@@ -1,5 +1,8 @@
 2004-01-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua-spvr.in (main): fixed a bug that kahua-spvr removes
+	the socket on exit when it detects another kahua-spvr is running.
+
 	* src/kahua/server.scm (a/cont): allow 'fragment' parameter to aux
 	list, to specify fragment id of generated uri.
 

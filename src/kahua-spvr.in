@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.4 2004/01/13 08:12:21 shiro Exp $
+;; $Id: kahua-spvr.in,v 1.5 2004/01/23 22:17:10 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -411,9 +411,8 @@
         ))
     ))
 
-(define (run-server spvr sockaddr use-listener)
-  (let ((sock (make-server-socket sockaddr))
-        (listener (and use-listener
+(define (run-server spvr sock sockaddr use-listener)
+  (let ((listener (and use-listener
                        (make <listener>
                          :prompter (lambda () (display "kahua> ")))))
         )
@@ -454,6 +453,7 @@
           (else    (log-open (kahua-logpath "kahua-spvr.log"))))
     (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
            (spvr     (make <kahua-spvr>))
+           (sock     (make-server-socket sockaddr))
            (cleanup  (lambda ()
                        (when (is-a? sockaddr <sockaddr-un>)
                          (sys-unlink (sockaddr-name sockaddr)))
@@ -469,13 +469,12 @@
          (with-error-handler
              (lambda (e)
                (cleanup)
-               (display (ref e 'message) (current-error-port))
                (report-error e)
                (bye 70))
            (lambda ()
              (load-worker-types)
              (run-default-workers spvr)
-             (run-server spvr sockaddr listener)
+             (run-server spvr sock sockaddr listener)
              (bye 0))))))
     ))
 
