@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.5 2004/02/09 10:36:43 shiro Exp $
+;; $Id: persistence.scm,v 1.6 2004/02/11 11:05:23 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -194,6 +194,9 @@
                         #f)
         (read-kahua-instance db (ref proxy 'class) (ref proxy 'key)))))
 
+;; The bottom-level writer ----------------------------------------
+;;   write-kahua-instance calls kahua-write.
+
 ;; for now, we don't consider shared structure
 (define-method kahua-write ((obj <kahua-persistent-base>) port)
   (define (save-slot s)
@@ -237,6 +240,11 @@
     (serialize-value (ref v 'value)))
    (else
     (error "object not serializable:" v))))
+
+;; The bottom-level reader ----------------------------------------
+;;   read-kahua-instance will read srfi-10 syntax of
+;;   kahua-object and kahua-proxy, which triggers the following
+;;   procedures.
 
 (define-reader-ctor 'kahua-object
   (lambda (class-name id . vals)
@@ -401,8 +409,8 @@
                                 (ref metainfo 'generation)))
               ((find-generation metainfo signature)
                => (lambda (gen&sig)
-                    (set-generation! (car gen&sig) (ref metainfo 'generation))
-                    ))
+                    (set-generation! (car gen&sig)
+                                     (ref metainfo 'generation))))
               (else
                (increment-generation metainfo signature)))))
   )
