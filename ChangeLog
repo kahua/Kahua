@@ -1,3 +1,7 @@
+2004-02-15  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/*.kahua: changed tags from symbol to function.
+	
 2004-02-14  Nobuo Yamashita  <nobsun@sampou.org>
 	
 	* src/kahua/elem.scm: newly added. It provides html tags implemented
