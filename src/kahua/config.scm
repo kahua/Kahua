@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm,v 1.1 2003/12/11 05:39:12 nobsun Exp $
+;; $Id: config.scm,v 1.2 2003/12/27 03:14:08 ko1 Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -60,26 +60,30 @@
    )
   )
 
-(define-method initialize ((self <kahua-config>) initargs)
-  (next-method)
-  ;; do some sanity check
-  (let1 wdir (ref self 'working-directory)
+(define (sanity-check kahua-conf)
+;; do some sanity check
+  (let1 wdir (ref kahua-conf 'working-directory)
     (unless (and (file-is-directory? wdir)
                  (file-is-writable? wdir))
       (error "working directory does not exist or is not writable:" wdir))
     (make-directory* (build-path wdir "logs"))
-    (make-directory* (build-path wdir "checkout")))
-  )
+    (make-directory* (build-path wdir "checkout"))))
 
-;; kahua-init [conf-file]
+
+;; kahua-init [conf-file] [skip-check?]
+;; if "skip-check?" is #t, read kahua.conf only(not check 
 (define (kahua-init . args)
-  (let ((cfile (or (get-optional args #f) *kahua-conf-default*)))
-    (if (file-is-readable? cfile)
-      (begin
-        (load cfile :environment (find-module 'kahua.config))
-        (set! (ref (instance-of <kahua-config>) 'conf-file) cfile))
-      (warn "configuration file ~a is not readable.  using default settings."
-            cfile)))
+  (let-optionals* args
+		  ((cfile #f)
+		   (skip-check? #f))
+    (let1 cfile (or cfile *kahua-conf-default*)
+      (if (file-is-readable? cfile)
+        (begin
+         (load cfile :environment (find-module 'kahua.config))
+         (set! (ref (instance-of <kahua-config>) 'conf-file) cfile)
+         (unless skip-check? (sanity-check (instance-of <kahua-config>))))
+      (error "configuration file ~a is not readable.  using default settings."
+            cfile))))
   ;; Include working directory to *load-path*.
   ;; We don't use add-load-path here, since it is a macro that does
   ;; work at compile time.
@@ -87,6 +91,7 @@
          (build-path (ref (instance-of <kahua-config>) 'working-directory)
                      "checkout"))
   (instance-of <kahua-config>))
+
 
 ;; utility functions
 
