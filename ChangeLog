@@ -1,3 +1,9 @@
+2004-08-12 Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/shell.scm.in, test/usermode.scm:
+	Patched to avoid stacking with Gauche 0.8.1. by making port's 
+	buffering mode none on input port bound with proccess output.
+	
 2004-08-11 Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua/server.scm:
