@@ -92,7 +92,7 @@
 		       (textarea: (@: (name "content")
 				      (cols "80")
 				      (rows "20"))
-				      "(a b (c d (e f) g) h))"
+				      "(a b (c d (e f) g) h)"
 				      )))
 		     (div:
 		      (input: (@: (type "checkbox")

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.19 2004/02/29 17:25:47 ko1 Exp $
+;; $Id: kahua-spvr.in,v 1.20 2004/03/02 15:13:32 ko1 Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -34,6 +34,7 @@
 (use kahua.config)
 (use kahua.gsid)
 (use kahua.developer)
+(use kahua.util)
 
 ;; Eventually this should be configurable by some conf file
 (define *default-worker-type* 'dummy)
@@ -314,6 +315,7 @@
 
 ;; terminate all workers
 (define-method nuke-all-workers ((self <kahua-spvr>))
+  (log-format "[spvr] nuke-all-workers")
   (for-each (cut terminate <>) (list-workers self))
   (do ()
       ((queue-empty? (workers-of self)))
@@ -460,7 +462,7 @@
 
 ;; dummy method to do something when a worker ends unexpected
 (define-method unexpected-end ((self <kahua-worker>))
-  #f)
+  (log-worker-action "unexpected finish" self))
 
 (define-method finish-worker ((self <kahua-worker>))
   (if (not (zombee? self))
@@ -509,7 +511,8 @@
     ((kill)  ;; kill the specified worker or worker(s) of type
      (for-each
       (lambda (type-or-count)
-        (cond ((eq? type-or-count '*)  (nuke-all-workers *spvr*))
+        (cond ((eq? type-or-count '*) 
+	       (nuke-all-workers *spvr*))
               ((or (symbol? type-or-count)
                    (string? type-or-count)
                    (integer? type-or-count))
@@ -548,41 +551,37 @@
 
 (define-method handle-request ((self <kahua-spvr>) client-sock)
   (with-error-handler
-      (lambda (e)
-        (send-message (socket-output-port client-sock)
-                      '(("x-kahua-status" "SPVR-ERROR"))
-                      (list (ref e 'message)
-                            (call-with-output-string
-                              (lambda (o)
-                                (with-error-to-port o
-                                  (lambda ()
-                                    (report-error e))))))))
-    (lambda ()
-      (let*-values (((in) (socket-input-port client-sock))
-                    ((header body) (receive-message in))
-                    ((stat-gsid cont-gsid) (get-gsid-from-header header))
-                    ((stat-h stat-b) (decompose-gsid stat-gsid))
-                    ((cont-h cont-b) (decompose-gsid cont-gsid))
-                    ((wtype) (get-worker-type header)))
-        (log-format "[spvr] header: ~s" header)
-        (cond
-         ((equal? wtype 'spvr)
-          ;; this is a supervisor command.
-          (send-message (socket-output-port client-sock)
-                        '(("x-kahua-status" "OK"))
-                        (handle-spvr-command body)))
-         (cont-h
-          ;; we know which worker handles the request
-          (let ((w (find-worker self cont-h)))
-            (unless w (error "stale session key" cont-gsid))
-            (dispatch-to-worker w client-sock header body)))
-         (else
-          ;; this is a session-initiating request.
-          (let ((w (find-worker self wtype)))
-            (unless w (error "don't have worker for" wtype))
-            (dispatch-to-worker w client-sock header body))))
-        ))
-    ))
+   (lambda (e)
+     (let ((error-log (kahua-error-string e #t)))
+       (send-message (socket-output-port client-sock)
+		     '(("x-kahua-status" "SPVR-ERROR"))
+		     (list (ref e 'message) error-log))))
+   (lambda ()
+     (let*-values (((in) (socket-input-port client-sock))
+		   ((header body) (receive-message in))
+		   ((stat-gsid cont-gsid) (get-gsid-from-header header))
+		   ((stat-h stat-b) (decompose-gsid stat-gsid))
+		   ((cont-h cont-b) (decompose-gsid cont-gsid))
+		   ((wtype) (get-worker-type header)))
+		  (log-format "[spvr] header: ~s" header)
+		  (cond
+		   ((equal? wtype 'spvr)
+		    ;; this is a supervisor command.
+		    (send-message (socket-output-port client-sock)
+				  '(("x-kahua-status" "OK"))
+				  (handle-spvr-command body)))
+		   (cont-h
+		    ;; we know which worker handles the request
+		    (let ((w (find-worker self cont-h)))
+		      (unless w (error "stale session key" cont-gsid))
+		      (dispatch-to-worker w client-sock header body)))
+		   (else
+		    ;; this is a session-initiating request.
+		    (let ((w (find-worker self wtype)))
+		      (unless w (error "don't have worker for" wtype))
+		      (dispatch-to-worker w client-sock header body))))
+		  ))
+   ))
 
 (define (run-server spvr sock sockaddr use-listener)
   (let ((listener (and use-listener
@@ -640,13 +639,19 @@
       (log-format "[spvr] started at ~a" sockaddr)
       (call/cc
        (lambda (bye)
-         (set-signal-handler! SIGTERM (lambda _ (cleanup) (bye 0)))
-         (set-signal-handler! SIGINT  (lambda _ (cleanup) (bye 0)))
-         (set-signal-handler! SIGHUP  (lambda _ (cleanup) (bye 0)))
+         (set-signal-handler! SIGTERM (lambda _ (log-format "[spvr] SIGTERM")
+					        (cleanup) (bye 0)))
+         (set-signal-handler! SIGINT  (lambda _ (log-format "[spvr] SIGINT")
+					        (cleanup) (bye 0)))
+         (set-signal-handler! SIGHUP  (lambda _ (log-format "[spvr] SIGHUP")
+					        (cleanup) (bye 0)))
+
          (with-error-handler
              (lambda (e)
-               (cleanup)
-               (report-error e)
+	       (log-format "[spvr] error in main:\n~a" 
+			   (kahua-error-string e #t))
+	       (report-error e)
+	       (cleanup)
                (bye 70))
            (lambda ()
              (load-worker-types)

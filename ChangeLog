@@ -1,3 +1,7 @@
+2004-03-03  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in: added more log output.
+
 2004-03-02  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* src/kahua/elem.scm: added pdf: and pdf/ for publishing pdf document.
