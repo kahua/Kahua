@@ -1,5 +1,9 @@
 2004-04-09  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* Version 0.2.2 released.
+	
+2004-04-09  Nobuo Yamashita  <nobsun@sampou.org>
+
 	* cgi/kahua.cgi.in: change content-type charset value to euc-jp
 	with Gauche made by --enable-multibyte=no.
 	
