@@ -1,3 +1,9 @@
+2004-02-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/util.scm (kahua-error-string): the implementation of
+	detail? optional argument didn't meet the comment.  Fixed
+	implementation to match the comment.
+
 2004-02-20  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* src/kahua-install.in: added new -t type plugin.
