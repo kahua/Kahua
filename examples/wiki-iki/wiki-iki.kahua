@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: wiki-iki.kahua,v 1.4 2004/01/16 09:40:20 shiro Exp $
+;; $Id: wiki-iki.kahua,v 1.5 2004/02/15 15:31:51 nobsun Exp $
 
 (use srfi-1)
 (use srfi-13)
@@ -75,9 +75,9 @@
 
 (define (nonexistent-page pagename global-cont)
   (global-cont
-   `(,@(page-title `("存在しないページ: " ,pagename))
-     (p (a/cont (@@ (cont ,(cut edit-page #f pagename)))
-                ,pagename "を編集する")))))
+    (append (page-title (list "存在しないページ: " pagename))
+	    (list (p: (a/cont: (@@: (cont (cut edit-page #f pagename)))
+			       pagename "を編集する"))))))
 
 ;; [String], Cont -> [Node]
 ;; NB: this isn't a CPS!
@@ -98,11 +98,11 @@
            => (lambda (m)
                 (list (ref '(_ h2 h3 h4 h5 h6) (min 4 (string-length (m 1))))
                       (m 'after))))
-          (else `(p ,lines)))
-    (cons 'p (format-lines lines '()))))
+          (else (p: lines)))
+    (apply p: (format-lines lines '()))))
 
 (define (format-wikiname name cont)
-  `(a/cont (@@ (cont ,show-page ,name)) ,name))
+  (a/cont: (@@: (cont show-page name)) name))
 
 (define (format-time time)
   (sys-strftime "%Y/%m/%d %H:%M:%S %Z" (sys-localtime time)))
@@ -137,24 +137,26 @@
 
 (define (format-recent-changes cont)
   (let ((pages (ref (recent-changes) 'pages)))
-    `((table
-       (@ (id "recentchanges"))
-       (tr (th (@ (id "recentchanges")) "最近の更新"))
-       ,@(map (lambda (page)
-                `(tr (td (@ (id "recentchanges"))
-                         ,(format-wikiname (ref page 'name) cont))))
-              pages)))))
+    (list 
+     (apply table:
+	    (@: (id "recentchanges"))
+	    (tr: (th: (@: (id "recentchanges")) "最近の更新"))
+	    (map (lambda (page)
+		   (tr: (td: (@: (id "recentchanges"))
+			     (format-wikiname (ref page 'name) cont))))
+		 pages)))))
 
 ;;========================================================
 ;; Main application
 ;;
 
 (define (standard-page nodes)
-  `((html (head (title "Wiki Iki")
-                (link (@ (rel "stylesheet") (type "text/css")
-                         (href ,(kahua-static-document-url
-                                 "wiki-iki/wiki-iki.css")))))
-          (body ,@nodes))))
+  (list 
+   (html: (head: (title: "Wiki Iki")
+		 (link: (@: (rel "stylesheet") (type "text/css")
+			    (href (kahua-static-document-url
+				   "wiki-iki/wiki-iki.css")))))
+          (apply body: nodes))))
 
 (define-entry (show-page pagename)
   (let ((pagename (or pagename *welcome-page*)))
@@ -165,25 +167,25 @@
 
 (define (show-page/page page)
   (define (body-pane nodes)
-    `(td (@ (id "bodypane"))
-         ,@nodes
-         (hr)
-         (div (a/cont
-               (@@ (cont ,(cut edit-page (key-of page) (ref page 'name))))
-               "[編集]"))
-         (div (@ (id "lastchanged"))
-              "最終更新: " ,(format-time (ref page 'creation-time)) (br)
-              "Powered by " (a (@ (href "http://www.kahua.org/")) "Kahua"))))
-              
+    (td: (@: (id "bodypane"))
+	 (apply div: nodes)
+	 (hr:)
+	 (div: (a/cont:
+		(@@: (cont (cut edit-page (key-of page) (ref page 'name))))
+		"[編集]"))
+         (div: (@: (id "lastchanged"))
+	       "最終更新: " (format-time (ref page 'creation-time)) (br:)
+	       "Powered by " (a: (@: (href "http://www.kahua.org/")) "Kahua"))))
   (define (side-pane)
-    `(td (@ (id "sidepane")) ,@(format-recent-changes standard-page)))
+    (apply td: (@: (id "sidepane")) (format-recent-changes standard-page)))
 
   (format-page page
                (lambda (nodes)
                  (standard-page
-                  `(,@(page-title (list (ref page 'name)))
-                    (table (@ (style "width:100%"))
-                           (tr ,(body-pane nodes) ,(side-pane))))))
+                  (append (page-title (list (ref page 'name)))
+			  (list
+			   (table: (@: (style "width:100%"))
+				   (tr: (body-pane nodes) (side-pane)))))))
                standard-page))
 
 ;; Edit and commit uses pagekey for an existing page,
@@ -196,13 +198,15 @@
                          (newest-page (find-kahua-instance <page> pagekey))))
          (pagekey  (and orig-page (key-of orig-page))))
     (standard-page
-     `(,@(page-title `(,pagename "の編集"))
-       (form/cont
-        (@@ (cont ,(cut commit-page pagekey pagename)))
-        (textarea (@ (name "content") (rows 20) (cols 60))
-                  ,(if orig-page (ref orig-page 'body) ""))
-        (input (@ (type "submit") (name "commit") (value "コミット")))))
-     )))
+     (append
+      (page-title `(,pagename "の編集"))
+      (list 
+       (form/cont:
+        (@@: (cont (cut commit-page pagekey pagename)))
+        (textarea: (@: (name "content") (rows 20) (cols 60))
+		   (if orig-page (ref orig-page 'body) ""))
+        (input: (@: (type "submit") (name "commit") (value "コミット")))))
+     ))))
 
 (define (commit-page pagekey pagename)
   (let* ((content (canon-content (kahua-context-ref "content" "")))
@@ -227,12 +231,13 @@
   (error "Conflict!"))
 
 (define (page-title name)
-  `((h1
-     (a/cont
-      (@@ (cont ,show-page))
-      (img (@ (src ,(kahua-static-document-url "wiki-iki/images/wiki-iki.png"))
-              (border "0") (width 64) (height 64))))
-     (span (@ (style "vertical-align:50%; margin-left:0.5em")) ,@name))))
+  (list
+   (h1:
+     (a/cont:
+      (@@: (cont show-page))
+      (img: (@: (src (kahua-static-document-url "wiki-iki/images/wiki-iki.png"))
+		(border "0") (width 64) (height 64))))
+     (apply span: (@: (style "vertical-align:50%; margin-left:0.5em")) name))))
 
 ;; canonicalize EOL to #\newline
 (define (canon-content content)
