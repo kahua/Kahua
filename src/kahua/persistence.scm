@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.10 2004/02/27 13:27:29 shiro Exp $
+;; $Id: persistence.scm,v 1.11 2004/02/27 13:41:15 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -630,9 +630,9 @@
 (define (compute-translation-directive A-slots B-slots)
   (let loop ((A-slots A-slots) (B-slots B-slots) (dirs '()))
     (cond ((null? A-slots)
-           (append! dirs (map (lambda (s) (cons (car s) :drop)) B-slots)))
+           (append! dirs (map (lambda (s) (cons (car s) :add)) B-slots)))
           ((null? B-slots)
-           (append! dirs (map (lambda (s) (cons (car s) :add)) A-slots)))
+           (append! dirs (map (lambda (s) (cons (car s) :drop)) A-slots)))
           ((eq? (caar A-slots) (caar B-slots))
            (loop (cdr A-slots) (cdr B-slots) dirs))
           ((string<? (symbol->string (caar A-slots))
