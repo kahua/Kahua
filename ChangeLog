@@ -1,6 +1,8 @@
 2004-02-14  Yusei Tahara  <tahara@timedia.co.jp>
 
-	* src/kahua-shell (login-processor): if stdin is not a terminal,
+	* emacs/kahua-shell.el.in: added remote emacs interface. can use 'run-kahua-shell' like 'run-scheme'.
+	* emacs/Makefile.in: added 'kahua-shell.el' make target.
+	* src/kahua-shell.in (login-processor): if stdin is not a terminal,
 	password prompt is echoed.
 
 2004-02-11  Nobuo Yamashita  <nobsun@sampou.org>

@@ -1,0 +1,15 @@
+(require 'comint)
+(require 'cmuscheme)
+
+(defun run-kahua-shell (host user)
+  (interactive (list (read-string "hostname: " nil)
+		     (read-string "username: " nil)))
+
+  (if (not (comint-check-proc "*scheme*"))
+      (let ((args (list (concat user "@" host) "kahua-shell")))
+	(set-buffer (apply 'make-comint "scheme" "ssh" nil args))
+	(inferior-scheme-mode)))
+  (setq scheme-program-name "kahua-shell")
+  (setq scheme-buffer "*scheme*")
+  (pop-to-buffer "*scheme*")
+  )

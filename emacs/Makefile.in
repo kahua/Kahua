@@ -13,7 +13,7 @@ DESTDIR  =
 INSTALL = @INSTALL@
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
 
-ELISPS = kahua.el
+ELISPS = kahua.el kahua-shell.el
 
 CONFIG_GENERATED = Makefile 
 .PHONY: all check clean distclean install maintainer-clean
@@ -23,6 +23,10 @@ all: $(ELISPS)
 kahua.el : kahua.el.in
 	sed "s@##bindir##@${bindir}@" kahua.el.in > kahua.el.tmp && \
 	mv kahua.el.tmp kahua.el
+
+kahua-shell.el : kahua-shell.el.in
+	sed "s@##bindir##@${bindir}@" kahua-shell.el.in > kahua-shell.el.tmp && \
+	mv kahua-shell.el.tmp kahua-shell.el
 
 check:
 
