@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.26 2004/10/19 18:38:41 shiro Exp $
+;; $Id: server.scm,v 1.27 2004/11/26 11:40:23 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -487,12 +487,16 @@
     (list " " (sxml:ncname attr) "=" q v q)))
 
 (define (default-element-handler tag attrs content context cont)
-  (handle-element-contents content context
-                           (lambda (stree context)
-			     (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
-                                     ,@stree
-                                     "</" ,tag "\n>")
-                                   context))))
+  (handle-element-contents
+   content context
+   (lambda (stree context)
+     (if (memq tag '(area base basefont br col frame hr img
+                          input isindex link meta param))
+       (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) " />") context)
+       (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
+               ,@stree
+               "</" ,tag "\n>")
+             context)))))
 
 (define (handle-element-contents contents context cont)
   (if (null? contents)
