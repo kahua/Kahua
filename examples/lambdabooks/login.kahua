@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua,v 1.5 2004/02/16 02:21:26 nobsun Exp $
+;; $Id: login.kahua,v 1.6 2004/03/22 22:29:44 shiro Exp $
 
 ;; User login management ----------------------------------------
 ;;   Receives two continuation procedure.
@@ -52,10 +52,12 @@
     (transient-cont
      (list 
       (if logname
-	  (if pass
-	      (p: "2つのパスワードが異なります。同じパスワードを入力して下さい。")
-	      (p: "そのユーザー名は既に登録されています。異なるユーザー名を選んで下さい。"))
-          (p: "ユーザー名とパスワードを選び、入力して下さい。パスワードは確認のため2度入力して下さい。"))
+        (if pass
+          (p: "2つのパスワードが異なります。同じパスワードを入力して下さい。")
+          (if (#/\w+/ logname)
+            (p: "そのユーザー名は既に登録されています。異なるユーザー名を選んで下さい。")
+            (p: "ユーザー名はアルファベット、数字、'_'の組合せにして下さい。")))
+        (p: "ユーザー名とパスワードを選び、入力して下さい。パスワードは確認のため2度入力して下さい。"))
       (form/cont:
        (@@: (cont user-registration '(logname) '(pass) '(pass2)))
         (table:
@@ -77,6 +79,8 @@
   (define user-registration
     (entry-lambda (:keyword logname pass pass2)
       (cond
+       ((not (#/\w+/ logname))
+        (new-user logname #f)) ;; bad logname
        ((kahua-find-user logname)
         (new-user logname #f)) ;; user $logname already exists
        ((not (equal? pass pass2))
