@@ -1,3 +1,8 @@
+2004-02-16  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua-admin.in (spvr-command-processor):
+	added help command list, adduser, deluser, lsuser.
+
 2004-02-15  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* emacs/kahua.el.in: added the custom group 'kahua' and variables.

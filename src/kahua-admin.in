@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.in,v 1.5 2004/02/02 09:15:23 tahara Exp $
+;; $Id: kahua-admin.in,v 1.6 2004/02/16 07:12:35 tahara Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -33,7 +33,7 @@
               (case (car cmd)
                 ((help)
                  (let ((spvr-help (send-command #f cmd))
-                       (admin-help '(connect cvs)))
+                       (admin-help '(connect cvs adduser deluser lsuser)))
                    (write (append spvr-help admin-help)) (newline)
                    (spvr-command-processor)))
                 ((connect)
@@ -61,7 +61,7 @@
                            (kahua-delete-developer name)
                            (write 'done) (newline)
                            spvr-command-processor)
-                     (begin (display "Usage: deluser <name>")
+                     (begin (display "Usage: deluser <name>\n")
                             spvr-command-processor)))
                 ((lsuser)
                  (write (kahua-list-developer)) (newline)
