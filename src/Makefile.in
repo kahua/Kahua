@@ -39,21 +39,20 @@ INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) \
                $(SCM_INSTALL_DIR)/kahua/pdf
 
 SCRIPTS  = kahua-spvr.sh    \
-           kahua-server.sh  \
            kahua-admin.sh   \
            kahua-install.sh \
-           kahua-shell.sh   \
-           kahua-keyserv.sh
+           kahua-shell.sh
 
 SVR_SCRIPTS = kahua-server.sh \
 	      kahua-keyserv.sh
 
 SCM_SCRIPTS  = kahua-spvr    \
-               kahua-server  \
                kahua-admin   \
                kahua-install \
-               kahua-shell   \
-               kahua-keyserv
+               kahua-shell
+
+SCM_SVR_SCRIPTS = kahua-server \
+		  kahua-keyserv
 
 SCMFILES = kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
            kahua/config.scm kahua/session.scm kahua/server.scm \
@@ -75,7 +74,7 @@ CONFIG_GENERATED = Makefile
 .in:
 	$(top_srcdir)/src/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(libexecdir)" $@
 
-all: $(SCM_SCRIPTS) kahua/config.scm kahua.conf kahua/pdf/typeset.scm
+all: $(SCM_SCRIPTS) $(SCM_SVR_SCRIPTS) kahua/config.scm kahua.conf kahua/pdf/typeset.scm
 
 
 kahua/config.scm:
@@ -97,9 +96,7 @@ clean:
 
 server-scripts	:
 	@for f in $(SVR_SCRIPTS); do \
-	  sed -e "2s@^@exec @" $$f > TMP; \
-	  rm -f $$f; \
-	  mv TMP $$f; \
+	  sed -e "2s@^/@exec /@" $$f > $$f.svr; \
 	done
 
 install: all server-scripts
@@ -111,8 +108,14 @@ install: all server-scripts
 	@for f in $(SCM_SCRIPTS); do \
 	  $(INSTALL) -m 555 $$f $(SCM_SCRIPT_INSTALL_DIR)/$$f.scm; \
 	done
+	@for f in $(SCM_SVR_SCRIPTS); do \
+	  $(INSTALL) -m 555 $$f $(SCM_SCRIPT_INSTALL_DIR)/$$f.scm; \
+	done
 	@for f in $(SCM_SCRIPTS); do \
 	  $(INSTALL) -m 555 $$f.sh $(SCRIPT_INSTALL_DIR)/$$f; \
+	done
+	@for f in $(SCM_SVR_SCRIPTS); do \
+	  $(INSTALL) -m 555 $$f.sh.svr $(SCRIPT_INSTALL_DIR)/$$f; \
 	done
 	@if test ! -f $(CONFFILE); then \
 	  $(INSTALL) -m 444 kahua.conf $(CONFFILE); \
@@ -129,6 +132,9 @@ uninstall:
 	  rm -f $(SCRIPT_INSTALL_DIR)/$$f; \
 	done
 	@for f in $(SCM_SCRIPTS); do \
+	  rm -f $(SCM_SCRIPT_INSTALL_DIR)/$$f; \
+	done
+	@for f in $(SCM_SVR_SCRIPTS); do \
 	  rm -f $(SCM_SCRIPT_INSTALL_DIR)/$$f; \
 	done
 

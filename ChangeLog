@@ -1,3 +1,15 @@
+2004-06-16  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/Makefile.in: fixed a bug inserting 'exec ' repeatedly.
+
+2004-06-09  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/Makefile.in: modified permission of $KAHUA_SOCKBASE
+	from o777 to o770.
+
+	* cgi/Makefile.in: modified permission of $KAHUA_CGILOGDIR
+	from o777 to o770.
+	
 2004-06-09  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua-keyserv, src/kahua-server, src/kahua-spvr: 
