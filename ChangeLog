@@ -1,3 +1,16 @@
+2003-12-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/test/worker.scm : refactored out common procedures for
+	  testing worker scripts.
+
+	* src/kahua/test/xml.scm : test-* procedures (i.e. the ones to be
+	  used in the last arg of test and test*) now returns *test-error*
+	  when it receives *test-error*; attempting to parse *test-error*
+	  results hard-to-track error messages.
+
+	* test/worker.scm, test/lambdabooks.scm, test/wiki-iki.scm :
+	  revised to use kahua.test.worker.
+
 2003-12-26  Shiro Kawai  <shiro@acm.org>
 
 	* examples/wiki-iki/* : added another example: simple wiki

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: xml.scm,v 1.6 2003/12/21 11:11:39 shiro Exp $
+;; $Id: xml.scm,v 1.7 2003/12/28 05:04:36 shiro Exp $
 
 ;; This module provides the means of test the result of HTML
 ;; generating code, such as CGI programs.   The output of
@@ -247,6 +247,7 @@
 (define-module kahua.test.xml
   (use srfi-1)
   (use srfi-13)
+  (use gauche.test)
   (use util.combinations)
   (use text.tree)
   (use sxml.ssax)
@@ -365,23 +366,29 @@
 ;; Entry
 
 (define (test-sxml-match? pattern input . opts)
-  (apply match-input pattern (list input) opts))
+  (if (equal? input *test-error*)
+    input
+    (apply match-input pattern (list input) opts)))
 
 (define (test-xml-match? pattern input . opts)
-  (apply match-input pattern
-         (cdr (call-with-input-string (tree->string input)
-                (cut ssax:xml->sxml <> '())))
-         opts))
+  (if (equal? input *test-error*)
+    input
+    (apply match-input pattern
+           (cdr (call-with-input-string (tree->string input)
+                  (cut ssax:xml->sxml <> '())))
+           opts)))
 
 (define (test-sxml-select-matcher path . maybe-extra-check)
   (let ((selector (sxpath path)))
     (lambda (pattern input)
-      (apply match-input pattern
-             ;; kludge to deal with *TOP*
-             (selector (if (and (pair? input) (eq? (car input) '*TOP*))
-                         input
-                         `(*TOP* ,input)))
-             maybe-extra-check))))
+      (if (equal? input *test-error*)
+        input
+        (apply match-input pattern
+               ;; kludge to deal with *TOP*
+               (selector (if (and (pair? input) (eq? (car input) '*TOP*))
+                           input
+                           `(*TOP* ,input)))
+               maybe-extra-check)))))
 
 (define (test-xml-select-matcher path . maybe-extra-check)
   (let ((selector (sxpath path)))
