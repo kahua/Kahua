@@ -1,3 +1,23 @@
+2003-12-16  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua/gsid.scm : modified decompose-gsid to through
+	invalid gsid. if called with invalid gsid, return (values #f gsid).
+
+	* src/kahua/server.scm : added kahua-worker-type.
+
+	* src/kahua/html.scm : syntax define-entry is added.
+	 and modified a/cont to support named continuation.
+
+	* test/worker.scm, test/gsid.scm, acont.kahua  : added tests to
+	test above. worker.scm is added the test of named continuation with
+	acont.kahua.
+
+	* examples/lambdabooks.kahua, lambdabooks/books.kahua, 
+	lambdabooks/partner.kahua, lambdabooks/useradmin.kahua :
+	modified to use named continuation. 
+	For example, to access partner ship page, you can access by
+	"kahua.cgi/lambdabooks/partner-page".
+
 2003-12-11  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* test/spvr.scm, test/worker.scm : revised.
