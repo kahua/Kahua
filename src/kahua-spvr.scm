@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.7 2004/11/26 04:31:48 shiro Exp $
+;; $Id: kahua-spvr.scm,v 1.8 2005/01/18 05:16:36 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -985,9 +985,10 @@
       (kahua-init conf-file :user user) ; this must come after getting lib-path
                                         ; since kahua-init adds to *load-path*
       (when sockbase (set! (kahua-sockbase) sockbase))
-      (cond ((equal? logfile "-") (log-open #t))
-            (logfile (log-open logfile))
-            (else    (log-open (kahua-logpath "kahua-spvr.log"))))
+      (cond ((equal? logfile "-") (log-open #t :prefix "~Y ~T ~P[~$]: "))
+            (logfile (log-open logfile :prefix "~Y ~T ~P[~$]: "))
+            (else    (log-open (kahua-logpath "kahua-spvr.log")
+                               :prefix "~Y ~T ~P[~$]: ")))
       (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
              (spvr     (make <kahua-spvr>
                          :gosh-path gosh

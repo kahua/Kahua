@@ -1,3 +1,8 @@
+2005-01-18  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-spvr.scm, src/kahua-keyserv.scm, cgi/kahua.cgi.in:
+	Modified log prefix from "~T ~P[~$]: " to "~Y ~T ~P[~$]: ".
+
 2005-01-05  Kenji Hisazumi  <nel@soraneko.com>
 
 	* cgi/kahua.cgi.in: 
