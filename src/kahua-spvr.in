@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.16 2004/02/26 19:36:00 ko1 Exp $
+;; $Id: kahua-spvr.in,v 1.17 2004/02/27 04:33:20 ko1 Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -373,9 +373,8 @@
 	  (lambda ()
 	    (with-error-handler
 	     (lambda (e)
-	       ;; to be restart
-	       (set! (ref worker 'ping-last-time) 0)
-	       (set! (ref worker 'ping-responded) #f))
+	       ;; to be zombee
+	       (set! (ref worker 'worker-zombee) #t))
 	     (lambda ()
 	       (reset-sock)
 	       (set! (ref worker 'ping-responded) #f)
