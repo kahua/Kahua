@@ -319,6 +319,8 @@
 ;; newline
 (define (typeset-newline)
   (let ((maxh (+ (*typeset-line-height*) *typeset-line-space*)))
+    (if (< (*typeset-boxheight*) (+ (*typeset-page-height*) maxh))
+      (typeset-newpage) #f)
     (*typeset-page-height* (+ (*typeset-page-height*) maxh))
     (*typeset-page* (cons `((,maxh ,(*typeset-indent*) #f) ,(reverse (*typeset-line*))) (*typeset-page*)))
     (*typeset-line-height* 0)
@@ -382,6 +384,7 @@
      ((eq? name 'h2) `((helvetica 16) (gothic 16)))
      ((eq? name 'b) `((helvetica 12) (gothic 12)))
      ((eq? name 'em) `((helvetica 14) (gothic 14)))
+     ((eq? name 'strong) `((helvetica 14) (gothic 14)))
      ((eq? name 'tt) `((courier 12) (gothic 12)))
      ((eq? name 'pre) `((courier 12) (gothic 12)))
      (else `((times 12) (mincho 12)))
