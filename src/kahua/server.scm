@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.14 2004/02/07 09:10:57 shiro Exp $
+;; $Id: server.scm,v 1.15 2004/02/17 10:09:26 nobsun Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -243,7 +243,9 @@
 ;; default render proc
 ;; TODO: should apply interp-html-rec to all nodes!
 (define (kahua-render-proc nodes context)
-  (interp-html-rec (car nodes) context values))
+  (if (eq? 'node-set (car nodes))
+      (interp-html-rec (cadr nodes) context values)
+      (interp-html-rec (car nodes) context values)))
 
 ;; KAHUA-CONTEXT-REF key [default]
 ;;
