@@ -1,3 +1,9 @@
+2004-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm (kahua-object reader): check if the
+	generation of instance is newer than currently recorded in-db class
+	generation, and if so, relead metainfo.
+
 2004-02-27  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* src/kahua/sandbox.scm: requires gauche.redefutil module before

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.9 2004/02/26 14:42:12 shiro Exp $
+;; $Id: persistence.scm,v 1.10 2004/02/27 13:27:29 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -292,10 +292,7 @@
         ;; the :%realization-slot-values argument.
         (let* ((cname (if (pair? class-desc) (car class-desc) class-desc))
                (class (find-kahua-class cname))
-               (generation (if (pair? class-desc)
-                             (cadr class-desc)
-                             (and (ensure-metainfo class)
-                                  (ref class 'persistent-generation)))))
+               (generation (find-instance-generation class class-desc)))
           (receive (slot-alist save-slots)
               (import-slot-values class generation vals)
             (make class :id id
@@ -306,6 +303,19 @@
 (define-reader-ctor 'kahua-proxy
   (lambda (class-name key)
     (make <kahua-proxy> :class (find-kahua-class class-name) :key key)))
+
+(define (find-instance-generation class class-desc)
+  (if (eq? (class-name class) '<kahua-persistent-metainfo>)
+    0
+    (begin
+      (ensure-metainfo class)
+      (if (pair? class-desc)
+        (begin
+          ;; The database may have been updated since the last bind-metainfo.
+          (when (> (cadr class-desc) (ref class 'persistent-generation))
+            (persistent-class-bind-metainfo class))
+          (cadr class-desc))
+        (ref class 'persistent-generation)))))
 
 ;;=========================================================
 ;; Persistent metainformation
@@ -493,8 +503,7 @@
                (list source-id new-generation)))))
 
   ;; Main part of persistent-class-bind-metainfo
-  (or (ref class 'persistent-generation)
-      (eq? (class-name class) '<kahua-persistent-metainfo>)
+  (or (eq? (class-name class) '<kahua-persistent-metainfo>)
       (let ((metainfo (find-kahua-instance <kahua-persistent-metainfo>
                                            (x->string (class-name class))))
             (signature (persistent-class-signature class)))
