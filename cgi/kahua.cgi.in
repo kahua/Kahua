@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.9 2003/12/29 04:16:17 shiro Exp $
+;; $Id: kahua.cgi.in,v 1.10 2003/12/31 13:12:04 ko1 Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -68,7 +68,7 @@
                                   ".kahua/kahua.conf")
           (if (file-is-readable? conf)
               (begin
-               (kahua-init conf)
+               (kahua-init conf #t)
                (set! *bridge-option* (string-append "/" user-dir))
                (set! *sockbase* (ref (kahua-config) 'sockbase)))
             (error "no user kahua.conf"))))
