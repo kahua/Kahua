@@ -1,3 +1,24 @@
+2004-02-20  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua-install.in: added new -t type plugin.
+	* src/kahua-server.in:
+	(kahua-application-environment): added. make anonymous sandbox module.
+	(kahua-app-server): now this is a sandbox module object, not a module.
+	(load-kahua-module): changed load environment. use sandbox module.
+	this procedue is defined as "load" in sandbox module.
+	(kahua-server-main): initialize plugins before loading *.kahua.
+	* src/kahua/plugin.scm: added plugin manager.
+	* src/kahua/sandbox.scm: added safe environment module.
+	* src/Makefile.in: install kahua/sandbox.scm kahua/plugin.scm.
+	added /var/lib/kahua/user /var/lib/kahua/plugins in CREATE_DIRS.
+	* src/kahua.scm: added kahua.plugin and kahua.sandbox.
+	* test/admin.scm, test/lambdabooks.scm, test/nqueen.scm,
+	  test/spvr.scm, test/wiki-iki.scm, test/worker.scm:
+	make plugins directory in working directory and copy
+	allow-module.scm to it.
+	* plugins/Makefile.in, plugins/allow-module.scm, plugins/sendmail.scm:
+	added sample plugins.
+
 2004-02-20  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* src/kahua-spvr.in : modified to run servers such as different

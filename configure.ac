@@ -2,7 +2,7 @@ dnl
 dnl Configuring kahua-elua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
-dnl $Id: configure.ac,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+dnl $Id: configure.ac,v 1.2 2004/02/20 10:46:31 tahara Exp $
 AC_PREREQ(2.54)
 AC_INIT(kahua-elua, 0.1.1, shiro@acm.org)
 AC_GAUCHE_INIT_EXT
@@ -43,4 +43,5 @@ AC_OUTPUT(Makefile
           src/Makefile 
           cgi/Makefile 
           examples/Makefile
-          emacs/Makefile)
+          emacs/Makefile
+          plugins/Makefile)

@@ -19,13 +19,15 @@ SCM_INSTALL_DIR = $(DESTDIR)`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
 SCRIPT_INSTALL_DIR = $(bindir)
 
 INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) $(SCM_INSTALL_DIR)/kahua/test
-CREATE_DIRS = /var/lib/kahua /tmp/kahua
+CREATE_DIRS = /var/lib/kahua /var/lib/kahua/user \
+              /tmp/kahua /tmp/kahua/user
 
 SCRIPTS  = kahua-spvr kahua-server kahua-admin kahua-install kahua-shell
 SCMFILES = kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
            kahua/config.scm kahua/session.scm kahua/server.scm \
            kahua/developer.scm kahua/partcont.scm kahua/elem.scm \
-           kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm
+           kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm \
+           kahua/sandbox.scm kahua/plugin.scm
 CONFFILE = /etc/kahua.conf
 USERCONFFILE = /var/lib/kahua/user.conf
 

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.in,v 1.6 2004/02/16 12:55:34 tahara Exp $
+;; $Id: kahua-server.in,v 1.7 2004/02/20 10:46:30 tahara Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -37,6 +37,20 @@
 
 (define primary-database-name (make-parameter #f))
 
+(define (kahua-application-environment)
+  (let ((sandbox (make-sandbox-module))
+        (cm (current-module)))
+    (for-each (lambda (e)
+                (eval `(define-in-module ,sandbox ,(car e) ,(cdr e))
+                      cm))
+              (map (lambda (s) (cons s (eval s cm))) (module-exports cm)))
+    ;; define load-kahua-module as load in sandbox.
+    (eval `(define-in-module ,sandbox load ,load-kahua-module) cm)
+    sandbox))
+
+;; set sandbox module in main proc.
+(define kahua-app-server #f)
+
 (define main-proc (make-parameter (lambda _
  				    (error "Not initialized!"))))
 (define kahua-error-proc (make-parameter #f))
@@ -54,10 +68,6 @@
 
 (define (default-handler) ((main-proc)))
 
-(define-module kahua-app-server
-  (import kahua)
-  (import kahua-server))
-
 (define (load-kahua-module mod)
   (with-error-handler
       (lambda (e)
@@ -65,7 +75,7 @@
         (print "ERROR loading module")
         (exit 0))
     (lambda ()
-      (load mod :environment (find-module 'kahua-app-server)))))
+      (load mod :environment kahua-app-server))))
 
 (define (run-server worker-id sockaddr)
   (let ((sock (make-server-socket sockaddr :reuse-addr? #t))
@@ -110,6 +120,8 @@
       (error "usage: kahua-server [-c <conf>] [-user <user>] <app-server> <args> ..." mods))
     (set! *kahua-top-module* (car mods))
     (kahua-init conf-file :user user)
+    (set! kahua-app-server (kahua-application-environment))
+    (initialize-plugins)
     (load-kahua-module (car mods))
     (let* ((worker-id (kahua-init-server 
 		       (car (string-split (sys-basename (car mods)) #\.))))

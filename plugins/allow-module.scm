@@ -1,0 +1,12 @@
+;; allow module as plugin
+(allow-module file.util)
+(allow-module srfi-1)
+(allow-module srfi-13)
+(allow-module srfi-2)
+(allow-module text.parse)
+(allow-module util.list)
+(allow-module gauche.charconv)
+(allow-module gauche.collection)
+(allow-module gauche.logger)
+(allow-module gauche.parameter)
+(allow-module gauche.sequence)

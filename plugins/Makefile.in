@@ -1,0 +1,48 @@
+SHELL       = @SHELL@
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+srcdir      = @srcdir@
+VPATH       = $(srcdir)
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+DESTDIR  =
+
+INSTALL = @INSTALL@
+MKINSTDIR = $(top_srcdir)/mkinstalldirs
+
+INSTALL_DIR = /var/lib/kahua/plugins
+CREATE_DIR = $(INSTALL_DIR)
+
+
+PLUGINS = allow-module.scm sendmail.scm
+
+CONFIG_GENERATED = Makefile 
+.PHONY: all check clean distclean install maintainer-clean
+
+all:
+
+check:
+
+clean:
+
+install:
+	$(MKINSTDIR) $(INSTALL_DIR) $(CREATE_DIR)
+	@for f in $(PLUGINS); do \
+	  $(INSTALL) -m 644 $$f $(INSTALL_DIR)/$$f; \
+	done
+
+uninstall:
+	@for f in $(PLUGINS); do \
+	  rm -f $(INSTALL_DIR)/$$f; \
+	done
+
+distclean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+

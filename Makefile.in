@@ -6,6 +6,7 @@ all :
 	cd src; $(MAKE) all
 	cd cgi; $(MAKE) all
 	cd emacs; $(MAKE) all
+	cd plugins; $(MAKE) all
 
 check : all
 	cd test; $(MAKE) check
@@ -16,6 +17,7 @@ clean :
 	cd cgi; $(MAKE) clean
 	cd emacs; $(MAKE) clean
 	cd examples; $(MAKE) clean
+	cd plugins; $(MAKE) clean
 	cd test; $(MAKE) clean
 
 distclean : clean
@@ -23,12 +25,14 @@ distclean : clean
 	cd cgi; $(MAKE) distclean
 	cd emacs; $(MAKE) distclean
 	cd examples; $(MAKE) distclean
+	cd plugins; $(MAKE) distclean
 	cd test; $(MAKE) distclean
 	rm -rf $(CONFIG_GENERATED)
 
 install :
 	cd src; $(MAKE) install
 	cd cgi; $(MAKE) install
+	cd plugins; $(MAKE) install
 
 # Run "make install-examples" AFTER "make install" and editing kahua.conf.
 install-examples :
@@ -37,6 +41,7 @@ install-examples :
 uninstall :
 	cd src; $(MAKE) uninstall
 	cd cgi; $(MAKE) uninstall
+	cd plugins; $(MAKE) uninstall
 
 uninstall-examples :
 	cd examples; $(MAKE) uninstall-examples
@@ -46,6 +51,7 @@ maintainer-clean : clean
 	cd cgi; $(MAKE) maintainer-clean
 	cd emacs; $(MAKE) maintainer-clean
 	cd examples; $(MAKE) maintainer-clean
+	cd plugins; $(MAKE) maintainer-clean
 	cd test; $(MAKE) maintainer-clean
 	rm -rf configure VERSION $(CONFIG_GENERATED)
 
