@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm,v 1.5 2004/01/16 07:21:00 tahara Exp $
+;; $Id: config.scm,v 1.6 2004/01/29 07:19:18 tahara Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -28,6 +28,7 @@
           kahua-static-document-path
           kahua-static-document-url
           kahua-timeout-mins
+          kahua-userconf-file
           ))
 (select-module kahua.config)
 
@@ -63,6 +64,11 @@
    ;; timeout-mins - session period of time
    (timeout-mins :init-keyword :timeout-mins
                  :init-value 60)
+
+   ;; userconf-file - developer account file
+   (userconf-file :init-keyword :userconf-file
+                  :init-value "/var/lib/kahua/user.conf")
+
 
    ;; internal
    (conf-file :init-value #f)
@@ -134,6 +140,9 @@
   (build-path (ref (kahua-config) 'static-document-url) path))
 
 (define (kahua-timeout-mins)
-  (slot-ref (kahua-config) 'timeout-mins))
+  (ref (kahua-config) 'timeout-mins))
+
+(define (kahua-userconf-file)
+  (ref (kahua-config) 'userconf-file))
 
 (provide "kahua/config")

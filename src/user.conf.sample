@@ -1,0 +1,9 @@
+;; Sample user configuration file
+;; $id$
+
+(("steel" . "cRDtpNCeBiql5KOQsKVyrA0sAiA=")
+ ("sussman" . "gf6L/odXbD7LIkJvjleEc4KRes8="))
+
+;; Local variables:
+;; mode: scheme
+;; end:

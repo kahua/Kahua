@@ -1,3 +1,13 @@
+2004-01-29  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/developer.scm, src/user.conf.sample : added the developer account.
+	* src/kahua/test/developer.scm : added.
+	
+	* src/kahua-shell.in : added the REPL interface for kahua developers.
+
+	* src/kahua.conf.sample (userconf-file), src/kahua/config.scm :
+	added userconf-file slot
+
 2004-01-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/session.scm :
