@@ -1,5 +1,8 @@
 2004-01-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua/server.scm (form/cont): allow to pass extra parameters
+	to the continuation closure, much like a/cont.
+
 	* src/kahua/util.scm: added.
 	* src/kahua.scm: added kahua.util
 

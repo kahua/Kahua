@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.9 2004/01/22 13:32:12 shiro Exp $
+;; $Id: server.scm,v 1.10 2004/01/22 15:18:35 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -480,23 +480,16 @@
 ;; [Args] -> [PositionalArgs], [KeywordArgs]
 
 (define (extract-cont-args args form)
-  (define (valid-value? v)
-    (or (string? v) (symbol? v) (number? v)))
-
-  (receive (pargs kargs)
-      (partition (lambda (arg)
-                   (if (pair? arg)
-                     (if (and (symbol? (car arg))
-                              (pair? (cdr arg))
-                              (valid-value? (cadr arg)))
-                       #f
-                       (error "bad continuation argument in element:" form))
-                     (if (valid-value? arg)
-                       #t
-                       (error "bad continuation argument in element:" form))))
-                 args)
-    (values (map x->string pargs)
-            (map (lambda (p) (cons (car p) (x->string (cadr p)))) kargs))))
+  (define (val v)
+    (if (or (string? v) (symbol? v) (number? v))
+      (x->string v)
+      (errorf "bad continuation argument ~a in element ~a" v form)))
+  (receive (kargs pargs) (partition pair? args)
+    (values (map val pargs)
+            (map (lambda (p)
+                   (cons (car p)
+                         (if (null? (cdr p)) '() (val (cadr p)))))
+                 kargs))))
 
 ;;-----------------------------------------------------------
 ;; Pre-defined element handlers
@@ -513,25 +506,30 @@
 ;;    <value> : passed as a positional argument (via PATH_INFO).
 ;;    (<symbol> <value>) : passed as a keyword argument. (via QUERY_STRING).
 ;;
-;;      where <value> is either a string, symbol, or a number.
-;;      (x->string is applied on <value>).
+;;  Where <value> is either a string, symbol, or a number.
+;;  (x->string is applied on <value>).
+;;
+;;  Example: (a/cont (@@ (cont ,closure show time (id 40))) contents)
+;;   => <a href='kahua.cgi/app-type/closure/show/time?id=40'>contents</a>
 
 (define-element a/cont (attrs auxs contents context cont)
 
   (define (build-argstr cont-args)
-    (receive (pargs kargs)
-        (extract-cont-args cont-args `(a/cont ,attrs ,auxs ,@contents))
+    (receive (pargs kargs) (extract-cont-args cont-args 'a/cont)
       (string-concatenate
        `(,(string-join (map uri-encode-string pargs) "/" 'prefix)
          ,@(if (null? kargs)
              '()
              `("?"
-               ,@(string-join (map (lambda (karg)
-                                     (format "~a=~a"
-                                             (uri-encode-string (car karg))
-                                             (uri-encode-string (cdr karg))))
-                                   kargs)
-                              "&")))))))
+               ,@(string-join
+                  (map (lambda (karg)
+                         (if (null? (cdr karg))
+                           (uri-encode-string (car karg))
+                           (format "~a=~a"
+                                   (uri-encode-string (car karg))
+                                   (uri-encode-string (cdr karg)))))
+                       kargs)
+                  "&")))))))
   
   (let* ((clause (assq-ref auxs 'cont))
          (id     (if clause (session-cont-register (car clause)) ""))
@@ -544,16 +542,31 @@
 ;;
 ;; form/cont
 ;; 
-;; `(form/cont (@@ (cont ,closure)) contents)
+;; `(form/cont (@@ (cont ,closure [arg ...])) contents)
 ;;
-;; TODO: support arg... as a/cont does.
+;;  Where arg ... is like a/cont, except you can omit the value of
+;;  keyword arguments.  If so, the value of the form's QUERY_STRING
+;;  is taken.
 
 (define-element form/cont (attrs auxs contents context cont)
-  (let* ((cont-closure (assq-ref auxs 'cont))
-         (id (session-cont-register (car cont-closure))))
+
+  (define (build-argstr&hiddens cont-args)
+    (receive (pargs kargs) (extract-cont-args cont-args 'form/cont)
+      (cons
+       (string-join (map uri-encode-string pargs) "/" 'prefix)
+       (filter-map (lambda (karg)
+                     (and (not (null? (cdr karg)))
+                          `(input (@ (type "hidden") (name ,(car karg))
+                                     (value ,(cdr karg))))))
+                   kargs))))
+  
+  (let* ((clause (assq-ref auxs 'cont))
+         (id     (if clause (session-cont-register (car clause)) ""))
+         (argstr (if clause (build-argstr&hiddens (cdr clause)) '(""))))
     (cont
      `((form (@ (method "POST") 
-                (action ,(kahua-self-uri id)))
+                (action ,(kahua-self-uri (string-append id (car argstr)))))
+             ,@(cdr argstr)
              ,@contents))
      context)))
 
