@@ -1,11 +1,11 @@
 ;;;
 ;;; Generate a shell script to invoke kahua operations.
 ;;;
-;;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
+;;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: make-script.scm,v 1.1.2.1 2004/10/14 21:28:41 shiro Exp $
+;;; $Id: make-script.scm,v 1.1.2.2 2004/10/15 03:00:53 shiro Exp $
 ;;;
 
 ;; Example:
@@ -15,7 +15,7 @@
 ;;    Creates a shell script kahua-admin that kicks kahua-admin.scm
 ;;
 
-(define *ident* "$Id: make-script.scm,v 1.1.2.1 2004/10/14 21:28:41 shiro Exp $")
+(define *ident* "$Id: make-script.scm,v 1.1.2.2 2004/10/15 03:00:53 shiro Exp $")
 
 (use file.util)
 (use util.match)
@@ -51,10 +51,16 @@
         (print "    echo \"$0: Cannot locate kahua source tree\"")
         (print "    exit 1")
         (print "  fi")
+        (print "  # adds -c $libpath/test.conf to the option.  it will be")
+        (print "  # overridden if the user gives -c option.")
+        (print "  confopt=\"-c $libpath/test.conf\"")
         (print "else")
         (print "  libpath=" libdir)
+        (print "  confopt=")
         (print "fi")
-        (print "exec "gosh" -I${libpath} ${libpath}/"basename".scm --gosh "gosh" \"$@\""))
+        (print "exec "gosh " -I${libpath} ${libpath}/"basename".scm"
+               " --gosh " gosh " ${confopt}"
+               " \"$@\""))
       :if-exists :supersede)
     (sys-rename tmpname basename)
     (sys-chmod basename #o555)))

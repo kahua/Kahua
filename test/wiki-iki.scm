@@ -1,6 +1,6 @@
-;; test wiki-iki script.
+;; test wiki-iki script. -*-Scheme-*-
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: wiki-iki.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: wiki-iki.scm,v 1.1.2.1 2004/10/15 03:00:53 shiro Exp $
 
 (use srfi-2)
 (use srfi-11)
@@ -35,7 +35,7 @@
 (test-section "kahua-server wiki-iki.kahua")
 
 (with-worker
- (w `("gosh" "-I../src" "-I../examples" "../src/kahua-server"
+ (w `("gosh" "-I../src" "-I../examples" "../src/kahua-server.scm"
       "-c" ,*config* "../examples/wiki-iki/wiki-iki.kahua"))
 
  (test* "run wiki-iki.kahua" #t (worker-running? w))

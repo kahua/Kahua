@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.1.2.1 2004/10/14 21:28:41 shiro Exp $
+;; $Id: kahua-spvr.scm,v 1.1.2.2 2004/10/15 03:00:53 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -39,24 +39,6 @@
 (define *default-worker-type* 'dummy)
 
 (define *spvr* #f) ;; bound to supervisor object for convenience
-
-;; NB: patching gauche.process - would be included in next Gauche release.
-(with-module gauche.process
-  (export process-wait-any)
-  (use srfi-2)
-  (define (process-wait-any . args)
-    (let-optionals* args ((nohang? #f))
-      (and (not (null? (process-list)))
-           (receive (pid status) (sys-waitpid -1 :nohang nohang?)
-             (and pid
-                  (and-let* ((p (find (lambda (pp) (= (process-pid pp) pid))
-                                      (process-list))))
-                    (slot-set! p 'status status)
-                    (update! (ref p 'processes) (cut delete p <>))
-                    p)))))  )
-  )
-;; End of patch
-
 
 ;; Supervisor protocol
 ;;
@@ -167,6 +149,7 @@
               (let ((args (get-keyword :arguments (cdr p) '()))
                     (user (ref (kahua-config) 'user-mode)))
                     `(,(ref spvr 'gosh-path)
+                      "-I" ,(ref spvr 'lib-path)
                       ,(build-path (ref spvr 'lib-path) "kahua-server.scm")
                       ,@(apply append
                                (cond-list
@@ -253,6 +236,7 @@
 
 (define (start-keyserv spvr)
   (let* ((cmd `(,(ref spvr 'gosh-path)
+                "-I" ,(ref spvr 'lib-path)
                 ,(build-path (ref spvr 'lib-path) "kahua-keyserv.scm")
                 ,@(apply append
                          (cond-list
@@ -610,10 +594,57 @@
 		  ))
    ))
 
+;;; HTTP request handler.  This is provided for testing convenience,
+;;; and not intended to turn kahua-spvr full-featured httpd.
+;;; (using Apache mod_proxy may be a feasible solution, though)
+(define-method handle-http ((self <kahua-spvr>) client-sock)
+
+  (let ((in  (socket-input-port client-sock))
+        (out (socket-output-port client-sock)))
+
+    (define (receive-http-request)
+      (let1 start-line (read-line in)
+        (if (eof-object? first)
+          (bad-request "bad request")
+          (match (string-split start-line #[\s])
+            ((method request-uri (? #/HTTP\/1.[01]/ version))
+             (bad-request "Bunga gunba"))
+            (else
+             (bad-request "Bad bad"))))))
+
+    (define (bad-request msg)
+      (display "HTTP/1.1 400 Bad Request\r\n" out)
+      (display "Content-type: text/html\r\n" out)
+      (display #`"Content-length: ,(+ (string-size msg) 2)\r\n" out)
+      (display "\r\n" out)
+      (display msg out)
+      (display "\r\n" out))
+      
+    (guard (exc
+            (else
+             (let ((out (socket-output-port client-sock)))
+               (display *http-int-error-response* out)
+               (flush out))))
+      (receive-htt-request)))
+  )
+
+(define *http-int-error-response*
+  (let ((body (string-append
+               "<html><head><title>500 Internal Server Error</title>\n"
+               "</head><body>\n"
+               "<h1>Kahua-spvr internal error</h1>\n"
+               "</body></html>\n")))
+    (string-append
+     "HTTP/1.1 500 Internal Server Error\r\n"
+     "Content-type: text/html\r\n"
+     #`"Content-length: ,(string-size body)\r\n"
+     "\r\n"
+     body)))
+
 ;;
 ;; Actual server loop
 ;;
-(define (run-server spvr sock use-listener)
+(define (run-server spvr kahua-sock http-sock use-listener)
   (let ((listener (and use-listener
                        (make <listener>
                          :prompter (lambda () (display "kahua> ")))))
@@ -646,6 +677,7 @@
        (logfile   "l=s")  ;; overrides conf file settings
        (user      "user=s")
        (gosh      "gosh=s")  ;; wrapper script adds this.
+       (http-port "standalone-port=i") ;; standalone httpd mode
        )
     (let ((lib-path (car *load-path*))) ; kahua library path.  it is
                                         ; always the first one, since the
@@ -659,7 +691,10 @@
             (else    (log-open (kahua-logpath "kahua-spvr.log"))))
       (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
              (spvr     (make <kahua-spvr> :gosh-path gosh :lib-path lib-path))
-             (sock     (make-server-socket sockaddr :reuse-addr? #t))
+             (kahua-sock (make-server-socket sockaddr :reuse-addr? #t))
+             (http-sock (and http-port
+                             (make-server-socket 'inet http-port
+                                                 :reuse-addr? #t)))
              (cleanup  (lambda ()
                          (when (is-a? sockaddr <sockaddr-un>)
                            (sys-unlink (sockaddr-name sockaddr)))
@@ -673,6 +708,8 @@
           (sys-chmod (sockaddr-name sockaddr) #o770))
         (start-keyserv spvr)
         (log-format "[spvr] started at ~a" sockaddr)
+        (when http-sock
+          (log-format "[spvr] also accepting http at ~a" http-sock))
         (call/cc
          (lambda (bye)
            (set-signal-handler! SIGTERM (lambda _ (log-format "[spvr] SIGTERM")
@@ -692,7 +729,7 @@
              (lambda ()
                (load-worker-types)
                (run-default-workers spvr)
-               (run-server spvr sock listener)
+               (run-server spvr kahua-sock http-sock listener)
                (bye 0))))))
       )))
 
