@@ -29,7 +29,8 @@ SCRIPTFILES = lambdabooks/lambdabooks.kahua \
               lambdabooks/partner.kahua     \
               lambdabooks/useradmin.kahua   \
               wiki-iki/wiki-iki.kahua       \
-	      nqueen/nqueen.kahua
+	      nqueen/nqueen.kahua	    \
+	      lazy-nqueen/lazy-nqueen.kahua
 
 STATICFILES = lambdabooks/images/lambda-books-logo.png \
               lambdabooks/images/separator.jpg \
