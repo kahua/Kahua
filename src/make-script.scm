@@ -5,17 +5,17 @@
 ;;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;; $Id: make-script.scm,v 1.1.2.2 2004/10/15 03:00:53 shiro Exp $
+;;; $Id: make-script.scm,v 1.1.2.3 2004/10/15 07:22:18 shiro Exp $
 ;;;
 
 ;; Example:
 ;;
-;;    % gosh make-script.scm $(GOSH) $(libdir) kahua-admin
+;;    % gosh ./make-script.scm $(GOSH) $(libdir) kahua-admin
 ;;
 ;;    Creates a shell script kahua-admin that kicks kahua-admin.scm
 ;;
 
-(define *ident* "$Id: make-script.scm,v 1.1.2.2 2004/10/15 03:00:53 shiro Exp $")
+(define *ident* "$Id: make-script.scm,v 1.1.2.3 2004/10/15 07:22:18 shiro Exp $")
 
 (use file.util)
 (use util.match)

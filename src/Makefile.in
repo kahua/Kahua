@@ -38,6 +38,8 @@ INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) \
 	       $(SCM_INSTALL_DIR)/kahua/test \
                $(SCM_INSTALL_DIR)/kahua/pdf
 
+TESTENV_DIR  = $(top_builddir)/tmp
+
 SH_SCRIPTS  = kahua-spvr    \
               kahua-admin   \
               kahua-install \
@@ -63,10 +65,13 @@ SCMFILES = $(SCM_SCRIPTS) \
 CONFFILE = $(sysconfdir)/kahua.conf
 USERCONFFILE = $(localstatedir)/user.conf
 
-CONFIG_GENERATED = Makefile 
-.PHONY: all check clean distclean install maintainer-clean
+GENERATED = $(SH_SCRIPTS) kahua.conf test.conf \
+            kahua/config.scm kahua/pdf/typeset.scm kahua.conf
 
-all: $(SH_SCRIPTS) kahua/config.scm kahua.conf kahua/pdf/typeset.scm
+CONFIG_GENERATED = Makefile 
+.PHONY: all check testenv clean distclean install maintainer-clean
+
+all: $(GENERATED) testenv
 
 $(SH_SCRIPTS) : make-script.scm
 
@@ -98,11 +103,19 @@ kahua.conf: kahua.conf.sample
 	sed -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##localstatedir##@$(localstatedir)@" kahua.conf.sample > $@
 	chmod -w $@
 
+test.conf : make-testconf.scm
+	$(GOSH) ./make-testconf.scm $(top_builddir)
+
+# creates environment for 'in-place' test.
+testenv :
+	rm -rf $(TESTENV_DIR)
+	mkdir $(TESTENV_DIR)
+
 check:
 
 clean:
-	rm -rf core *~ kahua/*~ \
-	  $(SH_SCRIPTS) kahua/config.scm kahua/pdf/typeset.scm kahua.conf
+	rm -rf core *~ kahua/*~ $(GENERATED)
+	rm -rf $(TESTENV_DIR)
 
 install: all
 	$(INSTALL) -m 770 -d $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir)

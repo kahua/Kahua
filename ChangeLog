@@ -1,5 +1,8 @@
 2004-10-14  Shiro Kawai  <shiro@acm.org>
 
+	* src/make-testconf.scm : a script to generate conf file for
+	  'in-place' testing.
+
 	* branching shiro_reorg1 to experiment reorganization.
 	* src/kahua-*.in : renamed to kahua-*.scm, and will be installed to 
 	  the kahua library directory.
