@@ -24,8 +24,8 @@ CREATE_DIRS = /var/lib/kahua /tmp/kahua
 SCRIPTS  = kahua-spvr kahua-server kahua-admin kahua-install kahua-shell
 SCMFILES = kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
            kahua/config.scm kahua/session.scm kahua/server.scm \
-           kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm \
-           kahua/developer.scm
+           kahua/developer.scm kahua/partcont.scm \
+           kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm
 CONFFILE = /etc/kahua.conf
 USERCONFFILE = /var/lib/kahua/user.conf
 

@@ -1,4 +1,4 @@
-TESTS = test-xml persistence user config gsid session \
+TESTS = test-xml persistence user config gsid session partcont \
         server kahua-dbm worker lambdabooks wiki-iki spvr admin \
         developer
 
@@ -22,6 +22,9 @@ gsid :
 
 session :
 	@gosh -I../src ./session.scm >> test.log
+
+partcont :
+	@gosh -I../src ./partcont.scm >> test.log
 
 persistence :
 	@gosh -I../src ./persistence.scm >> test.log

@@ -1,3 +1,19 @@
+2004-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/partcont.scm, test/partcont.scm :
+	(reset/pc, call/pc, let/pc) : implemented partial continuation
+	according to Gasbichler&Sperber ICFP02 paper.
+	* src/kahua/kahua.scm : extends kahua.partcont
+	* src/kahua/server.scm : wrap handler invocation by reset/pc,
+	so that the partial continuation captured in the application-server
+	returns correctly.
+
+	* examples/nqueen/nqueen.kahua : added an example that uses
+	partial continuation (nqueen code by Koichi Sasada).
+
+	* examples/lambdabooks/login.kahua : slightly revised using
+	entry-lambda
+
 2004-02-03  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua/server.scm : replaced sxml:string->xml with 

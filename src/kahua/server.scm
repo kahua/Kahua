@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.13 2004/02/02 17:12:48 nobsun Exp $
+;; $Id: server.scm,v 1.14 2004/02/07 09:10:57 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -24,6 +24,7 @@
   (use sxml.tools)
   (use file.util)
   (use kahua.gsid)
+  (use kahua.partcont)
   (use kahua.session)
   (use kahua.persistence)
   (use kahua.user)
@@ -166,9 +167,9 @@
                   (lambda (e)
                     (render-proc (error-proc e) context))
                 (lambda ()
-                  (render-proc (handler) context))))
+                  (render-proc (reset/pc (handler)) context))))
             (lambda ()
-              (render-proc (handler) context))))))
+              (render-proc (reset/pc (handler)) context))))))
 
     ;; Handles 'eval' protocol
     ;; () -> ([Headers], [Result])
