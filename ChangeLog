@@ -1,3 +1,11 @@
+2004-02-17  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/elem.scm: added node-set: and node-list-to-node-set.
+	All tag functions flatten their args by checking node-set tag.
+
+	* src/kahua/server.scm (kahua-render-proc) : A little modified
+	for handling top level node-set.
+	
 2004-02-17  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* src/kahua/config.scm (kahua-init): bug fix. do sanity-check after
