@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.10 2004/01/22 15:18:35 shiro Exp $
+;; $Id: server.scm,v 1.11 2004/01/23 07:13:02 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -162,7 +162,9 @@
                context))
           (if error-proc
             (lambda ()
-              (with-error-handler error-proc
+              (with-error-handler
+                  (lambda (e)
+                    (render-proc (error-proc e) context))
                 (lambda ()
                   (render-proc (handler) context))))
             (lambda ()

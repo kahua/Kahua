@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.in,v 1.4 2004/01/16 09:40:20 shiro Exp $
+;; $Id: kahua-server.in,v 1.5 2004/01/23 07:13:02 shiro Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -29,6 +29,7 @@
   (use kahua)
   (export primary-database-name
           main-proc
+          kahua-error-proc
           initialize-main-proc
           kahua-server-main)
   )
@@ -38,13 +39,14 @@
 
 (define main-proc (make-parameter (lambda _
  				    (error "Not initialized!"))))
+(define kahua-error-proc (make-parameter #f))
 (define (initialize-main-proc proc)
   (main-proc proc))
-
 
 (define (handle-request header body reply-cont selector)
   (define (handle)
     (kahua-default-handler header body reply-cont default-handler
+                           :error-proc (kahua-error-proc)
                            :eval-environment (current-module)))
   (cond ((primary-database-name)
          => (lambda (dbname) (with-db (db dbname) (handle))))

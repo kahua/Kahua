@@ -1,5 +1,11 @@
 2004-01-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua/server.scm (kahua-default-handler): process error-proc's
+	result by render-proc, so that error-proc can return [SXML].
+
+	* src/kahua-server.in (kahua-error-proc): new parameter to customize
+	error-handling routine.
+	
 	* src/kahua/persistence.scm (initialize): fixed a problem when
 	class definition is changed to remove an existing slot.
 
