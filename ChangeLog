@@ -1,5 +1,9 @@
 2004-02-23  Yusei Tahara  <tahara@timedia.co.jp>
 
+	* emacs/kahua.el.in, emacs/kahua-shell.el:
+	added kahua-user-mode variable for connecting user-mode spvr.
+	* src/kahua-shell.in (login-processor): when run with -user option,
+	omit username prompt.
 	* src/kahua/developer.scm
 	(developer-roles): added developer role.
 	(kahua-add-developer): added roles argument.
