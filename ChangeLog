@@ -1,3 +1,8 @@
+2005-02-01 Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-server.scm (kahua-server-main):
+	Made to log when startup and exit on signal into kahua-spvr.log.
+	
 2005-01-25  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua/server.scm (default-element-handler):

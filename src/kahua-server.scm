@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.2 2004/10/19 02:37:34 shiro Exp $
+;; $Id: kahua-server.scm,v 1.3 2005/01/31 22:40:28 nobsun Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -140,23 +140,38 @@
     (initialize-plugins)
     (kahua-app-args (cdr mods))
     (load-kahua-module (car mods))
-    (let* ((worker-id (kahua-init-server 
-		       (car (string-split (sys-basename (car mods)) #\.))
-                       keyserv))
+    (let* ((worker-name (car (string-split (sys-basename (car mods)) #\.))) 
+           (worker-id (kahua-init-server worker-name keyserv))
            (sockbase  (kahua-sockbase))
            (sockaddr  (worker-id->sockaddr worker-id sockbase))
            (cleanup   (lambda ()
+                        (log-format "[~a] exit" worker-name)
                         (when (is-a? sockaddr <sockaddr-un>)
                           (sys-unlink (sockaddr-name sockaddr))))))
-      (set-signal-handler! SIGINT  (lambda _ (cleanup) (exit 0)))
-      (set-signal-handler! SIGHUP  (lambda _ (cleanup) (exit 0)))
-      (set-signal-handler! SIGTERM (lambda _ (cleanup) (exit 0)))
+      (log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
+      (set-signal-handler! SIGINT  (lambda _
+                                     (log-format "[~a] SIGINT" worker-name)
+                                     (cleanup)
+                                     (exit 0)))
+      (set-signal-handler! SIGHUP  (lambda _
+                                     (log-format "[~a] SIGHUP" worker-name)
+                                     (cleanup)
+                                     (exit 0)))
+      (set-signal-handler! SIGTERM (lambda _
+                                     (log-format "[~a] SIGTERM" worker-name)
+                                     (cleanup)
+                                     (exit 0)))
+      (set-signal-handler! SIGPIPE (lambda _
+                                     (log-format "[~a] SIGPIPE" worker-name)
+                                     (cleanup)
+                                     (exit 0)))
       (with-error-handler
           (lambda (e)
             (report-error e)
             (cleanup)
             70)
         (lambda ()
+          (log-format "[~a] start" worker-name)
           (run-server worker-id sockaddr))))
     ))
 
