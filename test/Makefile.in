@@ -27,8 +27,10 @@ SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
 	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm pdf.scm \
 	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
 	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
-	shell.scm spvr.scm test-xml.scm user.scm usermode.scm wiki-iki.scm \
+	spvr.scm test-xml.scm user.scm wiki-iki.scm \
 	worker.scm
+
+SCMFILES2 = shell.scm usermode.scm
 
 KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
 	hello-world-st.kahua hello-world.kahua lister-st.kahua lister.kahua \
@@ -52,10 +54,15 @@ CONFIG_GENERATED = Makefile
 
 .PHONY: all check clean distclean maintainer-clean $(TESTS)
 
-all: $(SCMFILES) $(KAHUAFILES) pdf-01.sxml
+all: $(SCMFILES) $(SCMFILES2) $(KAHUAFILES) pdf-01.sxml
 
 $(SCMFILES) :
 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
+	chmod -w $@
+
+$(SCMFILES2) :
+	$(GOSH) cesconv -o $@.tmp -f euc-jp $@.in
+	sed -e "s@###GOSH###@$(GOSH)@" $@.tmp > $@
 	chmod -w $@
 
 $(KAHUAFILES) :
