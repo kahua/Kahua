@@ -1,9 +1,29 @@
+;;
+;; Kahua client interface for Emacs
+;;
+;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: kahua-shell.el.in,v 1.2 2004/02/15 06:23:57 tahara Exp $
+;;
+
 (require 'comint)
 (require 'cmuscheme)
 
+(defvar kahua-worker-prompt-regex "^select wno> "
+  "Regexp to recognise select woker prompt")
+
+(defun kahua-select-worker-prompt (string)
+  "Prompt in the minibuffer for selecting worker"
+  (if (string-match kahua-worker-prompt-regex string)
+      (comint-simple-send "*scheme*" (read-string "select worker: " nil))))
+
+(add-hook 'comint-output-filter-functions 'kahua-select-worker-prompt)
+
+
 (defun run-kahua-shell (host user)
-  (interactive (list (read-string "hostname: " nil)
-		     (read-string "username: " nil)))
+  (interactive (list (read-string "hostname: " kahua-default-server)
+		     (read-string "username: " kahua-default-user)))
 
   (if (not (comint-check-proc "*scheme*"))
       (let ((args (list (concat user "@" host) "kahua-shell")))
@@ -13,3 +33,9 @@
   (setq scheme-buffer "*scheme*")
   (pop-to-buffer "*scheme*")
   )
+
+(provide 'kahua-shell)
+
+;; Local variables:
+;; mode: emacs-lisp
+;; end:

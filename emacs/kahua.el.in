@@ -4,10 +4,31 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua.el.in,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+;; $Id: kahua.el.in,v 1.2 2004/02/15 06:23:57 tahara Exp $
 ;;
 
 (require 'cmuscheme)
+(require 'kahua-shell)
+
+;; Custom Variables:
+(defgroup kahua nil
+  "*Support for editing and running remote kahua server application."
+  :group 'scheme
+  :prefix "kahua-"
+  :link '(url-link "http://www.kahua.org"))
+
+(defcustom kahua-default-server nil
+  "*Default kahua server."
+  :type 'string
+  :group 'kahua)
+
+(defcustom kahua-default-user (or (getenv "USER")
+				  (getenv "LOGNAME")
+				  (user-login-name))
+  "*Default username for running kahua server."
+  :type 'string
+  :group 'kahua)
+
 
 (add-hook 'inferior-scheme-mode-hook
           '(lambda () 
@@ -19,6 +40,8 @@
   "Run kahua Emacs interface in *scheme* buffer.  Make sure you're not running other inferior scheme."
   (interactive)
   (run-scheme *kahua-admin*))
+
+(provide 'kahua)
 
 ;; Local variables:
 ;; mode: emacs-lisp

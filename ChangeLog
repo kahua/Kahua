@@ -1,3 +1,9 @@
+2004-02-15  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* emacs/kahua.el.in: added the custom group 'kahua' and variables.
+	* emacs/kahua-shell.el.in: use custom variables for ssh username
+	and hostname. added select worker prompt hook.
+
 2004-02-15  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* test/*.kahua: changed tags from symbol to function.
