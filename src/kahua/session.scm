@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.8 2004/02/21 12:24:52 shiro Exp $
+;; $Id: session.scm,v 1.9 2004/05/18 03:54:15 nobsun Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -47,10 +47,12 @@
           <session-state>
           session-state-register
           session-state-get
+	  session-state-ref
           session-state-discard
           session-state-sweep
           session-state-refresh
-          session-flush-all)
+          session-flush-all
+	  session-state-all-keys)
   )
 (select-module kahua.session)
 
@@ -262,19 +264,25 @@
 ;;   Returns a session state object corresponding ID.
 ;;   If no session is associated with the ID, a new session state
 ;;   object is created.
-(define (session-state-get id)
-  (if (session-server-id)
-    (let* ((result (keyserver (list id)))
-           (state (make <session-state> :session-id id)))
-      (synchronize-session-state state result)
-      (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
-      state)
-    (let1 state (or (hash-table-get (state-sessions) id #f)
-                    (hash-table-get (state-sessions)
-                                    (session-state-register id)))
-      (session-state-refresh id)
-      (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
-      state)))
+(define (session-state-get id . rest)
+  (let-keywords* rest ((refresh? :refresh? #t))
+    (if (session-server-id)
+        (let* ((result (keyserver (if refresh?
+                                      (list id)
+                                      `(ref ,id))))
+               (state (make <session-state> :session-id id)))
+          (synchronize-session-state state result)
+          (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
+          state)
+        (let1 state (or (hash-table-get (state-sessions) id #f)
+                        (hash-table-get (state-sessions)
+                                        (session-state-register id)))
+	  (if refresh? (session-state-refresh id))
+	  (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
+          state))))
+
+(define (session-state-ref id)
+  (session-state-get id :refresh? #f))
 
 ;; SESSION-STATE-DISCARD id
 ;;   Discards the session specified by ID.
@@ -301,6 +309,11 @@
     (set! (ref (hash-table-get (state-sessions) id) '%timestamp)
           (sys-time))))
 
+(define (session-state-all-keys)
+  (if (session-server-id)
+      (keyserver '(keys))
+      (hash-table-keys (state-sessions))))
+
 ;;; common API ----------------------------------------------
 
 ;; SESSION-FLUSH-ALL
@@ -308,8 +321,6 @@
 (define (session-flush-all)
   (cont-sessions  (make-hash-table 'string=?))
   (state-sessiosn (make-hash-table 'string=?)))
-
-
 
 (provide "kahua/session")
 

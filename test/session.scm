@@ -1,5 +1,5 @@
 ;; test kahua.session
-;; $Id: session.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: session.scm,v 1.2 2004/05/18 03:54:15 nobsun Exp $
 
 ;; NB: first we test state session without session key server (local mode),
 ;; then start up the server process and test the shared key mode.
@@ -176,6 +176,18 @@
            (list (assq-ref (cdr reply) 'tempo)
                  (assq-ref (cdr reply) 'key))))
 
+  (test* "ref" '("adagio" D-dur)
+         (let1 reply (get-session-key `(ref ,(car key)))
+           (list (assq-ref (cdr reply) 'tempo)
+                 (assq-ref (cdr reply) 'key))))
+
+  (test* "ref (check %ctime is not changed)" #t
+         (let* ((g (get-session-key (list (car key))))
+                (_ (sys-sleep 2))
+                (r (get-session-key `(ref ,(car key)))))
+           (= (assq-ref g '%ctime)
+              (assq-ref r '%ctime))))
+
   (test* "admin message (stat)" '(2)
          (get-session-key '(stat)))
 
@@ -254,6 +266,21 @@
          (let ((state (session-state-get "nosuchid")))
            (list (ref state 'x-slot) (ref state 'y-slot)))))
 
+(test* "session-state-ref" '(x y)
+       (begin
+         (let ((state (session-state-ref "nosuchid")))
+           (set! (ref state 'x-slot) 'x)
+           (set! (ref state 'y-slot) 'y))
+         (let ((state (session-state-ref "nosuchid")))
+           (list (ref state 'x-slot) (ref state 'y-slot)))))
+
+(test* "session-state-ref (timestamp is not changed)" #t
+       (let* ((g (session-state-get "nosuchid"))
+              (_ (sys-sleep 2))
+              (r (session-state-ref "nosuchid")))
+         (= (ref g '%timestamp)
+            (ref r '%timestamp))))
+
 (test* "sweep" '(x y)
        (begin
          (session-state-sweep 10000)
@@ -265,6 +292,12 @@
          (session-state-sweep -1)
          (let ((state (session-state-get "nosuchid")))
            (list (ref state 'x-slot) (ref state 'y-slot)))))
+
+(set! a-state-id (session-state-register))
+(set! b-state-id (session-state-register))
+
+(test* "session-state-all-keys" (sort (list a-state-id b-state-id "nosuchid"))
+        (sort (session-state-all-keys)))
 
 (when kserv
   (process-send-signal kserv SIGHUP)

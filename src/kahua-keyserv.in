@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.in,v 1.5 2004/03/05 23:10:41 shiro Exp $
+;; $Id: kahua-keyserv.in,v 1.6 2004/05/18 03:54:15 nobsun Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -128,6 +128,7 @@
                      (list (num-objects)))
                     ((stat) (list (num-objects)))
                     ((keys) (all-keys))
+                    ((ref) (ref-object (cadr request)))
                     (else
                      (handle-object-command request)))
                   #f)
@@ -165,6 +166,10 @@
           (loop)
           (get-object candidate))))
     ))
+
+(define (ref-object key)
+  (and (string? key)
+       (hash-table-get *object-pool* key #f)))
 
 (define (sweep-objects timeout)
   (define now (sys-time))

@@ -1,13 +1,34 @@
+2004-05-18  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* plugin/allow-module.scm:
+	added srfi-11
+
+	* src/kahua/session.scm, test/session.scm.in:
+	added session-state-ref and session-state-all-keys.
+
+	* src/kahua-keyserv.in:
+	added ref-object.
+
+	These hacks are by Hisazumi san. 
+	See [kahua-dev:00653],[kahua-dev:00656],and [kahua-dev:00663] for
+	detail.
+	
 2004-05-17  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua/persistence.scm, test/persistence.scm.in:
 	Hacked by Hisazumi san to enable make-kahua-collection to collect
 	subclass instances.
+
+	See [kahua-dev:00652],[kahua-dev:00655],[kahua-dev:00657]
+	,[kahua-dev:00660],[kahua-dev:00661],and [kahua-dev:00662]
+	for detail
 	
 2004-05-17  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* cgi/kahua.cgi.in:
 	Hacked by Hisazumi san to enable to use as fastcgi.
+
+	See [kahua-dev:00658] for detail
 	
 2004-05-07  Nobuo Yamashita  <nobsun@sampou.org>
 
