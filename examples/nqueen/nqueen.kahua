@@ -1,7 +1,7 @@
 ;; -*-scheme-*-
 ;; nqueen.kahua
 ;;   Koichi Sasada
-;; $Id: nqueen.kahua,v 1.1 2004/02/07 09:10:57 shiro Exp $
+;; $Id: nqueen.kahua,v 1.2 2004/02/09 03:10:36 shiro Exp $
 ;;
 ;; This example shows how to capture continuations within Kahua application.
 ;; You need to use call/pc instead of call/cc --- that's it.
@@ -52,7 +52,7 @@
        (define (ans-page cont/nq)
          (let1 ret
              (page "nqueen answer page"
-                   `(div (h1 ,(format "answer list of ~A queen" num))
+                   `(div (h1 ,(format "answer list of ~A queens" num))
                          (h2 ,(format "ansnum: ~A" ansnum))
                          (ul
                           ,@(map (lambda (ans)
@@ -82,8 +82,8 @@
 
 (define-entry (nqueen-start)
   (page "nqueen start"
-        `(div (a/cont (@@ (cont ,nqueen-page 8)) "8 queen")
+        `(div (a/cont (@@ (cont ,nqueen-page 8)) "8 queens")
               ", "
-              (a/cont (@@ (cont ,nqueen-page 12)) "12 queen"))))
+              (a/cont (@@ (cont ,nqueen-page 12)) "12 queens"))))
 
 (initialize-main-proc nqueen-start)
