@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.8 2003/12/26 07:32:27 shiro Exp $
+;; $Id: kahua.cgi.in,v 1.9 2003/12/29 04:16:17 shiro Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -73,11 +73,10 @@
                (set! *sockbase* (ref (kahua-config) 'sockbase)))
             (error "no user kahua.conf"))))
 
-
 ;; determine dispatch destination.
 ;; returns worker-id, preferable-worker-type, and cgsid.
 ;;
-;; return: (worker-id worker-type cont-gsid)
+;; return: (worker-id worker-type cont-gsid path-info)
 ;; 
 (define (dispatch-destination params)
   (let* ((path-info   (get-path-info))
@@ -88,10 +87,10 @@
          (worker-type (and path-info (car path-info)))
          (worker-id   (and cont-gsid (gsid->worker-id cont-gsid)))
          )
-    (values worker-id worker-type cont-gsid)))
+    (values worker-id worker-type cont-gsid path-info)))
 
 (define (send-reply param)
-  (receive (worker-id worker-type cont-gsid)
+  (receive (worker-id worker-type cont-gsid path-info)
       (dispatch-destination param)
     (log-format "~s ~s ~s" worker-id worker-type cont-gsid)
     (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
@@ -103,6 +102,7 @@
                          (worker-type `("x-kahua-worker" ,worker-type))
                          (state-gsid `("x-kahua-sgsid" ,state-gsid))
                          (cont-gsid  `("x-kahua-cgsid" ,cont-gsid))
+                         (path-info  `("x-kahua-path-info" ,path-info))
                          (remote-addr `("remote-addr" ,remote-addr)))))
            (sockaddr   (worker-id->sockaddr worker-id *sockbase*))
            )
