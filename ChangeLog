@@ -1,3 +1,22 @@
+2005-02-09 Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.3.1:
+	- Gauche 0.8.3 or later required.
+	- (kahua-spvr): Fixed for the case if the platform has both ipv4 
+	and ipv6 interface.
+	- (kahua-spvr): Added version command to show kahua version.
+	- (kahua-server): Made to log when startup and exit on signals.
+	- (kahua-admin): Enabled batch execution---just give an admin 
+	command in the command line and it is executed immediately.
+	- (kahua.cgi): Introduced <response> class to represent http response
+	instead of response dispatcher
+	- (kahua.server): Duplicate default-element-handler: one is for 
+	non-terminated HTML tags (e.g.img, br, etc) and emits empty
+	XHTML tag (e.g. <img />) instead of <img></img>. The other is
+	for rss feeding by <link> elements, which is recognized non-terminated
+	tag in HTML.
+	- Modified log prefix from "~T ~P[~$]: " to "~Y ~T ~P[~$]: ".
+	
 2005-02-01 Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua-server.scm (kahua-server-main):
