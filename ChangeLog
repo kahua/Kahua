@@ -1,3 +1,8 @@
+2004-10-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (kahua-context-ref*): added kahua-context-ref*
+	  to deal with multiple form values.
+
 2004-10-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua-spvr.scm :

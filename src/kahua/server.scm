@@ -1,10 +1,10 @@
 ;; Common server operations
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2004 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.25 2004/10/12 06:46:01 nobsun Exp $
+;; $Id: server.scm,v 1.26 2004/10/19 18:38:41 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -40,6 +40,7 @@
           kahua-default-handler
           kahua-current-context
           kahua-context-ref
+          kahua-context-ref*
           kahua-current-user
           kahua-current-user-name
           kahua-worker-type
@@ -274,6 +275,15 @@
 
 (define (kahua-context-ref key . maybe-default)
   (apply assoc-ref-car (kahua-current-context) key maybe-default))
+
+;; KAHUA-CONTEXT-REF* key [default]
+;;
+;;  Like kahua-context-ref, but retrieves multiple values as a list.
+;;  It returns '() if the data corresponding to the key isn't found.
+
+(define (kahua-context-ref* key . maybe-default)
+  (or (apply assoc-ref (kahua-current-context) key maybe-default)
+      '()))
 
 ;; KAHUA-CURRENT-USER
 ;; (setter KAHUA-CURRENT-USER) user
