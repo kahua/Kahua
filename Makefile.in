@@ -34,6 +34,13 @@ install :
 install-examples :
 	cd examples; $(MAKE) install-examples
 
+uninstall :
+	cd src; $(MAKE) uninstall
+	cd cgi; $(MAKE) uninstall
+
+uninstall-examples :
+	cd examples; $(MAKE) uninstall-examples
+
 maintainer-clean : clean
 	cd src; $(MAKE) maintainer-clean
 	cd cgi; $(MAKE) maintainer-clean

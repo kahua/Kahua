@@ -1,5 +1,11 @@
 2004-01-12  Shiro Kawai  <shiro@acm.org>
 
+	* Makefile.in, cgi/Makefile.in, examples/Makefile.in,
+	  src/Makefile.in : added 'uninstall' and 'uninstall-examples'
+	  make target.
+
+	* src/kahua-install.in : added -U (uninstall) option.
+
 	* src/kahua-spvr.in : added (use srfi-1) to adapt the change of
 	  util.list in post-0.7.3 Gauche.
 

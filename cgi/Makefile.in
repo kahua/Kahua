@@ -3,7 +3,7 @@
 # The destination should be specified by --with-cgidir argument of configure
 # script.
 #
-# $Id: Makefile.in,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+# $Id: Makefile.in,v 1.2 2004/01/13 08:55:56 shiro Exp $
 #
 
 SHELL       = @SHELL@
@@ -48,6 +48,13 @@ install:
 	    $(INSTALL) -m 555 $$f $(KAHUA_CGIDIR)/$$f; \
 	  done; \
 	fi
+
+uninstall:
+	for f in $(SCRIPTS); do \
+	  if test -r $(KAHUA_CGIDIR)/$$f; then \
+	    rm -f $(KAHUA_CGIDIR)/$$f; \
+	  fi; \
+	done; \
 
 distclean: clean
 	rm -rf $(CONFIG_GENERATED)

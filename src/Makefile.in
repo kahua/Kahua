@@ -54,6 +54,14 @@ install: all
 	  $(INSTALL) -m 444 kahua.conf.sample $(CONFFILE); \
 	fi
 
+uninstall:
+	@for f in $(SCMFILES); do \
+	  rm -f $(SCM_INSTALL_DIR)/$$f; \
+	done
+	@for f in $(SCRIPTS); do \
+	  rm -f $(SCRIPT_INSTALL_DIR)/$$f; \
+	done
+
 distclean: clean
 	rm -rf $(CONFIG_GENERATED)
 
