@@ -1,3 +1,19 @@
+2003-12-21  Nobuo Yamashita <nobsun@sampou.org>
+
+	* examples/lambdabooks.kahua (standard-frame, standard-page):
+	* examples/lambdabooks/book.kahua (show-book-detail):
+	* examples/lambdabooks/login.kahua (login-dialog, new-user): 
+	local functions
+	* examples/lambdabooks/review.kahua (show-reviews, write-review):
+	* examples/lambdabooks/useradmin.kahua (user-edit-panel)
+	local function
+	
+	position of 'context' arg rearraged to be at last but 'cont' arg.
+
+	* examples/lambdabooks/lister.kahua (lister)
+
+	modified args order and curried.
+
 2003-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/test/xml.scm (match-pattern): added !contain
