@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.1.2.4 2004/10/16 05:43:34 shiro Exp $
+;; $Id: kahua-spvr.scm,v 1.1.2.5 2004/10/16 09:22:23 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -138,81 +138,20 @@
    (next-worker-count :allocation :class :init-value 0)
    ))
 
-(define (log-worker-action action worker)
-  (log-format "[work] ~A: ~A(~A - ~A)" action 
-	      (worker-type-of worker) (worker-count-of worker)
-	      (worker-id-of worker)))
-
 (define-class <kahua-keyserv> ()
   ((process :init-keyword :process) ;; <process>
    (id      :init-keyword :id)      ;; keyserver id
    ))
 
+;; Some exceptions can be handled gracefully.  We use a special
+;; class for that.
+(define-class <spvr-exception> (<error>) ())
 
 ;; worker type entry - will be overridden by configuration file
 (define worker-types
   (make-parameter
    '()
    ))
-
-(define (worker-script worker-type spvr)
-  (cond ((assq worker-type (worker-types))
-         => (lambda (p)
-              (let ((args (get-keyword :arguments (cdr p) '()))
-                    (user (ref (kahua-config) 'user-mode)))
-                    `(,(ref spvr 'gosh-path)
-                      "-I" ,(ref spvr 'lib-path)
-                      ,(build-path (ref spvr 'lib-path) "kahua-server.scm")
-                      ,@(apply append
-                               (cond-list
-                                ((kahua-config-file)
-                                 => (lambda (c) `("-c" ,c)))
-                                ((ref (kahua-config) 'user-mode)
-                                 => (lambda (u) `("-user" ,u)))
-                                ((ref spvr 'keyserv)
-                                 => (lambda (k) `("-k" ,(ref k 'id))))))
-                      ,(let1 type (symbol->string worker-type)
-                             (string-append type "/" type ".kahua"))
-                      ,@args))))
-        (else
-         (error "unknown worker type:" worker-type))))
-
-(define (load-worker-types)
-  (let1 app-map
-      (build-path (ref (instance-of <kahua-config>) 'working-directory)
-                  "app-servers")
-    (if (file-exists? app-map)
-      (with-error-handler
-          (lambda (e)
-            (log-format "[spvr] error in reading ~a" app-map)
-            #f)
-        (lambda ()
-          (let1 lis (call-with-input-file app-map read)
-            (if (and (list? lis)
-                     (every (lambda (ent)
-                              (and (list? ent)
-                                   (symbol? (car ent))
-                                   (odd? (length ent))))
-                            lis))
-              (begin
-                (log-format "[spvr] loaded ~a" app-map)
-                (worker-types lis)
-                #t)
-              (begin
-                (log-format "[spvr] malformed app-servers file: ~a" app-map)
-                #f)))))
-      (begin
-        (log-format "app-servers file does not exist: ~a" app-map)
-        #f))))
-
-(define (run-default-workers spvr)
-  (map (lambda (w)
-         (let1 wtype (car w)
-           (dotimes (n  (- (get-keyword :run-by-default (cdr w) 0)
-                           (length (find-workers spvr wtype))))
-             (run-worker spvr wtype))
-           wtype))
-       (worker-types)))
 
 ;;;=================================================================
 ;;; Miscellaneous utilities
@@ -228,10 +167,22 @@
          (body   (read in)))
     (values header body)))
 
+(define (log-worker-action action worker)
+  (log-format "[work] ~A: ~A(~A - ~A)" action 
+	      (worker-type-of worker) (worker-count-of worker)
+	      (worker-id-of worker)))
+
 (define (get-worker-type header)
   (cond ((assoc "x-kahua-worker" header)
          => (lambda (p) (string->symbol (cadr p))))
         (else #f)))
+
+;; returns a list suitable to pass run-process.  option-list
+;; is appended first.
+(define (script-command spvr script-name option-list)
+  (list* (ref spvr 'gosh-path) "-I" (ref spvr 'lib-path)
+         (build-path (ref spvr 'lib-path) script-name)
+         (apply append option-list)))
 
 (define (run-piped-cmd cmd)
   (log-format "[spvr] running ~a" cmd)
@@ -264,15 +215,12 @@
 ;;;
 
 (define (start-keyserv spvr)
-  (let* ((cmd `(,(ref spvr 'gosh-path)
-                "-I" ,(ref spvr 'lib-path)
-                ,(build-path (ref spvr 'lib-path) "kahua-keyserv.scm")
-                ,@(apply append
-                         (cond-list
-                          ((kahua-config-file)
-                           => (lambda (c) `("-c" ,c)))
-                          ((ref (kahua-config) 'user-mode)
-                           => (lambda (u) `("-user" ,u)))))))
+  (let* ((cmd (script-command spvr "kahua-keyserv.scm"
+                              (cond-list
+                               ((kahua-config-file)
+                                => (cut list "-c" <>))
+                               ((ref (kahua-config) 'user-mode)
+                                => (cut list "-user" <>)))))
          (kserv (run-piped-cmd cmd))
          (kserv-id (read-line (process-output kserv))))
     (set! (ref spvr 'keyserv)
@@ -289,6 +237,62 @@
 ;;;=================================================================
 ;;; Worker management
 ;;;
+
+(define (worker-script worker-type spvr)
+  (cond ((assq worker-type (worker-types))
+         => (lambda (p)
+              (let ((args (get-keyword :arguments (cdr p) '()))
+                    (user (ref (kahua-config) 'user-mode)))
+                (script-command
+                 spvr
+                 "kahua-server.scm"
+                 (cond-list
+                  ((kahua-config-file) => (cut list "-c" <>))
+                  ((ref (kahua-config) 'user-mode) => (cut list "-user" <>))
+                  ((ref spvr 'keyserv) => (lambda (k) `("-k" ,(ref k 'id))))
+                  (#t (cons (let1 type (symbol->string worker-type)
+                              (string-append type "/" type ".kahua"))
+                            args)))))))
+        (else
+         (error "unknown worker type:" worker-type))))
+
+(define (load-app-servers)
+  (let1 app-map
+      (build-path (ref (instance-of <kahua-config>) 'working-directory)
+                  "app-servers")
+    (if (file-exists? app-map)
+      (with-error-handler
+          (lambda (e)
+            (log-format "[spvr] error in reading ~a" app-map)
+            #f)
+        (lambda ()
+          (let1 lis (call-with-input-file app-map read)
+            (if (and (list? lis)
+                     (every (lambda (ent)
+                              (and (list? ent)
+                                   (symbol? (car ent))
+                                   (odd? (length ent))))
+                            lis))
+              (begin
+                (log-format "[spvr] loaded ~a" app-map)
+                (worker-types lis)
+                #t)
+              (begin
+                (log-format "[spvr] malformed app-servers file: ~a" app-map)
+                #f)))))
+      (begin
+        (log-format "app-servers file does not exist: ~a" app-map)
+        #f))))
+
+;; start workers that are specified as "run by default"
+(define (run-default-workers spvr)
+  (map (lambda (w)
+         (let1 wtype (car w)
+           (dotimes (n  (- (get-keyword :run-by-default (cdr w) 0)
+                           (length (find-workers spvr wtype))))
+             (run-worker spvr wtype))
+           wtype))
+       (worker-types)))
 
 ;; start worker specified by worker-class
 (define-method run-worker ((self <kahua-spvr>) worker-type)
@@ -552,7 +556,7 @@
      (map car (worker-types)))
     ((reload) ;; reload app-servers file
      (begin
-       (if (load-worker-types)
+       (if (load-app-servers)
 	   (run-default-workers *spvr*)
 	   #f)
        ))
@@ -871,7 +875,7 @@
                  (cleanup)
                  (bye 70))
              (lambda ()
-               (load-worker-types)
+               (load-app-servers)
                (run-default-workers spvr)
                (run-server spvr kahua-sock http-sock listener)
                (bye 0))))))
