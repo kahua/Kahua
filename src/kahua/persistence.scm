@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.12 2004/02/28 07:47:43 shiro Exp $
+;; $Id: persistence.scm,v 1.13 2004/02/28 10:42:58 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -759,7 +759,7 @@
 (define (select-db-class path)
   (cond ((string-prefix? "mysql:" path)
          <kahua-db-mysql>)
-        ((string-prefix? "postgresql:" path)
+        ((string-prefix? "pg:" path)
          <kahua-db-postgresql>)
         (else
          <kahua-db-fs>)))

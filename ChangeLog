@@ -9,7 +9,7 @@
 	* src/kahua/persistence.scm:
 	(<kahua-db-dbi> etc): added support of DBI back-end.  Tested with
 	mysql.  The back-end database can be specified by "mysql:" or
-	"postgresql:" prefix in the database pathname.  If these paths
+	"pg:" prefix in the database pathname.  If these paths
 	are specified, dbi module is autoloaded, so the caller doesn't
 	need to load dbi explicitly.  (And kahua.persistence still works
 	without dbi, as far as such pathnames aren't specified).
