@@ -1,4 +1,4 @@
-TESTS = test-xml persistence user config gsid session server worker spvr
+TESTS = test-xml persistence user config gsid session server worker lambdabooks spvr
 
 .PHONY: all check clean distclan maintainer-clean $(TESTS)
 
@@ -32,6 +32,9 @@ server :
 
 worker :
 	@gosh -I../src ./worker.scm >> test.log
+
+lambdabooks :
+	@gosh -I../src -I../examples ./lambdabooks.scm >> test.log
 
 spvr :
 	@gosh -I../src ./spvr.scm >> test.log
