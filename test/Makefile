@@ -1,6 +1,6 @@
 TESTS = test-xml persistence user config gsid session partcont \
         server kahua-dbm worker lambdabooks wiki-iki nqueen \
-	spvr admin developer
+	spvr admin developer shell
 
 .PHONY: all check clean distclan maintainer-clean $(TESTS)
 
@@ -58,6 +58,9 @@ kahua-dbm :
 
 developer:
 	@gosh -I../src ./developer.scm >> test.log
+
+shell:
+	@gosh -I../src ./shell.scm >> test.log
 
 clean:
 	rm -rf test.log app/test.log *~ _*
