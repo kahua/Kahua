@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.2 2003/12/15 21:12:03 ko1 Exp $
+;; $Id: server.scm,v 1.3 2004/01/14 12:10:25 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -111,6 +111,7 @@
              (state   (session-state-get state-id))
              (bridge  (or (car (assoc-ref header "x-kahua-bridge" '(#f)))
                           (kahua-bridge-name)))
+             (path-info (car (assoc-ref header "x-kahua-path-info" '(#f))))
              (eval?  (car (assoc-ref header "x-kahua-eval" '(#f))))
              (header (add-gsid-to-header header state-id #f))
              )
@@ -135,7 +136,10 @@
                         (run-cont (if cont-id
                                     (or (session-cont-get cont-id) stale-proc)
                                     default-proc)
-                                  (cons (list "session-state" state) body)))))
+                                  (list*
+                                   (list "session-state" state)
+                                   (list "x-kahua-path-info" path-info)
+                                   body)))))
         )))
   )
 
