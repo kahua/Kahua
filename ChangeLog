@@ -1,3 +1,10 @@
+2004-06-02  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/Makefile.in: modified to make kahua-server and kahua-keyserv
+	scripts use exec for invoking gosh.  It seems to fix the bug 
+	that kahua-server process cannot be killed by SIGTERM when
+	kahua-spvr is invoked as daemon or background job.
+
 2004-05-25  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* Release 0.2.6 released.
