@@ -1,6 +1,12 @@
 2003-12-15  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* test/lambdabooks.scm:
+	Added code testing page transition for anonymous user.
+	Still no code for loginuser.
+	
+2003-12-15  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/lambdabooks.scm:
 	Added for testing examples/lambdabooks.kahua 
 	The test script is work but not yet completed.
 
