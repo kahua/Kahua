@@ -1,3 +1,7 @@
+2004-03-16  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-spvr.in (terminate): issues SIGTERM instead of SIGINT
+	
 2004-03-06  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* src/kahua-spvr.in (dispatch-to-worker): modified error handling
