@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.5 2004/02/16 02:21:26 nobsun Exp $
+;; $Id: lambdabooks.kahua,v 1.6 2004/02/22 23:58:55 shiro Exp $
 
 (use srfi-1)
 (use gauche.collection)
@@ -13,10 +13,6 @@
 (use file.util)
 (use util.list)
 (use srfi-2)
-
-(primary-database-name
- (build-path (ref (kahua-config) 'working-directory)
-             "lambdabooks"))
 
 (log-open (kahua-logpath "lambdabooks.log"))
 

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.in,v 1.9 2004/02/22 22:00:55 ko1 Exp $
+;; $Id: kahua-server.in,v 1.10 2004/02/22 23:58:33 shiro Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -26,6 +26,7 @@
   (use gauche.parameter)
   (use gauche.collection)
   (use gauche.parseopt)
+  (use file.util)
   (use kahua)
   (export primary-database-name
           main-proc
@@ -61,15 +62,15 @@
   (assoc "x-kahua-ping" header))
 
 (define (handle-request header body reply-cont selector)
-  (define (handle)
-    (kahua-default-handler header body reply-cont default-handler
-                           :error-proc (kahua-error-proc)
-                           :eval-environment (current-module)))
   (if (ping-request? header)
-      (reply-cont #t #t)
-      (cond ((primary-database-name)
-	     => (lambda (dbname) (with-db (db dbname) (handle))))
-	    (else (handle)))))
+    (reply-cont #t #t)
+    (let1 dbname (or (primary-database-name)
+                     (build-path (ref (kahua-config) 'working-directory) "db"))
+      (with-db (db dbname)
+        (kahua-default-handler header body reply-cont default-handler
+                               :error-proc (kahua-error-proc)
+                               :eval-environment (current-module)))))
+  )
 
 (define (default-handler) ((main-proc)))
 
