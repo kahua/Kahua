@@ -1,3 +1,10 @@
+2004-02-22  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua-shell.in (make-worker-command-processor):
+	sending expression evaluate in sandbox instead of kahua-server.
+	* src/kahua-admin.in, src/kahua/plugin.scm:
+	added plugin command. this command provides listing and reloading.
+
 2004-02-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/server.scm (a/cont) : supports remote-cont clause, which

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: plugin.scm,v 1.1 2004/02/20 10:46:30 tahara Exp $
+;; $Id: plugin.scm,v 1.2 2004/02/22 12:05:31 tahara Exp $
 
 (define-module kahua.plugin
   (use srfi-1)
@@ -136,7 +136,7 @@
     (load plugin :environment *sandbox-plugin*)))
 
 (define (all-plugins)
-  (hash-table-map *plugins* (lambda (name p) (cons name p))))
+  (hash-table-map *plugins* (lambda (name p) (cons name (ref p 'version)))))
 
 
 (provide "kahua/plugin")
