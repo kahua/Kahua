@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.4 2004/01/16 09:40:21 shiro Exp $
+;; $Id: server.scm,v 1.5 2004/01/19 04:29:52 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -25,7 +25,6 @@
   (use kahua.gsid)
   (use kahua.session)
   (use kahua.persistence)
-  (use kahua.app)
   (use kahua.user)
   (export kahua-init-server
           kahua-bridge-name

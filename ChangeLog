@@ -1,3 +1,7 @@
+2004-01-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm : removed bogus reference to kahua.app module.
+
 2004-01-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/html.scm : merged into kahua/server.scm
