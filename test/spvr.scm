@@ -1,6 +1,6 @@
-;; test supervisor scripts.
+;; test supervisor scripts. -*-mode: scheme-*-
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: spvr.scm,v 1.2 2004/04/19 03:33:37 nobsun Exp $
+;; $Id: spvr.scm,v 1.2.2.1 2004/10/14 21:28:42 shiro Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -37,11 +37,6 @@
 
 (kahua-init *config*)
 
-;; in order to propagate load-path to child process
-(sys-putenv "GAUCHE_LOAD_PATH" "../src:.")
-(sys-putenv "PATH" (cond ((sys-getenv "PATH") => (lambda (x) #`"../src:,x"))
-                         (else "../src")))
-
 ;; some utilities
 (define (send-message out header body)
   (write header out) (newline out)
@@ -71,7 +66,7 @@
 (test-section "basic functionality")
 
 (test* "start" #t
-       (let* ((p (run-process 'gosh "-I../src" "../src/kahua-spvr"
+       (let* ((p (run-process "../src/kahua-spvr" "--test"
                               "-c" *config* "-i"
                               :input :pipe :output :pipe))
               )

@@ -28,7 +28,7 @@ DESTDIR  =
 
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
-INSTALL = $(GOSH) -I../src ../src/kahua-install
+INSTALL = $(top_srcdir)/src/kahua-install --test
 
 # specify -c ../kahua.conf etc. to give an alternative conf file
 KAHUACONFIG = -c $(sysconfdir)/kahua.conf

@@ -1,8 +1,8 @@
-;; test admin scripts.
+;; test admin scripts.  -*-mode:scheme-*-
 ;; this test isn't for modules, but for actual scripts.
 ;; kahua-admin テスト
 
-;; $Id: admin.scm,v 1.2 2004/04/19 03:33:37 nobsun Exp $
+;; $Id: admin.scm,v 1.2.2.1 2004/10/14 21:28:42 shiro Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -63,18 +63,13 @@
 (define *spvr*   #f)
 (define *admin*  #f)
 
-;; in order to propagate load-path to child process
-(sys-putenv "GAUCHE_LOAD_PATH" "../src:.")
-(sys-putenv "PATH" (cond ((sys-getenv "PATH") => (lambda (x) #`"../src:,x"))
-                         (else "../src")))
-
 ;;---------------------------------------------------------------
 ;; テストに必要な2つのスクリプトを起動する。
 (test-section "run scripts")
 
 ;; kahua-spvr を起動する。
 (test* "start spvr" #t
-       (let ((p (run-process 'gosh "-I../src" "../src/kahua-spvr" 
+       (let ((p (run-process "../src/kahua-spvr" "--test"
 			     "-c" *config*)))
 	 (sys-sleep 3)
 	 (and (file-exists? "_tmp/kahua")
@@ -83,7 +78,7 @@
 
 ;; kahua-admin を起動する。
 (test* "start admin" 'spvr>
-       (let ((p (run-process 'gosh "-I../src" "../src/kahua-admin"
+       (let ((p (run-process "../src/kahua-admin" "--test"
 			     "-c" *config* 
 			     :input :pipe :output :pipe :error :pipe)))
 	 (set! *admin* p)

@@ -1,3 +1,12 @@
+2004-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* branching shiro_reorg1 to experiment reorganization.
+	* src/kahua-*.in : renamed to kahua-*.scm, and will be installed to 
+	  the kahua library directory.
+	* src/maka-script.scm : generates shell scripts for kahua commands.
+	* test/*.scm.in : fixed accodringly.
+	* Makefiles : fixed accordingly.
+
 2004-10-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/config.scm.in (kahua-init):

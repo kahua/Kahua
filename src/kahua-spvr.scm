@@ -1,11 +1,10 @@
-#!/usr/bin/env gosh
 ;; "Supervisor" or super server for kahua
 ;;
 ;;  Copyright (c) 2003-2004 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.23 2004/06/09 06:46:11 nobsun Exp $
+;; $Id: kahua-spvr.scm,v 1.1.2.1 2004/10/14 21:28:41 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -114,6 +113,10 @@
    (workers    :init-form (make-queue) :getter workers-of)
    (selector   :init-form (make <selector>) :getter selector-of)
    (keyserv    :init-value #f) ;; keyserver process
+   (gosh-path  :init-keyword :gosh-path) ;; absolute path of gosh, passed
+                                         ;; by wrapper script.
+   (lib-path   :init-keyword :lib-path)  ;; path where kahua library files
+                                         ;; are installed.
    ))
 
 (define-class <kahua-worker> ()
@@ -151,6 +154,7 @@
    (id      :init-keyword :id)      ;; keyserver id
    ))
 
+
 ;; worker type entry - will be overridden by configuration file
 (define worker-types
   (make-parameter
@@ -162,7 +166,8 @@
          => (lambda (p)
               (let ((args (get-keyword :arguments (cdr p) '()))
                     (user (ref (kahua-config) 'user-mode)))
-                    `("kahua-server"
+                    `(,(ref spvr 'gosh-path)
+                      ,(build-path (ref spvr 'lib-path) "kahua-server.scm")
                       ,@(apply append
                                (cond-list
                                 ((kahua-config-file)
@@ -247,7 +252,8 @@
 ;;; Session key server ---------------------------------------------
 
 (define (start-keyserv spvr)
-  (let* ((cmd `("kahua-keyserv"
+  (let* ((cmd `(,(ref spvr 'gosh-path)
+                ,(build-path (ref spvr 'lib-path) "kahua-keyserv.scm")
                 ,@(apply append
                          (cond-list
                           ((kahua-config-file)
@@ -569,7 +575,8 @@
 
 ;;; server loop ------------------------------------------------
 
-(define-method handle-request ((self <kahua-spvr>) client-sock)
+;;; "Kahua request" handler.  Client is kahua.cgi or kahua-admin.
+(define-method handle-kahua ((self <kahua-spvr>) client-sock)
   (with-error-handler
    (lambda (e)
      (let ((error-log (kahua-error-string e #t)))
@@ -603,7 +610,10 @@
 		  ))
    ))
 
-(define (run-server spvr sock sockaddr use-listener)
+;;
+;; Actual server loop
+;;
+(define (run-server spvr sock use-listener)
   (let ((listener (and use-listener
                        (make <listener>
                          :prompter (lambda () (display "kahua> ")))))
@@ -611,7 +621,7 @@
     (selector-add! (selector-of spvr)
                    (socket-fd sock)
                    (lambda (fd flags)
-                     (handle-request spvr (socket-accept sock)))
+                     (handle-kahua spvr (socket-accept sock)))
                    '(r))
     (when listener
       (let1 listener-handler (listener-read-handler listener)
@@ -622,63 +632,69 @@
                        '(r)))
       (listener-show-prompt listener))
 
-    ;; hack
-    (when (is-a? sockaddr <sockaddr-un>)
-      (sys-chmod (sockaddr-name sockaddr) #o770))
     (do () (#f)
       (selector-select (selector-of spvr) 10.0e6)
       (check-workers spvr))
     ))
 
+;;; main ---------------------------------------------------------
 (define (main args)
   (let-args (cdr args)
-      ((conf-file "c=s" #f)
-       (listener "i" #f)
-       (sockbase "s=s" #f)  ;; overrides conf file settings
-       (logfile  "l=s" #f)  ;; overrides conf file settings
-       (user "user=s" #f)
+      ((conf-file "c=s")
+       (listener  "i")
+       (sockbase  "s=s")  ;; overrides conf file settings
+       (logfile   "l=s")  ;; overrides conf file settings
+       (user      "user=s")
+       (gosh      "gosh=s")  ;; wrapper script adds this.
        )
-    ;; initialization
-    (kahua-init conf-file :user user)
-    (when sockbase (set! (kahua-sockbase) sockbase))
-    (cond ((equal? logfile "-") (log-open #t))
-          (logfile (log-open logfile))
-          (else    (log-open (kahua-logpath "kahua-spvr.log"))))
-    (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
-           (spvr     (make <kahua-spvr>))
-           (sock     (make-server-socket sockaddr))
-           (cleanup  (lambda ()
-                       (when (is-a? sockaddr <sockaddr-un>)
-                         (sys-unlink (sockaddr-name sockaddr)))
-                       (nuke-all-workers spvr)
-                       (stop-keyserv spvr)
-                       (log-format "[spvr] exitting")))
-           )
-      (set! *spvr* spvr)
-      (start-keyserv spvr)
-      (log-format "[spvr] started at ~a" sockaddr)
-      (call/cc
-       (lambda (bye)
-         (set-signal-handler! SIGTERM (lambda _ (log-format "[spvr] SIGTERM")
+    (let ((lib-path (car *load-path*))) ; kahua library path.  it is
+                                        ; always the first one, since the
+                                        ; wrapper script adds it.
+      ;; initialization
+      (kahua-init conf-file :user user) ; this must come after getting lib-path
+                                        ; since kahua-init adds to *load-path*
+      (when sockbase (set! (kahua-sockbase) sockbase))
+      (cond ((equal? logfile "-") (log-open #t))
+            (logfile (log-open logfile))
+            (else    (log-open (kahua-logpath "kahua-spvr.log"))))
+      (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
+             (spvr     (make <kahua-spvr> :gosh-path gosh :lib-path lib-path))
+             (sock     (make-server-socket sockaddr :reuse-addr? #t))
+             (cleanup  (lambda ()
+                         (when (is-a? sockaddr <sockaddr-un>)
+                           (sys-unlink (sockaddr-name sockaddr)))
+                         (nuke-all-workers spvr)
+                         (stop-keyserv spvr)
+                         (log-format "[spvr] exitting")))
+             )
+        (set! *spvr* spvr)
+        ;; hack
+        (when (is-a? sockaddr <sockaddr-un>)
+          (sys-chmod (sockaddr-name sockaddr) #o770))
+        (start-keyserv spvr)
+        (log-format "[spvr] started at ~a" sockaddr)
+        (call/cc
+         (lambda (bye)
+           (set-signal-handler! SIGTERM (lambda _ (log-format "[spvr] SIGTERM")
 					        (cleanup) (bye 0)))
-         (set-signal-handler! SIGINT  (lambda _ (log-format "[spvr] SIGINT")
+           (set-signal-handler! SIGINT  (lambda _ (log-format "[spvr] SIGINT")
 					        (cleanup) (bye 0)))
-         (set-signal-handler! SIGHUP  (lambda _ (log-format "[spvr] SIGHUP")
+           (set-signal-handler! SIGHUP  (lambda _ (log-format "[spvr] SIGHUP")
 					        (cleanup) (bye 0)))
 
-         (with-error-handler
-             (lambda (e)
-	       (log-format "[spvr] error in main:\n~a" 
-			   (kahua-error-string e #t))
-	       (report-error e)
-	       (cleanup)
-               (bye 70))
-           (lambda ()
-             (load-worker-types)
-             (run-default-workers spvr)
-             (run-server spvr sock sockaddr listener)
-             (bye 0))))))
-    ))
+           (with-error-handler
+               (lambda (e)
+                 (log-format "[spvr] error in main:\n~a" 
+                             (kahua-error-string e #t))
+                 (report-error e)
+                 (cleanup)
+                 (bye 70))
+             (lambda ()
+               (load-worker-types)
+               (run-default-workers spvr)
+               (run-server spvr sock listener)
+               (bye 0))))))
+      )))
 
 ;; Local variables:
 ;; mode: scheme

@@ -1,11 +1,10 @@
-#!/usr/bin/env gosh
 ;; Utility script to install kahua-related materials
 ;;
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-install.in,v 1.3 2004/02/20 10:47:28 tahara Exp $
+;; $Id: kahua-install.scm,v 1.1.2.1 2004/10/14 21:28:41 shiro Exp $
 
 ;; Installs Kahua's application server materials according to
 ;; the kahua.conf configuration settings.
@@ -36,6 +35,7 @@
        (uninstall? "U")
        (dirs?     "dirs")
        (no-over   "no-overwrite")
+       (gosh      "gosh=s")  ;; wrapper script adds this.  ignore.
        . files)
     (unless (member material-type
                     '("script" "static" "base" "plugin")) (usage))

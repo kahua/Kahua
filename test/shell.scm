@@ -1,8 +1,8 @@
-;; test shell scripts.
+;; test shell scripts. -*-mode:scheme-*-
 ;; this test isn't for modules, but for actual scripts.
 ;; kahua-shell のテスト
 
-;; $Id: shell.scm,v 1.4 2004/08/12 05:03:38 nobsun Exp $
+;; $Id: shell.scm,v 1.4.2.1 2004/10/14 21:28:42 shiro Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -63,19 +63,13 @@
 (define *spvr*   #f)
 (define *shell*  #f)
 
-;; in order to propagate load-path to child process
-(sys-putenv "GAUCHE_LOAD_PATH" "../src:.")
-(sys-putenv "PATH" (cond ((sys-getenv "PATH") => (lambda (x) #`"../src:,x"))
-                         (else "../src")))
-
-
 ;;---------------------------------------------------------------
 ;; kahua-shell のテストを開始する。
 (test-section "run scripts")
 
 ;; kahua-shell と通信する kahua-spvr を起動する。
 (test* "start spvr" #t
-       (let ((p (run-process 'gosh "-I../src" "../src/kahua-spvr" 
+       (let ((p (run-process "../src/kahua-spvr" "--test"
 			     "-c" *config*)))
          (set! *spvr* p)
 	 (sys-sleep 3)
@@ -85,7 +79,7 @@
 
 ;; kahua-shell を起動する。
 (test* "start shell" "Welcome to Kahua."
-       (let ((p (run-process 'env "-i" "###GOSH###" "-I../src" "../src/kahua-shell"
+       (let ((p (run-process 'env "-i" "../src/kahua-shell" "--test"
 			     "-c" *config* 
 			     :input :pipe :output :pipe :error :pipe)))
 	 (set! *shell* p)

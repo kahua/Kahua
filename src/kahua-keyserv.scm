@@ -1,11 +1,10 @@
-#!/usr/bin/env gosh
 ;; session-key server.
 ;;
 ;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.in,v 1.7 2004/06/09 06:46:11 nobsun Exp $
+;; $Id: kahua-keyserv.scm,v 1.1.2.1 2004/10/14 21:28:41 shiro Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.

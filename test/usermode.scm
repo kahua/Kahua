@@ -1,7 +1,7 @@
-;; test user exclusive mode.
+;; test user exclusive mode. -*-mode:scheme-*-
 ;; ユーザ専用モードのテスト
 
-;; $Id: usermode.scm,v 1.4 2004/08/12 05:03:38 nobsun Exp $
+;; $Id: usermode.scm,v 1.4.2.1 2004/10/14 21:28:42 shiro Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -72,11 +72,6 @@
 (define *admin*  #f)
 (define *shell*  #f)
 
-;; in order to propagate load-path to child process
-(sys-putenv "GAUCHE_LOAD_PATH" "../src:.")
-(sys-putenv "PATH" (cond ((sys-getenv "PATH") => (lambda (x) #`"../src:,x"))
-                         (else "../src")))
-
 ;;---------------------------------------------------------------
 ;; Test user exclusive mode.
 ;; Run three programs with -user option.
@@ -96,7 +91,7 @@
 ;; kahua-spvr をユーザ専用モードで起動する。
 ;; -user オプション付きで起動することを確認する。
 (test* "start spvr" #t
-       (let ((p (run-process 'gosh "-I../src" "../src/kahua-spvr"
+       (let ((p (run-process "../src/kahua-spvr" "--test"
 			     "-c" *config* "-user" "gandalf")))
 	 (sys-sleep 3)
 	 (and (file-exists? "_tmp/user/gandalf/kahua")
@@ -106,7 +101,7 @@
 ;; kahua-admin をユーザ専用モードで起動する。
 ;; -user オプション付きで起動することを確認する。
 (test* "start admin" 'spvr>
-       (let ((p (run-process 'gosh "-I../src" "../src/kahua-admin"
+       (let ((p (run-process "../src/kahua-admin" "--test"
 			     "-c" *config* "-user" "gandalf"
 			     :input :pipe :output :pipe :error :pipe)))
 	 (set! *admin* p)
@@ -118,8 +113,7 @@
 ;; kahua-admin をユーザ専用モードで起動する。
 ;; -user オプション付きで起動することを確認する。
 (test* "start shell" "Welcome to Kahua."
-       (let ((p (run-process 'env "-i" "###GOSH###" "-I../src"
-                             "../src/kahua-shell"
+       (let ((p (run-process 'env "-i" "../src/kahua-shell" "--test"
 			     "-c" *config* "-user" "gandalf"
 			     :input :pipe :output :pipe :error :pipe)))
 	 (set! *shell* p)
