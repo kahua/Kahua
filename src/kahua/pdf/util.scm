@@ -1,3 +1,46 @@
+;; PDF utilities
+;;
+;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: util.scm,v 1.2 2004/03/03 04:45:34 shiro Exp $
+
+;; This file includes a code taken from Bruce Butterfield (bab@entricom.com)'s
+;; scm-pdf, which is derived from Marc Battyani's cl-pdf.  The following
+;; is the original copyright notice of cl-pdf.
+
+;;;  cl-pdf is a Common Lisp library for generating PDF files.
+;;;
+;;;  It is distributed under a FreeBSD style license
+;;;  (if you want another license contact me) marc.battyani@fractalconcept.com
+;;;
+;;;  Copyright (c) 2002 Marc Battyani. All rights reserved.
+;;;
+;;;  Redistribution and use in source and binary forms, with or without modification, are
+;;;  permitted provided that the following conditions are met:
+;;;
+;;;  Redistributions of source code must retain the above copyright notice, this list of
+;;;  conditions and the following disclaimer.
+;;;
+;;;  Redistributions in binary form must reproduce the above copyright notice, this list of
+;;;  conditions and the following disclaimer in the documentation and/or other materials 
+;;;  provided with the distribution.
+;;;
+;;;  THIS SOFTWARE IS PROVIDED BY THE MARC BATTYANI ``AS IS'' AND ANY EXPRESS OR IMPLIED
+;;;  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY 
+;;;  AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL MARC BATTYANI OR
+;;;  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+;;;  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+;;;  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+;;;  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+;;;  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+;;;  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;
+;;;  The latest version is at http://www.fractalconcept.com/asp/html/cl-pdf.html
+;;;  You can contact me at marc.battyani@fractalconcept.com or marc@battyani.net
+
+
 (define-module kahua.pdf.util
   (use gauche.parameter)
   (use gauche.collection)
