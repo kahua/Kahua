@@ -1,6 +1,6 @@
 kahua-spvr
 
-kahua-spvr [-c conf-file] [-user username] [-i][-l logfile]
+kahua-spvr [-c conf-file] [-user username] [-i] [-l logfile] [--test] [-H [host:]port]
 
 スーパバイザプロセスをスタートする。conf-fileは設定ファイル名を指定す
 る。デフォルトでは$sysconfdir/kahua/kahua.conf(Setupの際にconfigureス
@@ -29,8 +29,29 @@ REPLを起動する。デバッグ用。
 ォルトでは、conf-fileで指定されたworking-directory下の
 logs/kahua-spvr.logというファイルに吐く。
 
+--test 
+これは in-place で動作させるためのオプションで、普通に configure, make
+してから、srcにおりて
+
+$ ./kahua-spvr --test
+
+のように使う。
+
+-H, --httpd 
+このオプションを与えられた、kahua-spvr は自前の HTTPd 機能を使います。
+このときには、Apache および kahua.cgi は必要なくなる。
+
+-H 8080
+-H sherzo:8080
+
+のように指定する。
+いずれも指定のポート番号でサーバソケットをオープンする。ホスト名
+部分はアプリケーションサーバがホスト名を含むuriを生成するのに
+使われ、省略されるとlocalhostになる。
+
 立ち上がっているkahua-spvrプロセスは、kahua-adminコマンドによ
-って制御できる。
+って制御できる。ただし、--test を与えて起動した kahua-spvr を制御する
+には、kahua-admin にも --test を与えて起動すること。
 
 現在のバージョンでは、kahua-spvrは自らをdaemonizeすることはな
 い。 daemonとして立ち上げたい場合は、例えばbashなら次のように
