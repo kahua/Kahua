@@ -1,3 +1,14 @@
+2004-02-19  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/elem.scm : added higher-order tag functions
+	
+	* src/kahua/server.scm (kahua-render-proc) : A little modified
+	for handling higher-order nodes.
+
+	* test/*-st.kahua: Sample for higher-order tag functions
+	
+	* test/worker.scm: added test for *-st.kahua
+	
 2004-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/developer.scm (save-conf): made it more robust to save
