@@ -1,4 +1,4 @@
-$Id: INSTALL,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+$Id: INSTALL,v 1.2 2004/03/28 00:53:36 nobsun Exp $
 
 Installation procedure
 
@@ -6,14 +6,13 @@ Installation procedure
 
   % ./configure --with-cgidir=$(KAHUA_CGIDIR)
   % make
-  % make -s check
+  % make check
   % su
   # make install
-  # vi /etc/kahua.conf
-  # chgrp $(KAHUA_GROUP) $(KAHUA_DIRS)
-  # chmod g+ws $(KAHUA_DIRS)
+  # vi $(CONFFILE)
+  # chgrp -R $(KAHUA_GROUP) $(KAHUA_DIRS)
+  # chmod -R g+ws $(KAHUA_DIRS)
   # exit
-
   % make install-examples
   % vi $(KAHUA_WORK_DIR)/app-servers
   % (kahua-spvr > /dev/null 2>&1) &
@@ -27,7 +26,7 @@ Installation procedure
   % make
 
 You need to give a directory name where cgi scripts should be installed
-by --with-cgidir option.   If the option is omitted, /usr/lib/cgi-bin
+by --with-cgidir option.   If the option is omitted, /usr/local/libexec/kahua
 is used.  But it should differ by your httpd settings, so make sure
 your httpd recognizes the files under that directory as cgi scripts.
 
@@ -47,18 +46,20 @@ You can run a self test by 'make check'.
 Installation process writes to several locations.   You have to
 have permissions to do so.
 
-  /tmp/kahua-elua     : This directory is created for Unix domain sockets
-                        kahua servers will use.
-  /var/lib/kahua-elua : This directory is created for kahua to save
-                        various informations, including database.
-  $(KAHUA_CGIDIR)     : CGI scripts will be copied to the directory
-                        given to --with-cgidir configure option.
-  $(exec_prefix)/bin  : Kahua server executables will be copied to
-                        this location.  It can be customized by
-                        --prefix or --exec-prefix configure option.
-  `gauche-config --sitelibdir` : Kahua Scheme library files will be
-                        copied to the Gauche's site library directory.
-
+  $(prefix)/tmp/kahua    : This directory is created for Unix domain sockets
+                           kahua servers will use.  You can specify it
+                           in the kahua.conf file which by default installed
+                           in $(sysconfdir)/kahua
+  $(localstatedir)/kahua : This directory is created for kahua to save various
+                           informations, including database.
+  $(KAHUA_CGIDIR)        : CGI scripts will be copied to the directory
+                           given to --with-cgidir configure option.
+  $(sysconfdir)/kahua    : kahua.conf will be copied in this location.
+  $(bindir)/kahua        : Kahua commands (shell scripts) will be copied to
+                           this location.
+  $(libexecdir)/kahua    : Kahua executables called by kahua commands will be
+                           copied to this location.
+  $(libdir)/kahua        : Kahua modules will be copied to this location.
 
 "make install" will do the job.
 
@@ -66,19 +67,19 @@ have permissions to do so.
 3. Setting up
 -------------
 
-Check the file /etc/kahua.conf and edit it if necessary.
+Check the file $(sysconfdir)/kahua.conf and edit it if necessary.
 
 During its normal operation, the Kahua system needs to write
 to the following directories:
 
  - socket directory (specified by :sockbase in kahua.conf;
-   the default is /tmp/kahua-elua)
+   the default is $(prefix)/tmp/kahua)
 
  - working directory (specified by :working-directory
-   in kahua.conf; the default is /var/lib/kahua-elua)
+   in kahua.conf; the default is $(localstatedir)/kahua)
 
  - document directory (specified by :static-document-path
-   in kahua.conf; the default is /var/www/html/kahua)
+   in kahua.conf; the default is /var/www/kahua)
    This directory is not created by 'make install'.
    You need to make sure creating this directory.
 
@@ -93,27 +94,26 @@ group.
 -------------------
 
 Run "make install-examples" to install an example application
-server, "lambdabooks".
+servers, "lambdabooks", "wiki-iki", "login", "nqueen" "lazy-nqueen", and
+"lambdacalcul".
 
   % make install-examples
 
-Check /var/lib/kahua-elua/app-servers file and make sure
+Check $(localstatedir)/kahua/app-servers file and make sure
 it contains the following line.  By default, unless you have
 already created app-servers file, "make install-examples"
 copies a sample app-servers file that contains the following
 entry.
 
-   (books   :script ("kahua-server" @ "kahua.app.elua" "lambdabooks.kahua")
-            :run-by-default 1)
+ (lambdabooks   :arguments () :run-by-default 1)
+ (wiki-iki      :arguments () :run-by-default 1)
+ (login         :arguments () :run-by-default 1)
 
 And run Kahua main server.
 
   % (kahua-spvr > /dev/null 2>&1) &
 
 You can access the site via kahua-elua.cgi CGI script from
-your browser.
-
-Note: if you have already created multiple entries in app-servers
-file and running multiple application servers, use
-kahua-elua.cgi/books as URI to connect to the demo server.
+your browser, for example, by specifying kahua.cgi/lambdabooks as URI
+to connect to the demo server.
 
