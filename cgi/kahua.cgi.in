@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.22 2004/06/09 06:59:55 nobsun Exp $
+;; $Id: kahua.cgi.in,v 1.23 2004/11/26 04:31:48 shiro Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -235,9 +235,9 @@
   (cgi-main publisher
             :merge-cookies #t
             :on-error cgi-error-proc
+            :part-handlers '((#t file+name))
             )
   0)
-
 
 (define (get-error-string e)
   (call-with-output-string

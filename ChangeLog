@@ -1,3 +1,10 @@
+2004-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr.scm (handle-http):
+	  Added support of enctype multipart/form-data.  This enables file
+	  uploading.  (NB: this requires Gauche 0.8.2 to work).
+	* cgi/kahua.cgi.in : ditto.
+
 2004-11-16  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* doc/Setup.ja: added some description for setting about unix group

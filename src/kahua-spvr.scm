@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.6 2004/11/06 07:59:02 shiro Exp $
+;; $Id: kahua-spvr.scm,v 1.7 2004/11/26 04:31:48 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -31,6 +31,7 @@
 (use rfc.822)
 (use rfc.uri)
 (use rfc.cookie)
+(use rfc.mime)
 (use file.util)
 (use text.tree)
 (use text.html-lite)
@@ -668,10 +669,20 @@
         (static-doc-rx (string->regexp #`"^,(regexp-quote (kahua-static-document-url \"\"))/"))
         (ignore-paths '("/favicon.ico"))
         (mime-types '((".jpg"  . "image/jpeg")
+                      (".jpeg" . "image/jpeg")
                       (".png"  . "image/png")
                       (".gif"  . "image/gif")
+                      (".pdf"  . "application/pdf")
+                      (".ps"   . "application/postscript")
+                      (".eps"  . "application/postscript")
+                      (".doc"  . "application/msword")
+                      (".xls"  . "application/ms-excel")
+                      (".ppt"  . "application/ms-powerpoint")
+                      (".rtf"  . "application/rtf")
+                      (".swf"  . "application/x-shockwave-flash")
                       (".html" . "text/html")
                       (".htm"  . "text/html")
+                      (".xml"  . "text/xml")
                       (".txt"  . "text/plain")))
         )
 
@@ -703,29 +714,28 @@
          (else (serve-via-worker headers method query path-info)))))
 
     (define (serve-static-document m)
-      (let1 static-path
-          (build-path (kahua-static-document-path (m 'after)))
+      (let* ((relpath (uri-decode-string (m 'after)))
+             (abspath (simplify-path (kahua-static-document-path relpath))))
         (cond
-         ((file-is-readable? static-path)
-          (let* ((suffix (#/\.[^\.]+$/ static-path))
+         ;; make sure the client does not trick the server
+         ((not (string-prefix? (kahua-static-document-path "") abspath))
+          (not-found relpath))
+         ((file-is-readable? abspath)
+          (let* ((suffix (#/\.[^\.]+$/ abspath))
                  (mime-type (if suffix
                               (assoc-ref mime-types (suffix))
                               "application/octet-stream"))
-                 (content-size (file-size static-path))
-                 (content (call-with-input-file static-path
+                 (content-size (file-size abspath))
+                 (content (call-with-input-file abspath
                             (cut read-block content-size <>))))
             (reply-to-client `(("content-type" ,mime-type)) content)))
-         ((file-exists? static-path)
-          (forbidden path))
+         ((file-exists? abspath)
+          (forbidden relpath))
          (else
-          (not-found path)))))
+          (not-found relpath)))))
 
     (define (serve-via-worker headers method query path-info)
-      (let* ((query (or (if (equal? method "POST")
-                          (read-post-query headers)
-                          query)
-                        ""))
-             (params (parse-query headers query))
+      (let* ((params (parse-query method headers query))
              (cont-gsid (or (cgi-get-parameter "x-kahua-cgsid" params)
                             (if (and path-info (pair? (cdr path-info)))
                               (cadr path-info)
@@ -784,19 +794,35 @@
                 (http-response (cadr status) headers body)
                 (http-response "200 OK" headers body)))))))
 
-    (define (read-post-query headers)
-      (and-let* ((len  (rfc822-header-ref headers "content-length"))
-                 (nlen (x->integer len))
-                 ((positive? nlen))
-                 (body (read-block nlen in))
-                 ((not (eof-object? body))))
-        (ces-convert body "*jp")))
-
-    (define (parse-query headers query)
-      (let ((cookie (rfc822-header-ref headers "cookie")))
+    (define (parse-query method headers query)
+      (let1 cookie (rfc822-header-ref headers "cookie")
         (parameterize ((cgi-metavariables (cond-list
                                            (cookie `("HTTP_COOKIE" ,cookie)))))
-          (cgi-parse-parameters :query-string query :merge-cookies #t))))
+          (if (equal? method "POST")
+            (parse-post-query headers)
+            (cgi-parse-parameters :query-string (or query "")
+                                  :merge-cookies #t)))))
+
+    (define (parse-post-query headers)
+      (let1 nlen
+          (and-let* ((len  (rfc822-header-ref headers "content-length"))
+                     (nlen (x->integer len))
+                     ((positive? nlen)))
+            nlen)
+        (or (and-let* ((ctype (rfc822-header-ref headers "content-type"))
+                       ((equal? (take* (mime-parse-content-type ctype) 2)
+                                '("multipart" "form-data"))))
+              (cgi-parse-parameters :content-type ctype
+                                    :content-length nlen
+                                    :mime-input in
+                                    :merge-cookies #t
+                                    :part-handlers '((#t file+name))))
+            (and-let* ((nlen)
+                       (body (read-block nlen in))
+                       ((not (eof-object? body))))
+              (cgi-parse-parameters :query-string (ces-convert body "*jp")
+                                    :merge-cookies #t))
+            '())))      
 
     (define (http-response status headers body)
       (log-format "[spvr] http< ~a" status)
@@ -814,6 +840,7 @@
               (print "\r")
               (display body)
               (flush))))
+        (for-each sys-unlink (cgi-temporary-files)) ;remove tmpfiles for upload
         (socket-shutdown client-sock)
         (socket-close client-sock)))
 
