@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.18 2004/02/29 15:29:37 ko1 Exp $
+;; $Id: kahua-spvr.in,v 1.19 2004/02/29 17:25:47 ko1 Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -300,7 +300,8 @@
       (dequeue! wq)
       (remove-from-queue! (cut eq? w <>) wq))
     (if (and (kahua-auto-restart)
-	     (not (zombee? w)))
+	     (not (zombee? w))
+	     (> (- (sys-time) (start-time-of w)) 60))
 	;; unexpected terminated process
 	(begin
 	  (log-worker-action "restart unexpected terminated worker" w)

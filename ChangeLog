@@ -1,5 +1,10 @@
 2004-03-01  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
+	* src/kahua-spvr.in : fixed to stop restarting worker which doesn't
+	run over 60 sec.
+
+2004-03-01  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
 	* examples/foldlist/foldlist.kahua : added foldlist sample program.
 	* examples/Makefile : added foldlist.kahua entry
 	* test/Makefile, test/foldlist.scm : added test for foldlist.kahua
