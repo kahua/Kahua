@@ -1,3 +1,9 @@
+2005-02-09  Kenji Hisazumi  <nel@soraneko.com>
+
+	* src/kahua/persistence.scm: 
+	added a mechanism to provide cache consistency.
+	see [kahua-dev: 00870, 00871, 00874, 00885-00888] for detail.
+	
 2005-02-09 Nobuo Yamashita  <nobsun@sampou.org>
 
 	* Release 0.3.1:

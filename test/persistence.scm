@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.2 2004/05/17 07:00:52 nobsun Exp $
+;; $Id: persistence.scm,v 1.3 2005/02/09 07:30:38 nel Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -756,5 +756,120 @@
                (make-kahua-collection <kahua-test-sub>))
           (lambda (a b)
             (string<? (car a) (car b))))))
+
+;;----------------------------------------------------------
+;; トランザクション管理のテスト
+(test-section "transaction / default(read-only, no-sync)")
+
+(define-class <transaction-test-1> (<kahua-persistent-base>)
+  ((a :init-value 0 :init-keyword :a :allocation :persistent)))
+
+(define-method key-of ((self <transaction-test-1>))
+  "key")
+
+(define object #f)
+
+(test* "make" #t
+       (with-db (db *dbname*)
+         (set! object (make <transaction-test-1> :a 0))
+         #t))
+
+(test "ref out of transaction" 0
+      (lambda () (ref object 'a)))
+
+(test "access in other transaction" 0
+      (lambda ()
+        (with-db (db *dbname*)
+          (set! (ref (find-kahua-instance <transaction-test-1> "key") 'a) 1))
+        (with-db (db *dbname*)
+          (ref object 'a))))
+
+(test "set! out of transaction" *test-error*
+      (lambda () (set! (ref object 'a) 1) #t))
+
+(test-section "transaction / access denied")
+
+(define-class <transaction-test-2> (<kahua-persistent-base>)
+  ((a :init-value 0 :init-keyword :a :allocation :persistent
+      :out-of-transaction :denied)))
+
+(define-method key-of ((self <transaction-test-2>))
+  "key")
+
+(test* "make" #t
+       (with-db (db *dbname*)
+         (set! object (make <transaction-test-2> :a 0))
+         #t))
+
+(test "ref out of transaction" *test-error*
+      (lambda () (ref object 'a)))
+
+(test "ref in other transaction" 0
+      (lambda ()
+        (with-db (db *dbname*)
+          (make <transaction-test-2> :a 1))
+        (with-db (db *dbname*)
+          (ref object 'a))))
+
+(test "set! out of transaction" *test-error*
+      (lambda () (set! (ref object 'a) 1) #t))
+
+(test-section "transaction / read-only auto-sync")
+
+(define-class <transaction-test-3> (<kahua-persistent-base>)
+  ((a :init-value 0 :init-keyword :a :allocation :persistent))
+  :read-syncer :auto)
+
+(define-method key-of ((self <transaction-test-3>))
+  "key")
+
+(define object #f)
+
+(test* "make" #t
+       (with-db (db *dbname*)
+         (set! object (make <transaction-test-3> :a 0))
+         #t))
+
+(test "ref out of transaction" 0
+      (lambda () (ref object 'a)))
+
+(test "access in other transaction" 1
+      (lambda ()
+        (with-db (db *dbname*)
+          (set! (ref (find-kahua-instance <transaction-test-3> "key") 'a) 1))
+        (with-db (db *dbname*)
+          (ref object 'a))))
+
+(test-section "transaction / read/write auto-sync")
+
+(define-class <transaction-test-4> (<kahua-persistent-base>)
+  ((a :init-value 0 :init-keyword :a :allocation :persistent
+      :out-of-transaction :read/write))
+  :read-syncer  :auto
+  :write-syncer :auto)
+
+(define-method key-of ((self <transaction-test-4>))
+  "key")
+
+(define object #f)
+
+(test* "make" #t
+       (with-db (db *dbname*)
+         (set! object (make <transaction-test-4> :a 0))
+         #t))
+
+(test "write out of transaction" 1
+      (lambda () (set! (ref object 'a) 1) 1))
+
+;; トランザクション開始時にon-memory cacheがdbに書き込まれ
+;; ることを確認する。
+(test* "read in other transaction (auto synched: 1)" 1
+       (with-db (db *dbname*)
+         (ref (find-kahua-instance <transaction-test-4> "key") 'a)))
+
+;; 前トランザクションで書き込まれたデータを別トランザクション
+;; にて読み出せることを確認する。
+(test* "read in other transaction (auto synched: 2)" 1
+       (with-db (db *dbname*) (ref object 'a)))
 
 (test-end)

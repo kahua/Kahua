@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.20 2004/05/17 07:00:15 nobsun Exp $
+;; $Id: persistence.scm,v 1.21 2005/02/09 07:30:38 nel Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -44,6 +44,11 @@
 ;;  - Keeps generation of persistent class.
 ;;  - Keeps mapping from class name to the in-memory class.
 
+;; Cache Consistency Management
+;;  - :out-of-transaction :read-only(default), :read/write, :denied
+;;  - :write-sync         :error, :auto, handler procedure, :ignore
+;;  - :read-sync          :error, :auto, handler procedure, :ignore
+
 (define-class <kahua-persistent-meta> (<class>)
   (;; In-memory catalog of persistent classes.
    ;; maps class name to class object.
@@ -59,6 +64,10 @@
    (metainfo      :init-value #f)  ;; <kahua-persistent-metainfo> instance
    (generation    :init-value 0)   ;; generation of in-memory class
    (persistent-generation :init-value #f) ;; generation in persistent db
+   (write-syncer  :init-value :ignore
+                  :init-keyword :write-syncer)
+   (read-syncer   :init-value :ignore
+                  :init-keyword :read-syncer)
    ))
 
 (define-method make ((class <kahua-persistent-meta>) . initargs)
@@ -67,8 +76,70 @@
   (ensure-metainfo class)
   (next-method))
 
+(define (kahua-read-syncer in-memory)
+  ;; we shuold update transaction-id of in-memory object at last,
+  ;; but to avoid inifinite loop, we update it here.
+  (slot-set! in-memory '%transaction-id (current-transaction-id))
+  (let* ((class (class-of in-memory))
+         (key   (key-of in-memory))
+         (i     (read-kahua-instance (current-db) class key)))
+    (for-each (lambda (slot)
+                (slot-set! in-memory slot (ref i slot)))
+              (persistent-slot-syms class))))
+
+(define (kahua-write-syncer in-memory)
+  (let* ((db   (current-db))
+         (id    (ref in-memory 'id))
+         (class (class-of in-memory))
+         (key   (key-of in-memory)) ;; loop?
+         (in-db (read-kahua-instance db class key)))
+    (define (check-consistency)
+      (every (lambda (cache)
+               (let ((slot          (car cache))
+                     (in-transaction (cdr cache)))
+                 (equal? (ref in-db slot) in-transaction)))
+             (ref in-memory '%in-transaction-cache)))
+
+    (define (non-touched-slots)
+      (let1 cache (ref in-memory '%in-transaction-cache)
+        (remove (cut assq <> cache) (persistent-slot-syms class))))
+    
+    (define (sync-non-touched-slots)
+      (for-each (lambda (slot)
+                  (set! (ref in-memory slot) (ref in-db slot)))
+                (non-touched-slots)))
+                  
+    (unless (check-consistency)
+      (errorf "write syncer failed ~S ~S" in-memory in-db))
+
+    (sync-non-touched-slots)
+
+    ;; purge temporary fetched object (in-db)
+    ;; and overwrite it by in-memory object.
+    ;; for now...
+    (hash-table-put! (ref db 'instance-by-id) id in-memory)
+    (hash-table-put! (ref db 'instance-by-key)
+                     (cons (class-name class) key)
+                     in-memory)
+    
+    (touch-kahua-instance! in-memory)
+    
+    (slot-set! in-memory '%transaction-id (current-transaction-id))
+    (set! (ref in-memory '%in-transaction-cache) '())))
+
 (define-method initialize ((class <kahua-persistent-meta>) initargs)
+  (define (make-syncer default v)
+    (cond ((eq? v :error)
+           (lambda _ (error "object was obtained in other transaction")))
+          ((eq? v :auto) default)
+          ((procedure? v) v)
+          (else (lambda _ #f))))
+    
   (next-method)
+
+  (update! (ref class 'read-syncer) (pa$ make-syncer kahua-read-syncer))
+  (update! (ref class 'write-syncer) (pa$ make-syncer kahua-write-syncer))
+  
   (set! (ref class 'class-alist)
         (assq-set! (ref class 'class-alist) (class-name class) class)))
 
@@ -82,28 +153,46 @@
                      :class class :name (slot-definition-name slot)
                      :slot-number slot-num :initializable #t)))
          (inc! (slot-ref class 'num-instance-slots))
-         (list (make-kahua-getter acc)
-               (make-kahua-setter acc)
+         (list (make-kahua-getter acc class slot)
+               (make-kahua-setter acc slot)
                (make-kahua-boundp acc)
                #t)))
       (else (next-method)))))
 
-(define (make-kahua-getter acc)
-  (lambda (o)
-    (let1 val (slot-ref-using-accessor o acc)
-      (if (is-a? val <kahua-wrapper>)
-        (let1 real (peel-wrapper val)
-          (slot-set-using-accessor! o acc real)
-          real)
-        val))))
+(define (make-kahua-getter acc class slot)
+  (let ((aot (slot-definition-option slot :out-of-transaction :read-only)))
+    (lambda (o)
+      (if (current-db)
+          (unless (current-transaction? o)
+            ((ref class 'read-syncer) o))
+        (when (eq? aot :denied)
+          (error "database not active")))
+      
+      (let1 val (slot-ref-using-accessor o acc)
+        (if (is-a? val <kahua-wrapper>)
+            (let1 real (peel-wrapper val)
+              (slot-set-using-accessor! o acc real)
+              real)
+            val)))))
 
-(define (make-kahua-setter acc)
-  (lambda (o v)
-    (let1 db (current-db)
-      (unless db (error "database not active"))
-      (unless (memq o (ref db 'modified-instances))
-        (push! (ref db 'modified-instances) o))
-      (slot-set-using-accessor! o acc v))))
+(define (make-kahua-setter acc slot)
+  (let ((aot      (slot-definition-option slot :out-of-transaction :read-only))
+        (slot-name (car slot)))
+    (lambda (o v)
+      (let1 db (current-db)
+        (if db
+            (begin
+              (unless (memq o (ref db 'modified-instances))
+                (push! (ref db 'modified-instances) o))
+              (slot-set-using-accessor! o acc v))
+          (if (eq? aot :read/write)
+              (begin
+                (unless (assq slot-name (ref o '%in-transaction-cache))
+                  (push! (ref o '%in-transaction-cache)
+                         (cons slot-name (slot-ref-using-accessor o acc))))
+                (floted-instance-touch! o)
+                (slot-set-using-accessor! o acc v))
+            (error "database not active")))))))
 
 (define (make-kahua-boundp acc)
   (lambda (o)
@@ -125,6 +214,12 @@
    (%persistent-generation :init-keyword :%persistent-generation :init-value 0)
    ;; flag if this instance exists only in memory, or has been stored in db
    (%floating-instance :init-keyword :%floating-instance :init-value #t)
+   ;; transaction id
+   (%transaction-id :init-value -1)
+   ;; alist of slot data which keeps slot values obtained at
+   ;; a transaction indicated by %trancation-id.
+   ;; it to be used to check in-db / in-memory consistency.
+   (%in-transaction-cache :init-value '())
    )
   :metaclass <kahua-persistent-meta>)
 
@@ -155,6 +250,9 @@
     (when (hash-table-get (ref db 'instance-by-id) id #f)
       (errorf "instance with same ID (~s) is active (class ~s)"
               id (class-of obj)))
+    
+    (set! (ref obj '%transaction-id) (current-transaction-id))
+    
     (when rsv
       ;; we are realizing an instance from the saved one
       (dolist (p rsv)
@@ -746,6 +844,25 @@
 ;; Database class -----------------------------------------
 (define current-db (make-parameter #f))
 
+(define-class <kahua-db-meta> (<class>)
+  ((all-instances :init-value '())))
+
+(define-method make ((class <kahua-db-meta>) . initargs)
+   (let* ((path (get-keyword :path initargs))
+          (i    (or (find (lambda (i) (string=? path (ref i 'path)))
+                          (ref class 'all-instances))
+                   (let1 new-i (next-method)
+                      (push! (ref class 'all-instances) new-i)
+                      new-i))))
+
+     ;; reset for compatibility
+     ;; for in-memory instances consistency, we shuold not reset ...
+     (set! (ref i 'instance-by-id)  (make-hash-table 'eqv?))
+     (set! (ref i 'instance-by-key) (make-hash-table 'equal?))
+
+     ;; init-keywords are not evaluated.
+     i))
+
 (define-class <kahua-db> ()
   ((path       :init-keyword :path :init-value #f)
    (id-counter :init-keyword :id-counter :init-value 0)
@@ -753,7 +870,10 @@
    (instance-by-id  :init-form (make-hash-table 'eqv?))
    (instance-by-key :init-form (make-hash-table 'equal?))
    (modified-instances :init-form '())
-   ))
+   (current-transaction-id :init-value 0)
+   (floated-modified-instances :init-value '()) ;; modified, but...
+   )
+  :metaclass <kahua-db-meta>)
 
 ;; filesystem-based persistent store (default)
 (define-class <kahua-db-fs> (<kahua-db>)
@@ -833,6 +953,8 @@
            (with-error-handler
                (lambda (e) (kahua-db-close db #f) (raise e))
              (lambda ()
+               (inc! (ref db 'current-transaction-id))
+               (kahua-meta-write-syncer)
                (begin0 (begin . body) (kahua-db-close db #t))))))))))
 
 (define (id-counter-path path)
@@ -875,10 +997,9 @@
   (let ((cntfile (id-counter-path path)))
     (if (file-is-directory? path)
       (if (file-is-regular? cntfile)
-        (let1 db 
-            (make class
-              :path path :active #t
-              :id-counter (with-input-from-file cntfile read))
+        (let1 db (make class :path path)
+          (set! (ref db 'active) #t)
+          (set! (ref db 'id-counter) (with-input-from-file cntfile read))
           (unless (lock-db db)
             (error "kahua-db-open: couldn't obtain database lock: " path))
           db)
@@ -889,14 +1010,16 @@
         (make-directory* path)
         (make-directory* (build-path path "tmp"))
         (with-output-to-file cntfile (cut write 0))
-        (let1 db (make class :active #t :path path)
+        (let1 db (make class :path path)
+          (set! (ref db 'active) #t)
           (unless (lock-db db)
             (error "kahua-db-open: couldn't obtain database lock: " path))
           db))
       )))
 
 (define (kahua-db-open-dbi class path)
-  (let* ((db   (make class :path path :active #t))
+  (let* ((db   (make class :path path))
+         (_    (set! (ref db 'active) #t))
          (conn (dbi-make-connection (ref db 'driver)
                                     (ref db 'user)
                                     (ref db 'password)
@@ -984,6 +1107,36 @@
          (ref db 'path)
          (string-trim-both (x->string (class-name class)) #[<>])
          key))
+
+;; cache consistency management -----------------------------------
+(define (current-transaction-id)
+  (ref (current-db) 'current-transaction-id))
+
+(define (current-transaction? o)
+  (and (current-transaction-id)
+       (= (ref o '%transaction-id)
+          (current-transaction-id))))
+
+(define (persistent-slot-syms class)
+  (map car (filter (lambda (slot)
+                     (eq? (slot-definition-allocation slot) :persistent))
+                   (class-slots class))))
+
+(define (floted-instance-touch! o)
+  (update! (ref (ref o 'db) 'floated-modified-instances)
+           (lambda (instances)
+             (if (memq o instances)
+                 instances
+                 (cons o instances)))))
+
+(define (kahua-meta-write-syncer)
+  (update! (ref (current-db) 'floated-modified-instances)
+           (lambda (instances)
+             (for-each kahua-write-syncer instances)
+             '()))
+  (kahua-db-sync))
+
+
 
 ;; Instance I/O ----------------------------------------------
 
