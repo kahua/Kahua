@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.8 2004/02/22 23:05:29 shiro Exp $
+;; $Id: persistence.scm,v 1.9 2004/02/26 14:42:12 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -18,7 +18,9 @@
   (use gauche.fcntl)
   (use gauche.logger)
   (export <kahua-persistent-meta> <kahua-persistent-base>
+          <kahua-persistent-metainfo>
           key-of find-kahua-class find-kahua-instance
+          touch-kahua-instance!
           kahua-serializable-object?
           <kahua-db> current-db with-db kahua-db-sync
           id->kahua-instance class&key->kahua-instance
@@ -27,22 +29,15 @@
   )
 (select-module kahua.persistence)
 
-;; Patch to fix 0.7.2 definiciency
-(define slot-set-using-accessor!
-  (if (version<=? (gauche-version) "0.7.2")
-    slot-set-using-accessor
-    slot-set-using-accessor!))
-;; End patch
-
 ;;=========================================================
 ;; Persistent metaclass
 ;;
 
-;; Special allocation options:
+;; <kahua-persistent-meta>
 ;;
-;;   :persistent
-;;       - The slot is stored in the persistent db.
-;;
+;;  - Processes :persistent allocation option.
+;;  - Keeps generation of persistent class.
+;;  - Keeps mapping from class name to the in-memory class.
 
 (define-class <kahua-persistent-meta> (<class>)
   (;; In-memory catalog of persistent classes.
@@ -56,6 +51,7 @@
    ;; The following metainformation is set up when a first instance of
    ;; the class is realized (either read from DB or newly created)
    ;; See the "Persistent metainformation" section below for the details.
+   (metainfo      :init-value #f)  ;; <kahua-persistent-metainfo> instance
    (generation    :init-value 0)   ;; generation of in-memory class
    (persistent-generation :init-value #f) ;; generation in persistent db
    ))
@@ -63,8 +59,7 @@
 (define-method make ((class <kahua-persistent-meta>) . initargs)
   ;; When the first instance of a persistent class is realized (created
   ;; in memory), the in-memory definition and in-db definition is compared.
-  (unless (ref class 'persistent-generation)
-    (persistent-class-bind-metainfo class))
+  (ensure-metainfo class)
   (next-method))
 
 (define-method initialize ((class <kahua-persistent-meta>) initargs)
@@ -72,6 +67,7 @@
   (set! (ref class 'class-alist)
         (assq-set! (ref class 'class-alist) (class-name class) class)))
 
+;; Support of persistent slot
 (define-method compute-get-n-set ((class <kahua-persistent-meta>) slot)
   (let ((alloc (slot-definition-allocation slot)))
     (case alloc
@@ -117,6 +113,11 @@
    (id    :init-keyword :id :init-form (kahua-db-unique-id))
    ;; management data
    (db    :init-form (current-db))  ; points back to db
+   ;; alist of slot data which is in the DB but not in the current
+   ;; in-memory class.
+   (%hidden-slot-values :init-keyword :%hidden-slot-values :init-value '())
+   ;; persistent class generation of the in-db instance
+   (%persistent-generation :init-keyword :%persistent-generation :init-value 0)
    )
   :metaclass <kahua-persistent-meta>)
 
@@ -124,20 +125,26 @@
 (define-method key-of ((obj <kahua-persistent-base>))
   (format "~6,'0d" (ref obj 'id)))
 
-;; NB: a special initialization protocol is used when an instance
-;; is realized from the persistent storage.  We need the slot values
-;; to be recovered _before_ calling key-of to initialize instance-by-key
-;; table, since key-of may depend on them.  So we can't slot-set!
-;; _after_ initialize.  In order to solve this, the realization routine
-;; calls 'make' with a special initialization keyword,
-;; :realization-slot-values, which is an alist of slot values.
-;; This method gets that and recovers slot values before registering
-;; the instance to the table.
+;; Initializing persistent instance:
+;;  * (initialize (obj <kahua-persistent-base>)) initializes in-memory
+;;   image of persistent object, and registered it to the index table
+;;   of the current database.
+;;  * To calculate index, we need to retrieve key, so the slot values
+;;   have to be set before that.  We can't count on initargs, since
+;;   a persistent slot may not have init-keyword.  So, the persistent
+;;   object realization routine passes the alist of slot values via
+;;   :%realization-slot-values keyword argument, and we set! the slot
+;;   values.
+;;  * The object is an instance of in-memory persistent class.  It may
+;;   be different from in-db persistent class.  The persistent object
+;;   deserializer translates the in-db slot values to in-memory slot
+;;   values before passing it to :%realization-slot-values argument.
+
 (define-method initialize ((obj <kahua-persistent-base>) initargs)
   (next-method)
   (let ((db (current-db))
         (id (ref obj 'id))
-        (rsv (get-keyword :realization-slot-values initargs #f)))
+        (rsv (get-keyword :%realization-slot-values initargs #f)))
     (when (hash-table-get (ref db 'instance-by-id) id #f)
       (errorf "instance with same ID (~s) is active (class ~s)"
               id (class-of obj)))
@@ -160,6 +167,14 @@
 (define (find-kahua-class name)
   (or (assq-ref (class-slot-ref <kahua-persistent-meta> 'class-alist) name)
       (error "can't find a class: " name)))
+
+;; Mark a persistent object dirty
+(define-method touch-kahua-instance! ((obj <kahua-persistent-base>))
+  (let1 db (ref obj 'db)
+    (unless (ref db 'active)
+      (error "database not active"))
+    (unless (memq obj (ref db 'modified-instances))
+      (push! (ref db 'modified-instances) obj))))
 
 ;; kahua-wrapper is used to mark a slot value that has been just
 ;; read from the disk, and may contain <kahua-proxy> reference.
@@ -201,18 +216,20 @@
 ;; for now, we don't consider shared structure
 (define-method kahua-write ((obj <kahua-persistent-base>) port)
   (define (save-slot s)
-    (format #t "(~a . " (slot-definition-name s))
-    (serialize-value (slot-ref obj (slot-definition-name s)))
+    (format #t "(~a . " (car s))
+    (serialize-value (cdr s))
     (format #t ")\n"))
   (with-output-to-port port
     (lambda ()
-      (format #t "#,(kahua-object ~a ~a\n"
-              (class-name (class-of obj)) (ref obj 'id))
-      (for-each (lambda (s)
-                  (when (eq? (slot-definition-allocation s) :persistent)
-                    (save-slot s)))
-                (class-slots (class-of obj)))
-      (display ")\n"))))
+      (receive (generation vals hidden)
+          (export-slot-values obj)
+        (format #t "#,(kahua-object (~a ~a) ~a\n"
+                (class-name (class-of obj)) generation (ref obj 'id))
+        (for-each save-slot
+                  (if (null? hidden)
+                    vals
+                    (cons `(%hidden-slot-values . ,hidden) vals)))
+        (display ")\n")))))
 
 ;; serialization
 (define (serialize-value v)
@@ -269,12 +286,22 @@
 ;;   procedures.
 
 (define-reader-ctor 'kahua-object
-  (lambda (class-name id . vals)
+  (lambda (class-desc id . vals)
     (or (id->kahua-instance id)
         ;; See notes on (initialize (<kahua-persistent-base>)) for
-        ;; the :realization-slot-values argument.
-        (make (find-kahua-class class-name) :id id
-              :realization-slot-values vals))))
+        ;; the :%realization-slot-values argument.
+        (let* ((cname (if (pair? class-desc) (car class-desc) class-desc))
+               (class (find-kahua-class cname))
+               (generation (if (pair? class-desc)
+                             (cadr class-desc)
+                             (and (ensure-metainfo class)
+                                  (ref class 'persistent-generation)))))
+          (receive (slot-alist save-slots)
+              (import-slot-values class generation vals)
+            (make class :id id
+                  :%realization-slot-values slot-alist
+                  :%hidden-slot-values save-slots
+                  :%persistent-generation generation))))))
 
 (define-reader-ctor 'kahua-proxy
   (lambda (class-name key)
@@ -307,7 +334,7 @@
 ;;
 ;;   1. The source code is updated, so in-memory class is newer than
 ;;      the in-db class.
-;;   2. Some other process has used newer sources, and update the
+;;   2. Some other process has used newer sources, and updated the
 ;;      in-db class, while your process is still using older definition.
 ;;
 ;; If the case is 1, we'll update the in-db class, along with any
@@ -333,7 +360,7 @@
    ;; this alist.
    (signature-alist  :allocation :persistent :init-value '()
                      :init-keyword :signature-alist)
-   
+
    ;; Furthermore, if the in-memory class is given a source-id, the
    ;; association of it and generation number is stored here.  It helps
    ;; to find out whether the in-memory class is older than in-db class, or
@@ -342,10 +369,25 @@
    ;; corresponds to multiple generations.
    (source-id-map    :allocation :persistent :init-value '()
                      :init-keyword :source-id-map)
+
+   ;; For each generation (except the newest one), a "translation directive"
+   ;; is prepared.  Each directive contains information to translate
+   ;; an instance's slot value of the generation to the one of the next
+   ;; generation, and vice versa.
+   ;; The default translation directive is calculated by the difference
+   ;; of persistent slots.  In future, an interface will be provided
+   ;; to register an arbitrary translation procedures.
+   (translator-alist :allocation :persistent :init-value '()
+                     :init-keyword :translator-alist)
    ))
 
 (define-method key-of ((info <kahua-persistent-metainfo>))
   (x->string (ref info 'name)))
+
+(define-method ensure-metainfo ((class <kahua-persistent-meta>))
+  (unless (ref class 'metainfo)
+    (persistent-class-bind-metainfo class))
+  (ref class 'metainfo))
 
 ;; Calculates class signature.  Currently we take all persistent-allocated
 ;; slots.
@@ -359,6 +401,31 @@
         (lambda (x y)
           (string<? (symbol->string (car x)) (symbol->string (car y))))))
 
+;; Extracts persistent slot definitions from signature.  For the time
+;; being, both are the same, but it may be changed later.
+(define (signature->slot-definitions signature)
+  (sort-slot-definitions signature))
+
+(define (sort-slot-definitions sdefs)
+  (sort sdefs (lambda (a b)
+                (string<? (symbol->string (car a))
+                          (symbol->string (car b))))))
+
+;; Returns a list of persistent slot definitions of given generation.
+(define-method persistent-class-slots ((class <kahua-persistent-meta>)
+                                       (generation <integer>))
+  (persistent-class-slots (ensure-metainfo class) generation))
+
+(define-method persistent-class-slots ((metainfo <kahua-persistent-metainfo>)
+                                       (generation <integer>))
+  (cond ((= generation (ref metainfo 'generation))
+         (signature->slot-definitions (ref metainfo 'signature)))
+        ((assv-ref (ref metainfo 'signature-alist) generation)
+         => signature->slot-definitions)
+        (else
+         (error "persistent-class-slots: class ~a doesn't have generation ~a"
+                (ref metainfo 'name) generation))))
+
 ;; When an instance of a persistent class is realized for the first
 ;; time within the process, the in-memory class and the in-DB class
 ;; are compared.
@@ -368,7 +435,8 @@
   (define (signature=? x y) (equal? x y))
 
   ;; set generation numbers
-  (define (set-generation! in-mem in-db)
+  (define (set-generation! in-mem in-db metainfo)
+    (set! (ref class 'metainfo) metainfo)
     (set! (ref class 'generation) in-mem)
     (set! (ref class 'persistent-generation) in-db))
   
@@ -380,15 +448,15 @@
                  :signature signature
                  :source-id-map `((,(ref class 'source-id) 0))
                  :signature-alist `())
-      (kahua-db-sync) ;;XXX do we need this?
-      (set-generation! 0 0)
+      (kahua-db-sync)
+      (set-generation! 0 0 info)
       info))
 
   ;; signature doesn't match.  see if the in-memory class is older than
   ;; the in-db class, and if so, returns the (generation . signature)
   (define (find-generation metainfo signature)
-    (and-let* ((generations (assoc-ref (ref metainfo 'source-id-map)
-                                       (ref class 'source-id))))
+    (and-let* ((idmap (ref metainfo 'source-id-map))
+               (generations (assoc-ref idmap (ref class 'source-id))))
       (find (lambda (gen&sig)
               (signature=? (cdr gen&sig) signature))
             (filter-map (cut assv <> (ref metainfo 'signature-alist))
@@ -397,21 +465,26 @@
   ;; we couldn't find matching signature, so we assume the in-memory
   ;; class is newer.  record the newer class signature.
   (define (increment-generation metainfo signature)
-    (let ((newgen (+ (ref metainfo 'generation) 1)))
-      (slot-push! metainfo 'signature-alist
-                  (cons (ref metainfo 'generation)
-                        (ref metainfo 'signature)))
+    (let* ((oldgen (ref metainfo 'generation))
+           (newgen (+ oldgen 1))
+           (oldsig (ref metainfo 'signature)))
+      (slot-push! metainfo 'signature-alist (cons oldgen oldsig))
+      (slot-push! metainfo 'translator-alist
+                  (cons oldgen
+                        (compute-translation-directive
+                         (signature->slot-definitions oldsig)
+                         (signature->slot-definitions signature))))
       (set! (ref metainfo 'generation) newgen)
       (set! (ref metainfo 'signature) signature)
       (record-source-id metainfo newgen)
-      (set-generation! newgen newgen)))
+      (set-generation! newgen newgen metainfo)))
 
-  ;; subfunction of increment-generation
+  ;; register class' source-id to metainfo
   (define (record-source-id metainfo new-generation)
     (let* ((source-id (ref class 'source-id))
            (p (assoc source-id (ref metainfo 'source-id-map))))
       (if p
-        (begin
+        (unless (memv new-generation (cdr p))
           (set-cdr! p (cons new-generation (cdr p)))
           ;; touch the slot, so that it is reflected to db later.
           (set! (ref metainfo 'source-id-map)
@@ -419,6 +492,7 @@
         (push! (ref metainfo 'source-id-map)
                (list source-id new-generation)))))
 
+  ;; Main part of persistent-class-bind-metainfo
   (or (ref class 'persistent-generation)
       (eq? (class-name class) '<kahua-persistent-metainfo>)
       (let ((metainfo (find-kahua-instance <kahua-persistent-metainfo>
@@ -427,15 +501,189 @@
         (cond ((not metainfo) (register-metainfo signature))
               ((signature=? (ref metainfo 'signature) signature)
                ;; in-memory class is up to date.
-               (set-generation! (ref metainfo 'generation)
-                                (ref metainfo 'generation)))
+               (let1 gen (ref metainfo 'generation)
+                 (record-source-id metainfo gen)
+                 (set-generation! gen gen metainfo)))
               ((find-generation metainfo signature)
                => (lambda (gen&sig)
                     (set-generation! (car gen&sig)
-                                     (ref metainfo 'generation))))
+                                     (ref metainfo 'generation)
+                                     metainfo)))
               (else
                (increment-generation metainfo signature)))))
   )
+
+;; Translating between in-db slot value alist and in-memory slots
+;;
+;;   export-slot-values - given in-memory object, extracts
+;;     persistent slot values and translates it to fit the
+;;     in-db class, and returns three values: the instance generation,
+;;     alist of persistent slot values, and alist of saved (hidden)
+;;     slot values.
+;;
+;;   import-slot-values - given alist of slot names & values which
+;;     fits in in-db class, translates it to the in-memory slots,
+;;     and returns two values: translated slot value alist and
+;;     'saved' slot value alist, which contains the information that
+;;     exists in-db but not in-memory.
+;;
+;; Case-by-case analysis of slot translation:
+;;
+;;   Importing (reading):
+;;   * in-db version > in-memory version
+;;     DB has been updated, but our process is running with
+;;     older source.  If we see an added slot (a slot that exists in-db
+;;     but not in-memory), we put it to the hidden-slot-values alist,
+;;     so that the value will be kept.  If we see a removed slot
+;;     (a slot that exists in-memory but not in-db), we may find the
+;;     old value kept in the hidden-slot-values of in-db instance;
+;;     otherwise, we leave it out to be initialized in a default way.
+;;
+;;   * in-memory version < in-db version
+;;     We are running newer version.   If we see an added slot (a slot
+;;     that exists in-memory but not in-db), we leave it missing so it
+;;     is initialized by the default way.  If we see a deleted slot
+;;     (a slot that exists in-db but not in-memory), we keep the value
+;;     in the hidden-slot-values alist.
+;;
+;;   Exporting (writing):
+;;   * in-db version > in-memory version
+;;     If in-db version has added slot, whose value should have been
+;;     stored in the hidden-slot-values alist, so we recover the value
+;;     from it.
+;;
+;;   * in-memory version > in-db version
+;;     We update in-db version.  The value stored in the hidden-slot-values
+;;     are saved as is, so that other processes which uses older versions
+;;     can still access the older values.
+
+(define (export-slot-values obj)
+
+  (define (default-slot-values)
+    (filter-map (lambda (s)
+                  (and (eq? (slot-definition-allocation s) :persistent)
+                       (cons (slot-definition-name s)
+                             (slot-ref obj (slot-definition-name s)))))
+                (class-slots (class-of obj))))
+
+  (let* ((class  (class-of obj))
+         (c-gen  (ref class 'generation))
+         (p-gen  (ref obj '%persistent-generation))
+         (hidden (ref obj '%hidden-slot-values)))
+    (if (<= p-gen c-gen)
+      (values c-gen (default-slot-values) hidden)
+      ;; db is newer.  we need to upgrade in-memory instance.
+      (let loop ((gen c-gen)
+                 (vals (default-slot-values))
+                 (hidden hidden))
+        (if (= p-gen gen)
+          (values p-gen vals hidden)
+          (receive (vals hidden) (translate-up class gen vals hidden)
+            (loop (+ gen 1) vals hidden)))))
+    ))
+
+(define (import-slot-values class p-gen alist)
+  (let ((hidden (assq-ref alist '%hidden-slot-values '()))
+        (vals   (alist-delete '%hidden-slot-values alist)))
+    (if (eq? (class-name class) '<kahua-persistent-metainfo>)
+      (values vals hidden) ;; metainfo isn't managed by generations.
+      (let ((c-gen (and (ensure-metainfo class)
+                        (ref class 'generation))))
+
+        (define (downgrade gen vals hidden)
+          (if (= gen c-gen)
+            (values vals hidden)
+            (receive (vals hidden) (translate-down class gen vals hidden)
+              (downgrade (- gen 1) vals hidden))))
+
+        (define (upgrade gen vals hidden)
+          (if (= gen c-gen)
+            (values vals hidden)
+            (receive (vals hidden) (translate-up class gen vals hidden)
+              (upgrade (+ gen 1) vals hidden))))
+
+        ;; Main part of import-slot-values
+        (cond ((eqv? c-gen p-gen)
+               (values vals hidden)) ;; we are up to date.
+              ((< c-gen p-gen)
+               (downgrade p-gen vals hidden))
+              ((> c-gen p-gen)
+               (upgrade p-gen vals hidden)))
+        ))))
+
+;; Given two slot list A and B, returns a list of translation directive.
+;; <translation-directive> : (<slot-name> . <description>)
+;; <description> : :drop   ;; slot is only in A (so it is dropped to make B)
+;;               | :add    ;; slot is only in B (so it is added to make B)
+;; Assumes both input slot list are sorted.
+;; Slots common in both A and B aren't included in the directive list.
+
+(define (compute-translation-directive A-slots B-slots)
+  (let loop ((A-slots A-slots) (B-slots B-slots) (dirs '()))
+    (cond ((null? A-slots)
+           (append! dirs (map (lambda (s) (cons (car s) :drop)) B-slots)))
+          ((null? B-slots)
+           (append! dirs (map (lambda (s) (cons (car s) :add)) A-slots)))
+          ((eq? (caar A-slots) (caar B-slots))
+           (loop (cdr A-slots) (cdr B-slots) dirs))
+          ((string<? (symbol->string (caar A-slots))
+                     (symbol->string (caar B-slots)))
+           (loop (cdr A-slots) B-slots (acons (caar A-slots) :drop dirs)))
+          (else
+           (loop A-slots (cdr B-slots) (acons (caar B-slots) :add dirs))))
+    ))
+
+;; Given translation directive and slot value alist, returns
+;; a translated slot value alist and hidden slot value alist.
+;; Which indicates the conversion direction; either a->b or b->a.
+(define (translate-slot-alist directive alist hidden which)
+  (let ((src (case which ((a->b) :drop) ((b->a) :add))))
+
+    ;; slot dropped; move the slot value from r to h, if any.
+    (define (drop-slot slot r h)
+      (cond ((assq slot r) =>
+             (lambda (p) (values (alist-delete (car p) r)
+                                 (assq-set! h (car p) (cdr p)))))
+            (else (values r h))))
+
+    ;; slot added; move the slot value from h to r, if any.
+    (define (add-slot slot r h)
+      (cond ((assq slot h) =>
+             (lambda (p) (values (assq-set! r (car p) (cdr p))
+                                 (alist-delete (car p) h))))
+            (else (values r h))))
+
+    ;; loop over directive
+    (define (translate dir r h)
+      (cond ((null? dir)
+             (values r h))
+            ((eqv? (cdar dir) src)  ;; source dropped
+             (receive (r h) (drop-slot (caar dir) r h)
+               (translate (cdr dir) r h)))
+            (else
+             (receive (r h) (add-slot (caar dir) r h)
+               (translate (cdr dir) r h)))))
+    (translate directive alist hidden)))
+
+(define (translate-up class generation alist hidden)
+  (let* ((info (ensure-metainfo class))
+         (dir (assq-ref (ref info 'translator-alist) generation)))
+    (if (not dir)
+      (begin
+        (warn "class translator doesn't exist: class ~a, generation ~a"
+              (class-name class) generation)
+        alist)
+      (translate-slot-alist dir alist hidden 'a->b))))
+
+(define (translate-down class generation alist hidden)
+  (let* ((info (ensure-metainfo class))
+         (dir (assq-ref (ref info 'translator-alist) (- generation 1))))
+    (if (not dir)
+      (begin
+        (warn "class translator doesn't exist: class ~a, generation ~a"
+              (class-name class) (- generation 1))
+        alist)
+      (translate-slot-alist dir alist hidden 'b->a))))
 
 ;;=========================================================
 ;; Database

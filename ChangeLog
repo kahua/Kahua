@@ -1,3 +1,15 @@
+2004-02-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm : implemented schema generation control;
+	the module compares it's in-memory persistent class generation and
+	in-db persistent class generation, and upgrades/downgrades the
+	instance automatically when reading the data into memory.  At the
+	commitment time, the in-db persistent instance is upgraded iff
+	in-memory generation is newer than in-db generation.
+	* test/persistence.scm : added tests for the above change.
+	Also a detailed description of tests are written (currently in
+	Japanese euc-jp).
+
 2004-02-26  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* cgi/kahua.cgi.in: fixed PATH_INFO bugs.
