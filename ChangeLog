@@ -1,3 +1,9 @@
+2004-02-29  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/elem.scm: added functional tags extra-header: and
+	extra-header/
+	* examples/login/login.kahua: use extra-header: instead of symbol.
+
 2004-02-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/persistence.scm (kahua-db-open-dbi): handles
