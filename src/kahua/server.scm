@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.23 2004/05/07 08:20:15 nobsun Exp $
+;; $Id: server.scm,v 1.24 2004/08/11 12:15:58 nobsun Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -467,11 +467,18 @@
 ;; set interp-html-rec as default interp
 (add-interp! 'html interp-html-rec #t)
 
+;; Ad hoc patch by nobsun
+;; The sxml:attr->xml in sxml.tools module should satisfy this spec.
+
+(define (sxml:attr->xml-bis attr)
+  (let* ((v (x->string (cadr attr)))
+	 (q (if (string-any #\' v) "\"" "'")))
+    (list " " (sxml:ncname attr) "=" q v q)))
 
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents content context
                            (lambda (stree context)
-			     (cont `("<" ,tag ,(map sxml:attr->xml attrs) ">"
+			     (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
                                      ,@stree
                                      "</" ,tag "\n>")
                                    context))))
