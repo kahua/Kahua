@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.5 2004/10/19 06:23:32 shiro Exp $
+;; $Id: kahua-spvr.scm,v 1.6 2004/11/06 07:59:02 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -890,7 +890,7 @@
 ;;
 ;; Actual server loop
 ;;
-(define (run-server spvr kahua-sock http-sock use-listener)
+(define (run-server spvr kahua-sock http-socks use-listener)
   (let ((listener (and use-listener
                        (make <listener>
                          :prompter (lambda () (display "kahua> ")))))
@@ -901,12 +901,13 @@
                      (lambda (fd flags)
                        (handle-kahua spvr (socket-accept kahua-sock)))
                      '(r)))
-    (when http-sock
-      (selector-add! (selector-of spvr)
-                     (socket-fd http-sock)
-                     (lambda (fd flags)
-                       (handle-http spvr (socket-accept http-sock)))
-                     '(r)))
+    (when http-socks
+      (dolist (http-sock http-socks)
+        (selector-add! (selector-of spvr)
+                       (socket-fd http-sock)
+                       (lambda (fd flags)
+                         (handle-http spvr (socket-accept http-sock)))
+                       '(r))))
     (when listener
       (let1 listener-handler (listener-read-handler listener)
         (set! (port-buffering (current-input-port)) :none)
@@ -966,15 +967,16 @@
                          :lib-path lib-path
                          :httpd-name (canonicalize-httpd-option httpd)))
              (kahua-sock (make-server-socket sockaddr :reuse-addr? #t))
-             (http-sock (and httpd
-                             (make-server-socket 'inet (httpd-port spvr)
-                                                 :reuse-addr? #t)))
+             (http-socks (and httpd
+                              (make-server-sockets "localhost"
+                                                   (httpd-port spvr)
+                                                   :reuse-addr? #t)))
              (cleanup  (lambda ()
                          (when (is-a? sockaddr <sockaddr-un>)
                            (sys-unlink (sockaddr-name sockaddr)))
                          (nuke-all-workers spvr)
                          (stop-keyserv spvr)
-                         (when http-sock (socket-close http-sock))
+                         (when http-socks (map socket-close http-socks))
                          (log-format "[spvr] exitting")))
              )
         (set! *spvr* spvr)
@@ -983,8 +985,8 @@
           (sys-chmod (sockaddr-name sockaddr) #o770))
         (start-keyserv spvr)
         (log-format "[spvr] started at ~a" sockaddr)
-        (when http-sock
-          (log-format "[spvr] also accepting http at ~a" http-sock))
+        (when http-socks
+          (log-format "[spvr] also accepting http at ~a" http-socks))
         (call/cc
          (lambda (bye)
            (set-signal-handler! SIGTERM (lambda _ (log-format "[spvr] SIGTERM")
@@ -1002,7 +1004,7 @@
                       (bye 70)))
              (load-app-servers-file)
              (run-default-workers spvr)
-             (run-server spvr kahua-sock http-sock listener)
+             (run-server spvr kahua-sock http-socks listener)
              (bye 0))))
         ))))
 

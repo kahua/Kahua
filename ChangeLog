@@ -1,3 +1,9 @@
+2004-11-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr.scm (run-server): fixed for the case if the platform
+	  has both ipv4 and ipv6 interface.  httpd mode now opens and
+	  listens for both interfaces.
+
 2004-11-04  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* Release 0.3:
