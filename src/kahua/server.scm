@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.24 2004/08/11 12:15:58 nobsun Exp $
+;; $Id: server.scm,v 1.25 2004/10/12 06:46:01 nobsun Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -19,6 +19,7 @@
   (use text.html-lite)
   (use gauche.parameter)
   (use gauche.sequence)
+  (use gauche.charconv)
   (use rfc.uri)
   (use util.list)
   (use sxml.tools)
@@ -246,10 +247,10 @@
 ;; default render proc
 ;; TODO: should apply interp-html-rec to all nodes!
 (define (kahua-render-proc nodes context)
-  (let* ((expanded
-          (cond ((procedure? nodes) (car (rev-nodes (exec '() nodes))))
-                ((eq? (car nodes) 'node-set) (cadr nodes))
-                (else (car nodes))))
+  (let* ((expanded (cond 
+                    ((procedure? nodes) (car (rev-nodes (exec '() nodes)))) 
+                    ((eq? (car nodes) 'node-set) (cadr nodes))
+                    (else (car nodes))))
          (interp (get-interp expanded)))
     (interp expanded context values)))
 
@@ -738,5 +739,35 @@
     ))
 
 (add-interp! 'pdf interp-pdf)
+
+;;===========================================================
+;; SXML tree interpreter - for RSS
+;;
+;; interp-rss :: Node -> Context -> Stree
+
+(define (interp-rss nodes context cont)
+  (let1 enc (gauche-character-encoding)
+    (receive (stree context)
+             (interp-html-rec nodes context cont)
+             (values
+              ;; Stree
+              (cons "<?xml version=\"1.0\" encoding=\""
+                    (cons (symbol->string (gauche-character-encoding))
+                          (cons "\" ?>\n" stree)))
+              ;; Context
+              (let1 headers (assoc-ref-car context "extra-headers" '())
+                    (if (assoc "content-type" headers)
+                        context
+                        (cons `("extra-headers"
+                                ,(kahua-merge-headers
+                                  headers 
+                                  '(("content-type" 
+                                     (string-append 
+                                      "text/xml; charset="
+                                      (symbol->string
+                                       (gauche-character-encoding)))))))
+                              context)))))))
+
+(add-interp! 'rss interp-rss)
 
 (provide "kahua/server")
