@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.20 2004/03/02 15:13:32 ko1 Exp $
+;; $Id: kahua-spvr.in,v 1.21 2004/03/05 23:39:13 ko1 Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -471,19 +471,39 @@
 
 (define-method dispatch-to-worker ((self <kahua-worker>)
                                    reply-sock
-                                   header body)
+				   header body)
   (let* ((spvr (ref self 'spvr))
          (sock (make-client-socket
                 (worker-id->sockaddr (worker-id-of self)
                                      (ref spvr 'sockbase))))
          (out  (socket-output-port sock)))
-
+    (define (send-error-message reply-sock e)
+      (with-error-handler
+       (lambda (e)
+	 (selector-delete! (selector-of spvr) (socket-fd sock) handle #f)
+	 (socket-close sock)
+	 (socket-close reply-sock)
+	 (log-format "reply error:\n~a" (kahua-error-string e #t))
+	 (report-error e))
+       (lambda ()
+	 (send-message (socket-output-port reply-sock)
+		       '(("x-kahua-status" "SPVR-ERROR"))
+		       (list (ref e 'message)
+			     (kahua-error-string e #t)))
+	 (selector-delete! (selector-of spvr) (socket-fd sock) handle #f)
+	 (socket-close sock)
+	 (socket-close reply-sock))))
     (define (handle fd flags)
-      (receive (header body) (receive-message (socket-input-port sock))
-        (send-message (socket-output-port reply-sock) header body)
-        (socket-close reply-sock)
-        (selector-delete! (selector-of spvr) (socket-fd sock) handle #f)
-        (socket-close sock)))
+      (with-error-handler
+       (lambda (e)
+	 (send-error-message reply-sock e)
+	 (socket-close reply-sock))
+       (lambda ()
+	 (receive (header body) (receive-message (socket-input-port sock))
+	   (send-message (socket-output-port reply-sock) header body)
+	   (socket-close reply-sock)
+	   (selector-delete! (selector-of spvr) (socket-fd sock) handle #f)
+	   (socket-close sock)))))
 
     (send-message out header body)
     (selector-add! (selector-of spvr)
