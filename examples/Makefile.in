@@ -59,9 +59,11 @@ all:	lambdabooks.init $(SCRIPTFILES)
 
  $(SCRIPTFILES):
 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
+	chmod -w $@
 
 lambdabooks.init:
 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
+	chmod -w $@
 
 check:
 

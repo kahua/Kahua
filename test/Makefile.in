@@ -56,12 +56,15 @@ all: $(SCMFILES) $(KAHUAFILES) pdf-01.sxml
 
 $(SCMFILES) :
 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
+	chmod -w $@
 
 $(KAHUAFILES) :
 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
+	chmod -w $@
 
 pdf-01.sxml : 
 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
+	chmod -w $@
 
 check: all
 	rm -f test.log
@@ -137,7 +140,7 @@ pdf:
 	@gosh -I../src ./pdf.scm >> test.log
 
 clean:
-	rm -rf test.log app/test.log *~ _* user.conf *.scm *.kahua
+	rm -rf test.log app/test.log *~ _* user.conf *.scm *.kahua *.sxml
 
 distclean: clean
 	rm -rf $(CONFIG_GENERATED)
