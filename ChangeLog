@@ -1,3 +1,12 @@
+2004-09-02 Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.2.8:
+	Fixed.
+	- Build process cleanuped
+	- Avoid some tests to stack with Gauche 0.8.1
+	Ad hoc patch
+	- Enable to include apostrophies in (S)XML attribute value string.
+	
 2004-08-12 Nobuo Yamashita  <nobsun@sampou.org>
 
 	* test/shell.scm.in, test/usermode.scm:
