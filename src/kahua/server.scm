@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.21 2004/03/02 17:33:43 tahara Exp $
+;; $Id: server.scm,v 1.22 2004/04/26 06:49:59 nobsun Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -617,7 +617,10 @@
                      (kahua-bridge-name) server-type cont-id argstr))))
 
   (define (nodes path)
-    (cont `((a (@ (href ,path)) ,@contents)) context))
+    (cont `((a (@ ,@(cons `(href ,path)
+                          (remove (lambda (x)
+                                    (eq? 'href (car x))) attrs)))
+               ,@contents)) context))
 
   (cond ((assq-ref auxs 'cont) => local-cont)
         ((assq-ref auxs 'remote-cont) => remote-cont)
@@ -649,11 +652,26 @@
          (id     (if clause (session-cont-register (car clause)) ""))
          (argstr (if clause (build-argstr&hiddens (cdr clause)) '(""))))
     (cont
-     `((form (@ (method "POST") 
-                (action ,(kahua-self-uri (string-append id (car argstr)))))
+     `((form (@ ,@(append `((method "POST") 
+                              (action ,(kahua-self-uri 
+                                        (string-append id (car argstr)))))
+                            (remove (lambda (x)
+                                      (or (eq? 'method (car x))
+                                          (eq? 'action (car x)))) attrs)))
              ,@(cdr argstr)
              ,@contents))
      context)))
+
+;;
+;; frame/cont
+;;
+;; `(frame/cont (@@ (cont ,closure [arg ...])))
+;;
+
+(define-element frame/cont (attrs auxs contents context cont)
+  (let* ((clause (assq-ref auxs 'cont))
+         (id     (if clause (session-cont-register (car clause)) "")))
+    (cont `((frame (@ ,@attrs (src ,(kahua-self-uri id))))) context)))
 
 ;;
 ;; extra-header - inserts protocol header to the reply message
