@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.23 2004/11/26 04:31:48 shiro Exp $
+;; $Id: kahua.cgi.in,v 1.24 2005/01/05 05:05:17 nel Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -22,6 +22,7 @@
 (use gauche.net)
 (use gauche.charconv)
 (use gauche.logger)
+(use gauche.parameter)
 (use srfi-1)
 (use srfi-2)
 (use srfi-13)
@@ -72,14 +73,14 @@
     (if (and status (equal? (car status) "SPVR-ERROR"))
 	(cgi-error-page (string-append "SPVR-ERROR: " (car body)) (cadr body))
 	(receive (state cont) (get-gsid-from-header header)
-	  (for-each (lambda (hdr) ((response 'setheader) (car hdr) (cadr hdr)))
+          (for-each (lambda (hdr) (set-header! (car hdr) (cadr hdr)))
 		    (filter (lambda (hdr) (not (#/^x-kahua-/ (car hdr))))
 			    header))
-	  ((response 'setcookie) 
-	   (construct-cookie-string
-	    `(("x-kahua-sgsid" ,state
-	       :path ,(sys-dirname
-		       (or (get-meta "SCRIPT_NAME") "/"))))))
+ 	  (set-cookie!
+           (construct-cookie-string
+            `(("x-kahua-sgsid" ,state
+               :path ,(sys-dirname
+                       (or (get-meta "SCRIPT_NAME") "/"))))))
 	  body))))
 
 ;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
@@ -159,31 +160,47 @@
             (compose-reply header body))))
       )))
 
-;; dispatcher of http response representation.
+;; class of http response representation.
 ;; provide control over output headers, set cookies, redirect.
-(define response
-  (let ((headers '())
-        (cookies '())
-        (location #f))
-    (define (publish body)
-      (list
-       (apply cgi-header :cookies cookies :location location headers)
-       body))
-    (lambda (a)
-      (cond ((eq? a 'setheader)
-             (lambda (name value)
-               (set! headers (append
-                              (list (make-keyword name) value) headers))))
-            ((eq? a 'setcookie)
-             (lambda (x) (set! cookies (append x cookies))))
-            ((eq? a 'setredirect)
-             (lambda (url) (set! location url)))
-            ((eq? a 'headers) headers)
-            ((eq? a 'cookies) cookies)
-            ((eq? a 'redirect) location)
-            ((eq? a 'publish) publish)
-            (else (error "the key not found." a)))
-      )))
+(define-class <response> ()
+  ((headers  :init-value '())
+   (cookies  :init-value '())
+   (location :init-value #f)))
+
+(define-method set-header! ((self <response>) name value)
+  (set! (ref self 'headers)
+        (append
+         (list (make-keyword name) value)
+         (ref self 'headers))))
+
+(define-method set-cookie! ((self <response>) cookie)
+  (set! (ref self 'cookies)
+        (append cookie (ref self 'cookies))))
+
+(define-method set-redirect! ((self <response>) url)
+  (set! (ref self 'location) url))
+
+(define-method publish ((self <response>) body)
+  (list (apply cgi-header
+               :cookies  (ref self 'cookies)
+               :location (ref self 'location)
+               (ref self 'headers))
+        body))
+
+(define response (make-parameter #f))
+
+(define-method set-header! (name value)
+  (set-header! (response) name value))
+
+(define-method set-cookie! (cookie)
+  (set-cookie! (response) cookie))
+
+(define-method set-redirect! (url)
+  (set-redirect! (response) url))
+
+(define-method publish (body)
+  (publish (response) body))
+
 
 ;; publish html. provide ~user authentication.
 (define (publisher params)
@@ -191,8 +208,7 @@
 	 (p (cadr (string-split (if (or (not path-info) 
 					(string-null? path-info)) 
 				    "/" path-info) #\/))))
-    (
-     (response 'publish)
+    (publish
      ;; make a body.
      (if (#/^~.+/ p)
        (begin
@@ -206,7 +222,7 @@
            (if (kahua-check-developer name passwd)
              (begin
                ;; when login successed, set passwd to cookie.
-               ((response 'setcookie)
+               (set-cookie!
                 (construct-cookie-string
                  `(("kahua-passwd" ,(base64-encode-string passwd)
                     :path ,(sys-dirname
@@ -232,11 +248,12 @@
                    (html:input :type "submit" :value "login"))))))
 
 (define (main args)
-  (cgi-main publisher
-            :merge-cookies #t
-            :on-error cgi-error-proc
-            :part-handlers '((#t file+name))
-            )
+  (parameterize ((response (make <response>)))
+    (cgi-main publisher
+              :merge-cookies #t
+              :on-error cgi-error-proc
+              :part-handlers '((#t file+name))
+              ))
   0)
 
 (define (get-error-string e)

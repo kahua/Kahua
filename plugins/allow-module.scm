@@ -13,3 +13,6 @@
 (allow-module gauche.parameter)
 (allow-module gauche.sequence)
 (allow-module gauche.vm.debugger)
+(allow-module sati.rss)
+(allow-module sati.meta)
+(allow-module sati)
