@@ -1,3 +1,8 @@
+2004-06-26  Kimura Fuyuki  <fuyuki@hadaly.org>
+
+	* examples/Makefile.in, src/Makefile.in, test/Makefile.in: More
+	dependencies and clean targets.
+
 2004-06-25  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* plugins/allow-module.scm: added rfc.uri entry.

@@ -52,23 +52,28 @@ STATICFILES = lambdabooks/images/lambda-books-logo.png \
               wiki-iki/wiki-iki.css \
               wiki-iki/images/wiki-iki.png
 
-CONFIG_GENERATED = Makefile 
+CONFIG_GENERATED = Makefile
+
 .PHONY: all check clean distclean install maintainer-clean
 
 all:	lambdabooks.init $(SCRIPTFILES)
 
- $(SCRIPTFILES):
+.SUFFIXES: .kahua.in .kahua
+
+.kahua.in.kahua:
+	test ! -f $@ || chmod +w $@
 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
 	chmod -w $@
 
-lambdabooks.init:
+lambdabooks.init: lambdabooks.init.in
+	test ! -f $@ || chmod +w $@
 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
 	chmod -w $@
 
 check:
 
 clean:
-	rm -rf core *~ lambdabooks/*~ wiki-iki/*~ login/*~
+	rm -rf core *~ lambdabooks/*~ wiki-iki/*~ login/*~ lambdabooks.init $(SCRIPTFILES)
 
 install: 
 	@echo "use 'make install-examples'"

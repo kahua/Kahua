@@ -69,6 +69,7 @@ USERCONFFILE = $(localstatedir)/user.conf
 CONFIG_GENERATED = Makefile 
 .PHONY: all check clean distclean install maintainer-clean
 
+.SUFFIXES: # Delete the default suffixes to kill the malicious .sh rule
 .SUFFIXES: .in
 
 .in:
@@ -77,15 +78,18 @@ CONFIG_GENERATED = Makefile
 all: $(SCM_SCRIPTS) $(SCM_SVR_SCRIPTS) kahua/config.scm kahua.conf kahua/pdf/typeset.scm
 
 
-kahua/config.scm:
+kahua/config.scm: kahua/config.scm.in
+	test ! -f $@ || chmod +w $@
 	sed -e "s@##sysconfdir##@$(sysconfdir)@" -e "s@##localstatedir##@$(localstatedir)@" -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##package##@$(package)@" $@.in > $@
 	chmod -w $@
 
-kahua/pdf/typeset.scm:
+kahua/pdf/typeset.scm: kahua/pdf/typeset.scm.in
+	test ! -f $@ || chmod +w $@
 	$(GOSH) cesconv -o kahua/pdf/typeset.scm -f euc-jp kahua/pdf/typeset.scm.in
 	chmod -w $@
 
-kahua.conf:
+kahua.conf: kahua.conf.sample
+	test ! -f $@ || chmod +w $@
 	sed -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##localstatedir##@$(localstatedir)@" kahua.conf.sample > $@
 	chmod -w $@
 
