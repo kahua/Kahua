@@ -1,3 +1,8 @@
+2004-04-09  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in: change content-type charset value to euc-jp
+	with Gauche made by --enable-multibyte=no.
+	
 2004-04-07  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* cgi/kahua.cgi.in: adjusted content-type header's charset value to
