@@ -1,3 +1,13 @@
+2004-01-02 Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-admin.in : support cvs update. "cvs update [type]"
+
+	* src/kahua/config.scm : add "repository" slot.
+
+        * test/kahua-server.in (reload-server) : reload specifyed file.
+
+	* test/admin.scm : add kahua-admin test program.
+
 2003-12-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/test/xml.scm : The last fix about *test-error* is wrong.
