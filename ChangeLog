@@ -1,3 +1,12 @@
+2004-06-23  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.2.7:
+	Bugfix release. 
+	- Change unixdomain socket permission from o777 to o770.
+	- Added --with-cgilogdir option to configure script.
+	- Change log file directory for kahua.cgi from /tmp/t.log 
+	to $(KAHUA_CGILOG_PATH)/kahua-cgi.log.
+
 2004-06-16  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/Makefile.in: fixed a bug inserting 'exec ' repeatedly.
