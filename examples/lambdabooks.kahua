@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.3 2003/12/15 21:43:42 ko1 Exp $
+;; $Id: lambdabooks.kahua,v 1.4 2003/12/21 15:25:44 nobsun Exp $
 
 (use file.util)
 (use util.list)
@@ -116,7 +116,8 @@
               "キャンペーン価格：" ,(ref book 'price) "円"))
       (tr (td (@ (style "text-align: right"))
               (a/cont (@@ (cont ,(lambda (context)
-                                   (show-book-detail context key
+                                   (show-book-detail key
+						     context
                                                      standard-page-cont))))
                       "詳しい情報を見る...")))))
 

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: review.kahua,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+;; $Id: review.kahua,v 1.2 2003/12/21 15:25:44 nobsun Exp $
 
 (define-class <review> (<kahua-persistent-base>)
   ((about     :init-keyword :about  :init-value #f
@@ -33,7 +33,7 @@
               (delete rev (ref book 'reviews))))
       (kahua-db-sync)
       (if book
-        (show-reviews context (key-of book) cont)
+        (show-reviews (key-of book) context cont)
         (cont '() context))))
   
   `((tr (@ (style "border-bottom: 2px solid black"))
@@ -56,31 +56,31 @@
                                     "[レビューを削除]")))))))))
   )
 
-(define (show-reviews context key cont)
+(define (show-reviews key context cont)
   (let ((book (find-kahua-instance <book> key)))
     (if (not book)
       (cont '((p "(書籍データがありません)")) context)
-      (lister context
-              (map key-of (ref book 'reviews))
-              (lambda (key count)
-                (format-review (find-kahua-instance <review> key)
-                               context cont))
-              (lambda (nodes context)
-                (cont `((h2 ,(ref book 'title)
-                            "に対する読者レビュー")
-                        ,@nodes
-                        (a/cont (@@ (cont ,(lambda (context)
-                                             (show-book-detail context
-                                                               (key-of book)
-                                                               cont))))
-                                "[書籍情報に戻る]")
-                        ,(book-review-link (key-of book) context cont))
-                      context))
-              :table-attrs '(@ (style "border-collapse: collapse; width:95%"))
-              )
+      ((lister (map key-of (ref book 'reviews))
+	       (lambda (key count)
+		 (format-review (find-kahua-instance <review> key)
+				context cont))
+	       :table-attrs '(@ (style "border-collapse: collapse; width:95%")))
+       context
+       (lambda (nodes context)
+	 (cont `((h2 ,(ref book 'title)
+		     "に対する読者レビュー")
+		 ,@nodes
+		 (a/cont (@@ (cont ,(lambda (context)
+				      (show-book-detail (key-of book)
+							context
+							cont))))
+			 "[書籍情報に戻る]")
+		 ,(book-review-link (key-of book) context cont))
+	       context))
+       )
       )))
 
-(define (write-review context key cont)
+(define (write-review key context cont)
   (define (commit-review context)
     (let ((book (find-kahua-instance <book> key))
           (user (kahua-current-user context))
@@ -95,7 +95,7 @@
                        :comment comment)
                  (ref book 'reviews)))
           (kahua-db-sync)
-          (show-reviews context key cont))
+          (show-reviews key context cont))
         (cont '((p "(書籍データがありません)")) context))))
   
   (let ((book (find-kahua-instance <book> key))

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lister.kahua,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+;; $Id: lister.kahua,v 1.2 2003/12/21 15:25:44 nobsun Exp $
 
 ;; Lister -------------------------------------------------------
 ;;
@@ -28,31 +28,32 @@
 ;;   items-per-page :: Integer
 ;;      ページあたりの項目数。デフォルトは5。
 
-(define (lister context elts elt-formatter cont . opts)
-  (let-keywords* opts ((table-attrs #f)
-                       (header-formatter #f)
-                       (items-per-page 5))
+(define (lister elts elt-formatter . opts)
+  (lambda (context cont)
+    (let-keywords* opts ((table-attrs #f)
+			 (header-formatter #f)
+			 (items-per-page 5))
 
-    (define (show-list prev-show lis)
-      (receive (cur-items next-items) (split-at* lis items-per-page)
-        (cont
-         `((table
-            ,@(cond-list (table-attrs))
-            ,@(if header-formatter (header-formatter) '())
-            ,@(append-map elt-formatter cur-items (iota items-per-page)))
-           (p
-            ,@(cond-list
-               (prev-show
-                `(a/cont (@@ (cont ,prev-show))
-                         ,#`"[前の,|items-per-page|項目]"))
-               ((not (null? next-items))
-                `(a/cont (@@ (cont ,(lambda (context)
-                                      (show-list (lambda (context)
-                                                   (show-list prev-show lis))
-                                                 next-items))))
-                         ,#`"[次の,|items-per-page|項目]")))))
-         context)))
+      (define (show-list prev-show lis)
+	(receive (cur-items next-items) (split-at* lis items-per-page)
+	  (cont
+	   `((table
+	      ,@(cond-list (table-attrs))
+	      ,@(if header-formatter (header-formatter) '())
+	      ,@(append-map elt-formatter cur-items (iota items-per-page)))
+	     (p
+	      ,@(cond-list
+		 (prev-show
+		  `(a/cont (@@ (cont ,prev-show))
+			   ,#`"[前の,|items-per-page|項目]"))
+		 ((not (null? next-items))
+		  `(a/cont (@@ (cont ,(lambda (context)
+					(show-list (lambda (context)
+						     (show-list prev-show lis))
+						   next-items))))
+			   ,#`"[次の,|items-per-page|項目]")))))
+	   context)))
     
-    (show-list #f elts))
+      (show-list #f elts)))
   )
 

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+;; $Id: login.kahua,v 1.2 2003/12/21 15:25:44 nobsun Exp $
 
 ;; User login management ----------------------------------------
 ;;   Receives two continuation procedure.
@@ -13,7 +13,7 @@
 ;;   final-cont is called when user's login succeeded (or abandoned).
 ;;
 (define (user-box context transient-cont final-cont)
-  (define (login-dialog context logname pass)
+  (define (login-dialog logname pass context)
     (transient-cont 
      `(,(if logname
           '(p "ユーザー名、またはパスワードが違います")
@@ -31,7 +31,7 @@
              (td (input (@ (type "submit") (name "submit")
                            (value "ログイン")))))))
        (p "ユーザー登録がお済みでない方は、"
-          (a/cont (@@ (cont ,(cut new-user <> #f #f))) "新規ユーザー登録")
+          (a/cont (@@ (cont ,(cut new-user #f #f <>))) "新規ユーザー登録")
           "で登録を行うか、"
           (a/cont (@@ (cont ,(lambda (context) (final-cont '() context))))
                   "ログインせずにサイトを利用する")
@@ -46,9 +46,9 @@
         (begin
           (set! (kahua-current-user context) logname)
           (final-cont '() context))
-        (login-dialog context logname pass))))
+        (login-dialog logname pass context))))
 
-  (define (new-user context logname pass)
+  (define (new-user logname pass context)
     (transient-cont
      `(,(if logname
           (if pass
@@ -79,9 +79,9 @@
           (pass2   (kahua-context-ref context "pass2")))
       (cond
        ((kahua-find-user logname)
-        (new-user context logname #f)) ;; user $logname already exists
+        (new-user logname #f context)) ;; user $logname already exists
        ((not (equal? pass pass2))
-        (new-user context logname pass)) ;; passwords don't match
+        (new-user logname pass context)) ;; passwords don't match
        (else
         (kahua-add-user logname pass)
         (kahua-db-sync)
@@ -97,7 +97,7 @@
       `(table (tr (td "Welcome, " ,(ref user 'login-name)))
               (tr (td (@ (style "font-size:small; text-align:right"))
                       (a/cont (@@ (cont ,logout)) "logout"))))
-      `(a/cont (@@ (cont ,(cut login-dialog <> #f #f)))
+      `(a/cont (@@ (cont ,(cut login-dialog #f #f <>)))
                "ログイン/新規登録")))
   )
 

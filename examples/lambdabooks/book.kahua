@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: book.kahua,v 1.2 2003/12/15 21:13:33 ko1 Exp $
+;; $Id: book.kahua,v 1.3 2003/12/21 15:25:44 nobsun Exp $
 
 (define-class <book> (<kahua-persistent-base>)
   ((product-id :init-keyword :product-id :init-value 0
@@ -30,7 +30,7 @@
 (define-method format-for-list ((self <book>) context cont)
   `((tr (td (@ (colspan 2) (style "background-color:#92bae5"))
             (a/cont (@@ (cont ,(lambda (context)
-                                 (show-book-detail context (key-of self)
+                                 (show-book-detail (key-of self) context
                                                    cont))))
                     ,(ref self 'title))))
     (tr (td (@ (style "background-color:#bed0e2"))
@@ -51,7 +51,7 @@
        ,(if (null? (ref self 'reviews))
           ""
           `(a/cont (@@ (cont ,(lambda (context)
-                                (show-reviews context (key-of self)
+                                (show-reviews (key-of self) context
                                               cont))))
                    "[読者レビューを読む]")))
     ,(book-review-link (key-of self) context cont)
@@ -61,25 +61,25 @@
 (define (book-review-link key context cont)
   `(p ,@(if (kahua-current-user context)
           `((a/cont (@@ (cont ,(lambda (context)
-                                 (write-review context key cont))))
+                                 (write-review key context cont))))
                     "[この本についてのレビューを書く]"))
           `("("
             ,(user-box context cont
                        (lambda (nodes context)
-                         (show-book-detail context key cont)))
+                         (show-book-detail key context cont)))
             "すると、この本についてのレビューを書くことができます)"))))
 
 (define (show-book-list context cont)
-  (lister context
-          (map key-of (make-kahua-collection <book>))
-          (lambda (key count)
-            (format-for-list (find-kahua-instance <book> key)
-                             context cont))
-          (lambda (nodes context)
-            (cont `((h2 "書籍リスト") ,@nodes) context)))
+  ((lister (map key-of (make-kahua-collection <book>))
+	   (lambda (key count)
+	     (format-for-list (find-kahua-instance <book> key)
+			      context cont)))
+   context
+   (lambda (nodes context)
+     (cont `((h2 "書籍リスト") ,@nodes) context)))
   )
 
-(define (show-book-detail context key cont)
+(define (show-book-detail key context cont)
   (let ((book (find-kahua-instance <book> key)))
     (if book
       (cont (format-for-detail book context cont) context)
