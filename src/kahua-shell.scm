@@ -1,11 +1,10 @@
-#!/usr/bin/env gosh
 ;; Interactive shell script
 ;;
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-shell.in,v 1.6 2004/02/23 07:18:43 tahara Exp $
+;; $Id: kahua-shell.scm,v 1.2 2004/10/19 02:37:34 shiro Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -161,8 +160,10 @@
 ;; Entry -------------------------------------------------------
 (define (main args)
   (let-args (cdr args)
-      ((conf-file "c=s" #f)
-       (user "user=s" #f))
+      ((conf-file "c=s")
+       (user      "user=s")
+       (gosh      "gosh=s")  ;; wrapper script adds this.  ignore.
+       )
     (set-signal-handler! SIGINT  (lambda _ (exit 0)))
     (set-signal-handler! SIGHUP  (lambda _ (exit 0)))
     (set-signal-handler! SIGTERM (lambda _ (exit 0)))

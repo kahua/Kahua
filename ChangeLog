@@ -1,3 +1,33 @@
+2004-10-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr.scm :
+	- static document can be handled in httpd mode.
+	- handle worker-specified header (e.g. '302 Moved') properly.
+	* src/Makefile.in, src/make-testconf.scm : allow 'in-place' test
+	  running.  It is done by creating required symlinks under
+	  $(top_builddir)/tmp, and generating a test.conf that points to
+	  the directory as working directory.
+
+2004-10-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/config.scm.in : added kahua-version
+	* src/Makefile.in : ditto
+	* src/kahua-spvr.scm : added httpd support.  enabled by --httpd or -H
+	  option.  static document uri handling and certain header handling
+	  aren't working yet.
+
+2004-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/make-testconf.scm : a script to generate conf file for
+	  'in-place' testing.
+
+	* branching shiro_reorg1 to experiment reorganization.
+	* src/kahua-*.in : renamed to kahua-*.scm, and will be installed to 
+	  the kahua library directory.
+	* src/maka-script.scm : generates shell scripts for kahua commands.
+	* test/*.scm.in : fixed accodringly.
+	* Makefiles : fixed accordingly.
+
 2004-10-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/config.scm.in (kahua-init):

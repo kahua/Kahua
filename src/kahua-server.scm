@@ -1,11 +1,10 @@
-#!/usr/bin/env gosh
 ;; Generic application server script.
 ;;
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.in,v 1.13 2004/06/09 06:46:11 nobsun Exp $
+;; $Id: kahua-server.scm,v 1.2 2004/10/19 02:37:34 shiro Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.

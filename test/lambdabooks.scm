@@ -1,6 +1,6 @@
-;; test lambdabooks scripts.
+;; test lambdabooks scripts. -*-Scheme-*-
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: lambdabooks.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: lambdabooks.scm,v 1.2 2004/10/19 02:37:34 shiro Exp $
 
 (use srfi-2)
 (use srfi-11)
@@ -329,7 +329,7 @@
 (sys-system "gosh -I../src -I../examples lambdabooks.init -c ./test.conf")
 
 (with-worker
- (w `("gosh" "-I../src" "-I../examples" "../src/kahua-server"
+ (w `("gosh" "-I../src" "-I../examples" "../src/kahua-server.scm"
       "-c" ,*config* "../examples/lambdabooks/lambdabooks.kahua"))
     
  (test* "run lambdabooks.kahua" #t (worker-running? w))

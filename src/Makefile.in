@@ -23,13 +23,14 @@ DESTDIR           =
 
 GOSH                   = @GOSH@
 GAUCHE_CONFIG          = @GAUCHE_CONFIG@
-INSTALL                = @INSTALL@
+INSTALL                = @GAUCHE_INSTALL@
 INSTALL_TYPE           = @INSTALL_TYPE@
-MKINSTDIR              = $(top_srcdir)/mkinstalldirs
 SCM_INSTALL_DIR        = $(libdir)
 SCRIPT_INSTALL_DIR     = $(bindir)
-SCM_SCRIPT_INSTALL_DIR = $(libexecdir)
 SOCKET_BASE_DIR        = $(prefix)/tmp/$(package)
+KAHUA_VERSION          = $(shell cat $(top_srcdir)/VERSION)
+
+MAKE_SH_SCRIPT   = $(GOSH) $(top_srcdir)/src/make-script.scm "$(GOSH)" "$(libdir)"
 
 INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) \
 	       $(SCM_SCRIPT_INSTALL_DIR) \
@@ -38,23 +39,22 @@ INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) \
 	       $(SCM_INSTALL_DIR)/kahua/test \
                $(SCM_INSTALL_DIR)/kahua/pdf
 
-SCRIPTS  = kahua-spvr.sh    \
-           kahua-admin.sh   \
-           kahua-install.sh \
-           kahua-shell.sh
+TESTENV_DIR  = $(top_builddir)/tmp
 
-SVR_SCRIPTS = kahua-server.sh \
-	      kahua-keyserv.sh
+SH_SCRIPTS  = kahua-spvr    \
+              kahua-admin   \
+              kahua-install \
+              kahua-shell
 
-SCM_SCRIPTS  = kahua-spvr    \
-               kahua-admin   \
-               kahua-install \
-               kahua-shell
+SCM_SCRIPTS  = kahua-spvr.scm    \
+               kahua-admin.scm   \
+               kahua-install.scm \
+               kahua-shell.scm   \
+               kahua-server.scm  \
+               kahua-keyserv.scm
 
-SCM_SVR_SCRIPTS = kahua-server \
-		  kahua-keyserv
-
-SCMFILES = kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
+SCMFILES = $(SCM_SCRIPTS) \
+           kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
            kahua/config.scm kahua/session.scm kahua/server.scm \
            kahua/developer.scm kahua/partcont.scm kahua/elem.scm \
            kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm \
@@ -66,20 +66,37 @@ SCMFILES = kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
 CONFFILE = $(sysconfdir)/kahua.conf
 USERCONFFILE = $(localstatedir)/user.conf
 
+GENERATED = $(SH_SCRIPTS) kahua.conf test.conf \
+            kahua/config.scm kahua/pdf/typeset.scm kahua.conf
+
 CONFIG_GENERATED = Makefile 
-.PHONY: all check clean distclean install maintainer-clean
+.PHONY: all check testenv clean distclean install maintainer-clean
 
-.SUFFIXES: # Delete the default suffixes to kill the malicious .sh rule
-.SUFFIXES: .in
+all: $(GENERATED)
 
-.in:
-	$(top_srcdir)/src/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(libexecdir)" $@
+$(SH_SCRIPTS) : make-script.scm
 
-all: $(SCM_SCRIPTS) $(SCM_SVR_SCRIPTS) kahua/config.scm kahua.conf kahua/pdf/typeset.scm
+kahua-admin :
+	$(MAKE_SH_SCRIPT) kahua-admin
+
+kahua-spvr :
+	$(MAKE_SH_SCRIPT) kahua-spvr
+
+kahua-install :
+	$(MAKE_SH_SCRIPT) kahua-install
+
+kahua-shell :
+	$(MAKE_SH_SCRIPT) kahua-shell
+
 
 kahua/config.scm: kahua/config.scm.in
 	test ! -f $@ || chmod +w $@
-	sed -e "s@##sysconfdir##@$(sysconfdir)@" -e "s@##localstatedir##@$(localstatedir)@" -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##package##@$(package)@" $@.in > $@
+	sed -e "s@##sysconfdir##@$(sysconfdir)@" \
+	    -e "s@##localstatedir##@$(localstatedir)@" \
+	    -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" \
+	    -e "s@##package##@$(package)@" \
+	    -e "s@##KAHUA_VERSION##@$(KAHUA_VERSION)@" \
+            $@.in > $@
 	chmod -w $@
 
 kahua/pdf/typeset.scm: kahua/pdf/typeset.scm.in
@@ -92,55 +109,36 @@ kahua.conf: kahua.conf.sample
 	sed -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##localstatedir##@$(localstatedir)@" kahua.conf.sample > $@
 	chmod -w $@
 
+test.conf : make-testconf.scm
+	$(GOSH) ./make-testconf.scm $(top_builddir) $(top_srcdir)
+
 check:
 
+# cleanup
 clean:
-	rm -rf core *~ kahua/*~ \
-	  $(SCRIPTS) $(SCM_SCRIPTS) $(SVR_SCRIPTS) $(SCM_SVR_SCRIPTS) \
-	  kahua/config.scm kahua/pdf/typeset.scm kahua.conf
+	rm -rf core *~ kahua/*~ $(GENERATED)
+	rm -rf $(TESTENV_DIR)
 
-server-scripts	:
-	@for f in $(SVR_SCRIPTS); do \
-	  sed -e "2s@^/@exec /@" $$f > $$f.svr; \
-	done
-
-install: all server-scripts
-	$(MKINSTDIR) $(INSTALL_DIRS) $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir)
-	chmod o-rwx $(SOCKET_BASE_DIR)
-	@for f in $(SCMFILES); do \
-	  $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR)/$$f; \
-	done
-	@for f in $(SCM_SCRIPTS); do \
-	  $(INSTALL) -m 555 $$f $(SCM_SCRIPT_INSTALL_DIR)/$$f.scm; \
-	done
-	@for f in $(SCM_SVR_SCRIPTS); do \
-	  $(INSTALL) -m 555 $$f $(SCM_SCRIPT_INSTALL_DIR)/$$f.scm; \
-	done
-	@for f in $(SCM_SCRIPTS); do \
-	  $(INSTALL) -m 555 $$f.sh $(SCRIPT_INSTALL_DIR)/$$f; \
-	done
-	@for f in $(SCM_SVR_SCRIPTS); do \
-	  $(INSTALL) -m 555 $$f.sh.svr $(SCRIPT_INSTALL_DIR)/$$f; \
-	done
-	@if test ! -f $(CONFFILE); then \
-	  $(INSTALL) -m 444 kahua.conf $(CONFFILE); \
+# installation
+# NB: libexecdir is created for backward compatibility.  Eventually
+# we'll remove it.
+install: all
+	$(INSTALL) -m 770 -d $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir) $(libexecdir)
+	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR) -S $(srcdir) $(SCMFILES)
+	$(INSTALL) -m 555 -T $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
+	@if test ! -f $(sysconfdir)/kahua.conf; then \
+	  $(INSTALL) -m 444 kahua.conf $(sysconfdir)/kahua.conf; \
 	fi
-	@if test ! -f $(USERCONFFILE); then \
-	  $(INSTALL) -m 644 user.conf.sample $(USERCONFFILE); \
+	@if test ! -f $(localstatedir)/user.conf; then \
+	  $(INSTALL) -m 644 user.conf.sample $(localstatedir)/user.conf; \
 	fi
 
 uninstall:
 	@for f in $(SCMFILES); do \
 	  rm -f $(SCM_INSTALL_DIR)/$$f; \
 	done
-	@for f in $(SCRIPTS); do \
+	@for f in $(SH_SCRIPTS); do \
 	  rm -f $(SCRIPT_INSTALL_DIR)/$$f; \
-	done
-	@for f in $(SCM_SCRIPTS); do \
-	  rm -f $(SCM_SCRIPT_INSTALL_DIR)/$$f; \
-	done
-	@for f in $(SCM_SVR_SCRIPTS); do \
-	  rm -f $(SCM_SCRIPT_INSTALL_DIR)/$$f; \
 	done
 
 distclean: clean
