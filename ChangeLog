@@ -1,5 +1,7 @@
 2004-03-01  Yusei Tahara  <tahara@timedia.co.jp>
 
+	* src/kahua/pdf/interp.scm (html-environment): added kahua specific
+	tags, form/cont, a/cont and so on.
 	* src/kahua/pdf.scm, src/kahua/pdf/*: added pdf library.
 	* src/kahua/server.scm:
 	(add-interp!, get-interp, kahua-render-proc): separete interp-html-rec.

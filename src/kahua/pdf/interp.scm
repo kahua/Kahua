@@ -503,8 +503,11 @@
     (script . ,ignore)
     (noscript . ,ignore)
     (html . ,simple-block-tag)
+    ;; kahua specific tags
     (pdf . ,simple-block-tag)
     (extra-header . ,ignore)
+    (a/cont . ,inline-tag)
+    (form/cont . ,simple-block-tag)
 ))
 
 (define interp-html-pdf (make-pdf-interp html-environment))
