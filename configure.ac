@@ -2,9 +2,9 @@ dnl
 dnl Configuring kahua-elua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
-dnl $Id: configure.ac,v 1.4 2004/03/05 03:55:09 yasuyuki Exp $
+dnl $Id: configure.ac,v 1.5 2004/03/26 10:32:53 nobsun Exp $
 AC_PREREQ(2.54)
-AC_INIT(kahua, 0.2, shiro@acm.org)
+AC_INIT(kahua, 0.2.1, shiro@acm.org)
 AC_GAUCHE_INIT_EXT
 
 dnl Sets the default value of INSTALL_TYPE macro.
@@ -18,12 +18,12 @@ dnl Check for other programs.
 AC_PROG_INSTALL
 
 dnl Sets some additional installation destination
-KAHUA_CGIDIR=/usr/lib/cgi-bin
+KAHUA_CGIDIR=$libexecdir/kahua
 AC_ARG_WITH(cgidir,
   AC_HELP_STRING([--with-cgidir=PATH],
                  [Specifies the directory where Kahua cgi scripts should be
 installed.  If disabled (--with-cgidir=no or --without-cgidir), cgi scripts
-are not installed automatically.  Default: /usr/lib/cgi-bin/]),
+are not installed automatically.  Default: $libexecdir/kahua]),
   [
     case "$with_cgidir" in
       yes|no) KAHUA_CGIDIR= ;;
