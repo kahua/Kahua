@@ -1,3 +1,8 @@
+2003-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* test/worker.scm : added back the code to clean up the test
+	  worker process after each test section.
+
 2003-12-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua-spvr.in : added "restart" spvr command to restart
