@@ -1,5 +1,7 @@
 2004-01-20  Shiro Kawai  <shiro@acm.org>
 
+	* cgi/kahua.cgi.in (compose-reply): pass through the extra
+	headers given in the reply.
 	* src/kahua/server.scm :
 	(kahua-default-handler): let render-proc return (Stree, Context)
 	instead of just Stree, so that it can inject information into

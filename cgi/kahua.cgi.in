@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.10 2003/12/31 13:12:04 ko1 Exp $
+;; $Id: kahua.cgi.in,v 1.11 2004/01/21 01:41:05 shiro Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -20,6 +20,7 @@
 (use gauche.net)
 (use gauche.charconv)
 (use gauche.logger)
+(use srfi-1)
 (use srfi-2)
 (use www.cgi)
 (use util.list)
@@ -43,12 +44,19 @@
 
 (define (compose-reply header body)
   (receive (state cont) (get-gsid-from-header header)
-    (list
-     (cgi-header
-      :cookies (construct-cookie-string
-                `(("x-kahua-sgsid" ,state
-                   :path ,(sys-dirname (or (sys-getenv "SCRIPT_NAME") "/"))))))
-     body)))
+    (let1 extra-headers
+        (append-map (lambda (hdr)
+                      (list (make-keyword (car hdr)) (cadr hdr)))
+                    (filter (lambda (hdr) (not (#/^x-kahua-/ (car hdr))))
+                            header))
+      (list
+       (apply
+        cgi-header
+        :cookies (construct-cookie-string
+                  `(("x-kahua-sgsid" ,state
+                     :path ,(sys-dirname (or (sys-getenv "SCRIPT_NAME") "/")))))
+        extra-headers)
+       body))))
 
 ;; retrieve PATH_INFO, with processing ~user component.
 ;; returns #f if there's no PATH_INFO.
