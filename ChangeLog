@@ -1,3 +1,29 @@
+2004-04-07  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in: adjusted content-type header's charset value to
+	(gauche-character-encoding).
+
+	* configure.ac: added test/Makefile to AC_OUTPUT
+	
+	* examples/Makefile.in: modified to make souce code encoding of
+	kahua applications same as the one of gauche internal ces.
+	* examples/lambdabooks.init: removed
+	* examples/lambdabooks.init.in: added
+	* examples/*/*.kahua: removed
+	* examples/*/*.kahua.in: added
+
+	* src/Makefile.in:  modified to make souce code encoding of
+	src/kahua/typeset.scm same as the one of gauche internal ces.
+	* src/kahua/typeset.scm: removed
+	* src/kahua/typeset.scm.in: added
+
+	* test/Makefile.in: Added to make souce code encoding of
+	test/*.scm, test/*.kahua and test/*.sxml same as the one of 
+	gauche internal ces.
+	* test/Makefile: removed
+	* test/*.scm, test/*.kahua and test/*.sxml: removed
+	* test/*.scm.in, test/*.kahua.in and test/*.sxml.in: added
+	
 2004-04-02  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* examples/Makefile.in: added load-path for kahua.scm in calling lambdabooks.init. 
