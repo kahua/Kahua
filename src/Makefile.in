@@ -18,7 +18,8 @@ MKINSTDIR = $(top_srcdir)/mkinstalldirs
 SCM_INSTALL_DIR = $(DESTDIR)`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
 SCRIPT_INSTALL_DIR = $(bindir)
 
-INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) $(SCM_INSTALL_DIR)/kahua/test
+INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) $(SCM_INSTALL_DIR)/kahua/test \
+               $(SCM_INSTALL_DIR)/kahua/pdf
 CREATE_DIRS = /var/lib/kahua /var/lib/kahua/user \
               /tmp/kahua /tmp/kahua/user
 
@@ -32,7 +33,10 @@ SCMFILES = kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
            kahua/config.scm kahua/session.scm kahua/server.scm \
            kahua/developer.scm kahua/partcont.scm kahua/elem.scm \
            kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm \
-           kahua/sandbox.scm kahua/plugin.scm
+           kahua/sandbox.scm kahua/plugin.scm kahua/pdf.scm \
+           kahua/pdf/interp.scm kahua/pdf/main.scm kahua/pdf/monad.scm \
+           kahua/pdf/srfi-48-draft.scm  kahua/pdf/srfi-48.scm \
+           kahua/pdf/state.scm kahua/pdf/typeset.scm kahua/pdf/util.scm
 CONFFILE = /etc/kahua.conf
 USERCONFFILE = /var/lib/kahua/user.conf
 

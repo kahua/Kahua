@@ -1,3 +1,12 @@
+2004-03-01  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/pdf.scm, src/kahua/pdf/*: added pdf library.
+	* src/kahua/server.scm:
+	(add-interp!, get-interp, kahua-render-proc): separete interp-html-rec.
+	(interp-pdf): added. it generates PDF.
+	* src/kahua.scm: added kahua.pdf.
+	* src/Makefile.in (INSTALL_DIRS, SCMFILES): install kahua/pdf/*.scm.
+
 2004-03-01  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* src/kahua-spvr.in : fixed to stop restarting worker which doesn't

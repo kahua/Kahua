@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.19 2004/02/29 15:29:38 ko1 Exp $
+;; $Id: server.scm,v 1.20 2004/03/01 08:21:15 tahara Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -30,6 +30,7 @@
   (use kahua.user)
   (use kahua.util)
   (use kahua.elem)
+  (use kahua.pdf)
   (export kahua-init-server
           kahua-bridge-name
           kahua-server-uri
@@ -244,12 +245,25 @@
 ;; default render proc
 ;; TODO: should apply interp-html-rec to all nodes!
 (define (kahua-render-proc nodes context)
-  (cond ((procedure? nodes)
-	 (interp-html-rec (car (rev-nodes (exec '() nodes))) context values))
-	((eq? (car nodes) 'node-set)
-	 (interp-html-rec (cadr nodes) context values))
-	(else 
-	 (interp-html-rec (car nodes) context values))))
+  (let* ((expanded
+          (cond ((procedure? nodes) (car (rev-nodes (exec '() nodes))))
+                ((eq? (car nodes) 'node-set) (cadr nodes))
+                (else (car nodes))))
+         (interp (get-interp expanded)))
+    (interp expanded context values)))
+
+(define-values (add-interp! get-interp)
+  (let ((table (make-hash-table))
+        (default-interp #f))
+    (values
+     (lambda (type proc . default)
+       (let ((option (get-optional default #f)))
+         (hash-table-put! table type proc)
+         (if (or (not default-interp) option)
+           (set! default-interp proc))))
+     (lambda (nodes)
+       (hash-table-get table (car nodes) default-interp)))))
+
 
 ;; KAHUA-CONTEXT-REF key [default]
 ;;
@@ -435,6 +449,10 @@
                  (default-element-handler name attrs contents context cont)))
           )))
     ))
+
+;; set interp-html-rec as default interp
+(add-interp! 'html interp-html-rec #t)
+
 
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents content context
@@ -652,5 +670,34 @@
                (cons `("extra-headers"
                        ,(kahua-merge-headers headers `((,name ,value))))
                      context)))))
+
+
+;;==========================================================
+;;  SXML tree interpreter - generates PDF
+;;
+;; interp-pdf :: Node -> Context -> Stree
+(define (interp-pdf nodes context cont)
+  (let ((data (reverse (map reverse-lines
+                            (boxes-of-state
+                             (exec/state (make-state 0 0 #t '() '())
+                                         (interp-html-pdf nodes))))))
+        (port (open-output-string)))
+    (with-docdata-to-port port data)
+
+    ;;for extra headers
+    (receive (stree context)
+        (interp-html-rec nodes context cont)
+      (let1 headers (assoc-ref-car context "extra-headers" '())
+        (cont
+         (list (get-output-string port))
+         (if (assoc "content-type" headers)
+           context
+           (cons `("extra-headers"
+                   ,(kahua-merge-headers
+                     headers '(("content-type" "application/pdf"))))
+                 context)))))
+    ))
+
+(add-interp! 'pdf interp-pdf)
 
 (provide "kahua/server")
