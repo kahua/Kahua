@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.1 2003/12/11 05:39:12 nobsun Exp $
+;; $Id: user.scm,v 1.2 2004/01/25 14:37:28 shiro Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -13,7 +13,7 @@
   (use srfi-27)
   (use gauche.collection)
   (export <kahua-user> kahua-add-user kahua-check-user kahua-find-user
-          kahua-user-has-role?))
+          kahua-user-password-change kahua-user-has-role?))
 (select-module kahua.user)
 
 (define-class <kahua-user> (<kahua-persistent-base>)
@@ -46,6 +46,13 @@
                (not (ref user 'inactive))
                (match-passwd password (ref user 'password-hash))))
         (make-kahua-collection <kahua-user>)))
+
+;; user must be <kahua-user>.  caller must sync db.
+(define (kahua-user-password-change user old-password new-password)
+  (and (is-a? user <kahua-user>)
+       (kahua-check-user (ref user 'login-name) old-password)
+       (set! (ref user 'password-hash) (crypt-passwd new-password))
+       #t))
 
 ;; user may be <kahua-user> object or #f
 ;; role-alist's spec isn't fixed yet.  for now, we assume it's a list of
