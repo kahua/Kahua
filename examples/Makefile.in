@@ -48,7 +48,7 @@ install-examples: all
 	$(INSTALL) $(KAHUACONFIG) -t script $(SCRIPTFILES)
 	$(INSTALL) $(KAHUACONFIG) -t static $(STATICFILES)
 	$(INSTALL) $(KAHUACONFIG) -t base -r app-servers --no-overwrite app-servers.sample
-	$(GOSH) ./lambdabooks.init $(KAHUACONFIG) 
+	$(GOSH) -I. ./lambdabooks.init $(KAHUACONFIG) 
 
 distclean: clean
 	rm -rf $(CONFIG_GENERATED)

@@ -5,14 +5,14 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.init,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+;; $Id: lambdabooks.init,v 1.2 2003/12/16 07:54:55 nobsun Exp $
 
 (use kahua)
 (use file.util)
 (use gauche.parseopt)
 
-(load "./lambdabooks/book.kahua")
-(load "./lambdabooks/review.kahua")
+(load "lambdabooks/book.kahua")
+(load "lambdabooks/review.kahua")
 
 (define (main args)
   (let-args (cdr args) ((conf-file "c=s"))
