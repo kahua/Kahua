@@ -54,14 +54,9 @@
 ;; The entry name can be overloaded.  When "called", the definition
 ;; that matches the input signature is selected and invoked.
 
-;; Entry signature: 
-
-
+;; ... to be implemented ...
 ;(define-class <kahua-entry> ()
 ;  ((handlers :init-value '())))
-
-
-
 
 
 (define (add-entry! name proc)
@@ -106,8 +101,6 @@
                  (default-element-handler name attrs contents context cont)))
           )))
     ))
-
-
 
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents content context
