@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm,v 1.9 2004/02/22 22:00:55 ko1 Exp $
+;; $Id: config.scm,v 1.10 2004/02/29 15:29:38 ko1 Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -31,6 +31,7 @@
           kahua-userconf-file
 	  kahua-ping-timeout-sec
 	  kahua-ping-interval-sec
+	  kahua-auto-restart
           ))
 (select-module kahua.config)
 
@@ -73,6 +74,10 @@
 		     :init-value 120)
    (ping-interval-sec :init-keyword :ping-interval-sec
 		      :init-value 30)
+
+   ;; auto restart setting
+   (auto-restart :init-keyword :auto-restart
+		 :init-value #f)
 
    ;; userconf-file - developer account file
    (userconf-file :init-keyword :userconf-file
@@ -148,6 +153,8 @@
                    (ref kahua-custom 'ping-timeout-sec))
              (set! (ref (instance-of <kahua-config>) 'ping-interval-sec)
                    (ref kahua-custom 'ping-interval-sec))
+             (set! (ref (instance-of <kahua-config>) 'auto-restart)
+                   (ref kahua-custom 'auto-restart))
              ))
          (unless skip-check? (sanity-check (instance-of <kahua-config>)))
          )
@@ -196,5 +203,8 @@
 
 (define (kahua-userconf-file)
   (ref (kahua-config) 'userconf-file))
+
+(define (kahua-auto-restart)
+  (ref (kahua-config) 'auto-restart))
 
 (provide "kahua/config")

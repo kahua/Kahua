@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.18 2004/02/22 11:23:22 shiro Exp $
+;; $Id: server.scm,v 1.19 2004/02/29 15:29:38 ko1 Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -160,7 +160,7 @@
                 (html:head (html:title "Kahua error"))
                 (html:body (html:pre
                             (html-escape-string
-                             (kahua-error-string e)))))
+                             (kahua-error-string e #t)))))
                context))
           (if error-proc
             (lambda ()

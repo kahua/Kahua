@@ -1,3 +1,12 @@
+2004-03-01  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+        * src/kahua-spvr.in : support restarting the unexpected terminated
+        worker.
+        * src/kahua/config.scm : added "auto-restart" slot to <kahua-config>
+        to enable above support.
+        * cgi/kahua.cgi (compose-reply): changed default content-type as
+        "text/html; charset=euc-jp".	
+
 2004-02-29  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua/elem.scm: added functional tags extra-header: and

@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.15 2004/02/26 12:36:22 ko1 Exp $
+;; $Id: kahua.cgi.in,v 1.16 2004/02/29 15:29:37 ko1 Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -47,7 +47,10 @@
   (ces-convert value "*jp" (gauche-character-encoding)))
 
 (define (compose-reply header body)
-  (let ((status (assoc-ref header "x-kahua-status")))
+  (let ((status (assoc-ref header "x-kahua-status"))
+	(header (if (assoc-ref header "content-type") header
+		    (cons '("content-type" "text/html; charset=euc-jp")
+			  header))))
     (if (and status (equal? (car status) "SPVR-ERROR"))
 	(cgi-error-page (string-append "SPVR-ERROR: " (car body)) (cadr body))
 	(receive (state cont) (get-gsid-from-header header)
