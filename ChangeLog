@@ -1,5 +1,14 @@
 2003-12-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua-server.in : Let *.kahua be loaded in a separate module
+	  kahua-app-server, which imports kahua and kahua-server by default.
+	  This separation prevents accidental interference between kahua-server
+	  code and *.kahua, and also avoid issues about module "use" ordering
+	  (i.e. there was a case that the order of "use" of *.kahua wasn't
+	  really the order of imports, since some modules were already loaded
+	  in kahua-server code.  With this change, *.kahua has full control
+	  over the order of imports).
+
 	* src/kahua/html.scm (form/cont) : same change as a/cont, i.e.
 	  using PATH_INFO to pass session key instead of x-kahua-cgsid.
 

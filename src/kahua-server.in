@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.in,v 1.1 2003/12/11 05:39:11 nobsun Exp $
+;; $Id: kahua-server.in,v 1.2 2003/12/26 22:44:37 shiro Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -19,13 +19,20 @@
 ;; to reload the server code without restarting.
 ;;
 
-(use gauche.logger)
-(use gauche.net)
-(use gauche.selector)
-(use gauche.parseopt)
-(use gauche.parameter)
-(use gauche.collection)
-(use kahua)
+(define-module kahua-server
+  (use gauche.logger)
+  (use gauche.net)
+  (use gauche.selector)
+  (use gauche.parameter)
+  (use gauche.collection)
+  (use gauche.parseopt)
+  (use kahua)
+  (export primary-database-name
+          main-proc
+          initialize-main-proc
+          kahua-server-main)
+  )
+(select-module kahua-server)
 
 (define primary-database-name (make-parameter #f))
 
@@ -46,31 +53,9 @@
 (define (default-handler context)
    ((main-proc) context))
 
-
-(define (main args)
-  (let-args (cdr args) ((conf-file "c=s" #f)
-                        . mods)
-    (unless (pair? mods)
-      (error "usage: kahua-server [-c <conf>] <app-server> <args> ..."))
-    (kahua-init conf-file)
-    (load-kahua-module (car mods))
-    (let* ((worker-id (kahua-init-server 
-		       (car (string-split (sys-basename (car mods)) #\.))))
-           (sockbase  (kahua-sockbase))
-           (sockaddr  (worker-id->sockaddr worker-id sockbase))
-           (cleanup   (lambda ()
-                        (when (is-a? sockaddr <sockaddr-un>)
-                          (sys-unlink (sockaddr-name sockaddr))))))
-      (set-signal-handler! SIGINT  (lambda _ (cleanup) (exit 0)))
-      (set-signal-handler! SIGTERM (lambda _ (cleanup) (exit 0)))
-      (with-error-handler
-          (lambda (e)
-            (report-error e)
-            (cleanup)
-            70)
-        (lambda ()
-          (run-server worker-id sockaddr))))
-    ))
+(define-module kahua-app-server
+  (import kahua)
+  (import kahua-server))
 
 (define (load-kahua-module mod)
   (with-error-handler
@@ -79,7 +64,7 @@
         (print "ERROR loading module")
         (exit 0))
     (lambda ()
-      (eval `(load ,mod) (current-module)))))
+      (load mod :environment (find-module 'kahua-app-server)))))
 
 (define (run-server worker-id sockaddr)
   (let ((sock (make-server-socket sockaddr :reuse-addr? #t))
@@ -106,7 +91,39 @@
     (format #t "~a\n" worker-id)
     (selector-add! selector (socket-fd sock) accept-handler '(r))
     (do () (#f) (selector-select selector))
-    ))  
+    ))
+
+(define (kahua-server-main args)
+  (let-args (cdr args) ((conf-file "c=s" #f)
+                        . mods)
+    (unless (pair? mods)
+      (error "usage: kahua-server [-c <conf>] <app-server> <args> ..."))
+    (kahua-init conf-file)
+    (load-kahua-module (car mods))
+    (let* ((worker-id (kahua-init-server 
+		       (car (string-split (sys-basename (car mods)) #\.))))
+           (sockbase  (kahua-sockbase))
+           (sockaddr  (worker-id->sockaddr worker-id sockbase))
+           (cleanup   (lambda ()
+                        (when (is-a? sockaddr <sockaddr-un>)
+                          (sys-unlink (sockaddr-name sockaddr))))))
+      (set-signal-handler! SIGINT  (lambda _ (cleanup) (exit 0)))
+      (set-signal-handler! SIGTERM (lambda _ (cleanup) (exit 0)))
+      (with-error-handler
+          (lambda (e)
+            (report-error e)
+            (cleanup)
+            70)
+        (lambda ()
+          (run-server worker-id sockaddr))))
+    ))
+
+;; Main -----------------------------------------------------
+
+(select-module user)
+(import kahua-server)
+
+(define (main args) (kahua-server-main args))
 
 ;; Local variables:
 ;; mode: scheme
