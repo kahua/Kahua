@@ -1,3 +1,10 @@
+2004-01-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/session.scm :
+	(<session-cont>): added permanent? slot
+	(session-cont-register): set permanent? #t for permanent entries
+	(session-cont-sweep): avoid sweeping permanent entries.
+
 2004-01-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/user.scm (kahua-user-password-change): added.

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.5 2004/01/16 07:21:00 tahara Exp $
+;; $Id: session.scm,v 1.6 2004/01/25 23:26:29 shiro Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -72,6 +72,8 @@
   ((key               :init-keyword :key       ;; ID key string
                       :validator (lambda (o v) (x->string v)))
    (closure           :init-keyword :closure)  ;; closure
+   (permanent?        :init-keyword :permanent? ;; permanent id?
+                      :init-value #f)
    (timestamp         :init-keyword :timestamp
                       :init-form (sys-time))   ;; timestamp
    (key->session      :allocation :class
@@ -117,17 +119,18 @@
 ;;   removes old entry).  If CONT is not a procedure, returns #f.
 (define (session-cont-register cont . maybe-id)
   (and (procedure? cont)
-       (let ((entry (cont-closure->session cont)))
+       (let ((entry (cont-closure->session cont))
+             (given-id (get-optional maybe-id #f)))
          (if entry
            (if (or (null? maybe-id)
-                   (equal? (car maybe-id) (ref entry 'key)))
+                   (equal? given-id (ref entry 'key)))
              (ref entry 'key)
-             (replace-key entry (car maybe-id)))
+             (replace-key entry given-id))
            (ref (apply make <session-cont>
                        :closure cont
-                       (or (and-let* ((key (get-optional maybe-id #f)))
-                             `(:key ,key))
-                           '()))
+                       (if given-id
+                         `(:key ,given-id :permanent? #t)
+                         '()))
                 'key)))))
 
 ;; SESSION-CONT-GET id
@@ -155,7 +158,9 @@
     (map (lambda (tab)
            (sweep-hash-table
             (class-slot-ref <session-cont> tab)
-            (lambda (entry) (< (ref entry 'timestamp) cutoff))))
+            (lambda (entry)
+              (and (not (ref entry 'permanent?))
+                   (< (ref entry 'timestamp) cutoff)))))
          '(key->session closure->session))))
 
 ;;; state session table ---------------------------------------
@@ -203,9 +208,9 @@
   (let1 p (or (hash-table-get (state-sessions) id #f)
               (hash-table-get (state-sessions)
                               (session-state-register id)))
-        (session-state-refresh id)
-        (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
-        (cdr p)))
+    (session-state-refresh id)
+    (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
+    (cdr p)))
 
 ;; SESSION-STATE-DISCARD id
 ;;   Discards the session specified by ID.
