@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.20 2004/04/09 07:52:56 nobsun Exp $
+;; $Id: kahua.cgi.in,v 1.21 2004/05/17 04:32:45 nobsun Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -43,6 +43,14 @@
 ;; bridge name option, mainly to pass "~user" information
 (define *bridge-option* "")
 
+;; getting cgi meta-variables; first we try cgi-metavariables parameter,
+;; then use getenv for fallback.
+(define (get-meta name)
+  (or (and-let* ((mv (cgi-metavariables))
+                 (p  (assoc name mv)))
+        (cadr p))
+      (sys-getenv name)))
+
 (log-open "/tmp/t.log")
 
 (define (kcv value)
@@ -69,7 +77,7 @@
 	   (construct-cookie-string
 	    `(("x-kahua-sgsid" ,state
 	       :path ,(sys-dirname
-		       (or (sys-getenv "SCRIPT_NAME") "/"))))))
+		       (or (get-meta "SCRIPT_NAME") "/"))))))
 	  body))))
 
 ;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
@@ -82,7 +90,7 @@
 ;; retrieve PATH_INFO, with processing ~user component.
 ;; returns #f if there's no PATH_INFO.
 (define (get-path-info)
-  (and-let* ((p (sys-getenv "PATH_INFO"))
+  (and-let* ((p (get-meta "PATH_INFO"))
              (l (cdr (string-split p #\/))))
     (when (and (pair? l) (#/^~.+/ (car l)))
       (load-user-config (car l))
@@ -107,9 +115,9 @@
 ;; construct absolute uri for the server root.
 ;; note that we can only guess the protocol scheme.
 (define (server-uri)
-  (let ((scheme (if (sys-getenv "HTTPS") "https" "http"))
-        (name   (or (sys-getenv "SERVER_NAME") "localhost"))
-        (port   (or (x->integer (sys-getenv "SERVER_PORT")) 80)))
+  (let ((scheme (if (get-meta "HTTPS") "https" "http"))
+        (name   (or (get-meta "SERVER_NAME") "localhost"))
+        (port   (or (x->integer (get-meta "SERVER_PORT")) 80)))
     (format "~a://~a~a"
             scheme name
             (if (or (and (string=? scheme "http")  (= port 80))
@@ -124,10 +132,10 @@
       (dispatch-destination param)
     (log-format "~s ~s ~s" worker-id worker-type cont-gsid)
     (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
-           (remote-addr (sys-getenv "REMOTE_ADDR"))
+           (remote-addr (get-meta "REMOTE_ADDR"))
            (header     (list*
                         `("x-kahua-bridge"
-                          ,(string-append (sys-getenv "SCRIPT_NAME")
+                          ,(string-append (get-meta "SCRIPT_NAME")
                                           *bridge-option*))
                         `("x-kahua-server-uri" ,(server-uri))
                         (cond-list
@@ -177,7 +185,7 @@
 
 ;; publish html. provide ~user authentication.
 (define (publisher params)
-  (let* ((path-info (sys-getenv "PATH_INFO"))
+  (let* ((path-info (get-meta "PATH_INFO"))
 	 (p (cadr (string-split (if (or (not path-info) 
 					(string-null? path-info)) 
 				    "/" path-info) #\/))))
@@ -200,7 +208,7 @@
                 (construct-cookie-string
                  `(("kahua-passwd" ,(base64-encode-string passwd)
                     :path ,(sys-dirname
-                            (or (sys-getenv "SCRIPT_NAME") "/"))))))
+                            (or (get-meta "SCRIPT_NAME") "/"))))))
                (send-reply params))
              (unauthorized-form)
              ))

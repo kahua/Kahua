@@ -1,3 +1,8 @@
+2004-05-17  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in:
+	Hacked by Hisazumi san to enable to use as fastcgi.
+	
 2004-05-07  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* Version 0.2.5 released.
