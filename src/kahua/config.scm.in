@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm.in,v 1.2 2004/10/14 09:20:57 shiro Exp $
+;; $Id: config.scm.in,v 1.2.2.1 2004/10/16 05:43:34 shiro Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -32,6 +32,7 @@
 	  kahua-ping-timeout-sec
 	  kahua-ping-interval-sec
 	  kahua-auto-restart
+          kahua-version
           ))
 (select-module kahua.config)
 
@@ -205,6 +206,8 @@
 
 (define (kahua-auto-restart)
   (ref (kahua-config) 'auto-restart))
+
+(define (kahua-version) "##KAHUA_VERSION##")
 
 (provide "kahua/config")
 

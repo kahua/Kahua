@@ -28,6 +28,7 @@ INSTALL_TYPE           = @INSTALL_TYPE@
 SCM_INSTALL_DIR        = $(libdir)
 SCRIPT_INSTALL_DIR     = $(bindir)
 SOCKET_BASE_DIR        = $(prefix)/tmp/$(package)
+KAHUA_VERSION          = $(shell cat $(top_srcdir)/VERSION)
 
 MAKE_SH_SCRIPT   = $(GOSH) $(top_srcdir)/src/make-script.scm "$(GOSH)" "$(libdir)"
 
@@ -90,7 +91,12 @@ kahua-shell :
 
 kahua/config.scm: kahua/config.scm.in
 	test ! -f $@ || chmod +w $@
-	sed -e "s@##sysconfdir##@$(sysconfdir)@" -e "s@##localstatedir##@$(localstatedir)@" -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##package##@$(package)@" $@.in > $@
+	sed -e "s@##sysconfdir##@$(sysconfdir)@" \
+	    -e "s@##localstatedir##@$(localstatedir)@" \
+	    -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" \
+	    -e "s@##package##@$(package)@" \
+	    -e "s@##KAHUA_VERSION##@$(KAHUA_VERSION)@" \
+            $@.in > $@
 	chmod -w $@
 
 kahua/pdf/typeset.scm: kahua/pdf/typeset.scm.in

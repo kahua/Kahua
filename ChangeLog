@@ -1,3 +1,11 @@
+2004-10-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/config.scm.in : added kahua-version
+	* src/Makefile.in : ditto
+	* src/kahua-spvr.scm : added httpd support.  enabled by --httpd or -H
+	  option.  static document uri handling and certain header handling
+	  aren't working yet.
+
 2004-10-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/make-testconf.scm : a script to generate conf file for

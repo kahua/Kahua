@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.1.2.3 2004/10/15 06:25:50 shiro Exp $
+;; $Id: kahua-spvr.scm,v 1.1.2.4 2004/10/16 05:43:34 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -15,6 +15,7 @@
 ;; For now, we have only one worker server, so this is just an outline
 ;; of what we will ultimately do.
 
+(use gauche.charconv)
 (use gauche.net)
 (use gauche.process)
 (use gauche.logger)
@@ -26,10 +27,17 @@
 (use srfi-1)
 (use srfi-2)
 (use srfi-11)
+(use srfi-13)
 (use rfc.822)
+(use rfc.uri)
+(use rfc.cookie)
 (use file.util)
+(use text.tree)
+(use text.html-lite)
 (use util.queue)
 (use util.list)
+(use util.match)
+(use www.cgi)
 (use kahua.config)
 (use kahua.gsid)
 (use kahua.developer)
@@ -88,17 +96,21 @@
 ;;  contains a list of a error message string (for now).
 ;;
 
-;; Global structure -----------------------------------------------
+;;;=================================================================
+;;; Global structure
+;;;
 
 (define-class <kahua-spvr> ()
   ((sockbase   :init-form (kahua-sockbase))
    (workers    :init-form (make-queue) :getter workers-of)
    (selector   :init-form (make <selector>) :getter selector-of)
-   (keyserv    :init-value #f) ;; keyserver process
-   (gosh-path  :init-keyword :gosh-path) ;; absolute path of gosh, passed
-                                         ;; by wrapper script.
-   (lib-path   :init-keyword :lib-path)  ;; path where kahua library files
-                                         ;; are installed.
+   (keyserv    :init-value #f) ; keyserver process
+   (gosh-path  :init-keyword :gosh-path) ; Absolute path of gosh, passed
+                                         ; by wrapper script.
+   (lib-path   :init-keyword :lib-path)  ; Path where kahua library files
+                                         ; are installed.
+   (httpd-name :init-keyword :httpd-name ; when used as a standalone httpd,
+               :init-value #f)           ; this holds "server:port"
    ))
 
 (define-class <kahua-worker> ()
@@ -202,7 +214,9 @@
            wtype))
        (worker-types)))
 
-;;; utilities ------------------------------------------------------
+;;;=================================================================
+;;; Miscellaneous utilities
+;;;
 
 (define (send-message out header body)
   (write header out) (newline out)
@@ -232,7 +246,22 @@
         (log-format "[spvr] running ~a: pid ~a" (car cmd) (process-pid p))
         p))))
 
-;;; Session key server ---------------------------------------------
+;; canonicalize string passed to --httpd option
+(define (canonicalize-httpd-option value)
+  (and value
+       (rxmatch-case value
+         (#/^\d+$/  (#f)  #`"localhost:,value")
+         (#/^[\w._-]+:\d+$/ (#f) value)
+         (else (error "Bad value for --httpd option: must be a port number or servername:port, but got:" value)))))
+
+(define (httpd-port spvr)
+  (and-let* ((httpd-name (ref spvr 'httpd-name))
+             (m (#/:(\d+)$/ httpd-name)))
+    (x->integer (m 1))))
+
+;;;=================================================================
+;;; Keyserv management
+;;;
 
 (define (start-keyserv spvr)
   (let* ((cmd `(,(ref spvr 'gosh-path)
@@ -257,7 +286,9 @@
       (process-send-signal (ref serv 'process) SIGHUP)
       (process-wait (ref serv 'process)))))
 
-;;; Worker management ----------------------------------------------
+;;;=================================================================
+;;; Worker management
+;;;
 
 ;; start worker specified by worker-class
 (define-method run-worker ((self <kahua-spvr>) worker-type)
@@ -427,7 +458,9 @@
 (define-method find-workers ((self <kahua-spvr>) (wcount <integer>))
   (cond ((find-worker self wcount) => list) (else '())))
 
-;;; Worker implementation --------------------------------------------
+;;;=================================================================
+;;; <kahua-worker> implementation
+;;;
 
 (define-method initialize ((self <kahua-worker>) initargs)
   (next-method)
@@ -459,50 +492,34 @@
       (unexpected-end self))
   (close-input-port (process-output (worker-process-of self))))
 
-(define-method dispatch-to-worker ((self <kahua-worker>)
-                                   reply-sock
-				   header body)
+(define-method dispatch-to-worker ((self <kahua-worker>) header body cont)
   (let* ((spvr (ref self 'spvr))
+         (selector (selector-of spvr))
          (sock (make-client-socket
                 (worker-id->sockaddr (worker-id-of self)
                                      (ref spvr 'sockbase))))
          (out  (socket-output-port sock)))
-    (define (send-error-message reply-sock e)
-      (with-error-handler
-       (lambda (e)
-	 (selector-delete! (selector-of spvr) (socket-fd sock) handle #f)
-	 (socket-close sock)
-	 (socket-close reply-sock)
-	 (log-format "reply error:\n~a" (kahua-error-string e #t))
-	 (report-error e))
-       (lambda ()
-	 (send-message (socket-output-port reply-sock)
-		       '(("x-kahua-status" "SPVR-ERROR"))
-		       (list (ref e 'message)
-			     (kahua-error-string e #t)))
-	 (selector-delete! (selector-of spvr) (socket-fd sock) handle #f)
-	 (socket-close sock)
-	 (socket-close reply-sock))))
+
     (define (handle fd flags)
       (with-error-handler
-       (lambda (e)
-	 (send-error-message reply-sock e)
-	 (socket-close reply-sock))
-       (lambda ()
-	 (receive (header body) (receive-message (socket-input-port sock))
-	   (send-message (socket-output-port reply-sock) header body)
-	   (socket-close reply-sock)
-	   (selector-delete! (selector-of spvr) (socket-fd sock) handle #f)
-	   (socket-close sock)))))
+          (lambda (e)
+            (selector-delete! selector (socket-fd sock) handle #f)
+            (socket-close sock)
+            (cont '(("x-kahua-status" "SPVR-ERROR"))
+                  (list (ref e 'message) (kahua-error-string e #t))))
+        (lambda ()
+          (receive (header body) (receive-message (socket-input-port sock))
+            (selector-delete! selector (socket-fd sock) handle #f)
+            (socket-close sock)
+            (cont header body)))))
 
     (send-message out header body)
-    (selector-add! (selector-of spvr)
-                   (socket-fd sock)
-                   handle
-                   '(r)))
+    (selector-add! selector (socket-fd sock) handle '(r)))
   )
 
-;;; supervisor commands ----------------------------------------
+;;;=================================================================
+;;; Supervisor commands
+;;;
 
 (define (handle-spvr-command body)
   (define (worker-info w)
@@ -557,89 +574,202 @@
     (else
      (error "unknown spvr command:" body))))
 
-;;; server loop ------------------------------------------------
+;;;=================================================================
+;;; Server Loop
+;;;
+
+;;; Common dispatching routine
+(define-method handle-common ((self <kahua-spvr>) header body cont)
+  (let*-values (((stat-gsid cont-gsid) (get-gsid-from-header header))
+                ((stat-h stat-b) (decompose-gsid stat-gsid))
+                ((cont-h cont-b) (decompose-gsid cont-gsid))
+                ((wtype) (get-worker-type header)))
+    (log-format "[spvr] header: ~s" header)
+    (log-format "[spvr] stat-h: ~s" stat-h)
+    (log-format "[spvr] cont-h: ~s" cont-h)
+    (cond
+     ((equal? wtype 'spvr)
+      ;; this is a supervisor command.
+      (cont '(("x-kahua-status" "OK")) (handle-spvr-command body)))
+     (cont-h
+      ;; we know which worker handles the request
+      (let ((w (find-worker self cont-h)))
+        (unless w (error "stale session key" cont-gsid))
+        (dispatch-to-worker w header body cont)))
+     (else
+      ;; this is a session-initiating request.
+      (let ((w (find-worker self wtype)))
+        (unless w (error "don't have worker for" wtype))
+        (dispatch-to-worker w header body cont))))
+    ))
 
 ;;; "Kahua request" handler.  Client is kahua.cgi or kahua-admin.
 (define-method handle-kahua ((self <kahua-spvr>) client-sock)
-  (with-error-handler
-   (lambda (e)
-     (let ((error-log (kahua-error-string e #t)))
-       (send-message (socket-output-port client-sock)
-		     '(("x-kahua-status" "SPVR-ERROR"))
-		     (list (ref e 'message) error-log))))
-   (lambda ()
-     (let*-values (((in) (socket-input-port client-sock))
-		   ((header body) (receive-message in))
-		   ((stat-gsid cont-gsid) (get-gsid-from-header header))
-		   ((stat-h stat-b) (decompose-gsid stat-gsid))
-		   ((cont-h cont-b) (decompose-gsid cont-gsid))
-		   ((wtype) (get-worker-type header)))
-		  (log-format "[spvr] header: ~s" header)
-		  (cond
-		   ((equal? wtype 'spvr)
-		    ;; this is a supervisor command.
-		    (send-message (socket-output-port client-sock)
-				  '(("x-kahua-status" "OK"))
-				  (handle-spvr-command body)))
-		   (cont-h
-		    ;; we know which worker handles the request
-		    (let ((w (find-worker self cont-h)))
-		      (unless w (error "stale session key" cont-gsid))
-		      (dispatch-to-worker w client-sock header body)))
-		   (else
-		    ;; this is a session-initiating request.
-		    (let ((w (find-worker self wtype)))
-		      (unless w (error "don't have worker for" wtype))
-		      (dispatch-to-worker w client-sock header body))))
-		  ))
-   ))
+  (guard (e
+          (#t (let ((error-log (kahua-error-string e #t)))
+                (send-message (socket-output-port client-sock)
+                              '(("x-kahua-status" "SPVR-ERROR"))
+                              (list (ref e 'message) error-log)))))
+    (receive (header body) (receive-message (socket-input-port client-sock))
+      (handle-common self header body
+                     (lambda (header body)
+                       (guard (e
+                               (#t (log-format "[spvr]: client closed connection")))
+                         (send-message (socket-output-port client-sock)
+                                       header body)))))
+    ))
 
 ;;; HTTP request handler.  This is provided for testing convenience,
-;;; and not intended to turn kahua-spvr full-featured httpd.
+;;; and not intended to turn kahua-spvr a full-featured httpd.
 ;;; (using Apache mod_proxy may be a feasible solution, though)
+;;;
+;;; Cf. ftp://ftp.isi.edu/in-notes/rfc2616.txt
+
 (define-method handle-http ((self <kahua-spvr>) client-sock)
 
   (let ((in  (socket-input-port client-sock))
-        (out (socket-output-port client-sock)))
+        (out (socket-output-port client-sock))
+        (ignore-paths '("/favicon.ico")))
 
     (define (receive-http-request)
       (let1 start-line (read-line in)
-        (if (eof-object? first)
+        (if (eof-object? start-line)
           (bad-request "bad request")
-          (match (string-split start-line #[\s])
-            ((method request-uri (? #/HTTP\/1.[01]/ version))
-             (bad-request "Bunga gunba"))
-            (else
-             (bad-request "Bad bad"))))))
+          (begin
+            (log-format "[spvr] http> ~a" start-line)
+            (match (string-split start-line #[\s])
+              ((method request-uri (? #/HTTP\/1.[01]/ version))
+               (if (member method '("GET" "HEAD" "POST"))
+                 (process-body (rfc822-header->list in) method request-uri)
+                 (not-implemented method)))
+              (else
+               (bad-request "bad request")))))))
+
+    (define (process-body headers method request-uri)
+      (if (and-let* ((expect (rfc822-header-ref headers "expect")))
+            (string-ci=? expect "100-continue"))
+        (display "HTTP/1.1 100 Continue\r\n" out)
+        (flush out))
+      (receive (scheme user host port path query fragment)
+          (uri-parse request-uri)
+        ;; NB: for now, ignore scheme, user, host and port.
+        (if (member path ignore-paths)
+          (not-found path)
+          (let* ((path-info (get-path-info path))
+                 (query (or (if (equal? method "POST")
+                              (read-post-query headers)
+                              query)
+                            ""))
+                 (params (parse-query headers query))
+                 (cont-gsid (or (cgi-get-parameter "x-kahua-cgsid" params)
+                                (if (and path-info (pair? (cdr path-info)))
+                                  (cadr path-info)
+                                  #f)))
+                 (worker-type (and path-info (car path-info)))
+                 (worker-id   (and cont-gsid (gsid->worker-id cont-gsid)))
+                 (state-gsid (cgi-get-parameter "x-kahua-sgsid" params))
+                 (header (list*
+                          '("x-kahua-bridge" "")
+                          `("x-kahua-server-uri" ,#`",(ref self 'httpd-name)/")
+                          (cond-list
+                           (worker-type `("x-kahua-worker" ,worker-type))
+                           (state-gsid  `("x-kahua-sgsid" ,state-gsid))
+                           (cont-gsid   `("x-kahua-cgsid" ,cont-gsid))
+                           (path-info   `("x-kahua-path-info" ,path-info))
+                           )))
+                 )
+            (handle-common self header params reply-to-client)))))
+
+    (define (get-path-info path)
+      (let1 l (cdr (string-split (uri-decode-string path) #[/]))
+        (and (pair? l) (not (equal? (car l) ""))
+             (filter-map (lambda (p) (if (equal? p "") #f p)) l))))
+
+    (define (reply-to-client header body)
+      (let ((status (assoc-ref header "x-kahua-status"))
+            (header (if (assoc-ref header "content-type")
+                      header
+                      `(("content-type"
+                         ,(format "text/html; charset=~a"
+                                  (gauche-character-encoding)))
+                        ,@header))))
+        (if (and status (equal? (car status) "SPVR-ERROR"))
+          (internal-error (cadr body)) ;;NB: need more comprehensive error page
+          (receive (state cont) (get-gsid-from-header header)
+            (let ((headers `(,@(map (cut list "Set-cookie" <>)
+                                    (construct-cookie-string
+                                     `(("x-kahua-sgsid" ,state :path "/"))))
+                             ,@(filter (lambda (hdr)
+                                         (not (#/^x-kahua-/ (car hdr))))
+                                       header))))
+              (http-response "200 OK" headers body))))))
+
+    (define (read-post-query headers)
+      (and-let* ((len  (rfc822-header-ref headers "content-length"))
+                 (nlen (x->integer len))
+                 ((positive? nlen))
+                 (body (read-block nlen in))
+                 ((not (eof-object? body))))
+        (ces-convert body "*jp")))
+
+    (define (parse-query headers query)
+      (let ((cookie (rfc822-header-ref headers "cookie")))
+        (parameterize ((cgi-metavariables (cond-list
+                                           (cookie `("HTTP_COOKIE" ,cookie)))))
+          (cgi-parse-parameters :query-string query :merge-cookies #t))))
+
+    (define (http-response status headers body)
+      (log-format "[spvr] http< ~a" status)
+      (let* ((body (if (pair? body) (tree->string body) body))
+             (len  (string-size body)))
+        (with-output-to-port out
+          (lambda ()
+            (print "HTTP/1.1 " status "\r")
+            (dolist (h headers)
+              (print (car h) ": " (cadr h) "\r"))
+            (print "Server: kahua-spvr\r")
+            (print "Content-length: " len "\r")
+            (print "\r")
+            (display body)
+            (flush)))
+        (socket-shutdown client-sock)
+        (socket-close client-sock)))
+
+    (define (http-diag-response status body)
+      (http-response status
+                     '(("Content-type" "text/html"))
+                     `(,(html-doctype)
+                       ,(html:html
+                         (html:head (html:title status))
+                         (html:body (html:h1 status) body
+                                    (html:hr)
+                                    (html:i "Kahua-spvr Version "
+                                            (kahua-version)
+                                            " running at "
+                                            (ref self 'httpd-name)))))))
 
     (define (bad-request msg)
-      (display "HTTP/1.1 400 Bad Request\r\n" out)
-      (display "Content-type: text/html\r\n" out)
-      (display #`"Content-length: ,(+ (string-size msg) 2)\r\n" out)
-      (display "\r\n" out)
-      (display msg out)
-      (display "\r\n" out))
-      
-    (guard (exc
-            (else
-             (let ((out (socket-output-port client-sock)))
-               (display *http-int-error-response* out)
-               (flush out))))
-      (receive-htt-request)))
-  )
+      (http-diag-response "400 Bad Request"
+                          (html:p (html-escape-string msg))))
 
-(define *http-int-error-response*
-  (let ((body (string-append
-               "<html><head><title>500 Internal Server Error</title>\n"
-               "</head><body>\n"
-               "<h1>Kahua-spvr internal error</h1>\n"
-               "</body></html>\n")))
-    (string-append
-     "HTTP/1.1 500 Internal Server Error\r\n"
-     "Content-type: text/html\r\n"
-     #`"Content-length: ,(string-size body)\r\n"
-     "\r\n"
-     body)))
+    (define (not-implemented msg)
+      (http-diag-response "501 Not Implemented"
+                          (html:p "The requested method isn't supported: "
+                                  (html-escape-string msg))))
+
+    (define (not-found uri)
+      (http-diag-response "404 Not Found"
+                          (html:p "The requested URL "
+                                  (html:tt (html-escape-string uri))
+                                  " was not found on this server.")))
+
+    (define (internal-error msg)
+      (http-diag-response "500 Internal Server Error"
+                          (html:pre (html-escape-string msg))))
+
+    (guard (exc (#t (internal-error (kahua-error-string exc #t))))
+      (receive-http-request))
+    ))
 
 ;;
 ;; Actual server loop
@@ -649,11 +779,18 @@
                        (make <listener>
                          :prompter (lambda () (display "kahua> ")))))
         )
-    (selector-add! (selector-of spvr)
-                   (socket-fd kahua-sock)
-                   (lambda (fd flags)
-                     (handle-kahua spvr (socket-accept kahua-sock)))
-                   '(r))
+    (when kahua-sock
+      (selector-add! (selector-of spvr)
+                     (socket-fd kahua-sock)
+                     (lambda (fd flags)
+                       (handle-kahua spvr (socket-accept kahua-sock)))
+                     '(r)))
+    (when http-sock
+      (selector-add! (selector-of spvr)
+                     (socket-fd http-sock)
+                     (lambda (fd flags)
+                       (handle-http spvr (socket-accept http-sock)))
+                     '(r)))
     (when listener
       (let1 listener-handler (listener-read-handler listener)
         (set! (port-buffering (current-input-port)) :none)
@@ -668,7 +805,10 @@
       (check-workers spvr))
     ))
 
-;;; main ---------------------------------------------------------
+;;;=================================================================
+;;; Main
+;;;
+
 (define (main args)
   (let-args (cdr args)
       ((conf-file "c=s")
@@ -677,7 +817,7 @@
        (logfile   "l=s")  ;; overrides conf file settings
        (user      "user=s")
        (gosh      "gosh=s")  ;; wrapper script adds this.
-       (http-port "standalone-port=i") ;; standalone httpd mode
+       (httpd     "H|httpd=s") ;; standalone httpd mode
        )
     (let ((lib-path (car *load-path*))) ; kahua library path.  it is
                                         ; always the first one, since the
@@ -690,16 +830,20 @@
             (logfile (log-open logfile))
             (else    (log-open (kahua-logpath "kahua-spvr.log"))))
       (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
-             (spvr     (make <kahua-spvr> :gosh-path gosh :lib-path lib-path))
+             (spvr     (make <kahua-spvr>
+                         :gosh-path gosh
+                         :lib-path lib-path
+                         :httpd-name (canonicalize-httpd-option httpd)))
              (kahua-sock (make-server-socket sockaddr :reuse-addr? #t))
-             (http-sock (and http-port
-                             (make-server-socket 'inet http-port
+             (http-sock (and httpd
+                             (make-server-socket 'inet (httpd-port spvr)
                                                  :reuse-addr? #t)))
              (cleanup  (lambda ()
                          (when (is-a? sockaddr <sockaddr-un>)
                            (sys-unlink (sockaddr-name sockaddr)))
                          (nuke-all-workers spvr)
                          (stop-keyserv spvr)
+                         (when http-sock (socket-close http-sock))
                          (log-format "[spvr] exitting")))
              )
         (set! *spvr* spvr)
