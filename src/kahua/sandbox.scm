@@ -5,7 +5,7 @@
 ;;
 ;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.4 2004/03/02 06:47:03 tahara Exp $
+;; $Id: sandbox.scm,v 1.5 2004/03/02 07:14:07 tahara Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)
@@ -14,7 +14,7 @@
   (use srfi-14)
   (use kahua.plugin)
   (export make-sandbox-module
-          export-module export-module-except
+          export-module enable-module-except
           disable-bindings)
   )
 
@@ -30,7 +30,7 @@
        (export-module module . names)))
     ))
 
-(define-macro (export-module-except module . names)
+(define-macro (enable-module-except module . names)
   (define (fold-bindings module proc knil)
     (let* ((mod     (find-module module))
            (exports (module-exports mod)))

@@ -2,7 +2,8 @@
 
 	* src/kahua/sandbox.scm (make-sandbox-module):
 	fixed a module dependency. now use kahua.plugin.
-	disabled exit, sys-exit, sys-abort bindings in sandbox module. 
+	disabled exit, sys-exit, sys-abort bindings in sandbox module.
+	renamed wrong name export-module-except to enable-module-except.
 
 2004-03-01  Yusei Tahara  <tahara@timedia.co.jp>
 
