@@ -5,7 +5,7 @@
 ;;
 ;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.2 2004/02/25 11:15:49 tahara Exp $
+;; $Id: sandbox.scm,v 1.3 2004/02/27 12:53:52 tahara Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)
@@ -80,6 +80,12 @@
         (use kahua.server)
         (use kahua.developer)
         (use kahua.elem)
+
+        ;; for class redefinition.
+        ;; require is done at compile time but also clear
+        ;; to need this module.
+        ;; TODO: but why does autoload in sandbox module??
+        (require "gauche/redefutil")
 
         (export-module kahua.plugin load-plugin use-plugin)
 

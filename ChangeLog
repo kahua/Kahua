@@ -1,3 +1,8 @@
+2004-02-27  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/sandbox.scm: requires gauche.redefutil module before
+	class redefinition.
+
 2004-02-27  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* src/kahua-spvr.in : fixed bug fixed about ping(error handling).
