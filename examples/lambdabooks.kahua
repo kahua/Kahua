@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.4 2003/12/21 15:25:44 nobsun Exp $
+;; $Id: lambdabooks.kahua,v 1.5 2003/12/22 00:53:47 nobsun Exp $
 
 (use file.util)
 (use util.list)
@@ -41,7 +41,7 @@
   `(img (@ (src ,(imgpath "separator.jpg")) (alt "[separator]")
            (width 480) (height 4))))
 
-(define (standard-frame context contents)
+(define (standard-frame contents context)
   `(html
     (head (title "Lambda books"))
     (body (@ (style "background-color: #ffffff"))
@@ -50,21 +50,21 @@
           ,@(standard-footer context))))
 
 (define (standard-frame-cont nodes context)
-  (interp-html (standard-frame context nodes)
+  (interp-html (standard-frame nodes context)
                context
                (lambda (stree context) stree)))
 
-(define (standard-page context contents)
-  (standard-frame context
-                  `((table (tr (td (@ (valign "top"))
+(define (standard-page contents context)
+  (standard-frame `((table (tr (td (@ (valign "top"))
                                    ,@(standard-menu context))
                                (td (@ (valign "top"))
                                    ,@(if (null? contents)
                                        (default-contents)
-                                       contents)))))))
+                                       contents)))))
+		  context))
 
 (define (standard-page-cont nodes context)
-  (interp-html (standard-page context nodes)
+  (interp-html (standard-page nodes context)
                context
                (lambda (stree context) stree)))
 
@@ -136,7 +136,7 @@
 
 (initialize-main-proc
  (lambda (context)
-   (interp-html (standard-page context '())
+   (interp-html (standard-page '() context)
                 context
                 (lambda (stree context) stree))))
 
