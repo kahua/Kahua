@@ -2,7 +2,7 @@
 ;; this test isn't for modules, but for actual scripts.
 ;; kahua-shell のテスト
 
-;; $Id: shell.scm,v 1.2 2004/04/19 02:58:16 nobsun Exp $
+;; $Id: shell.scm,v 1.3 2004/04/19 03:33:37 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -80,7 +80,8 @@
          (set! *spvr* p)
 	 (sys-sleep 3)
 	 (and (file-exists? "_tmp/kahua")
-	      (eq? (file-type "_tmp/kahua") 'socket))))
+	      (or (eq? (file-type "_tmp/kahua") 'socket)
+                  (eq? (file-type "_tmp/kahua") 'fifo)))))
 
 ;; kahua-shell を起動する。
 (test* "start shell" "Welcome to Kahua."

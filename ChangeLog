@@ -1,5 +1,12 @@
 2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* test/admin.scm.in, shell.scm.in,
+	  test/spvr.scm.in, test/usermode.scm.in:
+	modified socket check rootine (because there are systems
+	return 'fifo (instead of 'socket) for unix domain socket).
+	
+2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
+
 	* test/shell.scm.in, test/usermode.scm.in:
 	use 'env -i' instead of 'env -u' (because BSD's env does not support
 	-u option).

@@ -1,6 +1,6 @@
 ;; test supervisor scripts.
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: spvr.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: spvr.scm,v 1.2 2004/04/19 03:33:37 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -78,7 +78,8 @@
          (set! *spvr* p)
          (sys-sleep 2) ;; give the spvr time to set up...
          (and (file-exists? "_tmp/kahua")
-              (eq? (file-type "_tmp/kahua") 'socket))))
+	      (or (eq? (file-type "_tmp/kahua") 'socket)
+                  (eq? (file-type "_tmp/kahua") 'fifo)))))
 
 (test* "listener" #t
        (let* ((out (process-input *spvr*))

@@ -2,7 +2,7 @@
 ;; this test isn't for modules, but for actual scripts.
 ;; kahua-admin テスト
 
-;; $Id: admin.scm,v 1.1 2004/04/07 09:55:32 nobsun Exp $
+;; $Id: admin.scm,v 1.2 2004/04/19 03:33:37 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -78,7 +78,8 @@
 			     "-c" *config*)))
 	 (sys-sleep 3)
 	 (and (file-exists? "_tmp/kahua")
-	      (eq? (file-type "_tmp/kahua") 'socket))))
+	      (or (eq? (file-type "_tmp/kahua") 'socket)
+                  (eq? (file-type "_tmp/kahua") 'fifo)))))
 
 ;; kahua-admin を起動する。
 (test* "start admin" 'spvr>

@@ -1,7 +1,7 @@
 ;; test user exclusive mode.
 ;; ユーザ専用モードのテスト
 
-;; $Id: usermode.scm,v 1.2 2004/04/19 02:58:16 nobsun Exp $
+;; $Id: usermode.scm,v 1.3 2004/04/19 03:33:37 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -100,7 +100,8 @@
 			     "-c" *config* "-user" "gandalf")))
 	 (sys-sleep 3)
 	 (and (file-exists? "_tmp/user/gandalf/kahua")
-	      (eq? (file-type "_tmp/user/gandalf/kahua") 'socket))))
+	      (or (eq? (file-type "_tmp/user/gandalf/kahua") 'socket)
+	          (eq? (file-type "_tmp/user/gandalf/kahua") 'fifo)))))
 
 ;; kahua-admin をユーザ専用モードで起動する。
 ;; -user オプション付きで起動することを確認する。
