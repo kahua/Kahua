@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.11 2004/01/23 07:13:02 shiro Exp $
+;; $Id: server.scm,v 1.12 2004/01/23 10:30:56 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -500,7 +500,7 @@
 ;;
 ;; a/cont element - embeds continuation within a link node.
 ;;
-;; `(a/cont (@@ (cont ,closure [arg ...])) contents)
+;; `(a/cont (@@ (cont ,closure [arg ...]) (fragment ,id)) contents)
 ;;
 ;;  With arg ..., you can pass parameters to the continuation.
 ;;  Each arg should either be:
@@ -513,6 +513,10 @@
 ;;
 ;;  Example: (a/cont (@@ (cont ,closure show time (id 40))) contents)
 ;;   => <a href='kahua.cgi/app-type/closure/show/time?id=40'>contents</a>
+;;
+;;  If (fragment <id>) is given, <id> is used as a fragment ID of
+;;  the generated URL.  <id> isn't passed to the continuation closure;
+;;  it is used by the client browser to jump to the specified fragment.
 
 (define-element a/cont (attrs auxs contents context cont)
 
@@ -535,9 +539,12 @@
   
   (let* ((clause (assq-ref auxs 'cont))
          (id     (if clause (session-cont-register (car clause)) ""))
-         (argstr (if clause (build-argstr (cdr clause)) "")))
+         (argstr (if clause (build-argstr (cdr clause)) ""))
+         (fragment (cond ((assq-ref auxs 'fragment)
+                          => (lambda (p) #`"#,(uri-encode-string (car p))"))
+                         (else ""))))
     (cont
-     `((a (@ (href ,(kahua-self-uri (string-append id argstr))))
+     `((a (@ (href ,(kahua-self-uri (string-append id argstr fragment))))
           ,@contents))
      context)))
 

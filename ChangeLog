@@ -1,3 +1,8 @@
+2004-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (a/cont): allow 'fragment' parameter to aux
+	list, to specify fragment id of generated uri.
+
 2004-01-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/server.scm (kahua-default-handler): process error-proc's
