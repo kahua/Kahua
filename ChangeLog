@@ -1,3 +1,8 @@
+2004-02-03  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/server.scm : replaced sxml:string->xml with 
+	sxml:string->html
+	
 2004-02-02  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* src/kahua-admin, test/admin.scm : added "adduser", "deluser", "lsuser" commands for the developer account management.
