@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-shell.in,v 1.4 2004/02/18 22:35:22 shiro Exp $
+;; $Id: kahua-shell.in,v 1.5 2004/02/22 12:06:31 tahara Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -106,7 +106,7 @@
            ((memq expr '(disconnect bye)) select-worker-processor)
            (else
             ;; NB: the first two elts of reply is error-output and std-output
-            (let1 reply (send-command wid expr)
+            (let1 reply (send-command wid `(eval ',expr kahua-app-server))
               (display (car reply)) (display (cadr reply))
               (for-each (lambda (r) (display r) (newline)) (cddr reply))
               worker-processor))
