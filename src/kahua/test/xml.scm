@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: xml.scm,v 1.2 2003/12/19 12:18:52 shiro Exp $
+;; $Id: xml.scm,v 1.3 2003/12/19 23:14:03 shiro Exp $
 
 ;; This module provides the means of test the result of HTML
 ;; generating code, such as CGI programs.   The output of
@@ -242,7 +242,9 @@
   (use util.combinations)
   (use text.tree)
   (use sxml.ssax)
-  (export test-xml-match? test-sxml-match?))
+  (use sxml.sxpath)
+  (export test-xml-match? test-sxml-match?
+          test-xml-select-matcher test-sxml-select-matcher))
 (select-module kahua.test.xml)
 
 (define (pattern-var? obj)
@@ -352,5 +354,16 @@
          (cdr (call-with-input-string (tree->string input)
                 (cut ssax:xml->sxml <> '())))
          opts))
+
+(define (test-sxml-select-matcher path . maybe-extra-check)
+  (let ((selector (sxpath path)))
+    (lambda (pattern input)
+      (apply match-input pattern (selector input) maybe-extra-check))))
+
+(define (test-xml-select-matcher path . maybe-extra-check)
+  (let ((matcher (apply test-sxml-select-matcher path maybe-extra-check)))
+    (lambda (pattern input)
+      (matcher pattern (cdr (call-with-input-string (tree->string input)
+                              (cut ssax:xml->sxml <> '())))))))
 
 (provide "kahua/test/xml")

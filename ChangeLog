@@ -3,6 +3,8 @@
 	* src/kahua/test/xml.scm
 	(match-pattern) : treat attribute node (@ ...) specially; in it,
 	patterns match any permutations of the input.
+	(test-sxml-select-matcher, test-xml-select-matcher) : added
+	higher-order test function parameterized by sxpath selection rule.
 
 	* test/test-xml.scm : added tests for the above change.
 
