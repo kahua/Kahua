@@ -3,19 +3,33 @@
 # The destination should be specified by --with-cgidir argument of configure
 # script.
 #
-# $Id: Makefile.in,v 1.2 2004/01/13 08:55:56 shiro Exp $
+# $Id: Makefile.in,v 1.3 2004/03/26 10:39:49 nobsun Exp $
 #
 
-SHELL       = @SHELL@
-prefix      = @prefix@
-exec_prefix = @exec_prefix@
-bindir      = @bindir@
-libdir      = @libdir@
+package	          = kahua
+SHELL             = @SHELL@
+prefix            = @prefix@
+exec_prefix       = @exec_prefix@
+bindir            = @bindir@/$(package)
+sbindir           = @sbindir@/$(package)
+libexecdir	  = @libexecdir@/$(package)
+datadir		  = @datadir@/$(package)
+sysconfdir        = @sysconfdir@/$(package)
+sharedstatedir    = @sharedstatedir@/$(package)
+localstatedir     = @localstatedir@/$(package)
+libdir            = @libdir@/$(package)
+includedir        = @includedir@/$(package)
+oldincludedir     = @oldincludedir@/$(package)
+infodir           = @infodir@/$(package)
+mandir            = @mandir@/$(package)
+
 srcdir      = @srcdir@
 VPATH       = $(srcdir)
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 KAHUA_CGIDIR = @KAHUA_CGIDIR@
+
+SOCKET_BASE_DIR = $(prefix)/tmp/$(package)
 
 DESTDIR  =
 
@@ -32,7 +46,7 @@ CONFIG_GENERATED = Makefile
 .SUFFIXES: .in
 
 .in:
-	$(top_srcdir)/src/fix-shebang.sh "$(GOSH)" $@
+	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(SOCKET_BASE_DIR)" $@
 
 all: $(SCRIPTS)
 
