@@ -1,5 +1,10 @@
 2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* Version 0.2.3.1 released
+	Fix bug in test/Makefile.in
+
+2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
+
 	* Version 0.2.3 released
 	Several modifications in testing part.
 
