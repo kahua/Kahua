@@ -21,12 +21,12 @@ INSTALL = ../src/kahua-install
 # specify -c ../kahua.conf etc. to give an alternative conf file
 KAHUACONFIG = 
 
-SCRIPTFILES = lambdabooks.kahua           \
-              lambdabooks/lister.kahua    \
-              lambdabooks/login.kahua     \
-              lambdabooks/book.kahua      \
-              lambdabooks/review.kahua    \
-              lambdabooks/partner.kahua   \
+SCRIPTFILES = lambdabooks/lambdabooks.kahua \
+              lambdabooks/lister.kahua      \
+              lambdabooks/login.kahua       \
+              lambdabooks/book.kahua        \
+              lambdabooks/review.kahua      \
+              lambdabooks/partner.kahua     \
               lambdabooks/useradmin.kahua
 
 STATICFILES = lambdabooks/images/lambda-books-logo.png \
