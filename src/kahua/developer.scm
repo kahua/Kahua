@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: developer.scm,v 1.5 2004/02/29 04:13:15 tahara Exp $
+;; $Id: developer.scm,v 1.6 2004/02/29 05:01:28 tahara Exp $
 
 
 (define-module kahua.developer
@@ -35,7 +35,7 @@
 
 (define (developer-roles x) (caddr x))
 
-(define (developer-password-set! x pw) (set-cdr! x pw))
+(define (developer-password-set! x pw) (set-car! (cdr x) pw))
 
 (define (developer-exists? name)
   (any (lambda (x) (equal? name (developer-name x)))
@@ -136,12 +136,19 @@
         (equal? pw (developer-password developer))
         #f)))
 
-(define (kahua-change-developer-password name old-password new-password)
+(define (kahua-change-developer-password name new-password)
   (load-developers)
-  (if (kahua-check-developer name old-password)
-      (let ((developer (find-developer name)))
-        (developer-password-set! developer new-password) #t)
-      (error "name and/or password may be incorrect" name)))
+  (let ((developer (find-developer name)))
+    (if developer
+      (begin
+        (if (valid-password? new-password)
+          (begin
+            (developer-password-set! developer (gen-password new-password))
+            (save-conf)
+            #t)
+          (error "invalid password" new-password))
+        )
+      (error "the developer does not exists" name))))
 
 (define (kahua-list-developer)
   (load-developers)
