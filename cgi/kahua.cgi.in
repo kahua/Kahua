@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.11 2004/01/21 01:41:05 shiro Exp $
+;; $Id: kahua.cgi.in,v 1.12 2004/01/21 05:48:34 shiro Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -58,18 +58,6 @@
         extra-headers)
        body))))
 
-;; retrieve PATH_INFO, with processing ~user component.
-;; returns #f if there's no PATH_INFO.
-(define (get-path-info)
-  (and-let* ((p (sys-getenv "PATH_INFO"))
-             (l (cdr (string-split p #\/))))
-    (when (and (pair? l) (#/^~.+/ (car l)))
-      (load-user-config (car l))
-      (set! l (cdr l)))
-    (and (pair? l)
-         (not (equal? (car l) ""))
-         (map (lambda (p) (if (equal? p "") #f p)) l))))
-
 ;; load user-specific config file when PATH_INFO has ~user component.
 (define (load-user-config user-dir)
         (let1 conf (string-append (expand-path user-dir)
@@ -81,11 +69,20 @@
                (set! *sockbase* (ref (kahua-config) 'sockbase)))
             (error "no user kahua.conf"))))
 
+;; retrieve PATH_INFO, with processing ~user component.
+;; returns #f if there's no PATH_INFO.
+(define (get-path-info)
+  (and-let* ((p (sys-getenv "PATH_INFO"))
+             (l (cdr (string-split p #\/))))
+    (when (and (pair? l) (#/^~.+/ (car l)))
+      (load-user-config (car l))
+      (set! l (cdr l)))
+    (and (pair? l)
+         (not (equal? (car l) ""))
+         (filter-map (lambda (p) (if (equal? p "") #f p)) l))))
+
 ;; determine dispatch destination.
-;; returns worker-id, preferable-worker-type, and cgsid.
-;;
-;; return: (worker-id worker-type cont-gsid path-info)
-;; 
+;; returns: (worker-id worker-type cont-gsid path-info)
 (define (dispatch-destination params)
   (let* ((path-info   (get-path-info))
          (cont-gsid   (or (cgi-get-parameter "x-kahua-cgsid" params)
@@ -97,6 +94,21 @@
          )
     (values worker-id worker-type cont-gsid path-info)))
 
+;; construct absolute uri for the server root.
+;; note that we can only guess the protocol scheme.
+(define (server-uri)
+  (let ((scheme (if (sys-getenv "HTTPS") "https" "http"))
+        (name   (or (sys-getenv "SERVER_NAME") "localhost"))
+        (port   (or (x->integer (sys-getenv "SERVER_PORT")) 80)))
+    (format "~a://~a~a"
+            scheme name
+            (if (or (and (string=? scheme "http")  (= port 80))
+                    (and (string=? scheme "https") (= port 443)))
+                 ""
+                 #`":,port"))))
+
+;; prepare headers and dispatch the request to the appropriate server,
+;; then receives the reply and forward it to the client.
 (define (send-reply param)
   (receive (worker-id worker-type cont-gsid path-info)
       (dispatch-destination param)
@@ -104,8 +116,10 @@
     (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
            (remote-addr (sys-getenv "REMOTE_ADDR"))
            (header     (list*
-                        `("x-kahua-bridge" ,(string-append (sys-getenv "SCRIPT_NAME")
-                                                           *bridge-option*))
+                        `("x-kahua-bridge"
+                          ,(string-append (sys-getenv "SCRIPT_NAME")
+                                          *bridge-option*))
+                        `("x-kahua-server-uri" ,(server-uri))
                         (cond-list
                          (worker-type `("x-kahua-worker" ,worker-type))
                          (state-gsid `("x-kahua-sgsid" ,state-gsid))

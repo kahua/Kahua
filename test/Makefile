@@ -50,7 +50,7 @@ kahua-dbm :
 	@gosh -I../src ./kahua-dbm.scm >> test.log
 
 clean:
-	rm -rf test.log app/test.log *~ _tmp* _work
+	rm -rf test.log app/test.log *~ _*
 
 distclean: clean
 

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.7 2004/01/21 03:47:40 shiro Exp $
+;; $Id: server.scm,v 1.8 2004/01/21 05:48:34 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -29,6 +29,9 @@
   (use kahua.user)
   (export kahua-init-server
           kahua-bridge-name
+          kahua-server-uri
+          kahua-self-uri
+          kahua-self-uri-full
           kahua-default-handler
           kahua-current-context
           kahua-context-ref
@@ -84,6 +87,26 @@
 ;;   its name to kahua-server, and KAHUA-DEFAULT-HANDLER will
 ;;   set it to this parameter.
 (define kahua-bridge-name (make-parameter "kahua.cgi")) ;; dummy
+
+;; KAHUA-SERVER-URI
+;;   A parameter that holds the server URI (scheme://server:port).
+;;   The cgi-bridge tells this info to the app server.
+(define kahua-server-uri (make-parameter "http://localhost")) ;; dummy
+
+;; KAHUA-SELF-URI path ...
+;; KAHUA-SELF-URI-FULL path ...
+;;   Generates a self-referencing uri.  arguments has to be uriencoded.
+
+(define (kahua-self-uri . paths)
+  (apply build-path
+         (format "~a/~a/" (kahua-bridge-name) (kahua-worker-type))
+         paths))
+
+(define (kahua-self-uri-full . paths)
+  (apply build-path
+         (format "~a~a/~a/"
+                 (kahua-server-uri) (kahua-bridge-name) (kahua-worker-type))
+         paths))
 
 ;; KAHUA-DEFAULT-HANDLER header body reply-cont default-proc
 ;;                       &keyword stale-proc error-proc eval-proc
@@ -167,16 +190,17 @@
      
     ;; Main dispatcher body
     (receive (state-id cont-id) (get-gsid-from-header header)
-      (let* ((state-id (or state-id (session-state-register)))
-             (state   (session-state-get state-id))
-             (bridge  (or (car (assoc-ref header "x-kahua-bridge" '(#f)))
-                          (kahua-bridge-name)))
-             (path-info (car (assoc-ref header "x-kahua-path-info" '(()))))
-             (eval?  (car (assoc-ref header "x-kahua-eval" '(#f))))
-             (header (add-gsid-to-header header state-id #f))
-             )
-        (parameterize ((kahua-bridge-name bridge))
-          (if eval?
+      (let* ((state-id  (or state-id (session-state-register)))
+             (state     (session-state-get state-id))
+             (header    (add-gsid-to-header header state-id #f)))
+        (parameterize ((kahua-bridge-name
+                        (assoc-ref-car header "x-kahua-bridge" 
+                                       (kahua-bridge-name)))
+                       (kahua-server-uri
+                        (assoc-ref-car header "x-kahua-server-uri"
+                                       (kahua-server-uri)))
+                       )
+          (if (assoc-ref-car header "x-kahua-eval" #f)
             (receive (headers result) (run-eval)
               (reply-cont headers result))
             (receive (stree context)
@@ -184,9 +208,11 @@
                             (or (session-cont-get cont-id) stale-proc)
                             default-proc)
                           (list*
-                           (list "session-state" state)
-                           (list "x-kahua-path-info"
-                                 (drop* path-info 2))
+                           `("session-state" ,state)
+                           `("x-kahua-path-info"
+                             ,(drop* (assoc-ref-car header "x-kahua-path-info"
+                                                    '())
+                                     2))
                            body))
               (let1 extra-headers
                   (assoc-ref-car context "extra-headers" '())
@@ -304,6 +330,9 @@
     ((entry-lambda "finish" args pargs kargs #f body)
      (make-parameterized-entry-closure 'pargs 'kargs #f
                                        (lambda args . body)))
+    ((entry-lambda "finish" () pargs kargs rarg body)
+     (make-parameterized-entry-closure 'pargs 'kargs 'rarg
+                                       (lambda rarg . body)))
     ((entry-lambda "finish" (args ...) pargs kargs rarg body)
      (make-parameterized-entry-closure 'pargs 'kargs 'rarg
                                        (lambda (args ... . rarg) . body)))
@@ -509,12 +538,10 @@
                               "&")))))))
   
   (let* ((clause (assq-ref auxs 'cont))
-         (id     (and clause (session-cont-register (car clause))))
-         (argstr (and clause (build-argstr (cdr clause)))))
+         (id     (if clause (session-cont-register (car clause)) ""))
+         (argstr (if clause (build-argstr (cdr clause)) "")))
     (cont
-     `((a (@ (href ,(format "~a/~a/~a~a"
-                            (kahua-bridge-name) (kahua-worker-type)
-                            (or id "") (or argstr ""))))
+     `((a (@ (href ,(kahua-self-uri (string-append id argstr))))
           ,@contents))
      context)))
 
@@ -523,16 +550,14 @@
 ;; 
 ;; `(form/cont (@@ (cont ,closure)) contents)
 ;;
+;; TODO: support arg... as a/cont does.
 
 (define-element form/cont (attrs auxs contents context cont)
   (let* ((cont-closure (assq-ref auxs 'cont))
          (id (session-cont-register (car cont-closure))))
     (cont
      `((form (@ (method "POST") 
-                (action ,(format "~a/~a/~a"
-                                 (kahua-bridge-name)
-                                 (kahua-worker-type)
-                                 id)))
+                (action ,(kahua-self-uri id)))
              ,@contents))
      context)))
 

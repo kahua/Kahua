@@ -2,6 +2,10 @@
 
 	* cgi/kahua.cgi.in (compose-reply): pass through the extra
 	headers given in the reply.
+	(get-path-info): fixed a problem when PATH_INFO is "/".
+	(server-uri): pass the server's absolute uri to the application
+	server via "x-kahua-server-uri" header.
+	
 	* src/kahua/server.scm :
 	(kahua-default-handler): let render-proc return (Stree, Context)
 	instead of just Stree, so that it can inject information into
@@ -10,6 +14,11 @@
 	(extra-header): a new SXML element, which doesn't produce any
 	visual node but just inject a reply header.
 	(define-entry): added support of :rest argument.
+	(kahua-server-uri): provided the means to extract server's absolute
+	uri, which is passed from kahua.cgi.
+	(kahua-self-uri, kahua-self-uri-full): added.  utilities to build
+	self-referencing uri.
+	
 	* test/server.scm : updated accordingly.
 
 	* src/Makefile.in (SCMFILES): install kahua/test/*.scm as well.
