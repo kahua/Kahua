@@ -10,7 +10,7 @@ TESTS = test-xml persistence \
         user config gsid session partcont \
         server kahua-dbm worker \
 	lambdabooks wiki-iki nqueen foldlist \
-	spvr admin developer shell usermode sandbox plugin
+	spvr admin developer shell usermode sandbox plugin pdf
 
 .PHONY: all check clean distclan maintainer-clean $(TESTS)
 
@@ -88,6 +88,9 @@ sandbox:
 
 plugin:
 	@gosh -I../src ./plugin.scm >> test.log
+
+pdf:
+	@gosh -I../src ./pdf.scm >> test.log
 
 clean:
 	rm -rf test.log app/test.log *~ _* user.conf
