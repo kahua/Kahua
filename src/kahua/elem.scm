@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.2 2004/02/15 02:08:13 nobsun Exp $
+;; $Id: elem.scm,v 1.3 2004/02/15 14:46:09 nobsun Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -101,13 +101,21 @@
 
 (define-syntax @:
   (syntax-rules ()
-    ((_ (name val) ...)
-     `(@ (name ,val) ...))))
-     
+    ((_ (name val1) ...)
+     `(@ (name ,val1) ...))
+    ((_ (name val1 val2) ...)
+     `(@ (name ,val1 ,val2) ...))
+    ((_ (name val1 val2 ...) ...)
+     `(@ (name ,val1 ,val2 ...) ...))))
+
 (define-syntax @@:
   (syntax-rules ()
-    ((_ (name val) ...)
-     `(@@ (name ,val) ...))))
+    ((_ (name val1) ...)
+     `(@@ (name ,val1) ...))
+    ((_ (name val1 val2) ...)
+     `(@@ (name ,val1 ,val2) ...))
+    ((_ (name val1 val2 ...) ...)
+     `(@@ (name ,val1 ,val2 ...) ...))))
 
 (define (a/cont: . arg) `(a/cont ,@arg))
 (define (form/cont: . arg) `(form/cont ,@arg))
