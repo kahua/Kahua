@@ -1,3 +1,11 @@
+2003-12-19  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/lambdabooks.scm:
+	
+	- Modified call-server/gsid and match&pick to keep sgsid.
+	- Improved page checking pattern generation.
+	- All pages are NOT YET covered. 
+
 2003-12-15  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* test/lambdabooks.scm:
