@@ -1,7 +1,18 @@
 2004-05-07  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* Version 0.2.5 released.
+
+	- Added mechanism to pass :arguments value in app-servers to the
+	corresponding kahua application, by kahua-app-args parameter.
+	
+	- Added kahua-current-user-name for get only current user name
+	(not <kahua-user> object). This is useful, for example, to support
+	non-registered users' login.
+	
+2004-05-07  Nobuo Yamashita  <nobsun@sampou.org>
+
 	* src/kahua/server.scm:
-	Added kahua-current-user-name for get only user name
+	Added kahua-current-user-name for get only current user name
 	(not <kahua-user> object).  This is useful for supporting
 	non-registered users' login.
 
