@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.8 2005/01/18 05:16:36 nobsun Exp $
+;; $Id: kahua-spvr.scm,v 1.9 2005/01/25 03:56:14 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -81,7 +81,7 @@
 ;;  Request and reply both consist of two S-expressions, a header and
 ;;  a body.  A header is a list of two-element lists, resembles to
 ;;  what rfc822-header->list returns.   A body can be any valid sexpr.
-;;  It is arguable whether this format is adequate or not.  Let's see.
+;;  It is arguable whether this format is adequat or not.  Let's see.
 ;;
 ;;  In a request header, "x-kahua-sgsid" elemnt carries state GSID,
 ;;  and "x-kahua-cgsid" carries continuation GSID.  Other header can
@@ -603,7 +603,8 @@
      (log-format "[spvr] shutdown requested")
      (sys-kill (sys-getpid) SIGTERM))
     ((help)   ;; returns list of commands
-     '(ls run kill types reload restart help shutdown))
+     '(ls run kill types reload restart help version shutdown))
+    ((version) (kahua-version))
     (else
      (error "unknown spvr command:" body))))
 
