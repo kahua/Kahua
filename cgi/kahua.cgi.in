@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.13 2004/02/17 03:08:37 tahara Exp $
+;; $Id: kahua.cgi.in,v 1.14 2004/02/17 10:49:54 tahara Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -26,9 +26,12 @@
 (use www.cgi)
 (use util.list)
 (use rfc.cookie)
+(use rfc.base64)
+(use rfc.sha1)
 (use text.html-lite)
 (use kahua.gsid)
 (use kahua.config)
+(use kahua.developer)
 (use file.util)
 
 ;; Change this if you're using non-default sockbase
@@ -43,21 +46,17 @@
 (define (kcv value)
   (ces-convert value "*jp" (gauche-character-encoding)))
 
+
 (define (compose-reply header body)
   (receive (state cont) (get-gsid-from-header header)
-    (let1 extra-headers
-        (append-map (lambda (hdr)
-                      (list (make-keyword (car hdr)) (cadr hdr)))
-                    (filter (lambda (hdr) (not (#/^x-kahua-/ (car hdr))))
+    (for-each (lambda (hdr) ((response 'setheader) (car hdr) (cadr hdr)))
+              (filter (lambda (hdr) (not (#/^x-kahua-/ (car hdr))))
                             header))
-      (list
-       (apply
-        cgi-header
-        :cookies (construct-cookie-string
-                  `(("x-kahua-sgsid" ,state
-                     :path ,(sys-dirname (or (sys-getenv "SCRIPT_NAME") "/")))))
-        extra-headers)
-       body))))
+    ((response 'setcookie) (construct-cookie-string
+                            `(("x-kahua-sgsid" ,state
+                               :path ,(sys-dirname
+                                       (or (sys-getenv "SCRIPT_NAME") "/"))))))
+    body))
 
 ;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
 (define (load-user-config user-dir)
@@ -135,9 +134,78 @@
                  (body   (read in)))
             (compose-reply header body))))
       )))
-                      
+
+;; dispatcher of http response representation.
+;; provide control over output headers, set cookies, redirect.
+(define response
+  (let ((headers '())
+        (cookies '())
+        (location #f))
+    (define (publish body)
+      (list
+       (apply cgi-header :cookies cookies :location location headers)
+       body))
+    (lambda (a)
+      (cond ((eq? a 'setheader)
+             (lambda (name value)
+               (set! headers (append
+                              (list (make-keyword name) value) headers))))
+            ((eq? a 'setcookie)
+             (lambda (x) (set! cookies (append x cookies))))
+            ((eq? a 'setredirect)
+             (lambda (url) (set! location url)))
+            ((eq? a 'headers) headers)
+            ((eq? a 'cookies) cookies)
+            ((eq? a 'redirect) location)
+            ((eq? a 'publish) publish)
+            (else (error "the key not found." a)))
+      )))
+
+;; publish html. provide ~user authentication.
+(define (publisher params)
+  (let ((p (cadr (string-split (or (sys-getenv "PATH_INFO") "/") #\/))))
+    (
+     (response 'publish)
+     ;; make a body.
+     (if (#/^~.+/ p)
+       (begin
+         ;; ~user authentication
+         (let ((name (string-drop p 1))
+               (passwd (or (cgi-get-parameter "kahua-passwd-plain"
+                                              params :default #f)
+                           (base64-decode-string
+                            (cgi-get-parameter "kahua-passwd"
+                                               params :default "")))))
+           (if (kahua-check-developer name passwd)
+             (begin
+               ;; when login successed, set passwd to cookie.
+               ((response 'setcookie)
+                (construct-cookie-string
+                 `(("kahua-passwd" ,(base64-encode-string passwd)
+                    :path ,(sys-dirname
+                            (or (sys-getenv "SCRIPT_NAME") "/"))))))
+               (send-reply params))
+             (unauthorized-form)
+             ))
+         )
+       (send-reply params)
+       ))
+    ))
+
+;; ~user login form.
+;; when login failed, show this.
+(define (unauthorized-form)
+  `(,(html-doctype)
+    ,(html:html
+      (html:head (html:title "Unauthorized"))
+      (html:body (html:h1 "Unauthorized")
+                 (html:form :method "post"
+                   (html:span "password")
+                   (html:input :type "password" :name "kahua-passwd-plain")
+                   (html:input :type "submit" :value "login"))))))
+
 (define (main args)
-  (cgi-main send-reply
+  (cgi-main publisher
             :merge-cookies #t
             :on-error cgi-error-proc
             )

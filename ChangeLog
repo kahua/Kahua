@@ -1,3 +1,11 @@
+2004-02-17  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* cgi/kahua.cgi.in:
+	(response): added. provide control over output headers.
+	(publisher): added. publish html and provide ~user authentication.
+	(compose-reply): changed. compose-reply use response dispatcher
+	for setting headers and cookies.
+
 2004-02-17  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua/elem.scm: added node-set: and node-list-to-node-set.
