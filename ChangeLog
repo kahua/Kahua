@@ -1,3 +1,15 @@
+2003-12-23  Nobuo Yamashita <nobsun@sampou.org>
+
+	* examples/lambdabooks.kahua:
+	fixed type inconsistencies.
+
+	* src/kahua/html.scm (interp-html, interp-html-rec):
+	old interp-html renamed to interp-html-rec.
+	interp-html redefined without cont arg.
+
+	* test/*.kahua:
+	modified corresponding change of interp-html.
+
 2003-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/persistence.scm (kahua-db-open, kahua-db-close) :
