@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm,v 1.7 2004/02/16 12:55:34 tahara Exp $
+;; $Id: config.scm,v 1.8 2004/02/17 03:07:33 tahara Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -109,7 +109,6 @@
         (begin
          (load cfile :environment (find-module 'kahua.config))
          (set! (ref (instance-of <kahua-config>) 'conf-file) cfile)
-         (unless skip-check? (sanity-check (instance-of <kahua-config>)))
          ;; for running user-mode
          ;; make <kahua-custom> instance then copy slots value to
          ;; instance of <kahua-config>
@@ -137,6 +136,7 @@
              (set! (ref (instance-of <kahua-config>) 'timeout-mins)
                    (ref kahua-custom 'timeout-mins))
              ))
+         (unless skip-check? (sanity-check (instance-of <kahua-config>)))
          )
       (error "configuration file ~a is not readable.  using default settings."
             cfile))))
