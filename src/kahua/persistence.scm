@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.4 2004/02/08 03:22:49 shiro Exp $
+;; $Id: persistence.scm,v 1.5 2004/02/09 10:36:43 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -54,9 +54,17 @@
    
    ;; The following metainformation is set up when a first instance of
    ;; the class is realized (either read from DB or newly created)
+   ;; See the "Persistent metainformation" section below for the details.
    (generation    :init-value 0)   ;; generation of in-memory class
-   (persistent-generation :init-value 0) ;; generation in persistent db
+   (persistent-generation :init-value #f) ;; generation in persistent db
    ))
+
+(define-method make ((class <kahua-persistent-meta>) . initargs)
+  ;; When the first instance of a persistent class is realized (created
+  ;; in memory), the in-memory definition and in-db definition is compared.
+  (unless (ref class 'persistent-generation)
+    (persistent-class-bind-metainfo class))
+  (next-method))
 
 (define-method initialize ((class <kahua-persistent-meta>) initargs)
   (next-method)
@@ -207,9 +215,13 @@
    ((any (cut is-a? v <>)
          (list <boolean> <number> <string> <symbol> <keyword>))
     (write v) (display " "))
-   ((list? v)
+   ((null? v) (display "()"))
+   ((pair? v)
     (display "(")
-    (for-each serialize-value v)
+    (let loop ((v v))
+      (cond ((null? v))
+            ((pair? v) (serialize-value (car v)) (loop (cdr v)))
+            (else (display " . ") (serialize-value v))))
     (display ")"))
    ((vector? v)
     (display "#(")
@@ -243,24 +255,71 @@
 ;;
 
 ;; Information of persitent class metaobject is stored using
-;; a special persistent class, <persistent-metainfo>.
+;; a special persistent class, <kahua-persistent-metainfo>.
+;;
+;; A persistent class has "in-memory" representation and "in-db"
+;; representation.
+;;
+;; At the beginning, you don't have any instance in the database,
+;; nor the "in-db" class.  You only have "in-memory" class that
+;; is read from the source code.
+;;
+;; When the first persistent instance is created, a metainfo structure
+;; that records the class information is also created, and stored
+;; in the database.  That becomes "in-db" class representation.
+;;
+;; When you access to the db second time, the metainfo structure is
+;; read from the db and compared to the "in-memory" class.  If 
+;; two matches, no problem---the schema hasn't been changed.
+;;
+;; If in-memory class and in-db class doesn't match, there may
+;; be two cases.
+;;
+;;   1. The source code is updated, so in-memory class is newer than
+;;      the in-db class.
+;;   2. Some other process has used newer sources, and update the
+;;      in-db class, while your process is still using older definition.
+;;
+;; If the case is 1, we'll update the in-db class, along with any
+;; instance.  If the case is 2, we won't touch the in-db class, but
+;; we update the in-memory class as if it is redefined (note that at
+;; this point there's no instance in-memory, so the instance update
+;; protocol is not triggered).
 
 (define-class <kahua-persistent-metainfo> (<kahua-persistent-base>)
   (;; class name
    (name             :allocation :persistent :init-value #f
                      :init-keyword :name)
-   ;; current generation
-   (persistent-generation :allocation :persistent :init-value 0
-                          :init-keyword :persistent-generation)
-   ;; map from source-id to generation
-   (source-id-map    :allocation :persistent :init-value '()
-                     :init-keyword :source-id-map)
-   ;; alist of generation and class signatures
+   ;; current generation & signature
+   (generation       :allocation :persistent :init-value 0
+                     :init-keyword :persistent-generation)
+   (signature        :allocation :persistent :init-value '()
+                     :init-keyword :signature)
+
+   ;; The following slots keep the history of the class definitions.
+
+   ;; Every time the class signature is changed, the generation number is
+   ;; incremented and the old generation and sigature is pushed into
+   ;; this alist.
    (signature-alist  :allocation :persistent :init-value '()
                      :init-keyword :signature-alist)
+   
+   ;; Furthermore, if the in-memory class is given a source-id, the
+   ;; association of it and generation number is stored here.  It helps
+   ;; to find out whether the in-memory class is older than in-db class, or
+   ;; the newer source actually adopted the older definitions.
+   ;; Source id can be any string, and it is possible that one source id
+   ;; corresponds to multiple generations.
+   (source-id-map    :allocation :persistent :init-value '()
+                     :init-keyword :source-id-map)
    ))
 
-(define-method persistent-class-signature ((class <kahua-persistent-base>))
+(define-method key-of ((info <kahua-persistent-metainfo>))
+  (x->string (ref info 'name)))
+
+;; Calculates class signature.  Currently we take all persistent-allocated
+;; slots.
+(define-method persistent-class-signature ((class <kahua-persistent-meta>))
   (define (extract-slot-def slot)
     (and (memq (slot-definition-allocation slot) '(:persistent))
          (list (slot-definition-name slot)
@@ -268,30 +327,85 @@
                )))
   (sort (filter-map extract-slot-def (class-slots class))
         (lambda (x y)
-          (string<? (symbol->string x) (symbol->string y)))))
+          (string<? (symbol->string (car x)) (symbol->string (car y))))))
 
 ;; When an instance of a persistent class is realized for the first
 ;; time within the process, the in-memory class and the in-DB class
 ;; are compared.
-(define-method persistent-class-bind-metainfo ((class <kahua-persistent-base>))
+(define-method persistent-class-bind-metainfo ((class <kahua-persistent-meta>))
 
-  (define (register-metainfo)
-    (make <persistent-metainfo>
-      :name (class-name class) :persistent-generation 0
-      :source-id-map `((,(ref class 'source-id) . 0))
-      :signature-alist `((0 . ,(persistent-class-signature class)))))
+  ;; check if two signatures are the same
+  (define (signature=? x y) (equal? x y))
 
-  (define (get-signature metainfo)
-    (and-let* ((generation (assoc-ref (ref metainfo 'source-id-map)
-                                      (ref class 'source-id))))
-      (assv-ref (ref metanifo 'signature-alist) generation)))
+  ;; set generation numbers
+  (define (set-generation! in-mem in-db)
+    (set! (ref class 'generation) in-mem)
+    (set! (ref class 'persistent-generation) in-db))
   
-  (let1 metainfo
-      (find-kahua-instance <persistent-metainfo> (class-name class))
-    (cond ((not metainfo) (register-metainfo))
-          ((get-signature metainfo))
-          (else ...)) ;; writeme
-    ))
+  ;; this class is fresh; create new metainfo.
+  (define (register-metainfo signature)
+    (let1 info (make <kahua-persistent-metainfo>
+                 :name (class-name class)
+                 :generation 0
+                 :signature signature
+                 :source-id-map `((,(ref class 'source-id) 0))
+                 :signature-alist `())
+      (kahua-db-sync) ;;XXX do we need this?
+      (set-generation! 0 0)
+      info))
+
+  ;; signature doesn't match.  see if the in-memory class is older than
+  ;; the in-db class, and if so, returns the (generation . signature)
+  (define (find-generation metainfo signature)
+    (and-let* ((generations (assoc-ref (ref metainfo 'source-id-map)
+                                       (ref class 'source-id))))
+      (find (lambda (gen&sig)
+              (signature=? (cdr gen&sig) signature))
+            (filter-map (cut assv <> (ref metainfo 'signature-alist))
+                        generations))))
+
+  ;; we couldn't find matching signature, so we assume the in-memory
+  ;; class is newer.  record the newer class signature.
+  (define (increment-generation metainfo signature)
+    (let ((newgen (+ (ref metainfo 'generation) 1)))
+      (slot-push! metainfo 'signature-alist
+                  (cons (ref metainfo 'generation)
+                        (ref metainfo 'signature)))
+      (set! (ref metainfo 'generation) newgen)
+      (set! (ref metainfo 'signature) signature)
+      (record-source-id metainfo newgen)
+      (set-generation! newgen newgen)))
+
+  ;; subfunction of increment-generation
+  (define (record-source-id metainfo new-generation)
+    (let* ((source-id (ref class 'source-id))
+           (p (assoc source-id (ref metainfo 'source-id-map))))
+      (if p
+        (begin
+          (set-cdr! p (cons new-generation (cdr p)))
+          ;; touch the slot, so that it is reflected to db later.
+          (set! (ref metainfo 'source-id-map)
+                (ref metainfo 'source-id-map)))
+        (push! (ref metainfo 'source-id-map)
+               (list source-id new-generation)))))
+
+  (or (ref class 'persistent-generation)
+      (eq? (class-name class) '<kahua-persistent-metainfo>)
+      (let ((metainfo (find-kahua-instance <kahua-persistent-metainfo>
+                                           (x->string (class-name class))))
+            (signature (persistent-class-signature class)))
+        (cond ((not metainfo) (register-metainfo signature))
+              ((signature=? (ref metainfo 'signature) signature)
+               ;; in-memory class is up to date.
+               (set-generation! (ref metainfo 'generation)
+                                (ref metainfo 'generation)))
+              ((find-generation metainfo signature)
+               => (lambda (gen&sig)
+                    (set-generation! (car gen&sig) (ref metainfo 'generation))
+                    ))
+              (else
+               (increment-generation metainfo signature)))))
+  )
 
 ;;=========================================================
 ;; Database

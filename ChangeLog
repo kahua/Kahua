@@ -1,5 +1,9 @@
 2004-02-08  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua/persistence.scm : records persistent class information
+	as <kahua-persistent-metainfo> persistent object.
+	* test/persistence.scm : updated accordingly.
+
 	* src/kahua/test/worker.scm (call-worker/gsid->sxml): added.
 	(make-match&pick) : dropped the support of extra sxpath spec.
 	it is easier to apply sxpath in call-worker/gsid->sxml instead
