@@ -1,0 +1,26 @@
+kahua-server
+
+kahua-server [-c conf-file][-user user][-k keyserv] app args
+...
+
+アプリケーションサーバappをスタートするスクリプト。アプリケー
+ションサーバ本体は app/app.kahua に実装されている。
+
+通常のオペレーションではkahua-spvrがkahua-serverをspawnするの
+で、ユーザが直接起動する必要はない。
+
+kahua-serverは起動されるとサーバソケットを開き、リクエスト待
+ちループに入る。
+
+オプション
+
+conf-fileはkahua-spvrと同じく、設定ファイルのパスを指定する。
+
+user はユーザ専用モードで起動している kahua-spvr に接続するた
+めのオプション。ユーザ専用モード参照。
+
+keyservはkahua-keyservのworker id。kahua-spvrはkahua-keyserv
+を立ち上げ、そのidをkahua-serverを起動するたびにこのオプショ
+ン経由で渡す。このオプションが与えられた場合、kahua-serverは
+state session idを指定されたkahua-keyservに保存する。
+

@@ -1,0 +1,72 @@
+kahua.user
+
+[module] kahua.user
+
+ユーザ情報の管理。
+
+[class] <kahua-user>
+
+一人のユーザの情報を保持するクラスです。
+<kahua-persistent-base>を継承しています (kahua.persistence参
+照]])。
+
+[slot] login-name
+
+ユーザのログイン名。これが<kahua-user>永続クラスのキーになり
+ます。
+
+[slot] password-hash
+
+パスワードのハッシュ値(salt含む)。ハッシュには今のところmd5を
+使っています。
+
+[slot] role-alist
+
+このユーザのroleを表現するリスト。今のところ、role-alistは単
+なるシンボルのリストです。 roleの定義はアプリケーションサーバ
+によって行われます。
+
+[procedure] kahua-add-user login-name password
+
+このメソッドはデータベースがアクティブな時に呼ばれなければな
+りません。
+
+新たなユーザを登録します。passwordには生のパスワードテキスト
+を渡します。それは内部でハッシュされ、実際にユーザオブジェク
+トに保存されるのはハッシュ値のみです。
+
+既に同じlogin-nameを持つユーザがいない場合は、登録は成功し、
+新たに作られた<kahua-user>オブジェクトが返されます。同じ
+login-nameを持つユーザがいた場合は、新たなユーザは登録され
+ず、 #fが返ります。
+
+[procedure] kahua-check-user login-name password
+
+このメソッドはデータベースがアクティブな時に呼ばれなければな
+りません。
+
+与えられたlogin-nameとpasswordを持つユーザが見つかればその
+<kahua-user>オブジェクトを、見つからなければ#fを返します。
+
+[procedure] kahua-find-user login-name
+
+このメソッドはデータベースがアクティブな時に呼ばれなければな
+りません。
+
+与えられたlogin-nameを持つユーザが見つかればその<kahua-user>
+オブジェクトを、見つからなければ#fを返します。
+
+[procedure] kahua-user-has-role? user roles
+
+このメソッドはデータベースがアクティブな時に呼ばれなければな
+りません。
+
+ユーザuserが、rolesに挙げられているroleのいずれかを持っている
+時に#tを、そうでなければ#fを返します。
+
+userには、<kahua-user>のインスタンスか、#fを渡します。 #fを渡
+した場合は常に#fが返ります。これは、kahua-current-user (
+kahua.session 参照) の戻り値をそのまま渡すのに便利です。
+
+rolesはroleを表すシンボルのリストです。将来は、より複雑な条件
+を指定できるように拡張されるかもしれません。

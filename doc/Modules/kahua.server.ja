@@ -1,0 +1,210 @@
+kahua.server
+
+[module] kahua.server
+
+このモジュールはkahua-serverを利用したアプリケーションサーバを作成する際
+に、様々なkahua.* モジュールへインタフェースする高レベルAPIを提供しま
+す。
+
+APIには大きく分けて、アプリケーションライタ (*.kahuaを書く人) 向けの関数
+と、kahua-server等のスクリプトからアプリケーションを呼ぶための関数があり
+ます。
+
+             kahua-server
+                  |
+                  v  API for scripts
+        +-------------------+
+        |    kahua.server   |
+        +-------------------+
+                ^   |  API for applications
+                |   v
+          applications *.kahua
+
+以下では、この二つのタイプのAPIを分けて説明します。アプリケーションライ
+タは、API for applicationsの項だけ読めば、 kahua.serverモジュールの機能
+を使うことができるでしょう。
+
+API for Applications
+
+環境の問い合わせ
+
+[procedure] kahua-worker-type
+
+初期化時に与えられたworker-typeを返します。
+
+[procedure] kahua-bridge-name
+
+このアプリケーションへのコールバックをURIに埋め込みたい場合に、 URIのベ
+ースとなる文字列を返します。
+
+[procedure] kahua-server-uri
+
+Kahuaサーバを外部から参照するためのuri ("scheme://server:port") を返しま
+す。
+
+[procedure] kahua-self-uri path ...
+
+[procedure] kahua-self-uri-full path ...
+
+現在のアプリケーションサーバ内のリソース path を外部から参照するための
+uriを生成します。kahua-self-uriはdocumentrootからの相対指定、
+kahua-self-uri-fullはサーバ名を含めた絶対uriを返します。
+
+pathが複数与えられた場合、それらはbuild-pathで接続されます。
+
+[procedure] kahua-current-user context
+
+[procedure] (setter kahua-current-user) context user
+
+session-stateに保持されている、「現在のユーザ」情報をget/setします。
+session-stateは一般的にはクライアントのクッキーに結びつけられた情報を保
+存しています(kahua.session参照)
+
+kahua-current-userは、「現在のユーザ」が設定されていれば <kahua-user>オ
+ブジェクト(kahua.user参照)を、設定されていなければ#fを返します。
+
+(set! (kahua-current-user context) user) のように用いると、現在のユーザ
+を設定することができます。userには<kahua-user>オブジェクトか #fを渡しま
+す。
+
+これらの手続きはデータベースにアクセスするので、with-dbのダイナミックエ
+クステント内で呼ばれなければなりません (kahua.persistence参照)。
+
+内部では、Kahuaは<session-state>オブジェクトのuserスロットに、現在のユー
+ザのログイン名を保持することで、現在のユーザを管理しています。
+
+[procedure] kahua-context-ref context key
+
+アプリケーションサーバのハンドラに渡されるコンテキスト情報contextにアク
+セスするための関数です。keyは文字列またはシンボルです。
+
+コンテキスト情報には、例えばフォームで入力された値 (keyはname属性に与え
+た文字列)や、state sessionキーで管理されるクライアント情報
+("session-state"というキーでアクセス可能)が含まれます。
+
+継続エントリポイントの設定
+
+外部からの制御を受け取るポイントを定義するAPIです。
+
+[macro] define-entry (entry-name . entry-formals) body ...
+
+entry-formalsを引数とし、bodyを処理内容とする継続手続きを作成し、それを
+グローバル変数entry-nameに束縛します。また、 entry-name を、外部からの制
+御を受け取るポイントとして登録します。well-known entryとかpermanent
+entryと呼ばれることもあります。
+
+「外部からの制御を受け取る」とは、define-entryで指定される継続手続きを、
+次のURLで起動できるということです。
+
+  http://server/cgidir/kahua.cgi/''app-type''/''entry-name''
+
+また、entry-nameに束縛された継続手続きは、コンテンツ記述言語のディレクテ
+ィブa/cont, form/cont 等と一緒に使うことで、継続渡しスタイルでのアプリケ
+ーション記述を可能にします。
+
+entry-formals は次のような形式の引数リストです。 ([...]は...が省略可能で
+あることを示します)
+
+  ([arg ... ][:keyword karg ... ][:rest restarg])
+
+arg ... には、uriのentry-name 以下に渡されるパス名表記のパラメータが束縛
+され、karg ... にはhttpリクエストのqueryの部分が束縛されます。パス名表記
+のコンポーネントの数がarg ... より多く、restargが指定されている場合は、
+restargに残りがリストで束縛されます。
+
+例えば、次のようなエントリ定義があるとします。
+
+  (define-entry (name parg1 parg2 :keyword karg1 karg2 :restarg rarg)
+     ...)
+
+ここで、次のようなuriがアクセスされると：
+
+  http://host/kahua.cgi/app-type/name/foo/bar/baz/boz?karg1=aa&karg2=bb
+
+define-entryの本体は、次のような変数束縛のもとで評価されます。
+
+  parg1 = "foo"
+  parg2 = "bar"
+  karg1 = "aa"
+  karg2 = "bb"
+  rarg = ("baz" "boz")
+
+仮引数に対応する値が与えられなかった場合、仮引数には#fに束縛されます。
+（但しrargは、値が足りない場合は() に束縛されます)。対応する仮引数がない
+値は捨てられます。
+
+Schemeから見ると、entry-nameに束縛される継続手続きは引数を取らないクロー
+ジャです。継続手続きは、その内部で kahua-context-refを使ってクライアント
+から渡された情報を取り出し、仮引数への束縛を行っています。
+
+なお、entry-formalsとbodyからの継続手続きの作成は、次のentry-lambdaマク
+ロによって行われています。 entry-lambdaマクロを直接使うことにより、無名
+の継続手続きを簡単に作成できます。
+
+[macro] entry-lambda entry-formals body ...
+
+entry-formals の形式はdefine-entryの項で述べたものです。
+
+このマクロは、引数を取らない手続きを返します。呼び出されると、
+entry-formals内の変数をクライアントから渡されたcontextに従って束縛し、
+bodyを評価します。
+
+API for Scripts
+
+[procedure] kahua-init-server worker-type [session-server-id]
+
+kahua.serverフレームワークを初期化します。worker-typeにはアプリケーショ
+ンサーバのタイプを示す文字列を渡します。この手続きの中でworker idが作成
+され、kahua.sessionの session-manager-initが呼ばれます。作成されたworker
+idを返します。
+
+session-server-idには、session gsidを管理するkahua-keyserv のworker idを
+渡します。通常の運用では、session-server-idは kahua-spvrがkahua-serverを
+起動する際にコマンドラインオプションを通じて渡されます。
+
+[procedure] kahua-default-handler header body reply-cont default-proc
+&keyword stale-proc wrapper-proc error-proc eval-proc eval-environment
+
+アプリケーションサーバのhandle-requestから呼び出され、セッションキーから
+の継続手続きのディスパッチ等を行います。
+
+header, body, reply-cont にはhandle-requestに渡されたものをそのまま渡し
+ます。
+
+kahua-default-handlerはheaderからcontinuation gsidを取り出し、
+kahua.sessionのsession-cont-registerで登録された対応する継続手続きを得
+て、bodyを伴ってそれを呼び出します。
+
+継続手続きからの戻り値は、まずwrapper-procに渡されます。 wrapper-procの
+デフォルトはidentityですが、アプリケーションサーバはここで共通のページテ
+ンプレート等を使うことができます。 kahua-default-handlerは、wrapper-proc
+の返り値をreply-contに bodyとして渡します。
+
+headerにcontinuation gsidが与えられていない場合は、 default-procが継続手
+続きの替わりにbodyを伴って呼び出されます。
+
+continuation gsidに対応する継続手続きが無かった場合、 stale-procに与えら
+れた手続きが替わりに呼び出されます。
+
+default-proc, stale-proc, wrapper-proc等で補足されないエラーが発生した場
+合、error-procがエラー例外を伴って呼び出されます。error-procは適切なエラ
+ーページを表現する S式を返さねばなりません。
+
+default-procおよび継続手続きに渡されるcontextはリストのリストで、各リス
+トのcarにはパラメータ名が、cadrにその値が、共に文字列で与えられます。通
+常、フォームからのsubmitがあった場合には、フォームパラメータだと思えば良
+いでしょう。 kahua-default-handlerはそれに追加して、"session-state"とい
+うパラメータを渡します。その値はstate session IDと結びつけられた
+<session-state>オブジェクトです(kahua.session参照)。
+
+headerに"x-kahua-eval"が与えられた場合は、上記のメカニズムではなく、body
+がS式として評価され、その結果がreply-contへと渡されます。これは、アプリ
+ケーションサーバの管理用インタフェースです。 (将来は、何らかの認証メカニ
+ズムを導入するかもしれません)。評価は、eval-procで指定された手続きにより
+行われます。 eval-procはbodyに渡されたS式、およびeval-environmentに渡さ
+れたモジュールを受け取り、2つの値を返さねばなりません。最初の値は、評価
+が成功すれば#t, エラーが発生すれば#fです。次の値は、評価が成功した場合は
+各値を文字列表現したもののリスト、評価が失敗した場合はエラーメッセージで
+す。 eval-procには適切なデフォルトの手続きが設定されているので、通常は
+eval-environmentだけを与えてやれば良いでしょう。 eval-environmentのデフ
+ォルトはuserモジュールです。

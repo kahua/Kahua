@@ -1,0 +1,158 @@
+kahua.plugin
+
+[module] kahua.plugin
+
+このモジュールはサンドボックスモジュールに Kahua 開発者が許可した安
+全な手続きを提供するための機能を提供します。
+
+プラグインの作成方法
+
+Kahua のアプリケーションを記述する *.kahua と違い、プラグインは制限
+のない Gauche を使うことができます。アプリケーションに危険な手続き
+を使った機能(例えば、メール送信のために sendmail を run-process す
+る)が必要なときは、手続きをラッピングしてプラグインにするといいでし
+ょう。
+
+作成した手続きをプラグインに登録するために define-plugin を使いま
+す。 define-plugin はファイルの先頭で使い、select-module したあとに
+呼び出されることがないようにしてください。
+
+;; sendmail plugin.
+
+(use gauche.process)
+(use gauche.charconv)
+
+(define-plugin "sendmail"
+  (version "0.1")
+  (export sendmail)
+  (depend #f))
+
+(define-export (sendmail to from subject body)
+  (call-with-output-process
+   "/usr/sbin/sendmail -t -oi"
+   (lambda (p)
+     (display (format "To: ~a\n" to) p)
+     (display (format "From: ~a\n" from) p)
+     (display (format "Subject: ~a\n" subject) p)
+     (display "Content-Transfer-Encoding: 7bit\n" p)
+     (display "Content-Type: text/plain; charset=ISO-2022-JP\n" p)
+     (display "\n\n" p)
+     (display (ces-convert body "eucjp" "iso2022jp") p)
+     )))
+
+allow-module マクロを使って既存のモジュールをそのままプラグイン化す
+ることができます。
+
+(allow-module srfi-1)
+
+プラグインのインストール方法
+
+kahua.conf で設定したワーキングディレクトリに define-plugin を書い
+た scm ファイルを置いてください。
+
+そのあとで kahua-spvr を起動すれば、全てのアプリケーションでプラグ
+インを利用できます。
+
+起動中のアプリケーションにプラグインを追加したい場合は kahua-admin
+を起動して plugin reload コマンドをアプリケーションのワーカー番号付
+きで実行してください。kahua-admin で plugin コマンドを実行するとプ
+ラグインの一覧を表示できます。
+
+$ kahua-admin
+spvr> plugin
+name                 version
+file.util            1.0
+gauche.charconv      1.0
+gauche.collection    1.0
+gauche.logger        1.0
+gauche.parameter     1.0
+gauche.sequence      1.0
+gauche.vm.debugger   1.0
+sendmail             0.1
+srfi-1               1.0
+srfi-13              1.0
+srfi-2               1.0
+text.parse           1.0
+util.list            1.0
+wiliki.format        1.0
+wiliki.log           1.0
+spvr> plugin reload 1
+plugin reloaded: 1
+name                 version
+file.util            1.0
+gauche.charconv      1.0
+gauche.collection    1.0
+gauche.logger        1.0
+gauche.parameter     1.0
+gauche.sequence      1.0
+gauche.vm.debugger   1.0
+sendmail             0.1
+srfi-1               1.0
+srfi-13              1.0
+srfi-2               1.0
+text.parse           1.0
+util.list            1.0
+wiliki.format        1.0
+wiliki.log           1.0
+spvr>
+
+*.scm にプラグイン化したい手続きを定義し、Kahua のワーキングディレ
+クトリ下にある pluginsディレクトリにコピーすればインストール完了で
+す。
+
+[macro] define-export def body
+
+明示的にプラグインとして提供することを宣言するためのマクロです。
+
+[procedure] lookup-exports name
+
+プラグインファイルはプラグイン読み込み用の無名モジュールでロードさ
+れますが、必ずそのモジュールで束縛されるとは限りません。
+
+name のプラグインで export リストにある名前を探し、シンポルとモジュ
+ールの alist を返します。
+
+[macro] expand-define name module
+
+name の手続きを module に束縛します。
+
+[macro] load-plugin file
+
+file という名前のプラグインの提供する手続きをサンドボックスに束縛し
+ます。file は文字列でなければなりません。
+
+[macro] use-plugin name
+
+load-plugin の構文シュガーです。サンドボックスはこの手続きを use と
+いう名前で束縛し、Gauche の use と同じ構文でプラグインを使うことが
+できます。
+
+[macro] define-plugin name (version) (export ...) (depend ...)
+
+プラグインを登録するために使います。export にプラグインが提供する手
+続きの名前を書きます。
+
+version と depend はプラグイン一覧表示用のメタ情報です。
+
+[macro] allow-module module
+
+module をそのままプラグイン化します。既存モジュールをプラグイン化す
+る場合は define-plugin の代わりに使います。
+
+[procedure] register-plugin name version export depend
+
+define-plugin と allow-module でラッピングされているプラグイン登録
+手続きです。
+
+[procedure] initialize-plugins
+
+プラグイン初期化手続きです。実行するとプラグインディレクトリにある
+*.scm ファイルをプラグイン環境にロードします。
+
+[procedure] refresh-plugin filename
+
+プラグインを読み込む手続きです。
+
+[procedure] all-plugins
+
+登録されているプラグインの名前とバージョン番号の alist を返します。

@@ -1,0 +1,9 @@
+kahua-keyserv
+
+kahua-keyserv [-c conf-file] [-user user]
+
+State session idを管理するためのサーバ。通常はkahua-spvrによ
+り立ち上げられる。
+
+同じkahua-spvrの配下にあるkahua-serverは、ログイン情報等、
+state sessionに結びつけられた情報をこのサーバに保存する。

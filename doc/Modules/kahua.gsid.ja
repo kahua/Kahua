@@ -1,0 +1,91 @@
+kahua.gsid
+
+[module] kahua.gsid
+
+グローバルセッションID (gsid) を扱うための手続き群を提供しま
+す。
+
+アプリケーションサーバーから使う場合、通常はkahua.sessionモジ
+ュールが自動的にセッションIDを作成するので、このモジュールを
+直接使う必要はあまり無いでしょう。
+
+アプリケーションサーバー以外のKahuaユーティリティは、GSIDを解
+読するのにこのモジュールが必要です。
+
+Global session ID (GSID)
+
+Session ID consists of two strings. One is a continuation ID,
+which corresponds to a continuation of the session. It can be
+restartable, that is, the same continuation ID can be reused
+to backtrack the session as far as it hasn't explicitly
+invalidated. In other word, a continuation ID has an
+unlimited extent by default.
+
+The other is a state ID, which stands for a monadic state of
+the session. It carries a stateful information---therefore
+can't be backtracked.
+
+In a typical web session, the continuation ID is kept in
+parameters in POST request or in URL, whereas the state ID is
+kept in cookies.
+
+Both ID consists of the following format:
+
+   1-HHHHH-BBBBBBB
+
+The first '1' desginates the GSID version. Hs and Bs are for
+a header and a body. The format after the version number can
+be changed in the later versions. For version 1, the header
+just includes worker ID. The body is up to the worker. Hs and
+Bs shouldn't include a minus sign.
+
+[procedure] make-gsid worker-id body
+
+GSID形式の文字列をworker-idとbodyから作成して返します。
+
+この手続きは単に文字列を作成するだけで、それがユニークである
+ことは保証しません。kahua.sessionモジュールがユニークなIDの作
+成を保証します。
+
+[procedure] decompose-gsid gsid
+
+GSID文字列からヘッダ部分とボディ部分を取り出し、 2つの値とし
+て返します。
+
+[procedure] gsid->worker-id gsid
+
+GSID文字列からworker idを取り出して返します。gsidが#fの場合に
+は #fを返します。
+
+[procedure] get-gsid-from-header header
+
+メッセージ(プロトコル?参照)のヘッダから、2つのgsid (state
+gsidとcontinuation gsid)を取り出し、2つの値として返します。該
+当するgsidがヘッダに与えられていない場合はその値として#fが返
+ります。
+
+[procedure] add-gsid-to-header header state-gsid cont-gsid
+
+ヘッダheader (リストのリスト) に、state-gsidで指定される
+state gsidと、cont-gsidで指定されるcontinuation gsidを設定し
+たヘッダを返します。headerに既にこれらのgsidが含まれる場合は
+新しいものに置き換えられます。
+
+[procedure] worker-id->sockaddr worker-id [sockbase]
+
+worker-idから、そのworker (アプリケーションサーバー) に接続す
+るための <sockaddr>オブジェクトを作成して返します。worker-id
+に#fを与えると、スーパバイザサーバーに接続するための
+<sockaddr>を返します。
+
+返った<sockaddr>をmake-client-socketに与えることで、クライア
+ントソケットを作成してサーバーに接続することができます。
+
+[procedure] make-worker-id worker-type
+
+workerタイプからworker idを作成します。
+
+[procedure] supervisor-sockaddr [sockbase]
+
+(worker-id->sockaddr #f) と同じで、スーパバイザサーバーに接続
+するための <sockaddr>を作成して返します。

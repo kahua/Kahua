@@ -1,0 +1,82 @@
+kahua.session
+
+[module] kahua.session
+
+アプリケーションサーバー内で、セッションID (gsid) とサーバー
+内のデータ構造との結び付きを管理するモジュールです。
+
+continuation gsidに対しては、それと継続手続きとの関連を管理し
+ます。
+
+state gsidに対しては、それと<session-state>オブジェクトとの関
+連を管理します。<session-state>オブジェクトは、アプリケーショ
+ンサーバが立ち上がっている期間中有効なオブジェクトで、例えば
+ユーザのログイン状態等を保持します。アプリケーションサーバは
+独自の情報を追加して保持できます。state gsidは通常Webブラウザ
+のクッキーを通じて管理されるため、特定のブラウザに結びつけら
+れたオブジェクトと考えて良いでしょう。
+
+[procedure] session-manager-init worker-id
+[session-server-id]
+
+アプリケーションサーバーは最初にこれを呼んでセッションマネー
+ジャを初期化します。worker-idには kahua.gsid モジュールの
+make-worker-id で作成されたworker-idを渡します。
+
+state gsidをプロセス間で共有する場合は、state gsidを管理する
+kahua-keyservのworker idをsession-server-idに渡します。これが
+与えられた場合、state gsid関係のリクエストは全て
+kahua-keyservを通じて処理されます。これが与えられない場合、
+state gsidはプロセスローカルなテーブルで管理されます。
+
+[procedure] session-cont-register cont [id]
+
+継続手続きcont (procedure)を登録し、その継続セッションIDを返
+します。permanent entry を登録する場合 (define-entryによる:
+kahua.server参照) は、そのIDをid引数で与えます。
+
+id を与えない場合、その継続セッションIDはkahua.conf
+kahua.config参照)で指定されるタイムアウト時間後に削除されま
+す。
+
+[procedure] session-cont-get id
+
+継続セッションID id に対応する継続手続きを返します。対応する
+手続きが無い場合は#fを返します。
+
+[procedure] session-cont-discard id
+
+(もしあれば) id に結びつけられた継続手続きを破棄します。
+
+[procedure] session-cont-sweep age
+
+age (秒)より古いセッションを破棄し、破棄したセッション数を返します。
+
+[procedure] session-state-register id
+
+新しいセッション状態を登録し、セッションIDを返します。
+IDを指定することができますが、そうしながった場合は
+システムがセッションIDを作成します。
+
+[procedure] session-state-get id
+
+id に結びついたセッション状態オブジェクトを返します。
+もし、指定されたID に結びついたセッションがなければ、
+新しいセッション状態オブジェクトが生成されます。
+
+[procedure] session-state-discard id
+
+id で指定されたセッションを破棄します。
+
+[procedure] session-state-sweep age
+
+age (秒)より古いセッションを破棄し、破棄したセッション数を返します。
+
+[procedure] session-state-refresh id
+
+セッションのタイムスタンプを更新します。
+
+[procedure] session-flush-all
+
+すべてのセッションを破棄します
+(継続セッションと状態セッションの両方とも)。

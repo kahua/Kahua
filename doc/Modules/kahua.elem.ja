@@ -1,0 +1,165 @@
+kahua.elem
+
+[module] kahua.elem
+
+このモジュールは記述言語を構成するタグ関数を提供します。
+
+タグ関数は、0個以上のノードをとり、ノードを返す関数です。
+
+タグ関数には、ノードの実装方法の違いによって、次の2種類があります。
+
+ ・ 単純タグ関数: ノードは、SXMLのノード
+ ・ 高階タグ関数: ノードは、関数
+
+単純タグ関数はタグシンボルと組み合わせて使うことができますが、高階タグ関数は他
+のものと混在することはできません。
+
+単純タグ関数
+
+[procedure] HTMLタグ: args ...
+
+以下のタグ関数は各種HTMLタグに相当する関数群です。 0個以上のノード(SXMLノード)
+を引数にとり、ノード(SXMLノード)を返します。
+
+ tt: i: b: big: small: em: strong: dfn: code: samp: kbd: var: cite: abbr:
+acronym: sub: sup: span: bdo: br: body: address: div: a: area: link: img:
+hr: p: h1: h2: h3: h4: h5: h6: pre: q: blockquote: ins: del: dl: dt: dd:
+ol: ul: li: form: label: input: select: optgroup: option: textarea: fieldset:
+legend: button: table: caption: thead: tfoot: tbody: colgroup: col:
+tr: th: td: head: title: base: meta: style: script: noscript: html:
+
+[procedure] pdf: args ...
+
+PDFドキュメントを出力するときに html: の代わりに使います。返り値はSXMLノードで
+す。
+
+[macro] @: (name value) ...
+
+属性リストを表現するノードを作ります。このマクロのnameは評価されません。 name
+はシンボルでなければなりません。
+
+[macro] @@: (name value ...) ...
+
+補助属性リストを表現するノードを作ります。このマクロのnameは評価されません。
+nameはシンボルでなければなりません。
+
+[procedure] a/cont: args ...
+
+HTMLのリンクに継続を結びつけるSXMLノードを返します。
+
+[procedure] form/cont: args ...
+
+HTMLのフォームに継続を結びつけるSXMLノードを返します。
+
+[procedure] extra-header: args ...
+
+HTTPのレスポンスメッセージのヘッダーに加えたい情報を保持するSXMLノードを返しま
+す。
+
+[procedure] node-list-to-node-set ls
+
+SXMLノードのリストを取り、一つのSXMLノードに変換し返します。
+
+[procedure] node-set: args ...
+
+複数のSXMLノードをとり、それらを一つのSXMLノードにまとめて返します。
+
+高階タグ関数
+
+[procedure] HTMLタグ/ args ...
+
+以下のタグ関数は各種HTMLタグに相当する関数群です。(関数で表現された)ノードを引
+数にとり、(関数で表現された)ノードを返します。
+
+tt/ i/ b/ big/ small/ em/ strong/ dfn/ code/ samp/ kbd/ var/ cite/ abbr/
+acronym/ sub/ sup/ span/ bdo/ br/ body/ address/ div/ a/ area/ link/ img/
+hr/ p/ h1/ h2/ h3/ h4/ h5/ h6/ pre/ q/ blockquote/ ins/ del/ dl/ dt/ dd/
+ol/ ul/ li/ form/ label/ input/ select/ optgroup/ option/ textarea/ fieldset/
+legend/ button/ table/ caption/ thead/ tfoot/ tbody/ colgroup/ col/
+tr/ th/ td/ head/ title/ base/ meta/ style/ script/ noscript/ html/
+
+各種HTMLタグに相当する高階タグ関数です。 0個以上の関数で表現されたノード(関数
+ノード)を引数にとり、関数ノードを返します。
+
+[procedure] pdf/
+
+PDFドキュメントを出力するときに html/ の代わりに使います。返り値は関数ノードで
+す。
+
+[macro] @/ (name value) ...
+
+属性リストを表現する関数ノードを作ります。nameは評価されません。nameはシンボル
+でなければなりません。
+
+[macro] @@/ (name value ...) ...
+
+補助属性リストを表現する関数ノードを作ります。nameは評価されません。nameはシン
+ボルでなければなりません。
+
+[procedure] a/cont/ args
+
+HTMLのリンクに継続を結びつける関数ノードを返します。
+
+[procedure] form/cont/ args
+
+HTMLのフォームに継続を結びつける関数ノードを返します。
+
+[procedure] extra-header/ args
+
+HTTPレスポンスメッセージのヘッダーに加えたい情報を保持する関数ノードを返しま
+す。
+
+[procedure] node-set sts
+
+関数ノードのリストを一つの関数ノードに変換する手続き
+
+[procedure] empty s
+
+空の関数ノード
+
+[procedure] text/ args
+
+文字列を関数ノードに変換する手続き
+
+組合せ子
+
+関数ノードの並びを関数ノードとする基本演算。ユーザ定義のノードを作成したいとき
+に使います。
+
+(参考)現行のKahuaでは、関数ノードは、それまでの関数ノードを処理して生成した
+SXMLノードスタックを引数としてとり、現在の関数ノードを処理して生成したSXMLノー
+ドをそのスタックに積んでそれを返す「関数」として実装されています。関数ノード
+は、このスタックに積まれているものの内容を見ることはなく、自分自身の処理結果を
+積んで次へわたすだけです。この実装は将来変更される可能性があります。
+
+以下の2つは、互換性が保たれるよう、ジェネリック関数として実装される予定です。
+
+[procedure] >>= st f
+
+現行の Kahua では使いません。
+
+[procedure] >> st1 st2
+
+二つのノードst1とst2を組合せて一つのノードを作ります。
+
+以下は現行の関数ノードの実装に依存しています。
+
+[variable] get
+
+SXMLスタックを取得する関数ノードです。
+
+[procedure] put s
+
+SXMLスタックを s に変更する関数ノードを返します。
+
+[procedure] update f
+
+SXMLスタックをfで変換してそれに変更する関数ノードを返します。
+
+[procedure] exec s0 st
+
+SXMLスタック s0 に st を適用し、処理結果のSXMLスタックを返します。
+
+[procedure] rev-nodes node-set
+
+SXMLスタックの内容を処理した順序に並び換る手続き。

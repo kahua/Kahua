@@ -1,0 +1,70 @@
+kahua-spvr
+
+kahua-spvr [-c conf-file] [-user username] [-i][-l logfile]
+
+スーパバイザプロセスをスタートする。conf-fileは設定ファイル名を指定す
+る。デフォルトでは$sysconfdir/kahua/kahua.conf(Setupの際にconfigureス
+クリプトになにも指定しなければ、/usr/local/etc/kahua/kahua.conf) を探
+しに行くが、無かったら適当なデフォルト値を使うので別にファイルが無くて
+も良い。しかし、デバッグ時には自分用の設定ファイルを作って置いた方が良
+いだろう。 Setup参照。ここで与えた設定ファイル名は、kahua-spvr が
+kahua-serverを起動する際にも引き継がれる。設定ファイルの書式については..
+/modules/kahua.config参照。
+
+-user ユーザ名
+ユーザ名は kahua.conf の userconf-file で指定されている開発者
+アカウントにある名前を指定する。このオプションが与えられると
+ユーザ専用モードの spvr が起動し、spvr からfork する kahua-server もユー
+ザ専用モードで起動する。ユーザ専用モードの spvr は -user なしの標準の
+spvr と衝突することなく同一マシン上で動かせる。ユーザ専用モードのサー
+バにブラウザから接続する場合、URLは kahua.cgi/~ユーザ名/アプリケーショ
+ン名になる。ユーザ専用モードのサーバに接続するには認証をパスする必要が
+ある。ユーザ専用モード参照。 
+
+-i 
+この interactive オプションが与えられると、標準入出力に対して
+REPLを起動する。デバッグ用。
+
+-l はログファイル指定。 -l - とするとstdoutにログを吐く。デフ
+ォルトでは、conf-fileで指定されたworking-directory下の
+logs/kahua-spvr.logというファイルに吐く。
+
+立ち上がっているkahua-spvrプロセスは、kahua-adminコマンドによ
+って制御できる。
+
+現在のバージョンでは、kahua-spvrは自らをdaemonizeすることはな
+い。 daemonとして立ち上げたい場合は、例えばbashなら次のように
+する：
+
+$ (kahua-spvr > /dev/null 2>&1 &)
+
+アプリケーションサーバの種類と立ち上げ方法については、
+conf-fileで指定されたworking-directory下のapp-serversというフ
+ァイルに書いておけば、kahua-spvrの起動時に読み込まれる。この
+ファイルはkahua-spvr実行中に再読み込みすることもできる (
+kahua-adminのreloadコマンド参照)。 app-serversの書式は次の通
+り。
+
+app-serversの書式
+
+S式で書く。
+
+((<server-type> :arguments <args> :run-by-default <count>)
+ ...)
+
+<server-type>
+
+    シンボルで、アプリケーションサーバのタイプを書く。
+
+<args>
+
+    そのアプリケーションサーバの起動時に与えられる引数のリス
+    ト。
+
+<count>
+
+    kahua-spvr起動時にいくつこのアプリケーションサーバのイン
+    スタンスを立ち上げるか、という指定。通常0か1にしておく。
+
+app-serversの読み込み時にエラーがあった場合は、単に
+app-serversの内容は無視される。

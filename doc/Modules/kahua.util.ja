@@ -1,0 +1,11 @@
+kahua.util
+
+[module] kahua.util
+
+特定の機能群に属さないけれど便利な手続きを定義するモジュー
+ル。
+
+[procedure] kahua-error-string error [detail?]
+
+エラーオブジェクトerrorを受け取り、エラーメッセージを文字列で
+返します。 detail?が#tなら、スタックトレースも合わせて返します。

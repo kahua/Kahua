@@ -1,0 +1,41 @@
+kahua-install
+
+kahua-install [-c conf-file][-U][-t material-type][-r
+rename][--no-overwrite] file ...
+
+Kahuaのアプリケーションサーバ関連のマテリアルを、現在のコンフ
+ィグレーションに従った箇所にインストールするためのスクリプ
+ト。
+
+conf-file にはkahua-spvr等と共通のコンフィグレーションファイ
+ルを指定する (kahua.config参照)。
+
+material-type には、"static", "script", "base", "plugin" のい
+ずれかを指定する。
+
+static
+
+    file はコンフィグレーションで指定される
+    static-document-path以下にインストールされる
+
+script
+
+    fileはコンフィグレーションで指定される
+    $(working-directory)/checkout 以下にインストールされる
+
+base
+
+    fileは$(working-directory)直下にインストールされる
+
+plugin
+
+    fileは$(working-directory)/plugins にインストールされる
+
+-r rename オプションが与えられると、インストールされたファイ
+ル名が"'rename''へと変更される。
+
+--no-overwriteオプションが与えられている場合、既に指定のファ
+イルが指定の場所に存在すれば、インストールを行わない。
+
+-U オプション(uninstall)が指定された場合、既にインストールさ
+れているファイルを取り除く。

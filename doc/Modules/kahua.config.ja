@@ -1,0 +1,190 @@
+kahua.config
+
+[module] kahua.config
+
+Kahuaサーバ、ツール群で共通して使われるコンフィグレーションパ
+ラメータを扱うモジュールです。
+
+Kahuaサーバ、ツール群(Scripts参照)は、起動時にコンフィグレー
+ションファイルを読み込みます。デフォルトは/etc/kahua.confです
+が、多くのツールは-cオプションで替わりのファイルを指定するこ
+ともできます。
+
+コンフィグレーションファイルはSchemeスクリプト片で、単にload
+されます。それは、<kahua-config>クラスのシングルトンインスタ
+ンスを生成する式を含んでいなければなりません。
+
+(make <kahua-config>
+  :sockbase ....
+  :working-directory ...)
+
+src/kahua.conf.sample にサンプルのコンフィグレーションファイ
+ルがあります。
+
+[class] <kahua-config>
+
+gauche.mop.singletonの<singleton-mixin>を継承しており、ただ一
+つだけインスタンスが作成されます。以下のユーザアクセス可能な
+スロットがあります。コンフィグレーションファイル内で、
+<kahua-config>のインスタンス作成時にこれらのスロットに初期値
+を与えることで、 Kahuaの動作に影響を与えるパラメータを設定す
+ることができます。
+
+これらのスロットの値を実行中に変更した場合の動作は未定義で
+す。プログラム中では、下記にあるユーティリティ手続き等で参照
+するだけにとどめて下さい。
+
+[slot] sockbase
+
+サーバソケットをオープンする際のベースとなる値を指定します。
+現在サポートされているのはunixドメインソケットのみです。次の
+ように指定します。
+
+  unix:dir
+
+dirはディレクトリ名で、その下にソケットファイルが作成されま
+す。 dirは存在して、Kahuaサーバを起動するユーザが書き込み可能
+でなければなりません。
+
+デフォルトは unix:/tmp/kahua-elua です。
+
+[slot] working-directory
+
+Kahuaサーバ群が使用するワーキングディレクトリを指定します。こ
+のディレクトリは存在して、Kahuaサーバを起動するユーザが書き込
+み可能でなければなりません。
+
+Kahuaサーバ群は、この下にアプリケーションサーバスクリプトや、
+データベースを保持します。
+
+デフォルトは/var/lib/kahua-elua です。
+
+[slot] static-document-path
+
+スタティックなコンテンツを保持するディレクトリを指定します。
+このディレクトリ以下に書き込んだものが、次に述べる
+static-document-urlで外部からhttpd経由でアクセス可能でなけれ
+ばなりません。 Kahuaサーバ群は、スタティックなコンテンツへの
+リンクは毎回cgiを通して送るのではなく、直接そのファイルを指す
+urlを生成します。
+
+このディレクトリは存在して、Kahuaサーバを起動するユーザが書き
+込み可能でなければなりません。
+
+デフォルトは/var/www/html/kahuaです。
+
+[slot] static-document-url
+
+スタティックなコンテンツを外部からhttpd経由でアクセスするため
+の urlのパスを指定します。通常、サーバ名を除いた絶対パスが使
+われます。
+
+デフォルトは/kahuaです。
+
+[slot] ping-timeout-sec
+
+kahua-spvr は一定間隔で各 worker が動作しているかを確認し、一
+定時間 worker が無反応だった場合（タイムアウト）、worker を再
+起動します。
+
+このスロットは、そのタイムアウトの秒数を設定します。
+
+[slot] ping-interval-sec
+
+このスロットは、ping を打つ間隔の秒数を設定します。
+
+[slot] auto-restart
+
+意図せずに終了した worker プロセスを自動的に再起動する場合に
+は #t を設定します。デフォルトでは #f になっています。
+
+[procedure] kahua-init [conf-file] [skip-check]
+
+Kahuaアプリケーションサーバは最初にこの手続きを呼ぶ必要があり
+ます。
+
+コンフィグレーションクラス<kahua-config>のシングルトンインス
+タンスを初期化します。conf-fileが与えられていればそれをloadし
+ます。与えられていなければデフォルトのコンフグレーションファ
+イル (/etc/kahua.conf) のロードを試み、それが見つからなければ
+警告を出して適当な初期値を設定します。
+
+一度初期化されたら、<kahua-config>のシングルトンインスタンス
+は
+
+  (kahua-config)
+
+でアクセスすることができます。
+
+skip-check に #t だった場合、working-dir などのチェックを省略
+します。 kahua.conf の内容だけ知りたい場合はこれを #t にして
+利用してください。このオプションが与えられていない場合はチェ
+ックを行います。
+
+以下のアクセス手続きが提供されています。
+
+[procedure] kahua-config
+
+<kahua-config>のシングルトンインスタンスを返します。
+
+[procedure] kahua-sockbase
+
+ソケットを開く箇所の基準となるsockbaseの値を返します。
+
+今のところサポートされているのはunixドメインソケットのみで、
+sockbase は次の形式の文字列です。
+
+  unix:dir
+
+ここで、dirは存在するディレクトリ名で、その下にunixドメインソ
+ケットが作成されます。
+
+[procedure] kahua-logpath filename
+
+ログファイルfilenameを作成するためのフルパス名を返します。
+<kahua-config>で指定されたワーキングディレクトリ名をwdirとす
+ると、ログファイルのフルパスは
+
+  wdir/logs/filename
+
+となります。
+
+[procedure] kahua-static-document-path path
+
+スタティックドキュメントを置くためのパスを返します。 pathには
+相対パスを指定します。例えばstatic-document-pathが
+"/var/www/html/kahua"の場合、
+
+  (kahua-static-document-path "myapp/home.html")
+    => "/var/www/html/kahua/myapp/home.html"
+
+となります。
+
+[procedure] kahua-static-document-url path
+
+スタティックドキュメントを外部から参照するためのurlのパスを返
+します。
+
+[procedure] kahua-config-file
+
+kahua-initで指定されたコンフグレーションファイル名(無指定だっ
+た場合はデフォルトのパス) を返します。
+
+[procedure] kahua-ping-timeout-sec
+
+kahua-spvr は一定間隔で各 worker が動作しているかを確認し、一
+定時間 worker が無反応だった場合（タイムアウト）、worker を再
+起動します。
+
+この手続きは、そのタイムアウトとして何秒間設定するかを返しま
+す。
+
+[procedure] kahua-ping-interval-sec
+
+ping を打つ間隔の秒数を返します。
+
+[procedure] kahua-auto-restart
+
+自動的に予期せず終了した worker プロセスを再起動させる設定の
+場合、#t を返します。
+

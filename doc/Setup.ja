@@ -1,0 +1,90 @@
+Setup
+
+tarballからのビルドとインストール
+
+準備
+
+Gauche-0.7.4.2以降が必要。
+
+また、Kahuaサーバを管理するスタッフのためにunixグループを一つ
+作っておくとよい。ここでは仮にそれをkahuaグループとする。
+
+ビルド
+
+ % tar xzvf Kahua-$VERSION.tgz
+ % cd Kahua-$VERSION
+ % ./configure --with-cgidir=$CGIDIR
+ % make
+
+./configureのオプション
+
+--with-cgidir
+
+    cgiスクリプトをインストールするディレクトリ。 httpdの設定
+    によって異なる。(cgiスクリプトのインストール先は、 make
+    install時にmake変数KAHUA_CGIDIRによってオーバライドでき
+    る)。
+
+--prefix, --exec-prefix,...
+
+    標準のconfigureオプションは、kahua関連のスクリプトファイ
+    ルをインストールする先を指定する。
+
+セルフテスト
+
+ % make check
+
+インストール
+
+ % su
+ # make install
+ # vi /etc/kahua.conf
+ # chgrp kahua $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR
+ # chmod g+ws $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR
+
+インストールプロセスは、
+{$bindir,$sysconfdir,$libdir,$libexecdir}/kahua 以下に書き込
+むので、それなりの権限で行う必要がある。書き込まれるディレク
+トリの詳細はINSTALLファイルを参照されたい。
+
+実行時にKahuaサーバが書き込みを必要とするディレクトリは次の3
+つである。これらはkahuaサーバの権限で書き込み可能になっている
+必要がある。各ディレクトリは$sysconfdir/kahua/kahua.confでカ
+スタマイズできる。 kahua.confの内容に関してはkahua.config参
+照。
+
+$KAHUA_SOCKBASE
+
+    ソケットを作成するディレクトリ。デフォルトは
+    $prefix/tmp/kahua。
+
+$KAHUA_WORKDIR
+
+    作業ファイルディレクトリ。デフォルトは
+    $localstatedir/kahua-elua。
+
+$KAHUA_DOCDIR
+
+    静的ドキュメントディレクトリ。デフォルトは
+    /var/www/kahua。
+
+サンプルサーバのインストール
+
+ % make install-examples
+
+"lambdabooks", "wiki-iki", "login", "nqueen" "lazynqueen"
+"lambdacalcul" アプリケーションサーバがインストールされる。
+
+kahua-spvrを起動して、それぞれkahua.cgi/lambdabooks,
+kahua.cgi/wiki-iki などを通じて Webブラウザからアクセス可能。
+
+CVSからのビルド
+
+CVSからビルドするには、autoconf 2.54以降が必要。
+
+CVSからチェックアウトしたソースにはconfigureスクリプトが含ま
+れない。
+
+ % ./DIST gen
+
+でconfigureスクリプトを作成してからビルドすること。

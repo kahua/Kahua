@@ -1,5 +1,9 @@
 2004-03-26  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* doc/ : added documents. Not yet prepaired English documents.
+	
+2004-03-26  Nobuo Yamashita  <nobsun@sampou.org>
+
 	* Install directory rearranged:
 	By default all install files located in /usr/local/*/kahua/.
 

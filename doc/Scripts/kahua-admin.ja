@@ -1,0 +1,165 @@
+kahua-admin
+
+kahua-admin [-c conf-file] [-user username]
+
+立ち上がっているkahua-spvrおよびアプリケーションサーバをイン
+タラクティブにコントロールするためのスクリプト。
+
+起動するとまずkahua-spvrに接続し、プロンプト"spvr>"が出る。終
+了するにはEOF (^D) をタイプ。
+
+プロンプトは、現在接続中の相手に応じて変化する。
+
+オプション
+
+-c conf-file
+
+conf-fileは設定ファイル名を指定する。デフォルトでは
+$sysconfdir/kahua/kahua.conf(Setupの際にconfigureスクリプトに
+なにも指定しなければ、/usr/local/etc/kahua/kahua.conf)を探し
+に行くが、無かったら適当なデフォルト値を使うので別にファイル
+が無くても良い。以下 $(working-directory) で参照するのは、こ
+のファイルで指定した working-directory のこと。
+
+-user ユーザ名
+
+ユーザ専用モードで起動している kahua-spvr に接続するためのオ
+プション。ユーザ専用モード参照。
+
+kahua-spvrに対するコマンド
+
+プロンプト"spvr>" に対しては、次のコマンドを与えることができ
+る。
+
+help
+
+kahua-spvr で使えるコマンドの一覧を表示する。
+
+ls
+
+kahua-spvrが立ち上げているアプリケーションサーバのリストを表
+示する。
+
+spvr> ls
+wno   pid type         since        wid
+  0 13188 lambdabooks  Jan 23 13:32 lambdabooks:a6c:3357v
+  1 13189 wiki-iki     Jan 23 13:32 wiki-iki:a6d:1l51q
+ 40 10553 kahua-web    Jan 25 04:36 kahua-web:855:t9ee
+
+run type
+
+typeで指定されるタイプのアプリケーションサーバプロセスを新た
+に走らせる。
+
+kill number | kill type | kill *
+
+指定されるアプリケーションサーバプロセスを終了させる。
+
+number
+
+    lsコマンドで表示されるwnoの欄の番号を整数で指定。
+
+type
+
+    タイプを指定。該当するタイプのアプリケーションサーバプロ
+    セスは全てkillされる。
+
+*
+
+    全てのアプリケーションサーバプロセスを終了させる。
+
+restart number | restart type | restart *
+
+指定されるアプリケーションサーバプロセスを再起動する。引数の
+意味はkillと同じ。
+
+connect wno
+
+wnoで指定されるアプリケーションサーバに接続する。wnoは lsコマ
+ンドの第一カラムに示される番号。
+
+アプリケーションサーバに接続すると、プロンプトがアプリケーシ
+ョンサーバIDに変わる。
+
+spvr> connect 1
+ekahi:20554:7161209>
+
+types
+
+kahua-spvrが知っているアプリケーションサーバのタイプのリスト
+を表示する。
+
+reload
+
+$(working-directory)/app-serversファイルを（あれば）再読み込
+みする。 app-serversファイルに関してはkahua-spvr参照。
+
+:run-by-default で指定したサーバ数以上のサーバプロセスを起動
+する。
+
+lsuser
+
+登録された開発者アカウントを表示する。
+
+adduser name password [role] ...
+
+新しい開発者アカウントを登録する。nameは3文字以上、passwordは
+4文字以上入力しなければならない。
+
+deluser name
+
+開発者nameのアカウントを削除する。
+
+moduser password name new-password
+
+開発者nameのパスワードを変更する。
+
+plugin [wno]
+
+起動しているアプリケーションの初期化したプラグインを一覧表示
+する。wnoには ls で表示される wno 番号を指定する。指定しない
+場合は wno の一番小さいものが使われる。ほとんどの場合、どのア
+プリケーションでも初期化されているプラグインは同じであるが、
+次に説明する reload を使った場合は変わる可能性がある。
+
+plugin reload wno
+
+プラグインを再読み込みし、起動しているアプリケーションのプラ
+グイン用モジュールを初期化する。これによって、起動後にインス
+トールされたプラグインを読み込むことができる。
+
+wno には ls で表示される wno 番号を指定する。
+
+shutdown
+
+kahua-spvrを終了させる。kahua-spvr配下のアプリケーションサー
+バも全て終了する。
+
+update wno or wtype . files
+
+wno または wtype で指定したサーバ（typeとする）のスクリプトを
+再読み込みする。具体的には、
+$(working-directory)/checkout/type/type.kahua を再読み込みす
+る。
+
+files が指定してあった場合、
+$(working-directory)/checkout/file, ... をそのサーバが load
+する。
+
+アプリケーションサーバに対するコマンド
+
+アプリケーションサーバに対しては、通常のScheme repl
+(read-eval-print-loop) のように使うことができる。プロンプトに
+対してタイプしたS式はアプリケーションサーバに送られ、そこで
+evalされた結果が表示される。
+
+式が評価されるモジュールはアプリケーションサーバの作り方によ
+って異なる。デフォルトではuserモジュール。
+
+唯一の特殊コマンドは"disconnect" で、これをタイプすると
+kahua-spvrプロンプトに戻る。(spvrのプロンプトが二つ出るのは、
+disconnectの後のnewlineが spvrプロンプトに戻ってから読まれる
+ため)。
+
+lambdabooks:20554:7161209> disconnect
+spvr> spvr>

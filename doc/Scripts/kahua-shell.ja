@@ -1,0 +1,45 @@
+kahua-shell
+
+kahua-shell [-c conffile] [-user username]
+
+立ち上がっているkahua-serverに接続し、サンドボックス環境をイ
+ンタラクティブにコントロールするためのスクリプト。
+
+起動すると認証プロンプトが出る。ここでuser.confに登録されてい
+る開発者アカウントの名前とパスワードを入力する。次にワーカー
+(アプリケーション)を選択する。選択するとプロンプトが出る。
+
+このプロンプトにS式を書くと接続先のkahua-serverのサンドボック
+ス環境(*.kahuaの環境)で評価される。
+
+終了するにはEOF (^D) をタイプ。
+
+オプション
+
+-c kahua.conf を指定する。
+
+-user ユーザ専用モードで起動しているサーバに接続するときに使
+い、ユーザ名を指定する。ここで指定するユーザ名は自分のアカウ
+ントでなければならない。認証時にはここで指定したユーザ名が使
+われ、パスワード入力プロンプトだけが表示される。
+
+Emacs Lisp の設定
+
+1. Kahua/emacs/ にある kahua.el と kahua-shell.el を Emacs の
+load-path にあるディレクトリに置く。
+
+2. Emacs 起動時にロードしたいなら .emacs に (require 'kahua)
+を記述する。Emacs が起動したあとにロードするなら *scratch* バ
+ッファで(require 'kahua) を実行する。
+
+3. kahua をロードすると 2つのコマンドが使える。
+
+ ・ M-x run-kahua : kahua-admin を起動し、バッファを Inferior
+    Schemeモードにする。
+
+ ・ M-x run-kahua-shell : リモートホストに ssh で接続し
+    kahua-shellを起動する。バッファを Inferior Scheme モード
+    にする。
+
+4. カスタマイズ用変数が用意してある。M-x customize-group
+kahua でデフォルトの接続ホスト名やユーザ名等を設定できる。

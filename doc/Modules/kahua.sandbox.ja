@@ -1,0 +1,45 @@
+kahua.sandbox
+
+[module] kahua.sandbox
+
+このモジュールは、ローカルファイルシステムやプロセスなどの外
+部環境へアクセスすること、load や use することを禁止するサン
+ドボックスモジュールを提供します。
+
+このモジュールが Kahua アプリケーションの実行環境になります。
+
+[procedure] make-sandbox-module
+
+危険な手続きを禁止した無名モジュールを返します。
+
+以下の手続きが禁止されています。
+
+ open-input-file open-output-file
+ call-with-input-file call-with-output-file
+ with-input-from-file with-output-to-file
+ load transcript-on transcript-off
+ null-environment scheme-report-environment
+ interaction-environment
+ exit sys-exit sys-abort
+ import require
+ select-module
+ with-module define-module
+ define-in-module find-module
+
+use は kahua.plugin の提供する use-plugin マクロで置換され、
+kahua.plugin で許可されたモジュールをサンドボックスモジュール
+に束縛することができます。
+
+[macro] export-module module name ...
+
+module にある name を束縛して export します。
+
+[macro] enable-module-except module names ...
+
+names 以外の module の提供する手続きを束縛します。
+
+[macro] disable-bindings name ...
+
+name にある束縛をエラーを起こすマクロで上書きし、無効にしま
+す。
+

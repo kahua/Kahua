@@ -1,0 +1,20 @@
+kahua
+
+[module] kahua
+
+Kahuaアプリケーションフレームワークのモジュール群をまとめてイ
+ンポートするためのモジュール。以下のモジュールをextendする。
+
+ ・ kahua.config
+ ・ kahua.util
+ ・ kahua.partcont
+ ・ kahua.gsid
+ ・ kahua.persistence
+ ・ kahua.user
+ ・ kahua.session
+ ・ kahua.server
+ ・ kahua.developer
+ ・ kahua.elem
+ ・ kahua.plugin
+ ・ kahua.sandbox
+ ・ kahua.pdf
