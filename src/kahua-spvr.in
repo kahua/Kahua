@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.12 2004/02/22 22:00:55 ko1 Exp $
+;; $Id: kahua-spvr.in,v 1.13 2004/02/23 06:15:11 tahara Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -167,7 +167,7 @@
                                 ((kahua-config-file)
                                  => (lambda (c) `("-c" ,c)))
                                 ((ref (kahua-config) 'user-mode)
-                                 => (lambda (u) `("-user" ,user)))
+                                 => (lambda (u) `("-user" ,u)))
                                 ((ref spvr 'keyserv)
                                  => (lambda (k) `("-k" ,(ref k 'id))))))
                       ,(let1 type (symbol->string worker-type)
@@ -252,7 +252,7 @@
                           ((kahua-config-file)
                            => (lambda (c) `("-c" ,c)))
                           ((ref (kahua-config) 'user-mode)
-                           => (lambda (u) `("-user" ,user)))))))
+                           => (lambda (u) `("-user" ,u)))))))
          (kserv (run-piped-cmd cmd))
          (kserv-id (read-line (process-output kserv))))
     (set! (ref spvr 'keyserv)
