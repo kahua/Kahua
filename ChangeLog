@@ -1,3 +1,13 @@
+2004-02-23  Koichi Sasada <sasada@namikilab.taut.ac.jp>
+
+	* src/kahua-spvr.in : bug fixed about ping.
+	* src/kahua-server.in (update-server): 
+	renamed 'reload-server to update-server. supported updating specified
+	file.
+	* src/kahua-admin.in : supported 'update' command.
+	supported redo command as ":".
+	* test/admin.in : add 'update' test.
+
 2004-02-23  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* src/kahua-spvr.in (unexpected-end): 

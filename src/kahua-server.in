@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.in,v 1.10 2004/02/22 23:58:33 shiro Exp $
+;; $Id: kahua-server.in,v 1.11 2004/02/23 11:20:58 ko1 Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -27,6 +27,7 @@
   (use gauche.collection)
   (use gauche.parseopt)
   (use file.util)
+  (use srfi-1)
   (use kahua)
   (export primary-database-name
           main-proc
@@ -112,11 +113,19 @@
 
 (define *kahua-top-module* #f)
 
-;; reload with top-module
-(define (reload-server . files)
+;; update server with top-module or some files
+(define (update-server . files)
+  (define (load-k-module mod)
+    (with-error-handler
+     (lambda (e)
+       (report-error e)
+       #f)
+     (lambda ()
+       (load mod :environment kahua-app-server))))
+
   (if (pair? files)
-      (warn "unsupport operation: reload-server with files")
-      (load-kahua-module *kahua-top-module*)))
+      (every (lambda (f) (load-k-module f)) files)
+      (load-k-module *kahua-top-module*)))
 
 (define (kahua-server-main args)
   (let-args (cdr args) ((conf-file "c=s" #f)

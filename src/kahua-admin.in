@@ -5,15 +5,19 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.in,v 1.10 2004/02/23 05:49:15 tahara Exp $
+;; $Id: kahua-admin.in,v 1.11 2004/02/23 11:20:58 ko1 Exp $
 
 (use srfi-1)
 (use gauche.net)
 (use gauche.parseopt)
+(use gauche.parameter)
 (use util.list)
 (use kahua)
 (use file.util)
 (use gauche.process)
+
+(define last-command (make-parameter ""))
+(define *redo-command* ":")
 
 ;; Deal with supervisor command -----------------------------------
 (define (spvr-command-processor)
@@ -25,6 +29,9 @@
       (format #t "spvr> ")
       (flush)
       (let1 line (read-line)
+        (if (equal? line *redo-command*)
+	    (set! line (last-command)) ;; use last command
+	    (last-command line))       ;; set last command
         (if (eof-object? line)
           (exit 0)
           (let1 cmd (call-with-input-string line port->sexp-list)
@@ -47,6 +54,14 @@
 		   (apply cvs-command (cdr cmd))
 		   (begin (display "Usage: cvs update <worker-type/number>\n")
 			  spvr-command-processor)))
+		((update)
+		 (if (> (length cmd) 1)
+		     (apply update-command (cdr cmd))
+		     (begin (display 
+			     "Usage: update <worker-type/number> (files...)\n")
+			    spvr-command-processor)))
+
+		;; user management
                 ((adduser)
                  (if (>= (length cmd) 3)
                      (let ((name (symbol->string (cadr cmd)))
@@ -137,18 +152,41 @@
     ))
 
 
-(define (reload-worker-files wid . files)
+(define (update-worker-files wtype . files)
   (let* ((workers (send-command #f '(ls)))
          (the-worker (find (lambda (w)
-                             (eqv? (get-keyword :worker-type w) wid))
+                             (eqv? (get-keyword :worker-type w) wtype))
                            workers)))
     (if the-worker
 	(begin
 	  (display (caddr (send-command (get-keyword :worker-id the-worker) 
-				      '(reload-server))))
+				      '(update-server))))
 	  (newline))
-        (format #t "No such worker: ~a\n" wid)))
+        (format #t "No such worker: ~a\n" wtype)))
   spvr-command-processor)
+
+(define (update-command t/c . files)
+  (let* ((workers (send-command #f '(ls)))
+	 (targets (filter
+		   (lambda (w)
+		     (or (eqv? (get-keyword :worker-type w) t/c)
+			 (eqv? (get-keyword :worker-count w) t/c)))
+		   workers)))
+    (if (null? targets)
+	  (format #t "No such worker: ~a\n" t/c)
+	  (for-each (lambda (w)
+		      (let* ((wid   (get-keyword :worker-id w))
+			     (wtype (get-keyword :worker-type w))
+			     (fs    (map (cut symbol->string <>) files))
+			     (ans   (send-command wid
+						  `(update-server ,@fs))))
+			(if (equal? (caddr ans) "#f")
+			    (begin
+			      (format #t "update failed: ~a(~a)\n" wtype wid)
+			      (format #t "~a\n" (car ans)))
+			    (format #t "update: ~a(~a)\n" wtype wid))))
+		    targets))
+    spvr-command-processor))
 
 ;; Deal with cvs command ------------------------------------
 
@@ -166,8 +204,8 @@
 			      "update" "-PAd" cdir
 			      :wait #t)
 		 (if (pair? wtype)
-		     (reload-worker-files (car wtype))
-		     (reload-worker-files #f)))
+		     (update-worker-files (car wtype))
+		     (update-worker-files #f)))
 	       (display "unknown type or has not checkouted\n")))
 	  (else
 	   (display "unknown cvs command. Usage: update worker-type\n")))
