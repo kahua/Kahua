@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-shell.in,v 1.1 2004/01/29 07:19:19 tahara Exp $
+;; $Id: kahua-shell.in,v 1.2 2004/02/14 09:05:17 tahara Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -24,11 +24,17 @@
        (print "ERROR: " (ref e 'message))
        login-processor)
      (lambda ()
+       (display "Welcome to Kahua.") (newline)
        (let ((username (begin (format #t "username: ")
                               (flush)
                               (read-line)))
-             (password (get-password "password: ")))
-         (cond ((kahua-check-developer username password)
+             (password (if (sys-getenv "TERM")
+                         (get-password "password: ")
+                         (begin (format #t "password: ")
+                                (flush)
+                                (read-line)))))
+         (cond ((find eof-object? (list username password)) (exit 0))
+               ((kahua-check-developer username password)
                 select-worker-processor)
                (else
                 (newline)
