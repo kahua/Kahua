@@ -1,5 +1,6 @@
 2004-02-16  Yusei Tahara  <tahara@timedia.co.jp>
 
+	* src/custom.conf.sample: added configuration file for user mode.
 	* src/kahua/config.scm
 	(<kahua-custom>): added. and added new internal slot, "user-mode" for
 	running user mode. when running under user mode, "user-mode" value
