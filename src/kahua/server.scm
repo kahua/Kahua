@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.20 2004/03/01 08:21:15 tahara Exp $
+;; $Id: server.scm,v 1.21 2004/03/02 17:33:43 tahara Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -682,7 +682,7 @@
                              (exec/state (make-state 0 0 #t '() '())
                                          (interp-html-pdf nodes))))))
         (port (open-output-string)))
-    (with-docdata-to-port port data)
+    (with-docdata-to-port port (lambda () data))
 
     ;;for extra headers
     (receive (stree context)

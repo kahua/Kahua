@@ -1,3 +1,17 @@
+2004-03-03  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* test/developer.scm, test/plugin.scm, test/sandbox.scm:
+	added japanese comment and test-module check.
+	* test/config.scm: added japanese comment.
+	* src/kahua/pdf/main.scm, src/kahua/pdf/state.scm, src/kahua/typeset.scm:
+	remove non-defined symbols from export list.
+	(with-document, with-document-to-port, with-document-to-file,
+	 with-page, with-docdata-to-file, with-docdata-to-port):
+	in gauche, with-* get thunk instead of body. now these are procedures,
+	not macros.
+	(with-output-to-string): removed.
+	* test/pdf.scm: added test-module check and change with-* argument.
+
 2004-03-03  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* src/kahua-spvr.in: added more log output.

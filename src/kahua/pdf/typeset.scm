@@ -458,51 +458,46 @@
     (for-each
      (lambda (pbox)
        (with-page
-	(move-to *typeset-left-margin* (- *default-height* *typeset-top-margin*))
-	(line-to (+ *typeset-left-margin* (*typeset-width*)) (- *default-height* *typeset-top-margin*))
-	(line-to (+ *typeset-left-margin* (*typeset-width*)) *typeset-top-margin*)
-	(line-to *typeset-left-margin* *typeset-top-margin*)
-	(line-to *typeset-left-margin* (- *default-height* *typeset-top-margin*))
-	(stroke)
-	(in-text-mode
-	 (move-text *typeset-left-margin* (- *default-height* *typeset-top-margin*))
-	 (for-each
-	  (lambda (lbox)
+        (lambda ()
+          (move-to *typeset-left-margin* (- *default-height* *typeset-top-margin*))
+          (line-to (+ *typeset-left-margin* (*typeset-width*)) (- *default-height* *typeset-top-margin*))
+          (line-to (+ *typeset-left-margin* (*typeset-width*)) *typeset-top-margin*)
+          (line-to *typeset-left-margin* *typeset-top-margin*)
+          (line-to *typeset-left-margin* (- *default-height* *typeset-top-margin*))
+          (stroke)
+          (in-text-mode
+           (move-text *typeset-left-margin* (- *default-height* *typeset-top-margin*))
+           (for-each
+            (lambda (lbox)
 	    ;(format #t "indent: ~a~%body: ~a~%" (cadar lbox) (cadr lbox))
-	    (move-text 0 (- (caar lbox)))
-	    (move-text (* *typeset-indent-width* (cadar lbox)) 0)
-	    (for-each
-	     (lambda (cbox)
-	       (let* ((font (caddar cbox))
-		      (char (cadr cbox)) )
-		 (when font
-		       (set! fontname (typeset-get-font (car font)))
-		       (set! fontsize (cadr font)) )
-		 (draw-char fontname fontsize char) ))
+              (move-text 0 (- (caar lbox)))
+              (move-text (* *typeset-indent-width* (cadar lbox)) 0)
+              (for-each
+               (lambda (cbox)
+                 (let* ((font (caddar cbox))
+                        (char (cadr cbox)) )
+                   (when font
+                     (set! fontname (typeset-get-font (car font)))
+                     (set! fontsize (cadr font)) )
+                   (draw-char fontname fontsize char) ))
 	       (cadr lbox) )
-	     (move-text (- (* *typeset-indent-width* (cadar lbox))) 0)
-	     )
-	    pbox ))))
+              (move-text (- (* *typeset-indent-width* (cadar lbox))) 0)
+              )
+	    pbox)))))
      (reverse (*typeset-document*)) ))
-)
+  )
 
+(define (with-docdata-to-file filename thunk)
+  (reset-parameters)
+  (*document* (build-doc))
+  (pdf-proc (thunk))
+  (write-document filename))
 
-(define-syntax with-docdata-to-file
-  (syntax-rules ()
-    ((_ filename body)
-     (begin
-       (reset-parameters)
-       (*document* (build-doc))
-       (pdf-proc body)
-       (write-document filename)))))
+(define (with-docdata-to-port port thunk)
+  (reset-parameters)
+  (*document* (build-doc))
+  (pdf-proc (thunk))
+  (write-document-port port))
 
-(define-syntax with-docdata-to-port
-  (syntax-rules ()
-    ((_ port body)
-     (begin
-       (reset-parameters)
-       (*document* (build-doc))
-       (pdf-proc body)
-       (write-document-port port)))))
 
 (provide "kahua/pdf/typeset")

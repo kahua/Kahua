@@ -7,13 +7,11 @@
   (export
            with-document
            with-document-to-file
-	   with-docdata-to-file
            with-document-to-port
            with-page
            build-font
 	   build-jfont
 	   build-cidsysteminfo
-	   pdf-proc
            write-document
            write-document-port
            font-name
@@ -381,55 +379,39 @@
 
 ;; helpful document structure macros
 
-(define-syntax with-output-to-string
-  (syntax-rules ()
-    ((_ body ...)
-     (let ((s-port (open-output-string)))
-       (set-page-stream s-port)
-       body ...
-       (get-output-string s-port)))))
+(define (with-document thunk)
+  (reset-parameters)
+  (*document* (build-doc))
+  (thunk))
 
-(define-syntax with-document
-  (syntax-rules ()
-    ((_ body ...)
-     (begin
-       (reset-parameters)
-       (*document* (build-doc))
-       body ...))))
+(define (with-document-to-port port thunk)
+  (reset-parameters)
+  (*document* (build-doc))
+  (thunk)
+  (write-document-port port))
 
-(define-syntax with-document-to-port
-  (syntax-rules ()
-    ((_ port body ...)
-     (begin
-       (reset-parameters)
-       (*document* (build-doc))
-       body ...
-       (write-document-port port)))))
+(define (with-document-to-file filename thunk)
+  (reset-parameters)
+  (*document* (build-doc))
+  (thunk)
+  (write-document filename))
 
-  
-(define-syntax with-document-to-file
-  (syntax-rules ()
-    ((_ filename body ...)
-     (begin
-       (reset-parameters)
-       (*document* (build-doc))
-       body ...
-       (write-document filename)))))
-
-(define-syntax with-page
-  (syntax-rules ()
-    ((_ (width height) body ...)
-     (begin
-       (*page-width* width)
-       (*page-height* height)
-       (let* ((pdf-stream
-               (build-pdf-stream
-                (with-output-to-string body ...)))
-              (content (build-indirect-obj pdf-stream))
-              (page (build-page width height content)))
-         (*page* page)
-         (add-page (*page*)))))
-    ((_ body ...) ; default media box size
-     (with-page (*default-width* *default-height*) body ...))))
+(define (with-page thunk . size)
+  (let* ((size (get-optional size (cons *default-width* *default-height*)))
+         (width (car size))
+         (height (cdr size)))
+    (*page-width* width)
+    (*page-height* height)
+    (let* ((pdf-stream
+            (build-pdf-stream
+             (let1 s-port (open-output-string)
+               (set-page-stream s-port)
+               (thunk)
+               (get-output-string s-port))))
+           (content (build-indirect-obj pdf-stream))
+           (page (build-page width height content)))
+      (*page* page)
+      (add-page (*page*))
+      )))
 
 (provide "kahua/pdf/main")

@@ -14,10 +14,6 @@
           run/state
           exec/state
           eval/state
-          sequence-state>>=
-          sequence-state>>
-          map-state>>=
-          map-state>>
           )
 )
 
