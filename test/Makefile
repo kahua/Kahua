@@ -1,5 +1,5 @@
 TESTS = test-xml persistence user config gsid session server worker \
-        lambdabooks wiki-iki spvr
+        lambdabooks wiki-iki spvr admin
 
 .PHONY: all check clean distclan maintainer-clean $(TESTS)
 
@@ -43,6 +43,8 @@ wiki-iki :
 spvr :
 	@gosh -I../src ./spvr.scm >> test.log
 
+admin:
+	@gosh -I../src ./admin.scm >> test.log
 
 clean:
 	rm -rf test.log app/test.log *~ _tmp* _work

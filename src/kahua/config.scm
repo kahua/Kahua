@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm,v 1.2 2003/12/27 03:14:08 ko1 Exp $
+;; $Id: config.scm,v 1.3 2004/01/02 11:36:33 ko1 Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -54,11 +54,23 @@
    ;;     static-document-path via httpd.
    (static-document-url  :init-keyword :static-document-url
                          :init-value "/kahua")
+   
+   ;; repository - specifies where to use cvs repository
+   (repository :init-keyword :repository
+	       :init-base "/var/lib/kahua/cvs")
 
    ;; internal
    (conf-file :init-value #f)
    )
   )
+
+(define-method initialize ((self <kahua-config>) initargs)
+  (next-method)
+  ;; repository path must be absolute(for cvs).
+  (let1 reppath (ref self 'repository)
+	(if (relative-path? reppath)
+	    (set! (ref self 'repository)
+		  (sys-normalize-pathname reppath :absolute #t)))))
 
 (define (sanity-check kahua-conf)
 ;; do some sanity check

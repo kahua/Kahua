@@ -5,13 +5,15 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.in,v 1.2 2003/12/26 03:09:10 shiro Exp $
+;; $Id: kahua-admin.in,v 1.3 2004/01/02 11:36:33 ko1 Exp $
 
 (use srfi-1)
 (use gauche.net)
 (use gauche.parseopt)
 (use util.list)
 (use kahua)
+(use file.util)
+(use gauche.process)
 
 ;; Deal with supervisor command -----------------------------------
 (define (spvr-command-processor)
@@ -34,6 +36,11 @@
                    (connect-worker (cadr cmd))
                    (begin (display "Usage: connect <worker-number>\n")
                           spvr-command-processor)))
+		((cvs)
+		 (if (> (length cmd) 2)
+		   (apply cvs-command (cdr cmd))
+		   (begin (display "Usage: cvs update <worker-type/number>\n")
+			  spvr-command-processor)))
                 (else
                  (let1 reply (send-command #f cmd)
                    (case (car cmd)
@@ -94,6 +101,43 @@
            ))
         ))
     ))
+
+
+(define (reload-worker-files wid . files)
+  (let* ((workers (send-command #f '(ls)))
+         (the-worker (find (lambda (w)
+                             (eqv? (get-keyword :worker-type w) wid))
+                           workers)))
+    (if the-worker
+	(begin
+	  (display (caddr (send-command (get-keyword :worker-id the-worker) 
+				      '(reload-server))))
+	  (newline))
+        (format #t "No such worker: ~a\n" wid)))
+  spvr-command-processor)
+
+;; Deal with cvs command ------------------------------------
+
+(define (cvs-command cmd-type . wtype)
+  (let1 cdir (apply build-path (ref (kahua-config) 'working-directory)
+		    "checkout"
+		    (if (pair? wtype) 
+			(list (symbol->string (car wtype)))
+			'()))
+	(case cmd-type
+	  ((update)
+	   (if (file-is-directory? cdir)
+	       (begin
+		 (run-process "cvs" "-d" (ref (kahua-config) 'repository)
+			      "update" "-PAd" cdir
+			      :wait #t)
+		 (if (pair? wtype)
+		     (reload-worker-files (car wtype))
+		     (reload-worker-files #f)))
+	       (display "unkown type or has not checkouted\n")))
+	  (else
+	   (display "unkown cvs command. Usage: update worker-type\n")))
+	spvr-command-processor))
 
 ;; Utility -----------------------------------------------------
 (define (send-command wid cmd)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.3 2003/12/28 13:01:19 shiro Exp $
+;; $Id: session.scm,v 1.4 2004/01/02 11:36:33 ko1 Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -70,7 +70,8 @@
   ((key               :init-keyword :key       ;; ID key string
                       :validator (lambda (o v) (x->string v)))
    (closure           :init-keyword :closure)  ;; closure
-   (timestamp         :init-form (sys-time))   ;; timestamp
+   (timestamp         :init-keyword :timestamp
+                      :init-form (sys-time))   ;; timestamp
    (key->session      :allocation :class
                       :init-form (make-hash-table 'string=?))
    (closure->session  :allocation :class

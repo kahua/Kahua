@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.in,v 1.2 2003/12/26 22:44:37 shiro Exp $
+;; $Id: kahua-server.in,v 1.3 2004/01/02 11:36:33 ko1 Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -93,11 +93,20 @@
     (do () (#f) (selector-select selector))
     ))
 
+(define *kahua-top-module* #f)
+
+;; reload with top-module
+(define (reload-server . files)
+  (if (pair? files)
+      (warn "unsupport operation: reload-server with files")
+      (load-kahua-module *kahua-top-module*)))
+
 (define (kahua-server-main args)
   (let-args (cdr args) ((conf-file "c=s" #f)
                         . mods)
     (unless (pair? mods)
       (error "usage: kahua-server [-c <conf>] <app-server> <args> ..."))
+    (set! *kahua-top-module* (car mods))
     (kahua-init conf-file)
     (load-kahua-module (car mods))
     (let* ((worker-id (kahua-init-server 
