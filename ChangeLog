@@ -1,3 +1,8 @@
+2004-10-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/config.scm.in (kahua-init):
+	- fix error message.
+
 2004-10-12 Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua/server.scm
