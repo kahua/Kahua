@@ -5,7 +5,7 @@
 ;;
 ;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.1 2004/02/20 10:46:30 tahara Exp $
+;; $Id: sandbox.scm,v 1.2 2004/02/25 11:15:49 tahara Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)
@@ -90,6 +90,8 @@
                           load transcript-on transcript-off
                           null-environment scheme-report-environment 
                           interaction-environment
+
+                          import require
 
                           select-module
                           with-module define-module
