@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: wiki-iki.kahua,v 1.1 2003/12/27 04:00:48 shiro Exp $
+;; $Id: wiki-iki.kahua,v 1.2 2003/12/27 12:20:43 shiro Exp $
 
 (use srfi-1)
 (use srfi-13)
@@ -89,7 +89,7 @@
            => (lambda (m)
                 (next-token (m 'after)
                             (list* (format-wikiname (m 1) cont) (m 'before) r))))
-          (else (cons line r))))
+          (else (list* "\n" line r))))
   (define (format-lines lines r)
     (if (null? lines)
       (reverse! r)
