@@ -1,3 +1,11 @@
+2004-02-23  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/developer.scm
+	(developer-roles): added developer role.
+	(kahua-add-developer): added roles argument.
+	* src/kahua-admin.in, src/user.conf.sample: added developer role.
+	* test/developer.scm: changed kahua-add-developer argument.
+
 2004-02-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua-server.in (handle-request): opens the default database

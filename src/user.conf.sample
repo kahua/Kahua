@@ -1,8 +1,8 @@
 ;; Sample user configuration file
 ;; $id$
 
-(("steel" . "cRDtpNCeBiql5KOQsKVyrA0sAiA=")
- ("sussman" . "gf6L/odXbD7LIkJvjleEc4KRes8="))
+(("steel" . "cRDtpNCeBiql5KOQsKVyrA0sAiA=" (creator))
+ ("sussman" . "gf6L/odXbD7LIkJvjleEc4KRes8=" (creator)))
 
 ;; Local variables:
 ;; mode: scheme

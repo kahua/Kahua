@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: developer.scm,v 1.2 2004/02/18 22:54:26 shiro Exp $
+;; $Id: developer.scm,v 1.3 2004/02/23 05:49:15 tahara Exp $
 
 
 (define-module kahua.developer
@@ -31,7 +31,9 @@
 
 (define (developer-name x) (car x))
 
-(define (developer-password x) (cdr x))
+(define (developer-password x) (cadr x))
+
+(define (developer-roles x) (caddr x))
 
 (define (developer-password-set! x pw) (set-cdr! x pw))
 
@@ -101,7 +103,7 @@
 
 ;; user interface
 ;; TODO: load-developers should be use implicitly.
-(define (kahua-add-developer name password)
+(define (kahua-add-developer name password roles)
   (load-developers)
   (if (developer-exists? name)
       (error "the name already exists." name)
@@ -113,7 +115,7 @@
               (else
                (let ((pw (gen-password password)))
                  (developers
-                  (append (developers) `((,name . ,pw))))
+                  (append (developers) `((,name ,pw ,roles))))
                  (save-conf)))))))
 
 (define (kahua-delete-developer name)
