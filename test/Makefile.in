@@ -28,7 +28,7 @@ SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
 	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
 	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
 	spvr.scm test-xml.scm user.scm wiki-iki.scm \
-	worker.scm
+	worker.scm query.scm 
 
 SCMFILES2 = shell.scm usermode.scm
 
@@ -48,7 +48,7 @@ TESTS = test-xml persistence \
         user config gsid session partcont \
         server kahua-dbm worker \
 	lambdabooks wiki-iki nqueen foldlist \
-	spvr admin developer shell usermode sandbox plugin pdf
+	spvr admin developer shell usermode sandbox plugin pdf query
 
 CONFIG_GENERATED = Makefile
 
@@ -145,6 +145,10 @@ plugin:
 
 pdf:
 	@gosh -I../src ./pdf.scm >> test.log
+
+query:
+	@gosh -I../src ./query.scm >> test.log
+
 
 clean:
 	rm -rf test.log app/test.log *~ _* user.conf *.scm *.kahua *.sxml

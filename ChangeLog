@@ -1,3 +1,9 @@
+2004-09-07 Kenji Hisazumi <nel@soraneko.com>
+
+	* src/kahua/query.scm, test/query.scm:
+	- Added kahua.query module which is a query language for 
+	kahua.persistence.
+
 2004-09-02 Nobuo Yamashita  <nobsun@sampou.org>
 
 	* Release 0.2.8:
