@@ -45,6 +45,9 @@ SCRIPTS  = kahua-spvr.sh    \
            kahua-shell.sh   \
            kahua-keyserv.sh
 
+SVR_SCRIPTS = kahua-server.sh \
+	      kahua-keyserv.sh
+
 SCM_SCRIPTS  = kahua-spvr    \
                kahua-server  \
                kahua-admin   \
@@ -74,6 +77,7 @@ CONFIG_GENERATED = Makefile
 
 all: $(SCM_SCRIPTS) kahua/config.scm kahua.conf kahua/pdf/typeset.scm
 
+
 kahua/config.scm:
 	sed -e "s@##sysconfdir##@$(sysconfdir)@" -e "s@##localstatedir##@$(localstatedir)@" -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##package##@$(package)@" $@.in > $@
 	chmod -w $@
@@ -91,7 +95,14 @@ check:
 clean:
 	rm -rf core *~ kahua/*~ $(SCRIPTS) $(SCM_SCRIPTS) kahua/config.scm
 
-install: all
+server-scripts	:
+	@for f in $(SVR_SCRIPTS); do \
+	  sed -e "2s@^@exec @" $$f > TMP; \
+	  rm -f $$f; \
+	  mv TMP $$f; \
+	done
+
+install: all server-scripts
 	$(MKINSTDIR) $(INSTALL_DIRS) $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir)
 	@for f in $(SCMFILES); do \
 	  $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR)/$$f; \
