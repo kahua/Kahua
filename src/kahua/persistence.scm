@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.19 2004/02/29 11:29:03 shiro Exp $
+;; $Id: persistence.scm,v 1.20 2004/05/17 07:00:15 nobsun Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -17,6 +17,7 @@
   (use gauche.version)
   (use gauche.fcntl)
   (use gauche.logger)
+  (use gauche.collection)
   (export <kahua-persistent-meta> <kahua-persistent-base>
           <kahua-persistent-metainfo>
           key-of find-kahua-class find-kahua-instance
@@ -1081,10 +1082,22 @@
   ((instances :init-keyword :instances :init-value '()))
   )
 
+(define-method append-map (proc (col <collection>))
+  (fold (lambda (v r)
+          (append (proc v) r))
+        '()
+        col))
+
 (define-method make-kahua-collection ((class <kahua-persistent-meta>) . opts)
   (let1 db (current-db)
     (unless db (error "make-kahua-collection: database not active"))
-    (make-kahua-collection db class opts)))
+    (let-keywords* opts ((subclasses? :subclasses #f))
+      (if subclasses?
+          (append-map (lambda (c)
+                        (coerce-to <list> (make-kahua-collection db c opts)))
+                      (cons class
+                            (class-subclasses class)))
+          (make-kahua-collection db class opts)))))
 
 (define-method make-kahua-collection ((db <kahua-db-fs>)
                                       class opts)
@@ -1110,4 +1123,13 @@
     (proc (cut null? p)
           (lambda () (let1 r (car p) (pop! p) r)))))
     
+(define-method class-subclasses ((class <class>))
+  (define-method class-subclasses* ((class <class>))
+    (let1 subs (class-direct-subclasses class)
+      (if (null? subs)
+	  '()
+	  (append subs
+		  (append-map class-subclasses* subs)))))
+  (delete-duplicates (class-subclasses* class)))
+
 (provide "kahua/persistence")

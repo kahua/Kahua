@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: persistence.scm,v 1.2 2004/05/17 07:00:52 nobsun Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -322,6 +322,14 @@
          (make-kahua-collection <kahua-test-sub>)
          (sort (hash-table-keys (ref db 'instance-by-key))
                (lambda (a b) (string<? (cdr a) (cdr b))))))
+
+;; <kahua-test>と，そのsubclassである<kahua-test-sub>両者ともの
+;; 永続インスタンスのコレクションを，<kahua-test>に対する
+;; make-kahua-collectionを用いて作成できることを確認する．
+(test* "kahua-test-subclasses" '(1 2 4 5)
+       (sort (with-db (db *dbname*)
+               (map (cut ref <> 'id)
+                    (make-kahua-collection <kahua-test> :subclasses #t)))))
 
 ;;----------------------------------------------------------
 ;; メタ情報履歴に関するテスト：永続クラスの変更をオブジェクトマネージャ
