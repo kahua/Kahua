@@ -1,5 +1,9 @@
 2004-01-02 Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
+	* test/admin.scm : change to use cvs import, checkout.
+
+2004-01-02 Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
 	* src/kahua-admin.in : support cvs update. "cvs update [type]"
 
 	* src/kahua/config.scm : add "repository" slot.
