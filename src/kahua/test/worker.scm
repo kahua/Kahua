@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.3 2004/02/09 03:11:53 shiro Exp $
+;; $Id: worker.scm,v 1.4 2004/02/09 06:48:56 shiro Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -16,6 +16,7 @@
   (use gauche.process)
   (use gauche.net)
   (use text.tree)
+  (use rfc.uri)
   (use sxml.ssax)
   (use sxml.sxpath)
   (use util.list)
@@ -112,8 +113,10 @@
   (define (pick matches)
     (and-let* ((p (assoc-ref matches '?&)))
       ;; cut parameter from url
-      (cond ((#/\?x-kahua-cgsid=([^#&]*)/ p) => (cut <> 1))
-            ((#/kahua.cgi\/(.+?)\/(.+)/ p)   => (cut <> 2)) ;; path_info
+      (cond ((#/\?x-kahua-cgsid=([^#&]*)/ p)
+             => (lambda (m) (uri-decode-string (m 1))))
+            ((#/kahua.cgi\/(.+?)\/(.+)/ p)
+             => (lambda (m) (uri-decode-string (m 2)))) ;; path_info
             ((#/kahua.cgi\/(.+?)/ p) #f)                    ;; to top
             (else p))))
   (define (save p)

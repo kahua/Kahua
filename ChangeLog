@@ -4,6 +4,7 @@
 	(make-match&pick) : dropped the support of extra sxpath spec.
 	it is easier to apply sxpath in call-worker/gsid->sxml instead
 	of here; it will produce comprehensive error log.
+	Also decode uri encoding.
 
 	* test/nqueen.scm : added to test examples/nqueen.
 
