@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.8 2004/03/15 04:18:13 nobsun Exp $
+;; $Id: elem.scm,v 1.9 2004/04/26 06:50:39 nobsun Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -26,11 +26,12 @@
 	  form/ label/ input/ select/ optgroup/ option/ textarea/ fieldset/
 	  legend/ button/ table/ caption/ thead/ tfoot/ tbody/ colgroup/
           col/ tr/ th/ td/ head/ title/ base/ meta/ style/ script/ noscript/
-	  html/ pdf/
+	  html/ pdf/ frameset/ frame/
 	  @/
 	  @@/
 	  a/cont/
 	  form/cont/
+          frame/cont/
           extra-header/
 
 	  node-list-to-node-set
@@ -42,11 +43,12 @@
 	  form: label: input: select: optgroup: option: textarea: fieldset:
 	  legend: button: table: caption: thead: tfoot: tbody: colgroup:
           col: tr: th: td: head: title: base: meta: style: script: noscript:
-	  html: pdf:
+	  html: pdf: frameset: frame:
 	  @:
 	  @@:
 	  a/cont:
 	  form/cont:
+          frame/cont:
           extra-header:
 ))
 
@@ -90,6 +92,9 @@
   
 (define (form/cont/ . args)
   (update (cut cons `(form/cont ,@(exec '() (node-set args))) <>)))
+
+(define (frame/cont/ . args)
+  (update (cut cons `(frame/cont ,@(exec '() (node-set args))) <>)))
 
 (define (extra-header/ . args)
   (update (cut cons `(extra-header ,@(exec '() (node-set args))) <>)))
@@ -273,6 +278,10 @@
   (update (cut cons `(html ,@(exec '() (node-set args))) <>)))
 (define (pdf/ . args)
   (update (cut cons `(pdf ,@(exec '() (node-set args))) <>)))
+(define (frameset/ . args)
+  (update (cut cons `(frameset ,@(exec '() (node-set args))) <>)))
+(define (frame/ . args)
+  (update (cut cons `(frame ,@(exec '() (node-set args))) <>)))
 
 ;;--------------------------------------------------------------------------
 
@@ -367,6 +376,8 @@
 (define (noscript: . arg) `(noscript ,@(flatten arg)))
 (define (html: . arg) `(html ,@(flatten arg)))
 (define (pdf: . arg) `(pdf ,@(flatten arg)))
+(define (frameset: . arg) `(frameset ,@(flatten arg)))
+(define (frame: . arg) `(frame ,@(flatten arg)))
 
 (define-syntax @:
   (syntax-rules ()
@@ -388,6 +399,7 @@
 
 (define (a/cont: . arg) `(a/cont ,@(flatten arg)))
 (define (form/cont: . arg) `(form/cont ,@(flatten arg)))
+(define (frame/cont: . arg) `(frame/cont ,@(flatten arg)))
 (define (extra-header: . arg) `(extra-header ,@(flatten arg)))
      
 (provide "kahua.elem")
