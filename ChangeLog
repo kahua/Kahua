@@ -1,3 +1,9 @@
+2003-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm (kahua-db-open, kahua-db-close) :
+	added lock mechanism using fcntl(2).  NB: this might cause a
+	problem on platforms that don't support fcntl(2) record lock.
+
 2003-12-22  Nobuo Yamashita <nobsun@sampou.org>
 
 	* examples/lambdabooks.kahua (standard-frame, standard-page):

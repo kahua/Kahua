@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.1 2003/12/11 05:39:12 nobsun Exp $
+;; $Id: persistence.scm,v 1.2 2003/12/23 04:36:39 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -15,6 +15,7 @@
   (use gauche.sequence)
   (use gauche.parameter)
   (use gauche.version)
+  (use gauche.fcntl)
   (use gauche.logger)
   (export <kahua-persistent-meta> <kahua-persistent-base>
           key-of find-kahua-class find-kahua-instance
@@ -224,6 +225,7 @@
   ((path       :init-keyword :path :init-value #f)
    (id-counter :init-keyword :id-counter :init-value 0)
    (active     :init-keyword :active :init-value #f)
+   (lock-port  :init-value #f) ;; port opened on lock file
    (instance-by-id  :init-form (make-hash-table 'eqv?))
    (instance-by-key :init-form (make-hash-table 'equal?))
    (modified-instances :init-form '())
@@ -278,25 +280,61 @@
 (define (id-counter-path path)
   (build-path path "id-counter"))
 
+;; lock mechanism - we need more robust one later, but just for now...
+(define (lock-file-path path)
+  (build-path path "lock"))
+
+(define (lock-db db)
+  (let1 lock-file (lock-file-path (ref db 'path))
+    (unless (file-exists? lock-file)
+      ;; This is an old db.  This is only transitional, and may
+      ;; be called very rarely, so we just leave this though unsafe.
+      (with-output-to-file lock-file (lambda () (newline))))
+    (let ((record    (make <sys-flock> :type F_WRLCK))
+          (lock-port (open-output-file lock-file :if-exists? :append)))
+      (define (try-lock retry)
+        (cond ((zero? retry) #f)
+              ((sys-fcntl lock-port F_SETLK record)
+               (set! (ref db 'lock-port) lock-port) #t)
+              (else (try-lock (- retry 1)))))
+      (try-lock 10))))
+
+(define (unlock-db db)
+  (and-let* ((lock-port (ref db 'lock-port))
+             (record (make <sys-flock> :type F_UNLCK)))
+    (sys-fcntl lock-port F_SETLK record)
+    #t))
+
 (define (kahua-db-open path)
   (let ((cntfile (id-counter-path path)))
     (if (file-is-directory? path)
       (if (file-is-regular? cntfile)
-        (make <kahua-db>
-          :path path :active #t
-          :id-counter (with-input-from-file cntfile read))
+        (let1 db 
+            (make <kahua-db>
+              :path path :active #t
+              :id-counter (with-input-from-file cntfile read))
+          (unless (lock-db db)
+            (error "kahua-db-open: couldn't obtain database lock: " path))
+          db)
         (error "kahua-db-open: path is not a db: " path))
       (begin
+        ;; There could be a race condition here, but it would be very
+        ;; low prob., so for now it should be OK.
         (make-directory* path)
         (make-directory* (build-path path "tmp"))
         (with-output-to-file cntfile (cut write 0))
-        (make <kahua-db> :active #t :path path)))))
+        (let1 db (make <kahua-db> :active #t :path path)
+          (unless (lock-db db)
+            (error "kahua-db-open: couldn't obtain database lock: " path))
+          db))
+      )))
 
 (define (kahua-db-close db commit)
   (when commit
     (with-output-to-file (id-counter-path (ref db 'path))
       (cut write (ref db 'id-counter)))
     (kahua-db-sync db))
+  (unlock-db db)
   (set! (ref db 'modified-instances) '())
   (set! (ref db 'active) #f))
 
