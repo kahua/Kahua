@@ -1,5 +1,14 @@
 2004-01-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua/server.scm :
+	(kahua-default-handler): let render-proc return (Stree, Context)
+	instead of just Stree, so that it can inject information into
+	Context.   Specifically, a context "extra-headers" is used
+	as an additional header fields of reply message.
+	(extra-header): a new SXML element, which doesn't produce any
+	visual node but just inject a reply header.
+	* test/server.scm : updated accordingly.
+
 	* src/Makefile.in (SCMFILES): install kahua/test/*.scm as well.
 
 2004-01-18  Shiro Kawai  <shiro@acm.org>

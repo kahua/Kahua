@@ -4,13 +4,14 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.5 2004/01/19 04:29:52 shiro Exp $
+;; $Id: server.scm,v 1.6 2004/01/21 01:25:11 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
 ;; framework.
 
 (define-module kahua.server
+  (use srfi-1)
   (use srfi-2)
   (use srfi-11)
   (use srfi-13)
@@ -33,6 +34,7 @@
           kahua-context-ref
           kahua-current-user
           kahua-worker-type
+          kahua-merge-headers
           not-accessible?
           add-element!
           define-element
@@ -50,6 +52,13 @@
 (define worker-type (make-parameter "dummy"))
 (define (kahua-worker-type)
         (worker-type))
+
+;; utility
+(define (ref-car cmp lis item . maybe-default)
+  (cond ((assoc item lis cmp) => cadr)
+        (else (get-optional maybe-default #f))))
+(define assq-ref-car  (pa$ ref-car eq?))
+(define assoc-ref-car (pa$ ref-car equal?))
 
 ;; Context
 ;;  A context is established every time the control is passed from
@@ -88,9 +97,10 @@
 ;;   error-proc : When an error occurred within continuation handler
 ;;                (or default-proc/stale-proc).  An argument is an
 ;;                exception object.
-;;   render-proc : ([SXML], Context) -> Stree.  The SXML nodeset the
-;;                handler returns is passed to this procedure, which
-;;                should render the SXML to appropriate format.
+;;   render-proc : ([SXML], Context) -> (Stree, Context).
+;;                The SXML nodeset the handler returns is passed to
+;;                this procedure, which should render the SXML to
+;;                appropriate format.
 ;;   eval-proc  : When evaluation of sexpr requested, this proc is
 ;;                called with two arg, sexpr and module.  This proc
 ;;                evaluates sexpr.  Should return two values;
@@ -105,12 +115,13 @@
 ;;
 (define (kahua-default-handler header body reply-cont default-proc . args)
   
-  (let-keywords* args ((render-proc interp-html)
+  (let-keywords* args ((render-proc kahua-render-proc)
                        (stale-proc kahua-stale-proc)
                        (eval-proc  kahua-eval-proc)
                        (eval-environment (find-module 'user))
                        (error-proc #f))
 
+    ;; (Handler, Context) -> (Stree, Context)
     (define (run-cont handler context)
       (parameterize ((kahua-current-context context))
         (with-error-handler
@@ -118,12 +129,15 @@
               ;; This is the last resort to capture an error.
               ;; App server should provide more appropriate error page
               ;; within its handler.
-              (html:html
-               (html:head (html:title "Kahua error"))
-               (html:body (html:pre (html-escape-string
-                                     (call-with-output-string
-                                       (cut with-error-to-port <>
-                                            (lambda () (report-error e)))))))))
+              (values
+               (html:html
+                (html:head (html:title "Kahua error"))
+                (html:body (html:pre
+                            (html-escape-string
+                             (call-with-output-string
+                               (cut with-error-to-port <>
+                                    (lambda () (report-error e))))))))
+               context))
           (if error-proc
             (lambda ()
               (with-error-handler error-proc
@@ -132,6 +146,26 @@
             (lambda ()
               (render-proc (handler) context))))))
 
+    ;; Handles 'eval' protocol
+    ;; () -> ([Headers], [Result])
+    (define (run-eval)
+      (let ((error-output (open-output-string))
+            (std-output   (open-output-string)))
+        (receive (ok? result)
+            (with-error-to-port error-output
+              (cut with-output-to-port std-output
+                   (cut eval-proc body eval-environment)))
+          (if ok?
+            (values '(("x-kahua-status" "OK"))
+                    (list* (get-output-string error-output)
+                           (get-output-string std-output)
+                           result))
+            (values '(("x-kahua-status" "ERROR"))
+                    (string-append (get-output-string error-output)
+                                   (get-output-string std-output)
+                                   result))))))
+     
+    ;; Main dispatcher body
     (receive (state-id cont-id) (get-gsid-from-header header)
       (let* ((state-id (or state-id (session-state-register)))
              (state   (session-state-get state-id))
@@ -143,30 +177,21 @@
              )
         (parameterize ((kahua-bridge-name bridge))
           (if eval?
-            (let ((error-output (open-output-string))
-                  (std-output   (open-output-string)))
-              (receive (ok? result)
-                  (with-error-to-port error-output
-                    (cut with-output-to-port std-output
-                         (cut eval-proc body eval-environment)))
-                (if ok?
-                  (reply-cont '(("x-kahua-status" "OK"))
-                              (list* (get-output-string error-output)
-                                     (get-output-string std-output)
-                                     result))
-                  (reply-cont '(("x-kahua-status" "ERROR"))
-                              (string-append (get-output-string error-output)
-                                             (get-output-string std-output)
-                                             result)))))
-            (reply-cont header
-                        (run-cont (if cont-id
-                                    (or (session-cont-get cont-id) stale-proc)
-                                    default-proc)
-                                  (list*
-                                   (list "session-state" state)
-                                   (list "x-kahua-path-info"
-                                         (drop* path-info 2))
-                                   body)))))
+            (receive (headers result) (run-eval)
+              (reply-cont headers result))
+            (receive (stree context)
+                (run-cont (if cont-id
+                            (or (session-cont-get cont-id) stale-proc)
+                            default-proc)
+                          (list*
+                           (list "session-state" state)
+                           (list "x-kahua-path-info"
+                                 (drop* path-info 2))
+                           body))
+              (let1 extra-headers
+                  (assoc-ref-car context "extra-headers" '())
+                (reply-cont (kahua-merge-headers header extra-headers)
+                            stree)))))
         )))
   )
 
@@ -190,16 +215,18 @@
                 (map (cut write-to-string <>) r))))
     ))
 
+;; default render proc
+;; TODO: should apply interp-html-rec to all nodes!
+(define (kahua-render-proc nodes context)
+  (interp-html-rec (car nodes) context values))
+
 ;; KAHUA-CONTEXT-REF key [default]
 ;;
 ;;  Context is a list of lists, and a key may be a string or a symbol
 ;;  so it's not just as simple as an alist.
 
 (define (kahua-context-ref key . maybe-default)
-  (or (and-let* ((p (assoc key (kahua-current-context)))
-                 ((pair? (cdr p))))
-        (cadr p))
-      (get-optional maybe-default #f)))
+  (apply assoc-ref-car (kahua-current-context) key maybe-default))
 
 ;; KAHUA-CURRENT-USER
 ;; (setter KAHUA-CURRENT-USER) user
@@ -215,6 +242,28 @@
        (find-kahua-instance <kahua-user> logname)))
    (lambda (logname)
      (set! (ref (kahua-context-ref "session-state") 'user) logname))))
+
+;; KAHUA-MERGE-HEADERS :: ([Headers],...) -> [Headers]
+;;
+;;   Headers are list of list, e.g.
+;;     (("content-type" "text/html")
+;;      ("x-kahua-cgsid" "r903t:0r9aen:2425"))
+;;   This function merges given header list.  If the same field
+;;   appears, the last one take precedence.
+
+(define (kahua-merge-headers headers . more-headers)
+  (let outer ((headers headers)
+              (more    more-headers))
+    (if (null? more)
+      headers
+      (let inner ((headers headers)
+                  (header (car more)))
+        (if (null? header)
+          (outer headers (cdr more))
+          (inner (cons (car header) (alist-delete (caar header) headers))
+                 (cdr header)))
+        ))
+    ))
 
 ;;==========================================================
 ;; Access control
@@ -282,9 +331,7 @@
                (append (map-with-index (lambda (ind parg)
                                          (list-ref path-info ind #f))
                                        pargs-str)
-                       (map (lambda (karg)
-                              (kahua-context-ref karg #f))
-                            kargs-str)))))
+                       (map kahua-context-ref kargs-str)))))
     ))
 
 ;;  [syntax] define-entry (name arg ... :keyword karg ...)
@@ -469,6 +516,20 @@
              ,@contents))
      context)))
 
+;;
+;; extra-header - inserts protocol header to the reply message
+;; 
+;; `(extra-header (@@ (name ,name) (value ,value)))
+;;
+
+(define-element extra-header (attrs auxs contents context cont)
+  (let* ((name    (assq-ref-car attrs 'name))
+         (value   (assq-ref-car attrs 'value))
+         (headers (assoc-ref-car context "extra-headers" '())))
+    (and name value
+         (cont '()
+               (cons `("extra-headers"
+                       ,(kahua-merge-headers headers `((,name ,value))))
+                     context)))))
+
 (provide "kahua/server")
-
-
