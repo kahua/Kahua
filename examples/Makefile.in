@@ -21,15 +21,16 @@ INSTALL = $(GOSH) -I../src ../src/kahua-install
 # specify -c ../kahua.conf etc. to give an alternative conf file
 KAHUACONFIG = 
 
-SCRIPTFILES = lambdabooks/lambdabooks.kahua \
-              lambdabooks/lister.kahua      \
-              lambdabooks/login.kahua       \
-              lambdabooks/book.kahua        \
-              lambdabooks/review.kahua      \
-              lambdabooks/partner.kahua     \
-              lambdabooks/useradmin.kahua   \
-              wiki-iki/wiki-iki.kahua       \
-	      nqueen/nqueen.kahua	    \
+SCRIPTFILES = lambdabooks/lambdabooks.kahua     \
+              lambdabooks/lister.kahua          \
+              lambdabooks/login.kahua           \
+              lambdabooks/book.kahua            \
+              lambdabooks/review.kahua          \
+              lambdabooks/partner.kahua         \
+              lambdabooks/useradmin.kahua       \
+              wiki-iki/wiki-iki.kahua           \
+              login/login.kahua                 \
+	      nqueen/nqueen.kahua	        \
 	      lazy-nqueen/lazy-nqueen.kahua
 
 STATICFILES = lambdabooks/images/lambda-books-logo.png \
@@ -45,7 +46,7 @@ all:
 check:
 
 clean:
-	rm -rf core *~ lambdabooks/*~ wiki-iki/*~
+	rm -rf core *~ lambdabooks/*~ wiki-iki/*~ login/*~
 
 install: 
 	@echo "use 'make install-examples'"

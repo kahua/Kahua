@@ -1,0 +1,143 @@
+;;-*-Scheme-*-
+;; Common Login Manager
+;;
+;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: login.kahua,v 1.1 2004/02/22 23:59:09 shiro Exp $
+
+;; This module implements an application server that is used
+;; to handle web-user login session.  This is an example to
+;; separate commonly-used features to an individual application server,
+;; and to pass control back and forth between application servers.
+
+(use file.util)
+(use gauche.logger)
+
+(log-open (kahua-logpath "login.log"))
+
+;; The application server can put a link to login manager like this:
+;;
+;;  (a/cont: (@@: (remote-cont 'login 'login)
+;;                (return-cont ,cont))
+;;           "Login")
+;;
+;; This brings a user to a login screen, and after the authentication,
+;; brings back to the given return continuation.
+
+(define-entry (login :keyword return-cont)
+  (login-dialog #f #f return-cont))
+
+(define (login-dialog logname pass return-cont)
+
+  (define login-check
+    (entry-lambda (:keyword logname pass)
+      (if (kahua-check-user logname pass)
+        (begin
+          (set! (kahua-current-user) logname)
+          (redirect return-cont))
+        (dialog logname pass))))
+
+  (define (dialog logname pass)
+    (page
+     (node-set:
+      (if logname
+        (p: "ユーザー名、またはパスワードが違います")
+        (p: "ユーザー登録がお済みの方は、ユーザー名とパスワードを入力して「ログイン」ボタンをクリックして下さい"))
+      (form/cont:
+       (@@: (cont login-check '(logname) '(pass)))
+       (table:
+        (tr: (th: "ユーザー名")
+             (td: (input: (@: (type "text") (name "logname")
+                              (value (or logname ""))))))
+        (tr: (th: "パスワード")
+             (td: (input: (@: (type "password") (name "pass")
+                              (value (or pass ""))))))
+        (tr: (th:)
+             (td: (input: (@: (type "submit") (name "submit")
+                              (value "ログイン")))))))
+      (p: "ユーザー登録がお済みでない方は、"
+          (a/cont: (@@: (cont register `(return-cont ,return-cont)))
+                   "新規ユーザー登録")
+          "で登録を行うか、"
+          (a/cont: (@@: (cont (cut redirect return-cont)))
+                   "ログインせずにサイトを利用する")
+          "ことができます。"
+          "(ログインしない場合は、一部の機能が使えません)"))))
+
+  (dialog logname pass))
+
+(define-entry (register :keyword return-cont)
+  (define (new-user logname pass)
+    (page
+     (node-set:
+      (if logname
+	  (if pass
+	      (p: "2つのパスワードが異なります。同じパスワードを入力して下さい。")
+	      (p: "そのユーザー名は既に登録されています。異なるユーザー名を選んで下さい。"))
+          (p: "ユーザー名とパスワードを選び、入力して下さい。パスワードは確認のため2度入力して下さい。"))
+      (form/cont:
+       (@@: (cont user-registration '(logname) '(pass) '(pass2)))
+        (table:
+         (tr: (th: "ユーザー名")
+	      (td: (input: (@: (type "text") (name "logname")
+			       (value (or logname ""))))))
+         (tr: (th: "パスワード")
+	      (td: (input: (@: (type "password") (name "pass")
+			       (value "")))))
+         (tr: (th: "パスワード(確認)")
+	      (td: (input: (@: (type "password") (name "pass2")
+			       (value "")))))
+         (tr: (th:)
+	      (td: (input: (@: (type "submit") (name "submit")
+                           (value "登録")))))))
+      )))
+
+  (define user-registration
+    (entry-lambda (:keyword logname pass pass2)
+      (cond
+       ((kahua-find-user logname)
+        (new-user logname #f)) ;; user $logname already exists
+       ((not (equal? pass pass2))
+        (new-user logname pass)) ;; passwords don't match
+       (else
+        (kahua-add-user logname pass)
+        (kahua-db-sync)
+        (set! (kahua-current-user) logname)
+        (redirect return-cont)))))
+
+  (new-user #f #f))
+
+(define-entry (logout :keyword return-cont)
+  (set! (kahua-current-user) #f)
+  (redirect return-cont))
+
+(define (page nodeset)
+  (node-set:
+   (html: (head: (title: "Kahua example site login")
+                 (link: (@: (rel "stylesheet") (type "text/css")
+			    (href (kahua-static-document-url
+				   "wiki-iki/wiki-iki.css")))))
+          (body:
+           (h1: "Kahua examples: Site login")
+           (hr:)
+           nodeset
+           (hr:)
+           (div: (@: (id "lastchanged"))
+                 "Powered by "
+                 (a: (@: (href "http://www.kahua.org/")) "Kahua"))))))
+
+(define (redirect return-cont)
+  (let ((path (or return-cont "")))
+    (node-set:
+     (html: ;; Needed to make a single SXML node (for now)
+      `(extra-header (@ (name "Status") (value "302 Moved")))
+      `(extra-header (@ (name "Location")
+                        (value ,(format "~a~a/~a"
+                                        (kahua-server-uri)
+                                        (kahua-bridge-name)
+                                        path))))))))
+
+(initialize-main-proc login)
+

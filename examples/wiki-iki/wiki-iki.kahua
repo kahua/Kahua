@@ -1,11 +1,11 @@
 ;;-*-Scheme-*-
 ;; sample kahua application
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2004 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: wiki-iki.kahua,v 1.5 2004/02/15 15:31:51 nobsun Exp $
+;; $Id: wiki-iki.kahua,v 1.6 2004/02/22 23:59:10 shiro Exp $
 
 (use srfi-1)
 (use srfi-13)
@@ -16,9 +16,9 @@
 (use file.util)
 
 ;; This implements very simple, yet functional WikiWikiWeb.
-
-(primary-database-name
- (build-path (ref (kahua-config) 'working-directory) "wiki-iki"))
+;;
+;; This program uses 'login-manager' application server for
+;; user authentication handling.
 
 (log-open (kahua-logpath "wiki-iki.log"))
 
@@ -55,7 +55,9 @@
 (define-method format-page ((page <page>) local-cont global-cont)
   (let* ((lines (call-with-input-string (ref page 'body) port->string-list))
          (paras (lines->paragraphs lines)))
-    (local-cont (map (cut format-paragraph <> global-cont) paras))))
+    (local-cont
+     (apply node-set:
+            (map (cut format-paragraph <> global-cont) paras)))))
 
 (define (lines->paragraphs lines)
   (let loop ((lines lines)
@@ -75,9 +77,10 @@
 
 (define (nonexistent-page pagename global-cont)
   (global-cont
-    (append (page-title (list "存在しないページ: " pagename))
-	    (list (p: (a/cont: (@@: (cont (cut edit-page #f pagename)))
-			       pagename "を編集する"))))))
+    (node-set:
+     (page-title (node-set: "存在しないページ: " pagename))
+     (p: (a/cont: (@@: (cont (cut edit-page #f pagename)))
+                  pagename "を編集する")))))
 
 ;; [String], Cont -> [Node]
 ;; NB: this isn't a CPS!
@@ -137,26 +140,26 @@
 
 (define (format-recent-changes cont)
   (let ((pages (ref (recent-changes) 'pages)))
-    (list 
+    (node-set:
      (apply table:
-	    (@: (id "recentchanges"))
-	    (tr: (th: (@: (id "recentchanges")) "最近の更新"))
-	    (map (lambda (page)
-		   (tr: (td: (@: (id "recentchanges"))
-			     (format-wikiname (ref page 'name) cont))))
-		 pages)))))
+            (@: (id "recentchanges"))
+            (tr: (th: (@: (id "recentchanges")) "最近の更新"))
+            (map (lambda (page)
+                   (tr: (td: (@: (id "recentchanges"))
+                             (format-wikiname (ref page 'name) cont))))
+                 pages)))))
 
 ;;========================================================
 ;; Main application
 ;;
 
 (define (standard-page nodes)
-  (list 
+  (node-set:
    (html: (head: (title: "Wiki Iki")
 		 (link: (@: (rel "stylesheet") (type "text/css")
 			    (href (kahua-static-document-url
 				   "wiki-iki/wiki-iki.css")))))
-          (apply body: nodes))))
+          (body: nodes))))
 
 (define-entry (show-page pagename)
   (let ((pagename (or pagename *welcome-page*)))
@@ -168,7 +171,7 @@
 (define (show-page/page page)
   (define (body-pane nodes)
     (td: (@: (id "bodypane"))
-	 (apply div: nodes)
+	 (div: nodes)
 	 (hr:)
 	 (div: (a/cont:
 		(@@: (cont (cut edit-page (key-of page) (ref page 'name))))
@@ -177,15 +180,18 @@
 	       "最終更新: " (format-time (ref page 'creation-time)) (br:)
 	       "Powered by " (a: (@: (href "http://www.kahua.org/")) "Kahua"))))
   (define (side-pane)
-    (apply td: (@: (id "sidepane")) (format-recent-changes standard-page)))
+    (td: (@: (id "sidepane"))
+         (user-pane (ref page 'name))
+         (format-recent-changes standard-page)))
 
   (format-page page
                (lambda (nodes)
                  (standard-page
-                  (append (page-title (list (ref page 'name)))
-			  (list
-			   (table: (@: (style "width:100%"))
-				   (tr: (body-pane nodes) (side-pane)))))))
+                  (node-set:
+                   (page-title (ref page 'name))
+                   (node-set:
+                    (table: (@: (style "width:100%"))
+                            (tr: (body-pane nodes) (side-pane)))))))
                standard-page))
 
 ;; Edit and commit uses pagekey for an existing page,
@@ -198,15 +204,14 @@
                          (newest-page (find-kahua-instance <page> pagekey))))
          (pagekey  (and orig-page (key-of orig-page))))
     (standard-page
-     (append
-      (page-title `(,pagename "の編集"))
-      (list 
-       (form/cont:
-        (@@: (cont (cut commit-page pagekey pagename)))
-        (textarea: (@: (name "content") (rows 20) (cols 60))
-		   (if orig-page (ref orig-page 'body) ""))
-        (input: (@: (type "submit") (name "commit") (value "コミット")))))
-     ))))
+     (node-set:
+      (page-title (node-set: pagename "の編集"))
+      (form/cont:
+       (@@: (cont (cut commit-page pagekey pagename)))
+       (textarea: (@: (name "content") (rows 20) (cols 60))
+                  (if orig-page (ref orig-page 'body) ""))
+       (input: (@: (type "submit") (name "commit") (value "コミット")))))
+     )))
 
 (define (commit-page pagekey pagename)
   (let* ((content (canon-content (kahua-context-ref "content" "")))
@@ -231,18 +236,35 @@
   (error "Conflict!"))
 
 (define (page-title name)
-  (list
+  (node-set:
    (h1:
      (a/cont:
       (@@: (cont show-page))
       (img: (@: (src (kahua-static-document-url "wiki-iki/images/wiki-iki.png"))
 		(border "0") (width 64) (height 64))))
-     (apply span: (@: (style "vertical-align:50%; margin-left:0.5em")) name))))
+     (span: (@: (style "vertical-align:50%; margin-left:0.5em")) name))))
 
 ;; canonicalize EOL to #\newline
 (define (canon-content content)
   (string-join (call-with-input-string content port->string-list)
                "\n" 'suffix))
+
+;;========================================================
+;; user login stuff
+;;
+
+(define (user-pane pagename)
+  (cond ((kahua-current-user)
+         => (lambda (u)
+              (node-set:
+               "Welcome, " (ref u 'login-name)
+               (a/cont: (@@: (remote-cont 'login 'logout)
+                             (return-cont show-page pagename))
+                        "[Logout]"))))
+        (else
+         (a/cont: (@@: (remote-cont 'login 'login)
+                       (return-cont show-page pagename))
+                  "[Login]"))))
 
 ;;========================================================
 ;; initialization

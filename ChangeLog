@@ -1,5 +1,23 @@
 2004-02-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua-server.in (handle-request): opens the default database
+	($working-directory/db) if primary-database-name isn't specified.
+	Since several application servers need to share the database if they
+	pass control around, now it is strongly recommended for app servers
+	to use the default database instead of specifying its own database
+	by primary-database-name; in future, there will be different
+	mechanism to allow app servers to use multiple databases.
+
+	* src/examples/login/login.kahua : added. An example that handles
+	user login.
+	* src/examples/wiki-iki/wiki-iki.kahua : added link to login.
+	* src/examples/app-servers.sample : added login.kahua.
+	* src/examples/Makefile.in : added login.kahua.
+
+	* src/examples/lambdabooks/lambdabooks.kahua : removed
+	primary-database-name to use the default db.
+	* src/examples/lambdabooks.init : use the default db.
+
 	* src/kahua/persistence.scm (lock-db): sleep before retrying locking
 	the DB.
 

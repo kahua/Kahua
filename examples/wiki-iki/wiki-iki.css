@@ -1,9 +1,9 @@
 /* sample style sheet for wiki-iki */
 
 body {
-  font-family: verdana, arial, helvetica, sans-serif;
+  font-family: times;
   color: black;
-  background-color: #eeeeee;
+  background-color: #ffffff;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -20,7 +20,11 @@ h6 { font-size: 100%; font-style: italic }
 
 dt { font-weight: bold }
 
-
+hr {
+  border-width: 2px 0px 0px 0px;
+  border-style: solid;
+  border-color: #664422;
+}
 
 div#lastchanged { color:#888888;text-align:right }
 
@@ -28,6 +32,8 @@ td#bodypane { vertical-align:top }
 
 td#sidepane { vertical-align:top;width:10em }
 
-table#recentchanges { border-left:thick solid #ddbb88; border-spacing:0pt }
+table#recentchanges {
+  border:thin solid #ddbb88; border-spacing:0pt
+}
 th#recentchanges    { background-color:#ddbb88 }
 td#recentchanges    { padding-left:1em }
