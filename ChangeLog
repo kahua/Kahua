@@ -1,3 +1,11 @@
+2004-05-22  Shiro Kawai  <shiro@acm.org>
+
+	* test/server.scm.in: fixed test code that has macros which expand
+	into internal define inadvertently; although such macros are not
+	supported by Gauche yet, pre-0.8 Gauche accepted it and interpreted
+	in wrong way.  As of 0.8 Gauche reports an error for such usage,
+	so I forced them evaluated at top level by wrapping them by eval.
+
 2004-05-18  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* plugin/allow-module.scm:

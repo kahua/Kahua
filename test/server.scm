@@ -1,5 +1,5 @@
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: server.scm,v 1.2 2004/05/23 00:02:59 shiro Exp $
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.
@@ -123,8 +123,10 @@
          (#f #f #f "xxx" "yyy" "zzz")
          (#f #f #f #f #f #f))
        (let ()
-         (define-entry (foo a b c :keyword x y z)
-           (list a b c x y z))
+         (eval
+          '(define-entry (foo a b c :keyword x y z)
+             (list a b c x y z))
+          (current-module))
          (list
           (call-entry 'foo
                       '(("x-kahua-path-info" ("usr" "var" "www" "zzz"))
@@ -154,42 +156,50 @@
   (test* "define-entry (:rest arg - 1)"
          '("usr" "var" ("www" "zzz"))
          (let ()
-           (define-entry (foo a b :rest c) (list a b c))
+           (eval '(define-entry (foo a b :rest c) (list a b c))
+                 (current-module))
            (call-entry 'foo env)))
   (test* "define-entry (:rest arg - 2)"
          '("usr" "var" "www" "zzz")
          (let ()
-           (define-entry (foo :rest a) a)
+           (eval '(define-entry (foo :rest a) a)
+                 (current-module))
            (call-entry 'foo env)))
   (test* "define-entry (:rest arg - 3)"
          '(("usr" "var" "www" "zzz") "xxx" "yyy")
          (let ()
-           (define-entry (foo :rest a :keyword y x) (list a x y))
+           (eval '(define-entry (foo :rest a :keyword y x) (list a x y))
+                 (current-module))
            (call-entry 'foo env)))
   (test* "define-entry (:rest arg - 3)"
          '(("usr" "var" "www" "zzz") "xxx" "yyy")
          (let ()
-           (define-entry (foo :rest a :keyword y x) (list a x y))
+           (eval '(define-entry (foo :rest a :keyword y x) (list a x y))
+                 (current-module))
            (call-entry 'foo env)))
   (test* "define-entry (:rest arg - 4)"
          '(("usr" "var" "www" "zzz") "xxx" "yyy")
          (let ()
-           (define-entry (foo :keyword y x :rest a) (list a x y))
+           (eval '(define-entry (foo :keyword y x :rest a) (list a x y))
+                 (current-module))
            (call-entry 'foo env)))
   (test* "define-entry (:rest arg - 5)"
          '("usr" "var" ("www" "zzz") "xxx" "yyy")
          (let ()
-           (define-entry (foo a b :keyword y x :rest c) (list a b c x y))
+           (eval '(define-entry (foo a b :keyword y x :rest c) (list a b c x y))
+                 (current-module))
            (call-entry 'foo env)))
   (test* "define-entry (:rest arg - 6)"
          '("usr" "var" ("www" "zzz"))
          (let ()
-           (define-entry (foo a b :keyword :rest c) (list a b c))
+           (eval '(define-entry (foo a b :keyword :rest c) (list a b c))
+                 (current-module))
            (call-entry 'foo env)))
   (test* "define-entry (:rest arg - 7)"
          '()
          (let ()
-           (define-entry (foo :rest a) a)
+           (eval '(define-entry (foo :rest a) a)
+                 (current-module))
            (call-entry 'foo '(("x-kahua-path-info" ())))))
   (test* "define-entry (bad :rest arg - 1)"
          *test-error*
@@ -253,3 +263,7 @@
                (extra-header (@ (name "voo") (value "doo"))))))))))
 
 (test-end)
+
+;; Local variables:
+;; mode: scheme
+;; end:
