@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.2 2003/12/26 01:28:22 shiro Exp $
+;; $Id: session.scm,v 1.3 2003/12/28 13:01:19 shiro Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -102,7 +102,8 @@
 
 (define (make-cont-key)
   (check-initialized)
-  (let loop ((id (make-gsid (worker-id) (x->string (random-integer IDRANGE)))))
+  (let loop ((id (make-gsid (worker-id)
+                            (number->string (random-integer IDRANGE) 36))))
     (if (cont-key->session id) (loop) id)))
 
 ;; SESSION-CONT-REGISTER cont [ id ]

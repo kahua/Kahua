@@ -30,8 +30,8 @@
 (with-module sxml.tools (export sxml:string->xml))
 ;; End patch
 
-;;
-;; preliminary staff
+;;==========================================================
+;; Access control
 ;;
 
 (define (not-accessible? auxs context)
@@ -40,22 +40,29 @@
               (not (kahua-user-has-role? (kahua-current-user context) roles))))
         (else #f)))
 
-;;
-;; element management
+;;==========================================================
+;; Entry management
 ;;
 
-(define-values (add-element! get-element-handler)
-  (let ((table (make-hash-table)))
-    (values
-     (lambda (tag handler)
-       (hash-table-put! table tag handler))
-     (lambda (tag)
-       (hash-table-get table tag #f)))))
+;; Define-entry creates a "well-known" or "permanent" continuation ID.
+;; That means the user can always visit that node by using URL like
+;; 'kahua.cgi/type/entry-name', where 'type' is an application type
+;; and 'entry-name' is the name of the permanent entry.
+;; Note that it is the same format with the transient continuation ID;
+;; continuation IDs are distinguished by the name that matches #/^\d+-/.
+;;
+;; The entry name can be overloaded.  When "called", the definition
+;; that matches the input signature is selected and invoked.
 
-(define-syntax define-element
-  (syntax-rules ()
-    ((define-element name args . body)
-     (add-element! 'name (lambda args . body)))))
+;; Entry signature: 
+
+
+;(define-class <kahua-entry> ()
+;  ((handlers :init-value '())))
+
+
+
+
 
 (define (add-entry! name proc)
   (session-cont-register proc (symbol->string name)))
@@ -69,28 +76,16 @@
          closure)))
     ))
 
-(define (default-element-handler tag attrs content context cont)
-  (handle-element-contents content context
-                           (lambda (stree context)
-			     (cont `("<" ,tag ,(map sxml:attr->xml attrs) ">"
-                                     ,@stree
-                                     "</" ,tag "\n>")
-                                   context))))
+;;==========================================================
+;;  Default SXML tree interpreter - generates HTML
+;;
 
-(define (handle-element-contents contents context cont)
-  (if (null? contents)
-    (cont '() context)
-    (interp-html-rec (car contents) context
-                     (lambda (stree context)
-                       (handle-element-contents (cdr contents) context
-                                                (lambda (stree2 context)
-                                                  (cont (cons stree stree2)
-                                                        context)
-                                                  ))))))
-                                     
-;; Interprete node
-;;  interp-html :: Node -> Context -> (Stree -> Context -> Stree) -> Stree
+;; interp-html :: Node -> Context -> Stree
+;;    where Stree is a list of string segments passed to tree->string.
+(define (interp-html nodes context)
+  (interp-html-rec (car nodes) context (lambda (s _) s)))
 
+;; internal loop 
 (define (interp-html-rec node context cont)
   (let ((name (sxml:element-name node)))
     (if (not name)
@@ -112,13 +107,58 @@
           )))
     ))
 
-(define (interp-html nodes context)
-  (interp-html-rec (car nodes) context (lambda (s _) s)))
 
-;; Element handlers
+
+(define (default-element-handler tag attrs content context cont)
+  (handle-element-contents content context
+                           (lambda (stree context)
+			     (cont `("<" ,tag ,(map sxml:attr->xml attrs) ">"
+                                     ,@stree
+                                     "</" ,tag "\n>")
+                                   context))))
+
+(define (handle-element-contents contents context cont)
+  (if (null? contents)
+    (cont '() context)
+    (interp-html-rec (car contents) context
+                     (lambda (stree context)
+                       (handle-element-contents (cdr contents) context
+                                                (lambda (stree2 context)
+                                                  (cont (cons stree stree2)
+                                                        context)
+                                                  ))))))
+
+;;==========================================================
+;; Element management
+;;
+
+;; define-element allows the application programmer to define
+;; a special SXML node type (element).  When the SXML
+;; interpreter sees the node, its element handler is invoked,
+;; which can translate the node into SXML.
 ;;
 ;;  element-handler :: Attrs -> Auxs -> [Node] -> Context ->
-;;                     ([Node] -> Context -> Stree) -> Stree
+;;                     ([Node] -> Context -> a) -> a
+;;
+;;    where 'a' depends on the interpreter --- element handler is
+;;    agnostic about it.
+
+(define-syntax define-element
+  (syntax-rules ()
+    ((define-element name args . body)
+     (add-element! 'name (lambda args . body)))))
+
+(define-values (add-element! get-element-handler)
+  (let ((table (make-hash-table)))
+    (values
+     (lambda (tag handler)
+       (hash-table-put! table tag handler))
+     (lambda (tag)
+       (hash-table-get table tag #f)))))
+
+;;-----------------------------------------------------------
+;; Pre-defined element handlers
+;;
 
 ;;
 ;; a/cont element

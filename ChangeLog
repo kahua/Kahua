@@ -1,5 +1,9 @@
 2003-12-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua/gsid.scm (make-worker-id), 
+	  src/kahua/session.scm (make-cont-key): changed to use base-36
+	  numbers instead of base-10, to shorten the key.
+
 	* src/kahua/test/worker.scm : refactored out common procedures for
 	  testing worker scripts.
 

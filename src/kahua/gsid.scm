@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: gsid.scm,v 1.2 2003/12/15 21:12:03 ko1 Exp $
+;; $Id: gsid.scm,v 1.3 2003/12/28 13:01:19 shiro Exp $
 
 (define-module kahua.gsid
   (use gauche.uvector)
@@ -89,7 +89,9 @@
     (apply supervisor-sockaddr opts)))
 
 (define (make-worker-id worker-type)
-  (format "~a:~a:~a" worker-type (sys-getpid) (random-integer 10000000)))
+  (format "~a:~a:~a" worker-type
+          (number->string (sys-getpid) 36)
+          (number->string (random-integer 10000000) 36)))
 
 (define (supervisor-sockaddr . opts)
   ;; this may not be correct if we use inet domain socket.
