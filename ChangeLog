@@ -1,5 +1,8 @@
 2005-01-25  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* doc/Setup.ja:
+	Modified required Gauche version (-> 0.8.3)
+
 	* src/kahua-spvr.scm (handle-spvr-command):
 	added version command to show kahua version.
 

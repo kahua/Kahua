@@ -6,10 +6,10 @@
 
 *** Gauche のインストール
 
-0.8.1 以降のバージョンのGaucheがインストールされているかを確認します。
+0.8.3 以降のバージョンのGaucheがインストールされているかを確認します。
 
     $ gosh -V
-    Gauche scheme interpreter, version 0.8.1 [euc-jp]
+    Gauche scheme interpreter, version 0.8.3 [euc-jp]
 
 適切なバージョンの Gauche がインストールされていなければ、インストール
 してください。
