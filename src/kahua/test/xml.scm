@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: xml.scm,v 1.7 2003/12/28 05:04:36 shiro Exp $
+;; $Id: xml.scm,v 1.8 2003/12/29 04:23:05 shiro Exp $
 
 ;; This module provides the means of test the result of HTML
 ;; generating code, such as CGI programs.   The output of
@@ -393,9 +393,11 @@
 (define (test-xml-select-matcher path . maybe-extra-check)
   (let ((selector (sxpath path)))
     (lambda (pattern input)
-      (let ((parsed (call-with-input-string (tree->string input)
-                      (cut ssax:xml->sxml <> '()))))
-        (apply match-input pattern (selector parsed)
-               maybe-extra-check)))))
+      (if (equal? input *test-error*)
+        input
+        (let ((parsed (call-with-input-string (tree->string input)
+                        (cut ssax:xml->sxml <> '()))))
+          (apply match-input pattern (selector parsed)
+                 maybe-extra-check))))))
 
 (provide "kahua/test/xml")
