@@ -1,3 +1,11 @@
+2004-05-25  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.2.6 released.
+
+	- Added session-state-ref, session-state-all-keys, and ref-object.
+	- Modified make-kahua-collection to collect subclass instances.
+	- Fixed test code made error in the case of using Gauche 0.8. 
+	
 2004-05-22  Shiro Kawai  <shiro@acm.org>
 
 	* test/server.scm.in: fixed test code that has macros which expand
