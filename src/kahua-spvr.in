@@ -1,11 +1,11 @@
 #!/usr/bin/env gosh
 ;; "Supervisor" or super server for kahua
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2004 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.10 2004/02/19 20:50:09 ko1 Exp $
+;; $Id: kahua-spvr.in,v 1.11 2004/02/21 12:24:52 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -112,6 +112,7 @@
   ((sockbase   :init-form (kahua-sockbase))
    (workers    :init-form (make-queue) :getter workers-of)
    (selector   :init-form (make <selector>) :getter selector-of)
+   (keyserv    :init-value #f) ;; keyserver process
    ))
 
 (define-class <kahua-worker> ()
@@ -128,25 +129,31 @@
    (next-worker-count :allocation :class :init-value 0)
    ))
 
+(define-class <kahua-keyserv> ()
+  ((process :init-keyword :process) ;; <process>
+   (id      :init-keyword :id)      ;; keyserver id
+   ))
+
 ;; worker type entry - will be overridden by configuration file
 (define worker-types
   (make-parameter
    '()
    ))
 
-
-(define (worker-script worker-type)
+(define (worker-script worker-type spvr)
   (cond ((assq worker-type (worker-types))
          => (lambda (p)
               (let ((args (get-keyword :arguments (cdr p) '()))
                     (user (ref (kahua-config) 'user-mode)))
                     `("kahua-server"
-                      ,@(cond ((kahua-config-file)
-                               => (lambda (c) `("-c" ,c
-                                                ,@(if user
-                                                    `("-user" ,user) '())
-                                                )))
-                              (else '()))
+                      ,@(apply append
+                               (cond-list
+                                ((kahua-config-file)
+                                 => (lambda (c) `("-c" ,c)))
+                                ((ref (kahua-config) 'user-mode)
+                                 => (lambda (u) `("-user" ,user)))
+                                ((ref spvr 'keyserv)
+                                 => (lambda (k) `("-k" ,(ref k 'id))))))
                       ,(let1 type (symbol->string worker-type)
                              (string-append type "/" type ".kahua"))
                       ,@args))))
@@ -206,6 +213,42 @@
   (cond ((assoc "x-kahua-worker" header)
          => (lambda (p) (string->symbol (cadr p))))
         (else #f)))
+
+(define (run-piped-cmd cmd)
+  (log-format "running ~a" cmd)
+  (with-error-handler
+      (lambda (e)
+        (log-format "running ~a failed: ~a"
+                    (car cmd) (kahua-error-string e #t))
+        (raise e))
+    (lambda ()
+      (let1 p (apply run-process
+                     `(,@cmd :input "/dev/null" :output :pipe))
+        (log-format "running ~a: pid ~a" (car cmd) (process-pid p))
+        p))))
+
+;;; Session key server ---------------------------------------------
+
+(define (start-keyserv spvr)
+  (let* ((cmd `("kahua-keyserv"
+                ,@(apply append
+                         (cond-list
+                          ((kahua-config-file)
+                           => (lambda (c) `("-c" ,c)))
+                          ((ref (kahua-config) 'user-mode)
+                           => (lambda (u) `("-user" ,user)))))))
+         (kserv (run-piped-cmd cmd))
+         (kserv-id (read-line (process-output kserv))))
+    (set! (ref spvr 'keyserv)
+          (make <kahua-keyserv> :process kserv :id kserv-id))
+    (close-input-port (process-output kserv))))
+
+(define (stop-keyserv spvr)
+  (when (ref spvr 'keyserv)
+    (let1 serv (ref spvr 'keyserv)
+      (set! (ref spvr 'keyserv) #f)
+      (process-send-signal (ref serv 'process) SIGHUP)
+      (process-wait (ref serv 'process)))))
 
 ;;; Worker management ----------------------------------------------
 
@@ -288,10 +331,8 @@
 
 (define-method initialize ((self <kahua-worker>) initargs)
   (next-method)
-  (let* ((cmd `(,@(worker-script (worker-type-of self))
-                :input  "/dev/null"
-                :output :pipe))
-         (p    (apply run-process cmd))
+  (let* ((cmd  (worker-script (worker-type-of self) (ref self 'spvr)))
+         (p    (run-piped-cmd cmd))
          (id   (read-line (process-output p)))
          (count (ref self 'next-worker-count)))
     (slot-set! self 'worker-id id)
@@ -471,9 +512,11 @@
                        (when (is-a? sockaddr <sockaddr-un>)
                          (sys-unlink (sockaddr-name sockaddr)))
                        (nuke-all-workers spvr)
+                       (stop-keyserv spvr)
                        (log-format "exitting")))
            )
       (set! *spvr* spvr)
+      (start-keyserv spvr)
       (log-format "started at ~a" sockaddr)
       (call/cc
        (lambda (bye)

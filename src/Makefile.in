@@ -22,7 +22,12 @@ INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) $(SCM_INSTALL_DIR)/kahua/test
 CREATE_DIRS = /var/lib/kahua /var/lib/kahua/user \
               /tmp/kahua /tmp/kahua/user
 
-SCRIPTS  = kahua-spvr kahua-server kahua-admin kahua-install kahua-shell
+SCRIPTS  = kahua-spvr    \
+           kahua-server  \
+           kahua-admin   \
+           kahua-install \
+           kahua-shell   \
+           kahua-keyserv
 SCMFILES = kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
            kahua/config.scm kahua/session.scm kahua/server.scm \
            kahua/developer.scm kahua/partcont.scm kahua/elem.scm \

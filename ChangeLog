@@ -1,3 +1,31 @@
+2004-02-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-keyserv.in : added - session-key server.
+	* src/kahua-server.in : added -k option to receiver session-key server
+	identifier.
+	* src/kahua-spvr.in : fork session-key server at startup, and passes
+	its identifier to kahua-servers.  Also refactored run-piped-cmd.
+	* src/kahua/server.scm (kahua-init-server) : takes an optional
+	argument session-server-id, in case if session-key server is used.
+	* src/kahua/session.scm :
+	(session-manager-init): takes an optional argument session-server-id,
+	in case if session-key server is used.
+	(<session-state>, session-state-register, session-state-get,
+	session-state-discard, session-state-sweep, session-state-refresh):
+	If session-key server is used, query the state session id to it.
+	* src/Makefile.in : added kahua-keyserv
+	* test/session.scm : added tests that works with session-key server.
+	* test/sharedstate.kahua : added to test shared state-session key
+	via session-key server.
+	* test/spvr.scm : added tests for sharedstate.kahua.
+	
+	* plugins/allow-module.scm : allow gauche.vm.debugger - it is
+	implicitly used by '#?=' debug-print feature.
+	* test/allow-module.scm : removed, for it is redundant with
+	plugins/allow-module.scm
+	* test/admin.scm, test/lambdabooks.scm, test/nqueen.scm,
+	test/worker.scm : changed to get allow-module.scm from ../plugins.
+
 2004-02-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/util.scm (kahua-error-string): the implementation of

@@ -10,3 +10,4 @@
 (allow-module gauche.logger)
 (allow-module gauche.parameter)
 (allow-module gauche.sequence)
+(allow-module gauche.vm.debugger)

@@ -1,10 +1,10 @@
 ;; Session manager
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2004 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.7 2004/02/18 22:01:25 shiro Exp $
+;; $Id: session.scm,v 1.8 2004/02/21 12:24:52 shiro Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -16,6 +16,18 @@
 ;;       This table manages association of a state session ID and
 ;;       a state session object, which can contain long-living
 ;;       information such as login user.
+;;
+;; State session may be stored in process-local table or a global
+;; key server (see kahua-keyserv.in).  It is determined by whether
+;; the second argument is passed to session-manager-init; if it is
+;; omitted or #f, process-local table is used.  If it is a string,
+;; which should be a worker-id of the running key server, then the
+;; session key is stored in the key server.
+;;
+;; NB: In the normal mode of Kahua operation, key server should be
+;; used.  The process-local mode is only kept for testing and
+;; backward compatibility.
+
 
 (define-module kahua.session
   (use kahua.gsid)
@@ -23,6 +35,7 @@
   (use kahua.persistence)
   (use gauche.parameter)
   (use gauche.validator)
+  (use gauche.net)
   (use util.list)
   (use srfi-2)
   (use srfi-27)
@@ -47,9 +60,13 @@
 
 (define worker-id (make-parameter #f))
 
-(define (session-manager-init wid)
-  (worker-id wid)
-  #t)
+(define session-server-id (make-parameter #f))
+
+(define (session-manager-init wid . maybe-ssid)
+  (let-optionals* maybe-ssid ((ssid #f))
+    (worker-id wid)
+    (when (string? ssid) (session-server-id ssid))
+    #t))
 
 (define (check-initialized)
   (unless (worker-id) (error "session manager is not initialized")))
@@ -170,11 +187,16 @@
 ;; object.   This module doesn't care the content of <session-state>;
 ;; it's up to the application to use it.
 ;;
-;; The content of session-state is stored in persistent DB, so
-;; only serializable object can be stored.
+;; The content of session-state may be passed around across the
+;; process boundary, so only serializable object can be stored.
+;; 
+;; If session-server-id is given to session-manager-init, the
+;; session key is stored in the key server.
 
 (define-class <session-state> ()
-  ((%properties :init-value '())))
+  ((%session-id :init-keyword :session-id)
+   (%timestamp  :init-keyword :timestamp)
+   (%properties :init-value '())))
 
 ;; pseudo getter
 (define-method slot-missing ((class <class>) (obj <session-state>) slot)
@@ -187,11 +209,25 @@
            val))
   (set! (ref obj '%properties)
         (assq-set! (ref obj '%properties) slot val))
+  (update-session-state obj (cons slot val))
   )
 
+;; Obtain the newest session-state.
+(define-method update-session-state ((self <session-state>) . attrs)
+  (when (session-server-id)
+    (synchronize-session-state
+     self
+     (keyserver (cons (ref self '%session-id) attrs)))))
+
+(define-method synchronize-session-state ((self <session-state>) result)
+  (set! (ref self '%timestamp) (assq-ref (cdr result) '%ctime))
+  (set! (ref self '%properties) (cdr result)))
+
+;; Local session table.  Keeps key <-> <session-state>
 (define state-sessions
   (make-parameter (make-hash-table 'string=?)))
 
+;; Creates local key.  Only used in process-local mode.
 (define (make-state-key)
   (check-initialized)
   (let loop ((id (make-gsid (worker-id) (x->string (random-integer IDRANGE)))))
@@ -199,51 +235,71 @@
       (loop)
       id)))
 
+;; Communicate to keyserver
+(define (keyserver request)
+  (call-with-client-socket
+      (make-client-socket (worker-id->sockaddr (session-server-id)
+                                               (kahua-sockbase)))
+    (lambda (in out)
+      (write request out) (flush out)
+      (let1 result (read in)
+        (when (not (pair? result))
+          (error "keyserver failure: check log file"))
+        result))))
+
 ;; SESSION-STATE-REGISTER [id]
 ;;   Register a new session state.  Returns a state session ID.
 ;;   You can specify ID, but otherwise the system generates one for you.
 (define (session-state-register . args)
-  (let ((id (get-optional args (make-state-key)))
-        (state (make <session-state>))
-        (timestamp (sys-time)))
-    (hash-table-put! (state-sessions) id
-                     (cons timestamp state))
-    id))
+  (if (session-server-id)
+    (car (keyserver (list (get-optional args #f))))
+    (let* ((id (get-optional args (make-state-key)))
+           (state (make <session-state> :session-id id :timestamp (sys-time))))
+      (hash-table-put! (state-sessions) id state)
+      id)))
 
 ;; SESSION-STATE-GET id
 ;;   Returns a session state object corresponding ID.
 ;;   If no session is associated with the ID, a new session state
 ;;   object is created.
 (define (session-state-get id)
-  (let1 p (or (hash-table-get (state-sessions) id #f)
-              (hash-table-get (state-sessions)
-                              (session-state-register id)))
-    (session-state-refresh id)
-    (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
-    (cdr p)))
+  (if (session-server-id)
+    (let* ((result (keyserver (list id)))
+           (state (make <session-state> :session-id id)))
+      (synchronize-session-state state result)
+      (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
+      state)
+    (let1 state (or (hash-table-get (state-sessions) id #f)
+                    (hash-table-get (state-sessions)
+                                    (session-state-register id)))
+      (session-state-refresh id)
+      (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
+      state)))
 
 ;; SESSION-STATE-DISCARD id
 ;;   Discards the session specified by ID.
 (define (session-state-discard id)
-  (hash-table-delete! (state-sessions) id))
+  (if (session-server-id)
+    #f ;; for now, we don't discard global session id
+    (hash-table-delete! (state-sessions) id)))
 
 ;; SESSION-STATE-SWEEP age
 ;;   Discards sessions that are older than AGE (in seconds)
 ;;   Returns # of sessions discarded.
 (define (session-state-sweep age)
-  (let ((cutoff (- (sys-time) age)))
-    (sweep-hash-table (state-sessions)
-                      (lambda (val) (< (car val) cutoff)))))
+  (if (session-server-id)
+    (keyserver (list 'flush age))
+    (let ((cutoff (- (sys-time) age)))
+      (sweep-hash-table (state-sessions)
+                        (lambda (val) (< (ref val '%timestamp) cutoff))))))
 
 ;; SESSION-STATE-REFRESH id
 ;;   Update session timestamp.
 (define (session-state-refresh id)
-  (let* ((timestamp (sys-time))
-         (sessions (state-sessions))
-         (state (cdr (hash-table-get sessions id))))
-    (hash-table-put! sessions id
-                     (cons timestamp state))))
-
+  (if (session-server-id)
+    (keyserver (list id))
+    (set! (ref (hash-table-get (state-sessions) id) '%timestamp)
+          (sys-time))))
 
 ;;; common API ----------------------------------------------
 
