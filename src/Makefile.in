@@ -1,34 +1,57 @@
-SHELL       = @SHELL@
-prefix      = @prefix@
-exec_prefix = @exec_prefix@
-bindir      = @bindir@
-libdir      = @libdir@
-srcdir      = @srcdir@
-VPATH       = $(srcdir)
-top_builddir = @top_builddir@
-top_srcdir   = @top_srcdir@
+package	          = kahua
+SHELL             = @SHELL@
+prefix            = @prefix@
+exec_prefix       = @exec_prefix@
+bindir            = @bindir@/$(package)
+sbindir           = @sbindir@/$(package)
+libexecdir	  = @libexecdir@/$(package)
+datadir		  = @datadir@/$(package)
+sysconfdir        = @sysconfdir@/$(package)
+sharedstatedir    = @sharedstatedir@/$(package)
+localstatedir     = @localstatedir@/$(package)
+libdir            = @libdir@/$(package)
+includedir        = @includedir@/$(package)
+oldincludedir     = @oldincludedir@/$(package)
+infodir           = @infodir@/$(package)
+mandir            = @mandir@/$(package)
+srcdir            = @srcdir@
+VPATH             = $(srcdir)
+top_builddir      = @top_builddir@
+top_srcdir        = @top_srcdir@
 
-DESTDIR  =
+DESTDIR           =
 
-GOSH = @GOSH@
-GAUCHE_CONFIG = @GAUCHE_CONFIG@
-INSTALL = @INSTALL@
-INSTALL_TYPE = @INSTALL_TYPE@
-MKINSTDIR = $(top_srcdir)/mkinstalldirs
-SCM_INSTALL_DIR = $(DESTDIR)`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
-SCRIPT_INSTALL_DIR = $(bindir)
+GOSH                   = @GOSH@
+GAUCHE_CONFIG          = @GAUCHE_CONFIG@
+INSTALL                = @INSTALL@
+INSTALL_TYPE           = @INSTALL_TYPE@
+MKINSTDIR              = $(top_srcdir)/mkinstalldirs
+SCM_INSTALL_DIR        = $(libdir)
+SCRIPT_INSTALL_DIR     = $(bindir)
+SCM_SCRIPT_INSTALL_DIR = $(libexecdir)
+SOCKET_BASE_DIR        = $(prefix)/tmp/$(package)
 
-INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) $(SCM_INSTALL_DIR)/kahua/test \
+INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) \
+	       $(SCM_SCRIPT_INSTALL_DIR) \
+               $(SCM_INSTALL_DIR) \
+               $(SCM_INSTALL_DIR)/kahua \
+	       $(SCM_INSTALL_DIR)/kahua/test \
                $(SCM_INSTALL_DIR)/kahua/pdf
-CREATE_DIRS = /var/lib/kahua /var/lib/kahua/user \
-              /tmp/kahua /tmp/kahua/user
 
-SCRIPTS  = kahua-spvr    \
-           kahua-server  \
-           kahua-admin   \
-           kahua-install \
-           kahua-shell   \
-           kahua-keyserv
+SCRIPTS  = kahua-spvr.sh    \
+           kahua-server.sh  \
+           kahua-admin.sh   \
+           kahua-install.sh \
+           kahua-shell.sh   \
+           kahua-keyserv.sh
+
+SCM_SCRIPTS  = kahua-spvr    \
+               kahua-server  \
+               kahua-admin   \
+               kahua-install \
+               kahua-shell   \
+               kahua-keyserv
+
 SCMFILES = kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
            kahua/config.scm kahua/session.scm kahua/server.scm \
            kahua/developer.scm kahua/partcont.scm kahua/elem.scm \
@@ -37,8 +60,9 @@ SCMFILES = kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
            kahua/pdf/interp.scm kahua/pdf/main.scm kahua/pdf/monad.scm \
            kahua/pdf/srfi-48-draft.scm  kahua/pdf/srfi-48.scm \
            kahua/pdf/state.scm kahua/pdf/typeset.scm kahua/pdf/util.scm
-CONFFILE = /etc/kahua.conf
-USERCONFFILE = /var/lib/kahua/user.conf
+
+CONFFILE = $(sysconfdir)/kahua.conf
+USERCONFFILE = $(localstatedir)/user.conf
 
 CONFIG_GENERATED = Makefile 
 .PHONY: all check clean distclean install maintainer-clean
@@ -46,23 +70,28 @@ CONFIG_GENERATED = Makefile
 .SUFFIXES: .in
 
 .in:
-	$(top_srcdir)/src/fix-shebang.sh "$(GOSH)" $@
+	$(top_srcdir)/src/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(libexecdir)" $@
 
-all: $(SCRIPTS)
+all: $(SCM_SCRIPTS) kahua/config.scm
 
+kahua/config.scm:
+	sed -e "s@##sysconfdir##@$(sysconfdir)@" -e "s@##localstatedir##@$(localstatedir)@" -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##package##@$(package)@" $@.in > $@
 
 check:
 
 clean:
-	rm -rf core *~ kahua/*~ $(SCRIPTS)
+	rm -rf core *~ kahua/*~ $(SCRIPTS) $(SCM_SCRIPTS) kahua/config.scm
 
 install: all
-	$(MKINSTDIR) $(INSTALL_DIRS) $(CREATE_DIRS)
+	$(MKINSTDIR) $(INSTALL_DIRS) $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir)
 	@for f in $(SCMFILES); do \
 	  $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR)/$$f; \
 	done
-	@for f in $(SCRIPTS); do \
-	  $(INSTALL) -m 555 $$f $(SCRIPT_INSTALL_DIR)/$$f; \
+	@for f in $(SCM_SCRIPTS); do \
+	  $(INSTALL) -m 555 $$f $(SCM_SCRIPT_INSTALL_DIR)/$$f.scm; \
+	done
+	@for f in $(SCM_SCRIPTS); do \
+	  $(INSTALL) -m 555 $$f.sh $(SCRIPT_INSTALL_DIR)/$$f; \
 	done
 	@if test ! -f $(CONFFILE); then \
 	  $(INSTALL) -m 444 kahua.conf.sample $(CONFFILE); \
@@ -77,6 +106,9 @@ uninstall:
 	done
 	@for f in $(SCRIPTS); do \
 	  rm -f $(SCRIPT_INSTALL_DIR)/$$f; \
+	done
+	@for f in $(SCM_SCRIPTS); do \
+	  rm -f $(SCM_SCRIPT_INSTALL_DIR)/$$f; \
 	done
 
 distclean: clean
