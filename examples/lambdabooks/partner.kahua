@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: partner.kahua,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+;; $Id: partner.kahua,v 1.2 2003/12/15 21:13:33 ko1 Exp $
 
 (define (partnership-info context cont)
   (cont `((h2 "パートナーシッププログラムについて")
@@ -29,6 +29,6 @@
               (li "Steele (Ed.): Common LISP the Language Second Edition"))
           (p "あなたの参加をお待ちしています。")
           (p (@ (style "text-align:right"))
-             (a/cont (@@ (cont ,(main-proc))) "トップページに戻る")))
+             (a/cont "トップページに戻る")))
         context))
 

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: useradmin.kahua,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+;; $Id: useradmin.kahua,v 1.2 2003/12/15 21:13:33 ko1 Exp $
 
 ;; User administration ----------------------------------------
 ;;  Manages user information.
@@ -21,7 +21,7 @@
           "サイト構築のミスである可能性が高いです。"
           (a (@ (href "mailto:admin@kahua.org")) "サイト管理者")
           "に連絡して下さい。")
-       (a/cont (@@ (cont ,(cut cont '() <>))) "[トップページに戻る]"))
+       (a/cont "[トップページに戻る]"))
      context))
 
   ;; For now, we hardcode roles
@@ -84,7 +84,7 @@
              (tr (td (@ (align "center") (bgcolor "#d8d2c9") (colspan 2))
                      (input (@ (type "submit") (name "submit")
                                (value "変更")))))))
-           (a/cont (@@ (cont ,(cut user-admin-panel <> cont)))
+           (a/cont (@@ (cont user-admin-page))
                    "[ユーザー一覧へ]"))
          context)
         (auth-error))))
