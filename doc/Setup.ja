@@ -1,99 +1,140 @@
-Setup
+* Setup
 
-tarballからのビルドとインストール
+* tarballからのビルドとインストール
 
-準備
+** 準備
 
-Gauche-0.7.4.2以降が必要。
+*** Gauche のインストール
 
-また、Kahuaサーバを管理するスタッフのためにunixグループを一つ
-作っておくとよい。ここでは仮にそれをkahuaグループとする。
+0.8.1 以降のバージョンのGaucheがインストールされているかを確認します。
 
-ビルド
+    $ gosh -V
+    Gauche scheme interpreter, version 0.8.1 [euc-jp]
 
- % tar xzvf Kahua-$VERSION.tgz
- % cd Kahua-$VERSION
- % ./configure --with-cgidir=$CGIDIR --with-cgilogdir=$CGILOGDIR
- % make
+適切なバージョンの Gauche がインストールされていなければ、インストール
+してください。
 
-./configureのオプション
+*** /etc/group の調整
 
---with-cgidir
+Kahuaサーバ用のグループ kahua を作成します。
 
-    cgiスクリプトをインストールするディレクトリ。 httpdの設定
-    によって異なる。(cgiスクリプトのインストール先は、 make
-    install時にmake変数KAHUA_CGI_DIRによってオーバライドでき
-    る)。
+    # groupadd kahua
 
---with-cgilogdir
+このグループに以下のユーザを登録します。
 
-    cgiスクリプトのログを出力するディレクトリ。指定したディレクトリは
-    kahua の cgiスクリプトがログファイルをオープンして書き込めるような
-    パーミッションになっていること．(cgi スクリプトのログの出力先は
-    make install 時に make 変数KAHUA_CGILOG_DIRによってオーバーライド
-    できる．)
+- Kahuaサーバをインストールするユーザ(たとえば taro)
+- Kahuaサーバを管理するユーザ(たとえば hanako)
+- Kahua.cgi を起動するユーザ(たとえば www)
 
---prefix, --exec-prefix,...
+    # vi /etc/group
+    # grep kahua /etc/group
+    kahua:x:1000:taro,hanako,www
 
-    標準のconfigureオプションは、kahua関連のスクリプトファイ
-    ルをインストールする先を指定する。
+taro、hanako については、再ログインしたときから変更が有効になります。
+www については、HTTPサーバによって違う可能性がありますが、Apache の場合は
+httpd を再起動する必要があります。
 
-セルフテスト
 
- % make check
+** ビルド
 
-インストール
+*** 手順
 
- % su
- # make install
- # vi /etc/kahua.conf
- # chgrp kahua $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR $KAHUA_CGILOGDIR
- # chmod g+ws $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR
- # chown $CGI_USER $KAHUA_CGILOG_DIR
- # chmod 755 $KAHUA_CGILOG_DIR
+    $ tar xzvf Kahua-$VERSION.tgz
+    $ cd Kahua-$VERSION
+    $ ./configure --with-cgidir=$CGIDIR --with-cgilogdir=$CGILOGDIR
+    $ make
+
+*** ./configureのオプション
+
+    --with-cgidir
+
+        cgiスクリプトをインストールするディレクトリ。 httpdの設定
+        によって異なる。(cgiスクリプトのインストール先は、 make
+        install時にmake変数KAHUA_CGI_DIRによってオーバライドできる)。
+
+    --with-cgilogdir
+
+        cgiスクリプトのログを出力するディレクトリ。指定したディレクトリは
+        kahua の cgiスクリプトがログファイルをオープンして書き込めるような
+        パーミッションになっていること．(cgi スクリプトのログの出力先は
+        make install 時に make 変数KAHUA_CGILOG_DIRによってオーバーライド
+        できる．)
+
+    --prefix, --exec-prefix,...
+
+        標準のconfigureオプションは、kahua関連のスクリプトファイルを
+        インストールする先を指定する。
+
+
+** セルフテスト
+
+*** 手順
+
+    $ make check
+
+
+** インストール
+
+*** 手順
+
+    $ su
+    # make install
+    # vi /etc/kahua.conf
+    # chgrp kahua $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR $KAHUA_CGILOGDIR
+    # chmod g+ws $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR
+    # chown $CGI_USER $KAHUA_CGILOG_DIR
+    # chmod 755 $KAHUA_CGILOG_DIR
+
+*** インストールディレクトリ
 
 インストールプロセスは、
 {$bindir,$sysconfdir,$libdir,$libexecdir}/kahua 以下に書き込
 むので、それなりの権限で行う必要がある。書き込まれるディレク
 トリの詳細はINSTALLファイルを参照されたい。
 
+*** 書き込み権限
+
 実行時にKahuaサーバが書き込みを必要とするディレクトリは次の3
 つである。これらはkahuaサーバの権限で書き込み可能になっている
 必要がある。各ディレクトリは$sysconfdir/kahua/kahua.confでカ
-スタマイズできる。 kahua.confの内容に関してはkahua.config参
-照。
+スタマイズできる。 kahua.confの内容に関してはkahua.config参照。
 
-$KAHUA_SOCKBASE
+  $KAHUA_SOCKBASE
 
     ソケットを作成するディレクトリ。デフォルトは
     $prefix/tmp/kahua
 
-$KAHUA_WORKDIR
+  $KAHUA_WORKDIR
 
     作業ファイルディレクトリ。デフォルトは
     $localstatedir/kahua
 
-$KAHUA_DOCDIR
+  $KAHUA_DOCDIR
 
     静的ドキュメントディレクトリ。デフォルトは
     /var/www/kahua
 
-$KAHUA_CGILOGDIR
+以下のディレクトリは、kahua.cgi がログを書き込むディレクトリである。
+したがって、このディレクトリは
+
+  $KAHUA_CGILOGDIR
 
     kahua.cgi がログを書き込むディレクトリ．デフォルトは
     $localstatedir/kahua/cgilog
 
-サンプルサーバのインストール
 
- % make install-examples
+** サンプルアプリケーションのインストール
+
+  $ make install-examples
 
 "lambdabooks", "wiki-iki", "login", "nqueen" "lazynqueen"
-"lambdacalcul" アプリケーションサーバがインストールされる。
+"lambdacalcul" アプリケーションがインストールされる。
 
 kahua-spvrを起動して、それぞれkahua.cgi/lambdabooks,
 kahua.cgi/wiki-iki などを通じて Webブラウザからアクセス可能。
 
-CVSからのビルド
+
+* CVSからのビルド
 
 CVSからビルドするには、autoconf 2.54以降が必要。
 

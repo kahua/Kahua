@@ -1,3 +1,8 @@
+2004-11-16  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* doc/Setup.ja: added some description for setting about unix group
+	  and directory permissions.
+
 2004-11-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua-spvr.scm (run-server): fixed for the case if the platform
