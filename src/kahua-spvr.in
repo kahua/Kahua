@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.9 2004/02/16 12:55:34 tahara Exp $
+;; $Id: kahua-spvr.in,v 1.10 2004/02/19 20:50:09 ko1 Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -182,10 +182,13 @@
         #f))))
 
 (define (run-default-workers spvr)
-  (for-each (lambda (w)
-              (dotimes (n (get-keyword :run-by-default (cdr w) 0))
-                (run-worker spvr (car w))))
-            (worker-types)))
+  (map (lambda (w)
+         (let1 wtype (car w)
+           (dotimes (n  (- (get-keyword :run-by-default (cdr w) 0)
+                           (length (find-workers spvr wtype))))
+             (run-worker spvr wtype))
+           wtype))
+       (worker-types)))
 
 ;;; utilities ------------------------------------------------------
 
@@ -357,7 +360,11 @@
     ((types)  ;; returns list of known worker types
      (map car (worker-types)))
     ((reload) ;; reload app-servers file
-     (load-worker-types))
+     (begin
+       (if (load-worker-types)
+	   (run-default-workers *spvr*)
+	   #f)
+       ))
     ((restart)
      (fold (lambda (spec lis)
              (if (or (symbol? spec)

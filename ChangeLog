@@ -1,3 +1,11 @@
+2004-02-20  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in : modified to run servers such as different
+	to app-servers description when 'reload' command is executed.
+	and changed a return value of 'reload' command to available types.
+
+	* test/spvr.scm, test/admin.scm : modified to support above. 
+
 2004-02-19  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua/elem.scm : added higher-order tag functions
