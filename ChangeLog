@@ -1,3 +1,7 @@
+2003-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* examples/wiki-iki/* : added another example: simple wiki
+
 2003-12-27  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* src/kahua/config.scm(kahua-init): add "skip-check?" optional argument

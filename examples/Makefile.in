@@ -27,10 +27,13 @@ SCRIPTFILES = lambdabooks/lambdabooks.kahua \
               lambdabooks/book.kahua        \
               lambdabooks/review.kahua      \
               lambdabooks/partner.kahua     \
-              lambdabooks/useradmin.kahua
+              lambdabooks/useradmin.kahua   \
+              wiki-iki/wiki-iki.kahua
 
 STATICFILES = lambdabooks/images/lambda-books-logo.png \
-              lambdabooks/images/separator.jpg
+              lambdabooks/images/separator.jpg \
+              wiki-iki/wiki-iki.css \
+              wiki-iki/images/wiki-iki.png
 
 CONFIG_GENERATED = Makefile 
 .PHONY: all check clean distclean install maintainer-clean
@@ -40,7 +43,7 @@ all:
 check:
 
 clean:
-	rm -rf core *~ lambdabooks/*~
+	rm -rf core *~ lambdabooks/*~ wiki-iki/*~
 
 install: 
 

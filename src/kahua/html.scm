@@ -118,14 +118,12 @@
 ;; Element handlers
 ;;
 ;;  element-handler :: Attrs -> Auxs -> [Node] -> Context ->
-;;                     (Node -> Context -> Stree) -> Stree
+;;                     ([Node] -> Context -> Stree) -> Stree
 
 ;;
 ;; a/cont element
 ;;
 ;; `(a/cont (@@ (cont ,closure)) contents)
-;; or
-;; `(a/cont (@@ (cont entry-name)) contents)
 ;;
 
 (define-element a/cont (attrs auxs contents context cont)

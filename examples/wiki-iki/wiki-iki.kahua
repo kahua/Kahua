@@ -1,0 +1,274 @@
+;;-*-Scheme-*-
+;; sample kahua application
+;;
+;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: wiki-iki.kahua,v 1.1 2003/12/27 04:00:48 shiro Exp $
+
+(use srfi-1)
+(use srfi-13)
+(use util.list)
+(use gauche.collection)
+(use gauche.logger)
+(use text.parse)
+(use file.util)
+
+;; This implements very simple, yet functional WikiWikiWeb.
+
+(primary-database-name
+ (build-path (ref (kahua-config) 'working-directory) "wiki-iki"))
+
+(log-open (kahua-logpath "wiki-iki.log"))
+
+(define-constant *welcome-page* "Welcome to Wiki Iki")
+
+;;========================================================
+;; <page> structure
+;;
+
+(define-class <page> (<kahua-persistent-base>)
+  ((name :init-keyword :name :init-value ""
+         :allocation :persistent)
+   (body :init-keyword :body :init-value ""
+         :allocation :persistent)
+   (prev :init-keyword :prev :init-value #f
+         :allocation :persistent)
+   (next :init-keyword :next :init-value #f
+         :allocation :persistent)
+   (creation-time :init-keyword :creation-time :init-form (sys-time)
+                  :allocation :persistent)
+   ))
+
+(define-method newest-page ((page <page>))
+  (cond ((ref page 'next) => newest-page) (else page)))
+
+(define-method newest-page ((pagename <string>))
+  (cond ((find (lambda (p) (equal? (ref p 'name) pagename))
+               (make-kahua-collection <page>))
+         => newest-page)
+        (else #f)))
+
+(define-method newest-page (_) #f) ;; fallback
+
+(define-method format-page ((page <page>) context local-cont global-cont)
+  (let* ((lines (call-with-input-string (ref page 'body) port->string-list))
+         (paras (lines->paragraphs lines)))
+    (local-cont (map (cut format-paragraph <> global-cont) paras)
+                context)))
+
+(define (lines->paragraphs lines)
+  (let loop ((lines lines)
+             (paras '()))
+    (cond
+     ((null? lines) (reverse! paras))
+     ((string-null? (car lines)) (loop (cdr lines) paras))
+     ((#/^\*+\s/ (car lines)) (loop (cdr lines) (cons (car lines) paras)))
+     (else
+      (let span ((lines lines) (r '()))
+        (if (or (null? lines)
+                (string-null? (car lines))
+                (#/^\*+\s/ (car lines)))
+          (loop lines (cons (reverse! r) paras))
+          (span (cdr lines) (cons (car lines) r)))))
+     )))
+
+(define (nonexistent-page pagename context global-cont)
+  (global-cont
+   `(,@(page-title `("存在しないページ: " ,pagename))
+     (p (a/cont (@@ (cont ,(cut edit-page #f pagename <>)))
+                ,pagename "を編集する")))
+   context))
+
+;; [String], Cont -> [Node]
+;; NB: this isn't a CPS!
+(define (format-paragraph lines cont)
+  (define (next-token line r)
+    (cond ((#/\[\[(.*?)\]\]/ line)
+           => (lambda (m)
+                (next-token (m 'after)
+                            (list* (format-wikiname (m 1) cont) (m 'before) r))))
+          (else (cons line r))))
+  (define (format-lines lines r)
+    (if (null? lines)
+      (reverse! r)
+      (format-lines (cdr lines) (next-token (car lines) r))))
+  ;; body of format paragraph
+  (if (string? lines)
+    (cond ((#/^(\*+)\s/ lines)
+           => (lambda (m)
+                (list (ref '(_ h2 h3 h4 h5 h6) (min 4 (string-length (m 1))))
+                      (m 'after))))
+          (else `(p ,lines)))
+    (cons 'p (format-lines lines '()))))
+
+(define (format-wikiname name cont)
+  `(a/cont (@@ (cont ,(cut show-page/pagename name <>))) ,name))
+
+(define (format-time time)
+  (sys-strftime "%Y/%m/%d %H:%M:%S %Z" (sys-localtime time)))
+
+;;========================================================
+;; Generic page set
+;;
+
+(define-class <page-set> (<kahua-persistent-base>)
+  ((name  :init-keyword :name :init-value #f
+          :allocation :persistent)
+   (max-pages :init-keyword :max-pages :init-value #f
+              :allocation :persistent)
+   (pages :init-keyword :pages :init-value '()
+          :allocation :persistent)
+   ))
+
+(define-method key-of ((self <page-set>))
+  (x->string (ref self 'name)))
+
+(define-method page-set-push-unique! ((self <page-set>) page)
+  (let ((lis (cons page (remove (lambda (p)
+                                  (equal? (ref page 'name) (ref p 'name)))
+                                (ref self 'pages)))))
+    (set! (ref self 'pages)
+          (cond ((ref self 'max-pages) => (cut take* lis <>))
+                (else lis)))))
+
+(define (recent-changes)
+  (or (find-kahua-instance <page-set> "recent-changes")
+      (make <page-set> :name "recent-changes" :max-pages 20)))
+
+(define (format-recent-changes cont)
+  (let ((pages (ref (recent-changes) 'pages)))
+    `((table
+       (@ (id "recentchanges"))
+       (tr (th (@ (id "recentchanges")) "最近の更新"))
+       ,@(map (lambda (page)
+                `(tr (td (@ (id "recentchanges"))
+                         ,(format-wikiname (ref page 'name) cont))))
+              pages)))))
+
+;;========================================================
+;; Main application
+;;
+
+(define (standard-page-cont nodes context)
+  (interp-html
+   `((html (head (title "Wiki Iki")
+                 (link (@ (rel "stylesheet") (type "text/css")
+                          (href ,(kahua-static-document-url
+                                  "wiki-iki/wiki-iki.css")))))
+           (body ,@nodes)))
+   context))
+
+(define-entry (show-page context)
+  (show-page/pagename (kahua-context-ref context "p" *welcome-page*) context))
+
+(define (show-page/pagename pagename context)
+  (cond ((newest-page pagename) => (cut show-page/page <> context))
+        ((equal? pagename *welcome-page*)
+         (show-page/page (create-welcome-page) context))
+        (else (nonexistent-page pagename context standard-page-cont))))
+
+(define (show-page/page page context)
+  (define (body-pane nodes)
+    `(td (@ (id "bodypane"))
+         ,@nodes
+         (hr)
+         (div (a/cont
+               (@@ (cont ,(cut edit-page (key-of page) (ref page 'name) <>)))
+               "[編集]"))
+         (div (@ (id "lastchanged"))
+              "最終更新: " ,(format-time (ref page 'creation-time)) (br)
+              "Powered by " (a (@ (href "http://www.kahua.org/")) "Kahua"))))
+              
+  (define (side-pane)
+    `(td (@ (id "sidepane")) ,@(format-recent-changes standard-page-cont)))
+
+  (format-page page context
+               (lambda (nodes context)
+                 (standard-page-cont
+                  `(,@(page-title (list (ref page 'name)))
+                    (table (@ (style "width:100%"))
+                           (tr ,(body-pane nodes) ,(side-pane))))
+                  context))
+               standard-page-cont))
+
+;; Edit and commit uses pagekey for an existing page,
+;; and pagename for a new page. 
+
+(define (edit-page pagekey pagename context)
+  ;; NB: we pick the newest page in case if the user come back to
+  ;; the old continuation.
+  (let* ((orig-page (and pagekey
+                         (newest-page (find-kahua-instance <page> pagekey))))
+         (pagekey  (and orig-page (key-of orig-page))))
+    (standard-page-cont
+     `(,@(page-title `(,pagename "の編集"))
+       (form/cont
+        (@@ (cont ,(cut commit-page pagekey pagename <>)))
+        (textarea (@ (name "content") (rows 20) (cols 60))
+                  ,(if orig-page (ref orig-page 'body) ""))
+        (input (@ (type "submit") (name "commit") (value "コミット")))))
+     context)))
+
+(define (commit-page pagekey pagename context)
+  (let* ((content (canon-content (kahua-context-ref context "content" "")))
+         (orig-page (and pagekey (find-kahua-instance <page> pagekey))))
+    (if orig-page
+      (if (ref orig-page 'next)
+        (conflict-page page context)
+        (if (equal? content (ref orig-page 'body))
+          (show-page/page page context)
+          (let1 new-page (make <page>
+                           :name pagename :body content
+                           :previous-page orig-page)
+            (page-set-push-unique! (recent-changes) new-page)
+            (set! (ref orig-page 'next) new-page)
+            (show-page/page new-page context))))
+      (let1 new-page (make <page> :name pagename :body content)
+        (page-set-push-unique! (recent-changes) new-page)
+        (show-page/page new-page context)))
+    ))
+
+(define (conflict-page page context)
+  (error "Conflict!"))
+
+(define (page-title name)
+  `((h1
+     (a/cont
+      (@@ (cont ,show-page))
+      (img (@ (src ,(kahua-static-document-url "wiki-iki/images/wiki-iki.png"))
+              (border "0") (width 64) (height 64))))
+     (span (@ (style "vertical-align:50%; margin-left:0.5em")) ,@name))))
+
+;; canonicalize EOL to #\newline
+(define (canon-content content)
+  (string-join (call-with-input-string content port->string-list)
+               "\n" 'suffix))
+
+;;========================================================
+;; initialization
+;;
+
+(define (create-welcome-page)
+  (make <page>
+    :name *welcome-page*
+    :body "* Wiki Ikiへようこそ
+これは、簡単なWikiWikiWebのKahuaフレームワークによる実装です。
+(Wiki ikiとは「小さなWiki」という意味です)。
+
+** ページの編集
+ページを編集するには、下の[編集]リンクをクリックして下さい。
+空行がパラグラフの区切りに、'[['と
+']]'ではさまれた部分が他のページへの参照に、
+'* ', '** ', '*** ' 等で始まる行が見出しになります(アスタリスクの後に
+空白が必要です)。
+** ページの作成
+存在しないページに対する参照を作ると、その名前のページを作成することができます。
+例：[[最初は存在しないページ]]
+"))
+   
+(initialize-main-proc
+ (lambda (context)
+   (show-page context)))
+

@@ -1,0 +1,33 @@
+/* sample style sheet for wiki-iki */
+
+body {
+  font-family: verdana, arial, helvetica, sans-serif;
+  color: black;
+  background-color: #eeeeee;
+}
+
+h1, h2, h3, h4, h5, h6 {
+   text-align: left;
+   color: #557777;
+   background: transparent;
+}
+h1 { font-size: 190% }
+h2 { font-size: 160% }
+h3 { font-size: 130% }
+h4 { font-size: 110% }
+h5 { font-size: 100% }
+h6 { font-size: 100%; font-style: italic }
+
+dt { font-weight: bold }
+
+
+
+div#lastchanged { color:#888888;text-align:right }
+
+td#bodypane { vertical-align:top }
+
+td#sidepane { vertical-align:top;width:10em }
+
+table#recentchanges { border-left:thick solid #ddbb88; border-spacing:0pt }
+th#recentchanges    { background-color:#ddbb88 }
+td#recentchanges    { padding-left:1em }
