@@ -1,3 +1,8 @@
+2004-01-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/dbm.scm, test/kahua-dbm.scm : added a module that
+	  provides dbm interface on top of kahua.persistence.
+
 2004-01-12  Shiro Kawai  <shiro@acm.org>
 
 	* Makefile.in, cgi/Makefile.in, examples/Makefile.in,

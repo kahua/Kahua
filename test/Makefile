@@ -1,5 +1,5 @@
-TESTS = test-xml persistence user config gsid session server worker \
-        lambdabooks wiki-iki spvr admin
+TESTS = test-xml persistence user config gsid session server kahua-dbm \
+        worker lambdabooks wiki-iki spvr admin
 
 .PHONY: all check clean distclan maintainer-clean $(TESTS)
 
@@ -45,6 +45,9 @@ spvr :
 
 admin:
 	@gosh -I../src ./admin.scm >> test.log
+
+kahua-dbm :
+	@gosh -I../src ./kahua-dbm.scm >> test.log
 
 clean:
 	rm -rf test.log app/test.log *~ _tmp* _work
