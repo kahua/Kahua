@@ -13,7 +13,7 @@ Gauche-0.7.4.2以降が必要。
 
  % tar xzvf Kahua-$VERSION.tgz
  % cd Kahua-$VERSION
- % ./configure --with-cgidir=$CGIDIR
+ % ./configure --with-cgidir=$CGIDIR --with-cgilogdir=$CGILOGDIR
  % make
 
 ./configureのオプション
@@ -22,8 +22,16 @@ Gauche-0.7.4.2以降が必要。
 
     cgiスクリプトをインストールするディレクトリ。 httpdの設定
     によって異なる。(cgiスクリプトのインストール先は、 make
-    install時にmake変数KAHUA_CGIDIRによってオーバライドでき
+    install時にmake変数KAHUA_CGI_DIRによってオーバライドでき
     る)。
+
+--with-cgilogdir
+
+    cgiスクリプトのログを出力するディレクトリ。指定したディレクトリは
+    kahua の cgiスクリプトがログファイルをオープンして書き込めるような
+    パーミッションになっていること．(cgi スクリプトのログの出力先は
+    make install 時に make 変数KAHUA_CGILOG_DIRによってオーバーライド
+    できる．)
 
 --prefix, --exec-prefix,...
 
@@ -39,8 +47,10 @@ Gauche-0.7.4.2以降が必要。
  % su
  # make install
  # vi /etc/kahua.conf
- # chgrp kahua $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR
+ # chgrp kahua $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR $KAHUA_CGILOGDIR
  # chmod g+ws $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR
+ # chown $CGI_USER $KAHUA_CGILOG_DIR
+ # chmod 755 $KAHUA_CGILOG_DIR
 
 インストールプロセスは、
 {$bindir,$sysconfdir,$libdir,$libexecdir}/kahua 以下に書き込
@@ -56,17 +66,22 @@ Gauche-0.7.4.2以降が必要。
 $KAHUA_SOCKBASE
 
     ソケットを作成するディレクトリ。デフォルトは
-    $prefix/tmp/kahua。
+    $prefix/tmp/kahua
 
 $KAHUA_WORKDIR
 
     作業ファイルディレクトリ。デフォルトは
-    $localstatedir/kahua-elua。
+    $localstatedir/kahua
 
 $KAHUA_DOCDIR
 
     静的ドキュメントディレクトリ。デフォルトは
-    /var/www/kahua。
+    /var/www/kahua
+
+$KAHUA_CGILOGDIR
+
+    kahua.cgi がログを書き込むディレクトリ．デフォルトは
+    $localstatedir/kahua/cgilog
 
 サンプルサーバのインストール
 

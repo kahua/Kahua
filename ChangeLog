@@ -5,8 +5,12 @@
 
 	* configure.ac: added --with-cgilogdir option
 
-	* cgi/Makefile.in, cgi/kahua.cgi.in: modified kahua cgi log path
-	from /tmp/t.log to $(KAHUA_CGILOG_PATH)/kahua-cgi.log.
+	* cgi/Makefile.in, cgi/kahua.cgi.in, cgi/fix-shebang: 
+	modified kahua cgi log path from /tmp/t.log 
+	to $(KAHUA_CGILOG_PATH)/kahua-cgi.log.
+
+	* INSTALL, doc/Setup.jp: 
+	added description about permisson of kahua cgi log directory.
 
 2004-06-02  Nobuo Yamashita  <nobsun@sampou.org>
 
