@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.17 2004/02/21 12:24:52 shiro Exp $
+;; $Id: server.scm,v 1.18 2004/02/22 11:23:22 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -487,18 +487,21 @@
 
 ;; Comb out arguments to pass to continuation procedure.
 ;; [Args] -> [PositionalArgs], [KeywordArgs]
-
 (define (extract-cont-args args form)
   (define (val v)
-    (if (or (string? v) (symbol? v) (number? v))
-      (x->string v)
-      (errorf "bad continuation argument ~a in element ~a" v form)))
+    (cond ((not v) #f) ;; giving value #f makes keyword arg omitted
+          ((or (string? v) (symbol? v) (number? v))
+           (x->string v))
+          (else
+           (errorf "bad continuation argument ~a in element ~a" v form))))
   (receive (kargs pargs) (partition pair? args)
     (values (map val pargs)
-            (map (lambda (p)
-                   (cons (car p)
-                         (if (null? (cdr p)) '() (val (cadr p)))))
-                 kargs))))
+            (filter-map (lambda (p)
+                          (and-let* ((v (if (null? (cdr p))
+                                          '()
+                                          (val (cadr p)))))
+                            (cons (x->string (car p)) v)))
+                        kargs))))
 
 ;;-----------------------------------------------------------
 ;; Pre-defined element handlers
@@ -507,7 +510,8 @@
 ;;
 ;; a/cont element - embeds continuation within a link node.
 ;;
-;; `(a/cont (@@ (cont ,closure [arg ...]) (fragment ,id)) contents)
+;; `(a/cont (@@ (cont ,closure [arg ...]) (fragment ,id))
+;;          contents)
 ;;
 ;;  With arg ..., you can pass parameters to the continuation.
 ;;  Each arg should either be:
@@ -524,36 +528,83 @@
 ;;  If (fragment <id>) is given, <id> is used as a fragment ID of
 ;;  the generated URL.  <id> isn't passed to the continuation closure;
 ;;  it is used by the client browser to jump to the specified fragment.
+;;
+;;  A variation of 'cont' can be used to pass the control to other
+;;  application server:
+;;
+;; `(a/cont (@@ (remote-cont <server-type> <cont-id> [arg ...]) 
+;;              (fragment ,id)
+;;              (return-cont ,closure [arg ...]))
+;;          contents)
+;;
+;;  This will produce a URL kahua.cgi/<server-type>/<cont-id>..., so
+;;  that the control is transferred to other application server
+;;  specified by <server-type> and <cont-id>.
+;;
+;;  If 'return-cont' clause is also given, it is used to generate a keyword
+;;  argument 'return-cont' for the remote call, so that the remote server
+;;  can pass the control back to the current server.
+;;
+;;  NB: it would be nice if a/cont can specify arbitrary number of
+;;  return continuations, so that the remote server can choose the return
+;;  point depending on its operation.  Future extension.
 
 (define-element a/cont (attrs auxs contents context cont)
 
-  (define (build-argstr cont-args)
-    (receive (pargs kargs) (extract-cont-args cont-args 'a/cont)
-      (string-concatenate
-       `(,(string-join (map uri-encode-string pargs) "/" 'prefix)
-         ,@(if (null? kargs)
-             '()
-             `("?"
-               ,@(string-join
-                  (map (lambda (karg)
-                         (if (null? (cdr karg))
-                           (uri-encode-string (car karg))
-                           (format "~a=~a"
-                                   (uri-encode-string (car karg))
-                                   (uri-encode-string (cdr karg)))))
-                       kargs)
-                  "&")))))))
-  
-  (let* ((clause (assq-ref auxs 'cont))
-         (id     (if clause (session-cont-register (car clause)) ""))
-         (argstr (if clause (build-argstr (cdr clause)) ""))
-         (fragment (cond ((assq-ref auxs 'fragment)
-                          => (lambda (p) #`"#,(uri-encode-string (car p))"))
-                         (else ""))))
-    (cont
-     `((a (@ (href ,(kahua-self-uri (string-append id argstr fragment))))
-          ,@contents))
-     context)))
+  (define (build-argstr pargs kargs)
+    (string-concatenate
+     `(,(string-join (map uri-encode-string pargs) "/" 'prefix)
+       ,@(if (null? kargs)
+           '()
+           `("?"
+             ,(string-join
+               (map (lambda (karg)
+                      (if (null? (cdr karg))
+                        (uri-encode-string (car karg))
+                        (format "~a=~a"
+                                (uri-encode-string (car karg))
+                                (uri-encode-string (cdr karg)))))
+                    kargs)
+               "&"))))))
+
+  (define (fragment auxs)
+    (cond ((assq-ref auxs 'fragment)
+           => (lambda (p) #`"#,(uri-encode-string (car p))"))
+          (else "")))
+
+  (define (local-cont clause)
+    (let ((id     (session-cont-register (car clause)))
+          (argstr ((compose build-argstr extract-cont-args)
+                   (cdr clause) 'a/cont)))
+      (nodes (kahua-self-uri #`",|id|,|argstr|,(fragment auxs)"))))
+
+  (define (return-cont-uri)
+    (and-let* ((clause (assq-ref auxs 'return-cont))
+               (id     (session-cont-register (car clause)))
+               (argstr ((compose build-argstr extract-cont-args)
+                        (cdr clause) 'a/cont)))
+      (format "~a/~a~a" (kahua-worker-type) id argstr)))
+
+  (define (remote-cont clause)
+    (let* ((server-type (car clause))
+           (cont-id (cadr clause))
+           (return  (return-cont-uri))
+           (argstr  (receive (pargs kargs)
+                        (extract-cont-args (cddr clause) 'a/cont)
+                      (build-argstr pargs
+                                    (if return
+                                      `(("return-cont" . ,return) ,@kargs)
+                                      kargs)))))
+      (nodes (format "~a/~a/~a~a"
+                     (kahua-bridge-name) server-type cont-id argstr))))
+
+  (define (nodes path)
+    (cont `((a (@ (href ,path)) ,@contents)) context))
+
+  (cond ((assq-ref auxs 'cont) => local-cont)
+        ((assq-ref auxs 'remote-cont) => remote-cont)
+        (else (nodes (kahua-self-uri (fragment auxs)))))
+  )
 
 ;;
 ;; form/cont
@@ -589,7 +640,7 @@
 ;;
 ;; extra-header - inserts protocol header to the reply message
 ;; 
-;; `(extra-header (@@ (name ,name) (value ,value)))
+;; `(extra-header (@ (name ,name) (value ,value)))
 ;;
 
 (define-element extra-header (attrs auxs contents context cont)

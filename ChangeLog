@@ -1,3 +1,9 @@
+2004-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (a/cont) : supports remote-cont clause, which
+	allows the application server to pass the control to another
+	application server.
+
 2004-02-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua-keyserv.in : added - session-key server.
