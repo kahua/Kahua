@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.in,v 1.2 2004/02/21 22:18:03 shiro Exp $
+;; $Id: kahua-keyserv.in,v 1.3 2004/02/21 22:51:54 shiro Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -38,6 +38,8 @@
 ;;        Replies (<number-of-current-keys>)
 ;;     (stat)
 ;;        Replies (<number-of-current-keys>)
+;;     (keys)
+;;        Replies list of all existing keys
 ;;
 ;; This protocol favors simplicity over performance.  It won't scale,
 ;; so we'll watch out how it behaves.
@@ -123,8 +125,8 @@
                      (sweep-objects (x->integer (and (pair? (cdr request))
                                                      (cadr request))))
                      (list (num-objects)))
-                    ((stat)
-                     (list (num-objects)))
+                    ((stat) (list (num-objects)))
+                    ((keys) (all-keys))
                     (else
                      (handle-object-command request)))
                   #f)
@@ -147,10 +149,14 @@
 
 (define (get-object key)
   (if (string? key)
-    (or (hash-table-get *object-pool* key #f)
-        (let1 newobj `(,key (%ctime . ,(sys-time)))
-          (hash-table-put! *object-pool* key newobj)
-          newobj))
+    (cond ((hash-table-get *object-pool* key #f)
+           => (lambda (k)
+                (set! (cdr k) (assq-set! (cdr k) '%ctime (sys-time)))
+                k))
+          (else
+           (let1 newobj `(,key (%ctime . ,(sys-time)))
+             (hash-table-put! *object-pool* key newobj)
+             newobj)))
     (let loop ()
       (let1 candidate (number->string (random-integer (expt 2 64)) 36)
         (if (hash-table-get *object-pool* candidate #f)
@@ -171,6 +177,9 @@
   (hash-table-fold *object-pool*
                    (lambda (k v n) (+ n 1))
                    0))
+
+(define (all-keys)
+  (hash-table-keys *object-pool*))
 
 ;; Local variables:
 ;; mode: scheme
