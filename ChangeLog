@@ -1,3 +1,12 @@
+2005-03-23  Kenji Hisazumi  <nel@soraneko.com>
+
+	* src/kahua/persistence.scm:
+	- refactored a mecanism to provide in-db in-memory consistency.
+	Now, all in-memory objects obtained from db are managed over
+	transactions. However, the write-syncer mechanism dose not 
+	support yet.
+	
+
 2005-02-09  Kenji Hisazumi  <nel@soraneko.com>
 
 	* src/kahua/persistence.scm: 

@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.3 2005/02/09 07:30:38 nel Exp $
+;; $Id: persistence.scm,v 1.4 2005/03/23 05:09:36 nel Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -17,6 +17,13 @@
     (begin (test-start "persistence")
            (build-path (sys-getcwd) "_tmp"))))
 (sys-system #`"rm -rf ,*dbname*")
+
+(define-syntax with-clean-db
+  (syntax-rules ()
+    ((_ (db dbpath) . body)
+     (with-db (db dbpath)
+       (kahua-db-purge-objs)
+       . body))))
 
 ;; ロードテスト:
 ;;   kahua.persistentceがロードでき、またそのインタフェースに
@@ -72,22 +79,22 @@
 
 ;;  永続インスタンスを作成し、スロットが初期化されていること確認する。
 (test* "creation (1)" '(1 ii aa "oo")
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list-slots (make <kahua-test> :quick 'ii :quack 'aa :quock "oo"))))
 
 ;;  再びトランザクションを開始し、先程作成した永続オブジェクトが得られる
 ;;  ことを確認する。
 (test* "read (1)" '(1 ii a "oo")
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list-slots (get-test-obj 1))))
 
 ;;  ひとつのトランザクションでの変更が、次のトランザクションにも保持されて
 ;;  いることを確認する。
 (test* "modify (1)" '(1 "II" a "oo")
        (begin
-         (with-db (db *dbname*)
+         (with-clean-db (db *dbname*)
            (set! (ref (get-test-obj 1) 'quick) "II"))
-         (with-db (db *dbname*)
+         (with-clean-db (db *dbname*)
            (list-slots (get-test-obj 1))))
        )
 
@@ -95,26 +102,26 @@
 ;;  また、その変更が先程作成した永続インスタンスには影響しないことを
 ;;  確認する。
 (test* "creation (2)" '(2 hh bb "pp")
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list-slots (make <kahua-test> :quick 'hh :quack 'bb :quock "pp"))))
 
 (test* "modify (2)" '(2 "hh" a "PP")
        (begin
-         (with-db (db *dbname*)
+         (with-clean-db (db *dbname*)
            (set! (ref (get-test-obj 2) 'quick) "hh")
            (set! (ref (get-test-obj 2) 'quock) "PP"))
-         (with-db (db *dbname*)
+         (with-clean-db (db *dbname*)
            (list-slots (get-test-obj 2))))
        )
 
 (test* "read (1)" '(1 "II" a "oo")
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list-slots (get-test-obj 1))))
 
 ;;  永続クラスの世代番号が正しく初期化されていること、すなわち
 ;;  in-memory世代もin-db世代も0であることを確認する。
 (test* "generation" '(0 0)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list (ref <kahua-test> 'generation)
                (ref <kahua-test> 'persistent-generation))))
 
@@ -128,10 +135,10 @@
 (test* "abort transaciton" '(2 "hh" a "PP")
        (with-error-handler
            (lambda (e)
-             (with-db (db *dbname*)
+             (with-clean-db (db *dbname*)
                (list-slots (get-test-obj 2))))
          (lambda ()
-           (with-db (db *dbname*)
+           (with-clean-db (db *dbname*)
              (set! (ref (get-test-obj 2) 'quick) 'whoops)
              (error "abort!")))))
 
@@ -142,10 +149,10 @@
 (test* "commit & abort" '(2 whoops a "PP")
        (with-error-handler
            (lambda (e)
-             (with-db (db *dbname*)
+             (with-clean-db (db *dbname*)
                (list-slots (get-test-obj 2))))
          (lambda ()
-           (with-db (db *dbname*)
+           (with-clean-db (db *dbname*)
              (set! (ref (get-test-obj 2) 'quick) 'whoops)
              (kahua-db-sync db)
              (set! (ref (get-test-obj 2) 'quock) 'whack)
@@ -158,20 +165,20 @@
 ;;   永続オブジェクトへの参照を別の永続オブジェクトのスロットにセットし、
 ;;   コミットできることを確認する。
 (test* "reference write" #t
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (set! (ref (get-test-obj 1) 'quick) (get-test-obj 2))
          (is-a? (ref (get-test-obj 1) 'quick) <kahua-test>)))
 
 ;;   再びもとの永続オブジェクトを読み出し、参照先の永続オブジェクトも
 ;;   正しく読まれていることを確認する。
 (test* "reference read" '(2 whoops a "PP")
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list-slots (ref (get-test-obj 1) 'quick))))
 
 ;;   ふたつの永続オブジェクトが相互に参照しあう構造を作成し、それが
 ;;   コミットできることを確認する。
 (test* "circular reference write" '(#t #t)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (set! (ref (get-test-obj 2) 'quick) (get-test-obj 1))
          (list (eq? (get-test-obj 1) (ref (get-test-obj 2) 'quick))
                (eq? (get-test-obj 2) (ref (get-test-obj 1) 'quick)))))
@@ -179,13 +186,15 @@
 ;;   作成した循環参照構造を再び読み出し、構造が正しく再現されている
 ;;   ことを確認する。
 (test* "circular reference read" '(#t #t)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list (eq? (get-test-obj 1) (ref (get-test-obj 2) 'quick))
                (eq? (get-test-obj 2) (ref (get-test-obj 1) 'quick)))))
 
 ;;----------------------------------------------------------
 ;; クラス再定義
 (test-section "class redefinition")
+
+;(with-clean-db (db *dbname*) (kahua-db-purge-objs))
 
 ;; 永続クラスを再定義する。スロットの変更点は以下の通り。
 
@@ -210,12 +219,12 @@
 
 ;;   インスタンスが新しいクラスに対応してアップデートされることを確認する。
 (test* "updating instance for new class" #t
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (eq? (ref (get-test-obj 1) 'quick)
               (ref (get-test-obj 1) 'quock))))
 
 (test* "updating instance for new class" '(#t #t)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list (equal? (list-slots (ref (get-test-obj 1) 'quock))
                        (list-slots (get-test-obj 2)))
                (equal? (list-slots (ref (get-test-obj 2) 'quock))
@@ -224,23 +233,25 @@
 ;;   アップデートしたインスタンスに対する変更がデータベースに反映されることを
 ;;   確認する。
 (test* "redefining class (write)" '("M" "M" "M")
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (set! (ref (get-test-obj 1) 'muick) '("M" "M" "M"))
          (ref (get-test-obj 1) 'muick)))
 
 (test* "redefining class (read)" '("M" "M" "M")
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (ref (get-test-obj 1) 'muick)))
 
 ;;   再定義した永続クラスの世代番号がインクリメントされていることを確認する。
 (test* "generation" '(1 1)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list (ref <kahua-test> 'generation)
                (ref <kahua-test> 'persistent-generation))))
 
 ;;----------------------------------------------------------
 ;; サブクラスのテスト
 (test-section "subclassing")
+
+;(with-clean-db (db *dbname*) (kahua-db-purge-objs))
 
 ;;   永続クラス<kahua-test>を継承したサブクラスを作成する。
 (define-class <kahua-test-sub> (<kahua-test>)
@@ -259,40 +270,40 @@
 ;;   サブクラスの永続インスタンスが正しく作成され、継承されたスロット、
 ;;   追加されたスロット、共にデータが永続化されることを確認する。
 (test* "write" '(4 "quick" "quack" "woo" "boo" "quock")
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list-slots
           (make <kahua-test-sub> :quick "quick" :quack "quack"
                 :woo "woo" :boo "boo" :quock "quock"))))
 
 (test* "read"  '(4 "quick" a "woo" "boo" "quock")
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list-slots (find-kahua-instance <kahua-test-sub> "wooboo"))))
 
 (test* "write" '(5 i a "wooo" "booo" #f)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list-slots
           (make <kahua-test-sub> :woo "wooo" :boo "booo"))))
 
 (test* "read"  '(5 i a "wooo" "booo" #f)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list-slots (find-kahua-instance <kahua-test-sub> "wooobooo"))))
 
 ;;   親クラスの永続インスタンスへの参照を含む構造を作成し、
 ;;   それがデータベースに反映されることを確認する。
 (test* "reference to parent (write)" #t
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 obj (find-kahua-instance <kahua-test-sub> "wooboo")
            (set! (ref obj 'quick) (get-test-obj 1))
            (eq? (ref obj 'quick) (get-test-obj 1)))))
 
 (test* "reference to parent (read)" #t
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 obj (find-kahua-instance <kahua-test-sub> "wooboo")
            (eq? (ref obj 'quick) (get-test-obj 1)))))
 
 ;;   この子クラスの世代番号が初期化されていることを確認する。
 (test* "generation" '(0 0)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (list (ref <kahua-test-sub> 'generation)
                (ref <kahua-test-sub> 'persistent-generation))))
 
@@ -304,12 +315,12 @@
 ;;  そのクラスの永続インスタンスのコレクションが作成できることを
 ;;  確認する。
 (test* "kahua-test" '(1 2)
-       (sort (with-db (db *dbname*)
+       (sort (with-clean-db (db *dbname*)
                (map (cut ref <> 'id)
                     (make-kahua-collection <kahua-test>)))))
 
 (test* "kahua-test-sub" '("woo" "wooo")
-       (sort (with-db (db *dbname*)
+       (sort (with-clean-db (db *dbname*)
                (map (cut ref <> 'woo)
                     (make-kahua-collection <kahua-test-sub>)))))
 
@@ -318,7 +329,7 @@
 ;; 正しくセットアップされることを確認する。
 (test* "kahua-test-sub" '((<kahua-test-sub> . "wooboo")
                           (<kahua-test-sub> . "wooobooo"))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (make-kahua-collection <kahua-test-sub>)
          (sort (hash-table-keys (ref db 'instance-by-key))
                (lambda (a b) (string<? (cdr a) (cdr b))))))
@@ -327,7 +338,7 @@
 ;; 永続インスタンスのコレクションを，<kahua-test>に対する
 ;; make-kahua-collectionを用いて作成できることを確認する．
 (test* "kahua-test-subclasses" '(1 2 4 5)
-       (sort (with-db (db *dbname*)
+       (sort (with-clean-db (db *dbname*)
                (map (cut ref <> 'id)
                     (make-kahua-collection <kahua-test> :subclasses #t)))))
 
@@ -349,7 +360,7 @@
 
 (test* "generation with source-id change"
        '("1B" 0 0 (0))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 ins (make <kahua-test-sub>
                      :woo "1" :quick 'q1 :muick 'm1 :quock 'o1)
            (list (key-of ins)
@@ -374,7 +385,7 @@
 
 (test* "generation with source-id change (revert source-id)"
        '("2B" 0 0 (0))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 ins (make <kahua-test-sub> :woo "2")
            (list (key-of ins)
                  (ref <kahua-test-sub> 'generation)
@@ -395,7 +406,7 @@
   :source-id "Rev 3")
 
 (test* "generation with source-id change (update)" '(1 1 (1 0))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (make <kahua-test-sub>
            :woo "3" :quick 'q3 :muick 'm3 :quock 'o3 :bar 'b3)
          (list (ref <kahua-test-sub> 'generation)
@@ -416,7 +427,7 @@
   :source-id "Rev 4")
 
 (test* "generation with source-id change (change source-id)" '(1 1 (1 0))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (make <kahua-test-sub> :woo "4" :quock 'o4)
          (list (ref <kahua-test-sub> 'generation)
                (ref <kahua-test-sub> 'persistent-generation)
@@ -434,7 +445,7 @@
   :source-id "Rev 3")
 
 (test* "generation with source-id change (change parent)" '(2 2 (2 1 0))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (make-kahua-collection <kahua-test-sub>)
          (list (ref <kahua-test-sub> 'generation)
                (ref <kahua-test-sub> 'persistent-generation)
@@ -452,7 +463,7 @@
   :source-id "Rev 5")
 
 (test* "generation with source-id change (change source-id again)" '(3 3 (3))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (make <kahua-test-sub> :woo "5")
          (list (ref <kahua-test-sub> 'generation)
                (ref <kahua-test-sub> 'persistent-generation)
@@ -505,7 +516,7 @@
          :hidden
          ((quock . o1))
          :instance-generation 0)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 obj (find-kahua-instance <kahua-test-sub> "1B")
            (set! (ref obj 'bee) 'beebee)
            (list :slots (map (lambda (s) (cons s (ref obj s)))
@@ -533,7 +544,7 @@
          :hidden
          ((bee . beebee) (muick . m1))
          :instance-generation 3)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 obj (find-kahua-instance <kahua-test-sub> "1B")
            (set! (ref obj 'bar) #t)
            (list :class-generations
@@ -553,7 +564,7 @@
          :slots
          ((quick . q3) (woo . "3") (boo . "B") (quock . o3) (bar . b3))
          :instance-generation 1)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 obj (find-kahua-instance <kahua-test-sub> "3B")
            (touch-kahua-instance! obj)
            (list :class-generations
@@ -583,7 +594,7 @@
          (((quick . q1) (woo . "1") (boo . "B") (muick . m1) (bee . beebee))
           ((quick . q3) (woo . "3") (boo . "B") (muick . m3) (bee . bee)))
          :instance-generation (3 2))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 objs
              (list (find-kahua-instance <kahua-test-sub> "1B")
                    (find-kahua-instance <kahua-test-sub> "3B"))
@@ -635,7 +646,7 @@
          (((woo . "woo") (boo . "boo") (muick . m) (quock . "quock"))
           ((woo . "wooo") (boo . "booo") (muick . m) (quock . Q)))
          :instance-generation (0 0))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 objs
              (list (find-kahua-instance <kahua-test-sub> "wooboo")
                    (find-kahua-instance <kahua-test-sub> "wooobooo"))
@@ -656,7 +667,7 @@
           ((woo . "3") (boo . "B") (muick . m3) (quock . o3))
           ((woo . "5") (boo . "B") (muick . #f) (quock . QQ)))
          :instance-generation (3 3 3))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 objs
              (list (find-kahua-instance <kahua-test-sub> "1B")
                    (find-kahua-instance <kahua-test-sub> "3B")
@@ -693,7 +704,7 @@
           ((woo . "wooo") (boo . "booo") (quock . Q) (bar . wooobooo) (bee . bee))
           ((woo . "2") (boo . "B") (quock . #f) (bar . b2) (bee . bee)))
          :instance-generation (0 0 0))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 objs
              (list (find-kahua-instance <kahua-test-sub> "wooboo")
                    (find-kahua-instance <kahua-test-sub> "wooobooo")
@@ -715,7 +726,7 @@
        '(:slots
          ((woo . "4") (boo . "B") (quock . o4) (bar . b4) (bee . bee))
          :instance-generation 1)
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 obj (find-kahua-instance <kahua-test-sub> "4B")
            (set! (ref obj 'bar) 'b4)
            (list :slots (map (lambda (s) (cons s (ref obj s)))
@@ -728,7 +739,7 @@
           ((woo . "3") (boo . "B") (quock . o3) (bar . b3) (bee . bee))
           ((woo . "5") (boo . "B") (quock . QQ) (bar . #f) (bee . bee)))
          :instance-generation (3 3 3))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (let1 objs
              (list (find-kahua-instance <kahua-test-sub> "1B")
                    (find-kahua-instance <kahua-test-sub> "3B")
@@ -748,7 +759,7 @@
 (test* "translation (instances' persistent generations)"
        '(("1B" . 4) ("2B" . 4) ("3B" . 4) ("4B" . 4) ("5B" . 4)
          ("wooboo" . 0) ("wooobooo" . 4))
-       (with-db (db *dbname*)
+       (with-clean-db (db *dbname*)
          (sort
           (map (lambda (obj)
                  (cons (key-of obj)
@@ -767,25 +778,31 @@
 (define-method key-of ((self <transaction-test-1>))
   "key")
 
-(define object #f)
-
-(test* "make" #t
-       (with-db (db *dbname*)
-         (set! object (make <transaction-test-1> :a 0))
-         #t))
-
-(test "ref out of transaction" 0
-      (lambda () (ref object 'a)))
-
-(test "access in other transaction" 0
+(test "ref out of transaction" 1
       (lambda ()
-        (with-db (db *dbname*)
-          (set! (ref (find-kahua-instance <transaction-test-1> "key") 'a) 1))
-        (with-db (db *dbname*)
+        (let1 object (with-clean-db (db *dbname*)
+                       (make <transaction-test-1> :a 1))
           (ref object 'a))))
 
+(test "write in other transaction" #t
+      (lambda ()
+        (with-clean-db (db *dbname*)
+          (let1 object (find-kahua-instance <transaction-test-1> "key")
+            (set! (ref object 'a) 2)))
+        #t))
+
+(test "check (write in other transaction" 2
+      (lambda ()
+        (with-clean-db (db *dbname*)
+          (let1 object (find-kahua-instance <transaction-test-1> "key")
+            (ref object 'a)))))
+
 (test "set! out of transaction" *test-error*
-      (lambda () (set! (ref object 'a) 1) #t))
+      (lambda ()
+        (let1 object (with-clean-db (db *dbname*)
+                       (make <transaction-test-1> :a 1))
+          (set! (ref object 'a) 1)
+          #t)))
 
 (test-section "transaction / access denied")
 
@@ -796,80 +813,101 @@
 (define-method key-of ((self <transaction-test-2>))
   "key")
 
-(test* "make" #t
-       (with-db (db *dbname*)
-         (set! object (make <transaction-test-2> :a 0))
-         #t))
-
 (test "ref out of transaction" *test-error*
-      (lambda () (ref object 'a)))
-
-(test "ref in other transaction" 0
       (lambda ()
-        (with-db (db *dbname*)
-          (make <transaction-test-2> :a 1))
-        (with-db (db *dbname*)
+        (let1 object (with-clean-db (db *dbname*)
+                       (make <transaction-test-2> :a 0))
           (ref object 'a))))
 
+(test "ref in other transaction" 1
+      (lambda ()
+        (let1 object (with-clean-db (db *dbname*)
+                       (make <transaction-test-2> :a 1))
+          (with-clean-db (db *dbname*)
+            (ref object 'a)))))
+
 (test "set! out of transaction" *test-error*
-      (lambda () (set! (ref object 'a) 1) #t))
+      (lambda ()
+        (let1 object (with-clean-db (db *dbname*)
+                       (make <transaction-test-2> :a 0))
+          (set! (ref object 'a) 1))))
 
 (test-section "transaction / read-only auto-sync")
 
 (define-class <transaction-test-3> (<kahua-persistent-base>)
-  ((a :init-value 0 :init-keyword :a :allocation :persistent))
+  ((key :init-value #f :init-keyword :key :allocation :persistent)
+   (a :init-value 0 :init-keyword :a :allocation :persistent))
   :read-syncer :auto)
 
 (define-method key-of ((self <transaction-test-3>))
-  "key")
+  (ref self 'key))
 
-(define object #f)
-
-(test* "make" #t
-       (with-db (db *dbname*)
-         (set! object (make <transaction-test-3> :a 0))
-         #t))
+(define (geto key)
+  (with-clean-db (db *dbname*)
+    (find-kahua-instance <transaction-test-3> key)))
 
 (test "ref out of transaction" 0
-      (lambda () (ref object 'a)))
-
-(test "access in other transaction" 1
       (lambda ()
-        (with-db (db *dbname*)
-          (set! (ref (find-kahua-instance <transaction-test-3> "key") 'a) 1))
-        (with-db (db *dbname*)
+        (let1 object (with-clean-db (db *dbname*)
+                       (make <transaction-test-3> :key "0" :a 0))
           (ref object 'a))))
 
-(test-section "transaction / read/write auto-sync")
+(define (other-transaction num)
+  (with-db (db *dbname*)
+    (let1 object (geto "0")
+      (set! (ref object 'a) num)))
+  (sys-exit 0))
 
-(define-class <transaction-test-4> (<kahua-persistent-base>)
-  ((a :init-value 0 :init-keyword :a :allocation :persistent
-      :out-of-transaction :read/write))
-  :read-syncer  :auto
-  :write-syncer :auto)
+(test "write in other transaction" 1
+      (lambda ()
+        (let1 object (geto "0")
+          (let1 pid (sys-fork)
+            (if (= pid 0)
+                (other-transaction 1)
+                (begin
+                  (sys-waitpid pid)
+                  (with-db (db *dbname*) (ref object 'a))))))))
 
-(define-method key-of ((self <transaction-test-4>))
-  "key")
+(test "overwrite object" 5
+      (lambda ()
+        (let1 object (geto "0")
+          (let1 pid (sys-fork)
+            (if (= pid 0)
+                (other-transaction 2)
+                (begin
+                  (sys-waitpid pid)
+                  (with-db (db *dbname*) (set! (ref object 'a) 5))
+                  (with-db (db *dbname*) (ref object 'a))))))))
 
-(define object #f)
+; (test-section "transaction / read/write auto-sync")
+; (define-class <transaction-test-4> (<kahua-persistent-base>)
+;   ((a :init-value 0 :init-keyword :a :allocation :persistent
+;       :out-of-transaction :read/write))
+;   :read-syncer  :auto
+;   :write-syncer :auto)
 
-(test* "make" #t
-       (with-db (db *dbname*)
-         (set! object (make <transaction-test-4> :a 0))
-         #t))
+; (define-method key-of ((self <transaction-test-4>))
+;   "key")
 
-(test "write out of transaction" 1
-      (lambda () (set! (ref object 'a) 1) 1))
+; (define object #f)
 
-;; トランザクション開始時にon-memory cacheがdbに書き込まれ
-;; ることを確認する。
-(test* "read in other transaction (auto synched: 1)" 1
-       (with-db (db *dbname*)
-         (ref (find-kahua-instance <transaction-test-4> "key") 'a)))
+; (test* "make" #t
+;        (with-db (db *dbname*)
+;          (set! object (make <transaction-test-4> :a 0))
+;          #t))
 
-;; 前トランザクションで書き込まれたデータを別トランザクション
-;; にて読み出せることを確認する。
-(test* "read in other transaction (auto synched: 2)" 1
-       (with-db (db *dbname*) (ref object 'a)))
+; (test "write out of transaction" 1
+;       (lambda () (set! (ref object 'a) 1) 1))
+
+; ;; トランザクション開始時にon-memory cacheがdbに書き込まれ
+; ;; ることを確認する。
+; (test* "read in other transaction (auto synched: 1)" 1
+;        (with-db (db *dbname*)
+;          (ref (find-kahua-instance <transaction-test-4> "key") 'a)))
+
+; ;; 前トランザクションで書き込まれたデータを別トランザクション
+; ;; にて読み出せることを確認する。
+; (test* "read in other transaction (auto synched: 2)" 1
+;        (with-db (db *dbname*) (ref object 'a)))
 
 (test-end)
