@@ -57,7 +57,7 @@ install: all
 	  $(INSTALL) -m 444 kahua.conf.sample $(CONFFILE); \
 	fi
 	@if test ! -f $(USERCONFFILE); then \
-	  $(INSTALL) -m 444 user.conf.sample $(USERCONFFILE); \
+	  $(INSTALL) -m 644 user.conf.sample $(USERCONFFILE); \
 	fi
 
 uninstall:

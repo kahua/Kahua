@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.in,v 1.4 2004/02/02 05:41:30 tahara Exp $
+;; $Id: kahua-admin.in,v 1.5 2004/02/02 09:15:23 tahara Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -46,6 +46,26 @@
 		   (apply cvs-command (cdr cmd))
 		   (begin (display "Usage: cvs update <worker-type/number>\n")
 			  spvr-command-processor)))
+                ((adduser)
+                 (if (= (length cmd) 3)
+                     (let ((name (symbol->string (cadr cmd)))
+                           (pw (symbol->string (caddr cmd))))
+                       (kahua-add-developer name pw)
+                       (write 'done) (newline)
+                       spvr-command-processor)
+                     (begin (display "Usage: adduser <name> <password>\n")
+                            spvr-command-processor)))
+                ((deluser)
+                 (if (= (length cmd) 2)
+                     (let1 name (symbol->string (cadr cmd))
+                           (kahua-delete-developer name)
+                           (write 'done) (newline)
+                           spvr-command-processor)
+                     (begin (display "Usage: deluser <name>")
+                            spvr-command-processor)))
+                ((lsuser)
+                 (write (kahua-list-developer)) (newline)
+                 spvr-command-processor)
                 (else
                  (let1 reply (send-command #f cmd)
                    (case (car cmd)

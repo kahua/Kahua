@@ -1,5 +1,7 @@
 2004-02-02  Yusei Tahara  <tahara@timedia.co.jp>
 
+	* src/kahua-admin, test/admin.scm : added "adduser", "deluser", "lsuser" commands for the developer account management.
+
 	* src/kahua-admin, src/kahua-spvr : fixed "help" command. now it shows all the commands on both scripts.
 
 2004-01-29  Yusei Tahara  <tahara@timedia.co.jp>

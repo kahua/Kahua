@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua.scm,v 1.3 2004/01/22 13:32:12 shiro Exp $
+;; $Id: kahua.scm,v 1.4 2004/02/02 09:15:23 tahara Exp $
 
 (define-module kahua
   (extend kahua.config
@@ -13,7 +13,8 @@
           kahua.persistence
           kahua.user
           kahua.session
-          kahua.server)
+          kahua.server
+          kahua.developer)
   )
 
 (select-module kahua)
