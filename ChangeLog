@@ -1,3 +1,10 @@
+2004-02-11  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* examples/lazy-nqueen/lazy-nqueen.kahua : improved laziness.
+	Function applications are delayed instead args of cons.
+
+	* test/nqueen.scm : modified a little.
+	
 2004-02-10  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* examples/lazy-nqueen/lazy-nqueen.kahua : added.
