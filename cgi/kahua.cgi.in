@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.6 2003/12/26 01:46:54 shiro Exp $
+;; $Id: kahua.cgi.in,v 1.7 2003/12/26 01:51:25 shiro Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -54,7 +54,7 @@
 ;; returns #f if there's no PATH_INFO.
 (define (get-path-info)
   (and-let* ((p (sys-getenv "PATH_INFO"))
-             (l (string-split p #\/)))
+             (l (cdr (string-split p #\/))))
     (when (and (pair? l) (#/^~.+/ (car l)))
       (load-user-config (car l))
       (set! l (cdr l)))
