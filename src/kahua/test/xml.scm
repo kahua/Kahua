@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: xml.scm,v 1.4 2003/12/19 23:30:03 shiro Exp $
+;; $Id: xml.scm,v 1.5 2003/12/20 00:37:54 shiro Exp $
 
 ;; This module provides the means of test the result of HTML
 ;; generating code, such as CGI programs.   The output of
@@ -358,7 +358,11 @@
 (define (test-sxml-select-matcher path . maybe-extra-check)
   (let ((selector (sxpath path)))
     (lambda (pattern input)
-      (apply match-input pattern (selector `(*TOP* ,input))
+      (apply match-input pattern
+             ;; kludge to deal with *TOP*
+             (selector (if (and (pair? input) (eq? (car input) '*TOP*))
+                         input
+                         `(*TOP* ,input)))
              maybe-extra-check))))
 
 (define (test-xml-select-matcher path . maybe-extra-check)
