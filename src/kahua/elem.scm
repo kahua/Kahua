@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.1 2004/02/14 10:21:43 nobsun Exp $
+;; $Id: elem.scm,v 1.2 2004/02/15 02:08:13 nobsun Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -19,6 +19,8 @@
 	  html:
 	  @:
 	  @@:
+	  a/cont:
+	  form/cont:
 ))
 
 (select-module kahua.elem)
@@ -99,15 +101,16 @@
 
 (define-syntax @:
   (syntax-rules ()
-    ((_ a) `(@ a))
-    ((_ a b) `(@ a b))
-    ((_ a b ...) `(@ a b ...))))
+    ((_ (name val) ...)
+     `(@ (name ,val) ...))))
      
 (define-syntax @@:
   (syntax-rules ()
-    ((_ a) `(@@ a))
-    ((_ a b) `(@@ a b))
-    ((_ a b ...) `(@@ a b ...))))
+    ((_ (name val) ...)
+     `(@@ (name ,val) ...))))
+
+(define (a/cont: . arg) `(a/cont ,@arg))
+(define (form/cont: . arg) `(form/cont ,@arg))
      
 (provide "kahua.elem")
 
