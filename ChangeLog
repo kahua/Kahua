@@ -1,3 +1,8 @@
+2004-02-26  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* cgi/kahua.cgi.in: fixed PATH_INFO bugs.
+	fixed some error representation.
+
 2004-02-25  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* src/kahua/plugin.scm: added use-plugin to export.

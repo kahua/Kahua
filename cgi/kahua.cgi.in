@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.14 2004/02/17 10:49:54 tahara Exp $
+;; $Id: kahua.cgi.in,v 1.15 2004/02/26 12:36:22 ko1 Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -46,17 +46,20 @@
 (define (kcv value)
   (ces-convert value "*jp" (gauche-character-encoding)))
 
-
 (define (compose-reply header body)
-  (receive (state cont) (get-gsid-from-header header)
-    (for-each (lambda (hdr) ((response 'setheader) (car hdr) (cadr hdr)))
-              (filter (lambda (hdr) (not (#/^x-kahua-/ (car hdr))))
-                            header))
-    ((response 'setcookie) (construct-cookie-string
-                            `(("x-kahua-sgsid" ,state
-                               :path ,(sys-dirname
-                                       (or (sys-getenv "SCRIPT_NAME") "/"))))))
-    body))
+  (let ((status (assoc-ref header "x-kahua-status")))
+    (if (and status (equal? (car status) "SPVR-ERROR"))
+	(cgi-error-page (string-append "SPVR-ERROR: " (car body)) (cadr body))
+	(receive (state cont) (get-gsid-from-header header)
+	  (for-each (lambda (hdr) ((response 'setheader) (car hdr) (cadr hdr)))
+		    (filter (lambda (hdr) (not (#/^x-kahua-/ (car hdr))))
+			    header))
+	  ((response 'setcookie) 
+	   (construct-cookie-string
+	    `(("x-kahua-sgsid" ,state
+	       :path ,(sys-dirname
+		       (or (sys-getenv "SCRIPT_NAME") "/"))))))
+	  body))))
 
 ;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
 (define (load-user-config user-dir)
@@ -163,7 +166,10 @@
 
 ;; publish html. provide ~user authentication.
 (define (publisher params)
-  (let ((p (cadr (string-split (or (sys-getenv "PATH_INFO") "/") #\/))))
+  (let* ((path-info (sys-getenv "PATH_INFO"))
+	 (p (cadr (string-split (if (or (not path-info) 
+					(string-null? path-info)) 
+				    "/" path-info) #\/))))
     (
      (response 'publish)
      ;; make a body.
@@ -211,14 +217,25 @@
             )
   0)
 
-(define (cgi-error-proc e)
-  `(,(cgi-header)
-    ,(html-doctype)
+
+(define (get-error-string e)
+  (call-with-output-string
+   (cut with-error-to-port <> (cut report-error e))))
+
+(define (cgi-error-page message detail)
+  `(,(html-doctype)
     ,(html:html
       (html:head (html:title "Error"))
-      (html:body (html:h1 "Error")
-                 (html:p (html-escape-string (slot-ref e 'message)))
-                 ))))
+      (html:body
+       (html:h1 "Error")
+       (html:div
+	(html:p (html-escape-string message))
+	(html:pre (html-escape-string detail)))))))
+
+(define (cgi-error-proc e)
+  `(,(cgi-header)
+    ,(cgi-error-page (string-append "CGI Error: " (slot-ref e 'message))
+		  (get-error-string e))))
 
 
 ;; local variables:
