@@ -6,6 +6,7 @@
 (allow-module srfi-2)
 (allow-module text.parse)
 (allow-module util.list)
+(allow-module rfc.uri)
 (allow-module gauche.charconv)
 (allow-module gauche.collection)
 (allow-module gauche.logger)
