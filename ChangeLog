@@ -9,6 +9,7 @@
 	as an additional header fields of reply message.
 	(extra-header): a new SXML element, which doesn't produce any
 	visual node but just inject a reply header.
+	(define-entry): added support of :rest argument.
 	* test/server.scm : updated accordingly.
 
 	* src/Makefile.in (SCMFILES): install kahua/test/*.scm as well.

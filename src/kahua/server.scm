@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.6 2004/01/21 01:25:11 shiro Exp $
+;; $Id: server.scm,v 1.7 2004/01/21 03:47:40 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -290,29 +290,47 @@
 ;; and/or by position (using PATH_INFO).
 ;;
 
-;;  [syntax] entry-lambda (arg ... :keyword karg ...)
+;;  [syntax] entry-lambda (arg ... :keyword karg ... :rest restarg)
 ;;
 ;;   This creates a special procedure, which can be used as an entry
 ;;   procedure.  arg ... will be bound to a positional arguments,
 ;;   and kargs ... will be bound to a keyword arguments.
+;;   restarg can be used to receive remaining positional arguments.
+;;   (NB: it doesn't include keyword args).
 
 (define-syntax entry-lambda
   (syntax-rules ()
     ;; finishing expansion
-    ((entry-lambda "finish" args pargs kargs body)
-     (make-parameterized-entry-closure 'pargs 'kargs (lambda args . body)))
+    ((entry-lambda "finish" args pargs kargs #f body)
+     (make-parameterized-entry-closure 'pargs 'kargs #f
+                                       (lambda args . body)))
+    ((entry-lambda "finish" (args ...) pargs kargs rarg body)
+     (make-parameterized-entry-closure 'pargs 'kargs 'rarg
+                                       (lambda (args ... . rarg) . body)))
     ;; collecting positional args
     ((entry-lambda "pargs" () pargs body)
-     (entry-lambda "finish" pargs pargs () body))
+     (entry-lambda "finish" pargs pargs () #f body))
+    ((entry-lambda "pargs" (:rest rarg) pargs body)
+     (entry-lambda "finish" pargs pargs () rarg body))
+    ((entry-lambda "pargs" (:rest rarg :keyword . syms) pargs body)
+     (entry-lambda "kargs" syms pargs pargs () rarg body))
+    ((entry-lambda "pargs" (:rest . _) pargs body)
+     (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
     ((entry-lambda "pargs" (:keyword . syms) pargs body)
-     (entry-lambda "kargs" syms pargs pargs () body))
+     (entry-lambda "kargs" syms pargs pargs () #f body))
     ((entry-lambda "pargs" (sym . syms) (parg ...) body)
      (entry-lambda "pargs" syms (parg ... sym) body))
     ;; collecting keyword args
-    ((entry-lambda "kargs" () args pargs kargs body)
-     (entry-lambda "finish" args pargs kargs body))
-    ((entry-lambda "kargs" (sym . syms) (arg ...) pargs (karg ...) body)
-     (entry-lambda "kargs" syms (arg ... sym) pargs (karg ... sym) body))
+    ((entry-lambda "kargs" () args pargs kargs rarg body)
+     (entry-lambda "finish" args pargs kargs rarg body))
+    ((entry-lambda "kargs" (:rest rarg) args pargs kargs #f body)
+     (entry-lambda "finish" args pargs kargs rarg body))
+    ((entry-lambda "kargs" (:rest rarg) args pargs kargs rarg1 body)
+     (syntax-error "duplicate :rest args in entry-lambda:" (:rest rarg)))
+    ((entry-lambda "kargs" (:rest . _) args pargs kargs rarg1 body)
+     (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
+    ((entry-lambda "kargs" (sym . syms) (arg ...) pargs (karg ...) rarg body)
+     (entry-lambda "kargs" syms (arg ... sym) pargs (karg ... sym) rarg body))
     ;; initial entry
     ((entry-lambda args body1 . bodies)
      (entry-lambda "pargs" args () (body1 . bodies)))
@@ -322,16 +340,18 @@
     ))
 
 ;; helper procedure
-(define (make-parameterized-entry-closure pargs kargs proc)
-  (let ((pargs-str (map x->string pargs))
-        (kargs-str (map x->string kargs)))
+(define (make-parameterized-entry-closure pargs kargs rarg proc)
+  (let ((kargs-str (map x->string kargs)))
     (lambda ()
       (let1 path-info (kahua-context-ref "x-kahua-path-info" '())
         (apply proc
                (append (map-with-index (lambda (ind parg)
                                          (list-ref path-info ind #f))
-                                       pargs-str)
-                       (map kahua-context-ref kargs-str)))))
+                                       pargs)
+                       (map kahua-context-ref kargs-str)
+                       (if rarg
+                         (drop* path-info (length pargs))
+                         '())))))
     ))
 
 ;;  [syntax] define-entry (name arg ... :keyword karg ...)
