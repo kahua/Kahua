@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm,v 1.4 2004/01/05 10:56:39 shiro Exp $
+;; $Id: config.scm,v 1.5 2004/01/16 07:21:00 tahara Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -27,6 +27,7 @@
           kahua-config-file
           kahua-static-document-path
           kahua-static-document-url
+          kahua-timeout-mins
           ))
 (select-module kahua.config)
 
@@ -58,6 +59,10 @@
    ;; repository - specifies where to use cvs repository
    (repository :init-keyword :repository
 	       :init-value "/var/lib/kahua/cvs")
+
+   ;; timeout-mins - session period of time
+   (timeout-mins :init-keyword :timeout-mins
+                 :init-value 60)
 
    ;; internal
    (conf-file :init-value #f)
@@ -127,5 +132,8 @@
 
 (define (kahua-static-document-url path)
   (build-path (ref (kahua-config) 'static-document-url) path))
+
+(define (kahua-timeout-mins)
+  (slot-ref (kahua-config) 'timeout-mins))
 
 (provide "kahua/config")

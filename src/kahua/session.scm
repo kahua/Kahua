@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.4 2004/01/02 11:36:33 ko1 Exp $
+;; $Id: session.scm,v 1.5 2004/01/16 07:21:00 tahara Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -19,6 +19,7 @@
 
 (define-module kahua.session
   (use kahua.gsid)
+  (use kahua.config)
   (use gauche.parameter)
   (use gauche.validator)
   (use util.list)
@@ -34,6 +35,7 @@
           session-state-get
           session-state-discard
           session-state-sweep
+          session-state-refresh
           session-flush-all)
   )
 (select-module kahua.session)
@@ -133,6 +135,9 @@
 ;;   If such a procedure doesn't exist, returns #f.
 (define (session-cont-get id)
   (and-let* ((entry (cont-key->session id)))
+    ;; update timestamp
+    (slot-set! entry 'timestamp (sys-time))
+    (session-cont-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
     (ref entry 'closure)))
 
 ;; SESSION-CONT-DISCARD id
@@ -198,7 +203,9 @@
   (let1 p (or (hash-table-get (state-sessions) id #f)
               (hash-table-get (state-sessions)
                               (session-state-register id)))
-    (cdr p)))
+        (session-state-refresh id)
+        (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
+        (cdr p)))
 
 ;; SESSION-STATE-DISCARD id
 ;;   Discards the session specified by ID.
@@ -212,6 +219,16 @@
   (let ((cutoff (- (sys-time) age)))
     (sweep-hash-table (state-sessions)
                       (lambda (val) (< (car val) cutoff)))))
+
+;; SESSION-STATE-REFRESH id
+;;   Update session timestamp.
+(define (session-state-refresh id)
+  (let* ((timestamp (sys-time))
+         (sessions (state-sessions))
+         (state (cdr (hash-table-get sessions id))))
+    (hash-table-put! sessions id
+                     (cons timestamp state))))
+
 
 ;;; common API ----------------------------------------------
 
