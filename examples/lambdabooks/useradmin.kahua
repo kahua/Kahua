@@ -5,12 +5,12 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: useradmin.kahua,v 1.4 2003/12/26 01:28:21 shiro Exp $
+;; $Id: useradmin.kahua,v 1.5 2004/01/16 09:40:19 shiro Exp $
 
 ;; User administration ----------------------------------------
 ;;  Manages user information.
 
-(define (user-admin-panel context cont)
+(define (user-admin-panel cont)
 
   ;; this should eventually be in some library.
   (define (auth-error)
@@ -22,7 +22,7 @@
           (a (@ (href "mailto:admin@kahua.org")) "サイト管理者")
           "に連絡して下さい。")
        (a/cont "[トップページに戻る]"))
-     context))
+     ))
 
   ;; For now, we hardcode roles
   (define roles '(admin developer editor))
@@ -37,16 +37,16 @@
                     (br)))
                 roles))
 
-  (define (get-roles context)
+  (define (get-roles)
     (filter-map (lambda (role)
-                  (and (kahua-context-ref context #`"role-,role") role))
+                  (and (kahua-context-ref #`"role-,role") role))
                 roles))
 
-  (define (user-commit logname context)
-    (let* ((roles    (get-roles context))
-           (inactive (not (not (kahua-context-ref context "inactive"))))
+  (define (user-commit logname)
+    (let* ((roles    (get-roles))
+           (inactive (not (not (kahua-context-ref "inactive"))))
            (user     (kahua-find-user logname)))
-      (if (kahua-user-has-role? (kahua-current-user context) '(admin))
+      (if (kahua-user-has-role? (kahua-current-user) '(admin))
         (begin
           ;; kludge: make sure "admin" user won't lose admin priviledge
           (when (and (equal? logname "admin")
@@ -56,18 +56,18 @@
           (unless (equal? logname "admin")
             (set! (ref user 'inactive) inactive))
           (kahua-db-sync)
-          (user-edit-panel logname #t context))
+          (user-edit-panel logname #t))
         (auth-error))))
 
-  (define (user-edit-panel logname edited? context)
+  (define (user-edit-panel logname edited?)
     (let ((user (kahua-find-user logname)))
-      (if (kahua-user-has-role? (kahua-current-user context) '(admin))
+      (if (kahua-user-has-role? (kahua-current-user) '(admin))
         (cont
          `((h2 "ユーザー" ,logname "の情報")
            ,@(cond-list
               (edited? `(p (font (@ (color "#ff3535")) "情報を変更しました"))))
            (form/cont
-            (@@ (cont ,(cut user-commit logname <>)))
+            (@@ (cont ,(cut user-commit logname)))
             (table
              (tr (th (@ (style "background-color:#d8d2c9")) "ログイン名")
                  (td (@ (style "background-color:#ffd6b2;width:20em"))
@@ -86,30 +86,29 @@
                                (value "変更")))))))
            (a/cont (@@ (cont ,user-admin-page))
                    "[ユーザー一覧へ]"))
-         context)
+         )
         (auth-error))))
   
-  (define (format-user-info user count context)
+  (define (format-user-info user count)
     (define c (if (even? count) "#ffbbbb" "#ffdddd"))
     `((tr (td (@ (style ,#`"background-color:,|c|;width:8em"))
-              (a/cont (@@ (cont ,(cute user-edit-panel (key-of user) #f <>)))
+              (a/cont (@@ (cont ,(cute user-edit-panel (key-of user) #f)))
                       ,(ref user 'login-name)))
           (td (@ (style ,#`"background-color:,|c|"))
               ,(if (ref user 'inactive) "inactive" "active"))
           (td (@ (style ,#`"background-color:,|c|;width:25em"))
               ,(string-join (map x->string (ref user 'role-alist)) ", ")))))
 
-  (let* ((user (kahua-current-user context)))
+  (let* ((user (kahua-current-user)))
     (if (kahua-user-has-role? user '(admin))
       ((lister (map key-of (make-kahua-collection <kahua-user>))
 	       (lambda (key count)
-		 (format-user-info (kahua-find-user key) count context))
+		 (format-user-info (kahua-find-user key) count))
 	       :header-formatter
 	       (lambda ()
 		 `((tr (th "ログイン名") (th "activeness") (th "役割")))))
-       context
-       (lambda (nodes context)
-	 (cont `((h2 "登録ユーザー一覧") ,@nodes) context))
+       (lambda (nodes)
+	 (cont `((h2 "登録ユーザー一覧") ,@nodes)))
        )
       (auth-error)))
   )

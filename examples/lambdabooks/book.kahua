@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: book.kahua,v 1.4 2003/12/26 01:28:21 shiro Exp $
+;; $Id: book.kahua,v 1.5 2004/01/16 09:40:19 shiro Exp $
 
 (define-class <book> (<kahua-persistent-base>)
   ((product-id :init-keyword :product-id :init-value 0
@@ -27,18 +27,15 @@
 (define-method key-of ((self <book>))
   (x->string (ref self 'product-id)))
 
-(define-method format-for-list ((self <book>) context cont)
+(define-method format-for-list ((self <book>) cont)
   `((tr (td (@ (colspan 2) (style "background-color:#92bae5"))
-            (a/cont (@@ (cont ,(lambda (context)
-                                 (show-book-detail (key-of self) context
-                                                   cont))))
-                    ,(ref self 'title))))
+            (a/cont (@@ (cont ,books ,(key-of self))) ,(ref self 'title))))
     (tr (td (@ (style "background-color:#bed0e2"))
             ,(ref self 'authors))
         (td (@ (style "background-color:#bed0e2; text-align:right"))
             ,(ref self 'price)))))
 
-(define-method format-for-detail ((self <book>) context cont)
+(define-method format-for-detail ((self <book>) cont)
   `((h2 ,(ref self 'title))
     (table
      (tr (th "著者")  (td ,(ref self 'authors)))
@@ -50,38 +47,32 @@
     (p ,(x->string (length (ref self 'reviews))) "件の読者レビューがあります。"
        ,(if (null? (ref self 'reviews))
           ""
-          `(a/cont (@@ (cont ,(lambda (context)
-                                (show-reviews (key-of self) context
-                                              cont))))
+          `(a/cont (@@ (cont ,(cute show-reviews (key-of self) cont)))
                    "[読者レビューを読む]")))
-    ,(book-review-link (key-of self) context cont)
+    ,(book-review-link (key-of self) cont)
     (p (@ (style "text-align:right"))
-       (a/cont (@@ (cont ,book-list-page)) "[書籍一覧へ]"))))
+       (a/cont (@@ (cont ,books)) "[書籍一覧へ]"))))
 
-(define (book-review-link key context cont)
-  `(p ,@(if (kahua-current-user context)
-          `((a/cont (@@ (cont ,(lambda (context)
-                                 (write-review key context cont))))
+(define (book-review-link key cont)
+  `(p ,@(if (kahua-current-user)
+          `((a/cont (@@ (cont ,(cute write-review key cont)))
                     "[この本についてのレビューを書く]"))
           `("("
-            ,(user-box context cont
-                       (lambda (nodes context)
-                         (show-book-detail key context cont)))
+            ,(user-box cont
+                       (lambda (nodes) (show-book-detail key cont)))
             "すると、この本についてのレビューを書くことができます)"))))
 
-(define (show-book-list context cont)
+(define (show-book-list cont)
   ((lister (map key-of (make-kahua-collection <book>))
 	   (lambda (key count)
-	     (format-for-list (find-kahua-instance <book> key)
-			      context cont)))
-   context
-   (lambda (nodes context)
-     (cont `((h2 "書籍リスト") ,@nodes) context)))
+	     (format-for-list (find-kahua-instance <book> key) cont)))
+   (lambda (nodes)
+     (cont `((h2 "書籍リスト") ,@nodes))))
   )
 
-(define (show-book-detail key context cont)
+(define (show-book-detail key cont)
   (let ((book (find-kahua-instance <book> key)))
     (if book
-      (cont (format-for-detail book context cont) context)
-      (cont '((p "(書籍データがありません)")) context))))
+      (cont (format-for-detail book cont))
+      (cont '((p "(書籍データがありません)"))))))
 

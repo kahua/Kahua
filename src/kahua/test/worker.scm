@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.1 2003/12/28 05:04:36 shiro Exp $
+;; $Id: worker.scm,v 1.2 2004/01/16 09:40:21 shiro Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -30,6 +30,7 @@
    (worker-process :init-keyword :worker-process)
    (state-sid      :init-value #f)
    (cont-sid       :init-value #f)
+   (path-info      :init-value #f)
    ))
 
 (define (run-worker command)
@@ -55,7 +56,11 @@
 
 (define-method call-worker/gsid ((worker <worker-subprocess>) header body proc)
   (call-worker worker
-               (add-gsid-to-header header
+               (add-gsid-to-header (append
+                                    (cond-list ((ref worker 'path-info)
+                                                `("x-kahua-path-info"
+                                                  ,(ref worker 'path-info))))
+                                    header)
                                    (ref worker 'state-sid)
                                    (ref worker 'cont-sid))
                body
@@ -93,11 +98,15 @@
     (and-let* ((p (assoc-ref matches '?&)))
       ;; cut parameter from url
       (cond ((#/\?x-kahua-cgsid=([^#&]*)/ p) => (cut <> 1))
-            ((#/kahua.cgi\/(.+)\/(.+)/ p)    => (cut <> 2)) ;; path_info
-            ((#/kahua.cgi\/(.+)/ p) #f)                     ;; to top
+            ((#/kahua.cgi\/(.+?)\/(.+)/ p)   => (cut <> 2)) ;; path_info
+            ((#/kahua.cgi\/(.+?)/ p) #f)                    ;; to top
             (else p))))
   (define (save p)
-    (set! (ref worker 'cont-sid) p))
+    (receive (cgsid xtra-path) (string-scan (or p "") "/" 'both)
+      (set! (ref worker 'cont-sid) (or cgsid p))
+      (set! (ref worker 'path-info)
+            (and xtra-path
+                 (list* "dummy" "dummy" (string-split xtra-path "/"))))))
   (cond ((get-optional maybe-sxpath #f)
          => (cute text-xml-select-matcher <> (compose save pick)))
         (else

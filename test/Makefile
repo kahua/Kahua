@@ -1,5 +1,5 @@
-TESTS = test-xml persistence user config gsid session server kahua-dbm \
-        worker lambdabooks wiki-iki spvr admin
+TESTS = test-xml persistence user config gsid session \
+        server kahua-dbm worker lambdabooks wiki-iki spvr admin
 
 .PHONY: all check clean distclan maintainer-clean $(TESTS)
 

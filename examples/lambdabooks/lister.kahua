@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lister.kahua,v 1.2 2003/12/21 15:25:44 nobsun Exp $
+;; $Id: lister.kahua,v 1.3 2004/01/16 09:40:19 shiro Exp $
 
 ;; Lister -------------------------------------------------------
 ;;
@@ -15,7 +15,7 @@
 ;;      各アイテムが表形式で表示される際に呼ばれる関数。全体が(table ...)中に
 ;;      挿入されるので、通常はいくつかのtrエレメントのリストを返す。
 ;;      第2引数は表内でのアイテムの番号。
-;;   cont :: ([SXML], Context) -> [Stree]
+;;   cont :: [SXML] -> [SXML]
 ;;      リスト内で移動した画面を表示する際の継続手続き。
 ;;
 ;;  他に、次のキーワード引数を取る。
@@ -29,7 +29,7 @@
 ;;      ページあたりの項目数。デフォルトは5。
 
 (define (lister elts elt-formatter . opts)
-  (lambda (context cont)
+  (lambda (cont)
     (let-keywords* opts ((table-attrs #f)
 			 (header-formatter #f)
 			 (items-per-page 5))
@@ -47,12 +47,12 @@
 		  `(a/cont (@@ (cont ,prev-show))
 			   ,#`"[前の,|items-per-page|項目]"))
 		 ((not (null? next-items))
-		  `(a/cont (@@ (cont ,(lambda (context)
-					(show-list (lambda (context)
+		  `(a/cont (@@ (cont ,(lambda ()
+					(show-list (lambda ()
 						     (show-list prev-show lis))
 						   next-items))))
 			   ,#`"[次の,|items-per-page|項目]")))))
-	   context)))
+	   )))
     
       (show-list #f elts)))
   )

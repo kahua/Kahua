@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: wiki-iki.kahua,v 1.3 2003/12/28 13:09:39 shiro Exp $
+;; $Id: wiki-iki.kahua,v 1.4 2004/01/16 09:40:20 shiro Exp $
 
 (use srfi-1)
 (use srfi-13)
@@ -52,11 +52,10 @@
 
 (define-method newest-page (_) #f) ;; fallback
 
-(define-method format-page ((page <page>) context local-cont global-cont)
+(define-method format-page ((page <page>) local-cont global-cont)
   (let* ((lines (call-with-input-string (ref page 'body) port->string-list))
          (paras (lines->paragraphs lines)))
-    (local-cont (map (cut format-paragraph <> global-cont) paras)
-                context)))
+    (local-cont (map (cut format-paragraph <> global-cont) paras))))
 
 (define (lines->paragraphs lines)
   (let loop ((lines lines)
@@ -74,12 +73,11 @@
           (span (cdr lines) (cons (car lines) r)))))
      )))
 
-(define (nonexistent-page pagename context global-cont)
+(define (nonexistent-page pagename global-cont)
   (global-cont
    `(,@(page-title `("存在しないページ: " ,pagename))
-     (p (a/cont (@@ (cont ,(cut edit-page #f pagename <>)))
-                ,pagename "を編集する")))
-   context))
+     (p (a/cont (@@ (cont ,(cut edit-page #f pagename)))
+                ,pagename "を編集する")))))
 
 ;; [String], Cont -> [Node]
 ;; NB: this isn't a CPS!
@@ -104,7 +102,7 @@
     (cons 'p (format-lines lines '()))))
 
 (define (format-wikiname name cont)
-  `(a/cont (@@ (cont ,(cut show-page/pagename name <>))) ,name))
+  `(a/cont (@@ (cont ,show-page ,name)) ,name))
 
 (define (format-time time)
   (sys-strftime "%Y/%m/%d %H:%M:%S %Z" (sys-localtime time)))
@@ -151,86 +149,81 @@
 ;; Main application
 ;;
 
-(define (standard-page-cont nodes context)
-  (interp-html
-   `((html (head (title "Wiki Iki")
-                 (link (@ (rel "stylesheet") (type "text/css")
-                          (href ,(kahua-static-document-url
-                                  "wiki-iki/wiki-iki.css")))))
-           (body ,@nodes)))
-   context))
+(define (standard-page nodes)
+  `((html (head (title "Wiki Iki")
+                (link (@ (rel "stylesheet") (type "text/css")
+                         (href ,(kahua-static-document-url
+                                 "wiki-iki/wiki-iki.css")))))
+          (body ,@nodes))))
 
-(define-entry (show-page context)
-  (show-page/pagename (kahua-context-ref context "p" *welcome-page*) context))
+(define-entry (show-page pagename)
+  (let ((pagename (or pagename *welcome-page*)))
+    (cond ((newest-page pagename) => (cut show-page/page <>))
+          ((equal? pagename *welcome-page*)
+           (show-page/page (create-welcome-page)))
+          (else (nonexistent-page pagename standard-page)))))
 
-(define (show-page/pagename pagename context)
-  (cond ((newest-page pagename) => (cut show-page/page <> context))
-        ((equal? pagename *welcome-page*)
-         (show-page/page (create-welcome-page) context))
-        (else (nonexistent-page pagename context standard-page-cont))))
-
-(define (show-page/page page context)
+(define (show-page/page page)
   (define (body-pane nodes)
     `(td (@ (id "bodypane"))
          ,@nodes
          (hr)
          (div (a/cont
-               (@@ (cont ,(cut edit-page (key-of page) (ref page 'name) <>)))
+               (@@ (cont ,(cut edit-page (key-of page) (ref page 'name))))
                "[編集]"))
          (div (@ (id "lastchanged"))
               "最終更新: " ,(format-time (ref page 'creation-time)) (br)
               "Powered by " (a (@ (href "http://www.kahua.org/")) "Kahua"))))
               
   (define (side-pane)
-    `(td (@ (id "sidepane")) ,@(format-recent-changes standard-page-cont)))
+    `(td (@ (id "sidepane")) ,@(format-recent-changes standard-page)))
 
-  (format-page page context
-               (lambda (nodes context)
-                 (standard-page-cont
+  (format-page page
+               (lambda (nodes)
+                 (standard-page
                   `(,@(page-title (list (ref page 'name)))
                     (table (@ (style "width:100%"))
-                           (tr ,(body-pane nodes) ,(side-pane))))
-                  context))
-               standard-page-cont))
+                           (tr ,(body-pane nodes) ,(side-pane))))))
+               standard-page))
 
 ;; Edit and commit uses pagekey for an existing page,
 ;; and pagename for a new page. 
 
-(define (edit-page pagekey pagename context)
+(define (edit-page pagekey pagename)
   ;; NB: we pick the newest page in case if the user come back to
   ;; the old continuation.
   (let* ((orig-page (and pagekey
                          (newest-page (find-kahua-instance <page> pagekey))))
          (pagekey  (and orig-page (key-of orig-page))))
-    (standard-page-cont
+    (standard-page
      `(,@(page-title `(,pagename "の編集"))
        (form/cont
-        (@@ (cont ,(cut commit-page pagekey pagename <>)))
+        (@@ (cont ,(cut commit-page pagekey pagename)))
         (textarea (@ (name "content") (rows 20) (cols 60))
                   ,(if orig-page (ref orig-page 'body) ""))
         (input (@ (type "submit") (name "commit") (value "コミット")))))
-     context)))
+     )))
 
-(define (commit-page pagekey pagename context)
-  (let* ((content (canon-content (kahua-context-ref context "content" "")))
+(define (commit-page pagekey pagename)
+  (let* ((content (canon-content (kahua-context-ref "content" "")))
          (orig-page (and pagekey (find-kahua-instance <page> pagekey))))
     (if orig-page
       (if (ref orig-page 'next)
-        (conflict-page page context)
+        (conflict-page page)
         (if (equal? content (ref orig-page 'body))
-          (show-page/page orig-page context)
+          (show-page/page orig-page)
           (let1 new-page (make <page>
                            :name pagename :body content
                            :previous-page orig-page)
             (page-set-push-unique! (recent-changes) new-page)
             (set! (ref orig-page 'next) new-page)
-            (show-page/page new-page context))))
+            (show-page/page new-page))))
       (let1 new-page (make <page> :name pagename :body content)
         (page-set-push-unique! (recent-changes) new-page)
-        (show-page/page new-page context)))
+        (show-page/page new-page)))
     ))
 
-(define (conflict-page page context)
+(define (conflict-page page)
   (error "Conflict!"))
 
 (define (page-title name)
@@ -268,7 +261,5 @@
 例：[[最初は存在しないページ]]
 "))
    
-(initialize-main-proc
- (lambda (context)
-   (show-page context)))
+(initialize-main-proc show-page)
 

@@ -6,10 +6,7 @@
 		(h1 ,ttl)
 		,@elems))))
 
-(define hello-world
+(define (hello-world)
   (simple-page "Hello, world!"))
 
-(initialize-main-proc
- (lambda (context)
-   (interp-html hello-world context)))
-	
+(initialize-main-proc hello-world)

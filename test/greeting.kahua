@@ -6,20 +6,13 @@
 		(h1 ,ttl)
 		,@elems))))
 
-(define (simple-page/context ttl . elems)
-  (lambda (context)
-    (interp-html (apply simple-page ttl elems) context)))
-
-(define greeting
-  (lambda (context)
-    (let ((name (kahua-context-ref context "name")))
-      ((if name
-	   (simple-page/context "Welcome" "Hello, " name "! How are you?") 
-	   (simple-page/context "Please tell me your name."
-				`(form/cont (@@ (cont ,greeting))
-					    (input (@ (type "text")
-						      (size "15")
-						      (name "name"))))))
-     context))))
+(define-entry (greeting :keyword name)
+  (if name
+    (simple-page "Welcome" "Hello, " name "! How are you?") 
+    (simple-page "Please tell me your name."
+                 `(form/cont (@@ (cont ,greeting))
+                             (input (@ (type "text")
+                                       (size "15")
+                                       (name "name")))))))
 
 (initialize-main-proc greeting)

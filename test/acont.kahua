@@ -1,18 +1,12 @@
 ;-*-scheme-*-
 
-(define (acont/start context)
-  (page-frame
-   `(a/cont (@@ (cont ,next)) "next")
-   context))
+(define (acont/start)
+  (page-frame `(a/cont (@@ (cont ,next)) "next")))
 
-(define-entry (next context)
-  (page-frame
-   '(a/cont "top")
-   context))
+(define-entry (next)
+  (page-frame '(a/cont "top")))
 
-(define (page-frame contents context)
-  (interp-html
-   `((html (body ,@contents)))
-   context))
+(define (page-frame contents)
+  `((html (body ,@contents))))
 
 (initialize-main-proc acont/start)

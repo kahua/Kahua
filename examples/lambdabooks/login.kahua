@@ -5,15 +5,15 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua,v 1.2 2003/12/21 15:25:44 nobsun Exp $
+;; $Id: login.kahua,v 1.3 2004/01/16 09:40:19 shiro Exp $
 
 ;; User login management ----------------------------------------
 ;;   Receives two continuation procedure.
 ;;   transient-cont is used to display transient screen.
 ;;   final-cont is called when user's login succeeded (or abandoned).
 ;;
-(define (user-box context transient-cont final-cont)
-  (define (login-dialog logname pass context)
+(define (user-box transient-cont final-cont)
+  (define (login-dialog logname pass)
     (transient-cont 
      `(,(if logname
           '(p "ユーザー名、またはパスワードが違います")
@@ -31,24 +31,24 @@
              (td (input (@ (type "submit") (name "submit")
                            (value "ログイン")))))))
        (p "ユーザー登録がお済みでない方は、"
-          (a/cont (@@ (cont ,(cut new-user #f #f <>))) "新規ユーザー登録")
+          (a/cont (@@ (cont ,(cut new-user #f #f))) "新規ユーザー登録")
           "で登録を行うか、"
-          (a/cont (@@ (cont ,(lambda (context) (final-cont '() context))))
+          (a/cont (@@ (cont ,(cut final-cont '())))
                   "ログインせずにサイトを利用する")
           "ことができます。"
           "(ログインしない場合は、一部の機能が使えません)"))
-     context))
+     ))
 
-  (define (login-check context)
-    (let ((logname (kahua-context-ref context "logname"))
-          (pass    (kahua-context-ref context "pass")))
+  (define (login-check)
+    (let ((logname (kahua-context-ref "logname"))
+          (pass    (kahua-context-ref "pass")))
       (if (kahua-check-user logname pass)
         (begin
-          (set! (kahua-current-user context) logname)
-          (final-cont '() context))
-        (login-dialog logname pass context))))
+          (set! (kahua-current-user) logname)
+          (final-cont '()))
+        (login-dialog logname pass))))
 
-  (define (new-user logname pass context)
+  (define (new-user logname pass)
     (transient-cont
      `(,(if logname
           (if pass
@@ -71,33 +71,33 @@
              (td (input (@ (type "submit") (name "submit")
                            (value "登録")))))))
        (p "プライバシーポリシー：本サイトはデモ用のサイトであり、あなたの入力したデータはテスト目的にのみ使用され、テスト終了時に破棄されます。"))
-     context))
+     ))
 
-  (define (user-registration context)
-    (let ((logname (kahua-context-ref context "logname"))
-          (pass    (kahua-context-ref context "pass"))
-          (pass2   (kahua-context-ref context "pass2")))
+  (define (user-registration)
+    (let ((logname (kahua-context-ref "logname"))
+          (pass    (kahua-context-ref "pass"))
+          (pass2   (kahua-context-ref "pass2")))
       (cond
        ((kahua-find-user logname)
-        (new-user logname #f context)) ;; user $logname already exists
+        (new-user logname #f)) ;; user $logname already exists
        ((not (equal? pass pass2))
-        (new-user logname pass context)) ;; passwords don't match
+        (new-user logname pass)) ;; passwords don't match
        (else
         (kahua-add-user logname pass)
         (kahua-db-sync)
-        (set! (kahua-current-user context) logname)
-        (final-cont '() context)))))
+        (set! (kahua-current-user) logname)
+        (final-cont '())))))
 
-  (define (logout context)
-    (set! (kahua-current-user context) #f)
-    (final-cont '() context))
+  (define (logout)
+    (set! (kahua-current-user) #f)
+    (final-cont '()))
 
-  (let ((user (kahua-current-user context)))
+  (let ((user (kahua-current-user)))
     (if user
       `(table (tr (td "Welcome, " ,(ref user 'login-name)))
               (tr (td (@ (style "font-size:small; text-align:right"))
                       (a/cont (@@ (cont ,logout)) "logout"))))
-      `(a/cont (@@ (cont ,(cut login-dialog #f #f <>)))
+      `(a/cont (@@ (cont ,(cut login-dialog #f #f)))
                "ログイン/新規登録")))
   )
 

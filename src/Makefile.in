@@ -23,7 +23,7 @@ CREATE_DIRS = /var/lib/kahua /tmp/kahua
 
 SCRIPTS  = kahua-spvr kahua-server kahua-admin kahua-install
 SCMFILES = kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
-	kahua/config.scm kahua/session.scm kahua/server.scm kahua/html.scm 
+	kahua/config.scm kahua/session.scm kahua/server.scm
 CONFFILE = /etc/kahua.conf
 
 CONFIG_GENERATED = Makefile 

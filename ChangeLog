@@ -1,3 +1,29 @@
+2004-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/html.scm : merged into kahua/server.scm
+	* src/kahua/server.scm :
+	(kahua-current-context) : context is kept in this global parameter.
+	(kahua-default-handler) : changed calling convention of content
+	handlers.  Now the handler is () -> [SXML], and completely decoupled
+	from the rendering routine, whose default is interp-html.  Also,
+	the extra path info is passed in context.
+	(kahua-context-ref) : dropped 'context' argument, for it is now
+	obtained from kahua-current-context.
+	(kahua-context-add) : dropped, for it is not used at all.
+	(kahua-current-user) : dropped 'context' argument, for it is now
+	obtained from kahua-current-context.
+	(define-entry) : allow the handler to take positional and/or
+	query arguments.
+	(entry-lambda) : new macro that is the core part of parsing
+	positional and query arguments for entry procedures.
+	(a/cont) : allow to specify positional and query arguments for
+	continuation, which will be rendered in a link url.
+	
+	* src/kahua/test/worker.scm (make-match&pick) : added handling of
+	extra path-info.
+	
+	* examples/*, test/* : reflected above changes.
+
 2004-01-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/server.scm (kahua-default-handler): passes path-info

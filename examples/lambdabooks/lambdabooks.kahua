@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.3 2003/12/26 22:44:37 shiro Exp $
+;; $Id: lambdabooks.kahua,v 1.4 2004/01/16 09:40:19 shiro Exp $
 
 (use srfi-1)
 (use gauche.collection)
@@ -43,50 +43,44 @@
   `(img (@ (src ,(imgpath "separator.jpg")) (alt "[separator]")
            (width 480) (height 4))))
 
-(define (standard-frame contents context cont)
-  (cont `((html
-	   (head (title "Lambda books"))
-	   (body (@ (style "background-color: #ffffff"))
-		 ,@(standard-header context)
-		 ,@contents
-		 ,@(standard-footer context))))
-	context))
+;; standard-frame :: [SXML] -> [SXML]
+(define (standard-frame contents)
+  `((html
+     (head (title "Lambda books"))
+     (body (@ (style "background-color: #ffffff"))
+           ,@(standard-header)
+           ,@contents
+           ,@(standard-footer)))))
 
-(define (standard-frame-cont nodes context)
-  (standard-frame nodes context (cut interp-html <> <>)))
-
-(define (standard-page contents context cont)
+;; standard-page :: [SXML] -> [SXML]
+(define (standard-page contents)
   (standard-frame `((table (tr (td (@ (valign "top"))
-                                   ,@(standard-menu context))
+                                   ,@(standard-menu))
                                (td (@ (valign "top"))
                                    ,@(if (null? contents)
 					 (default-contents)
-					 contents)))))
-		  context cont))
+					 contents)))))))
 
-(define (standard-page-cont nodes context)
-  (standard-page nodes context (cut interp-html <> <>)))
-
-(define (standard-header context)
+(define (standard-header)
   `((a/cont ,(img-logo))
     (br)
     ,(img-separator)))
 
-(define-entry (book-list-page context)
-  (show-book-list context standard-page-cont))
+(define-entry (books book-key)
+  (if book-key
+    (show-book-detail book-key standard-page)
+    (show-book-list standard-page)))
 
-(define-entry (user-admin-page context)
-  (user-admin-panel context standard-page-cont))
+(define-entry (user-admin-page)
+  (user-admin-panel standard-page))
 
-(define-entry (partner-page context)
-  (partnership-info context standard-page-cont))
+(define-entry (partner-page)
+  (partnership-info standard-page))
 
-(define (standard-menu context)
+(define (standard-menu)
   `((table
-     (tr (td ,(user-box context
-			standard-frame-cont
-			standard-page-cont)))
-     (tr (td (a/cont (@@ (cont ,book-list-page))
+     (tr (td ,(user-box standard-frame standard-page)))
+     (tr (td (a/cont (@@ (cont ,books))
 		     "Books")))
      (tr (td (a/cont (@@ (cont ,partner-page))
 		     "Partnership")))
@@ -94,7 +88,7 @@
      (tr (@@ (require-role admin))
 	 (td (a/cont (@@ (cont ,user-admin-page)) "[ユーザ管理]"))))))
 
-(define (standard-footer context)
+(define (standard-footer)
   `(,(img-separator)
     (div (@ (style "text-align: right"))
          "Powered by " (a (@ (href "http://www.kahua.org/")) "Kahua"))))
@@ -107,11 +101,7 @@
       (tr (td (@ (style "text-align: right"))
               "キャンペーン価格：" ,(ref book 'price) "円"))
       (tr (td (@ (style "text-align: right"))
-              (a/cont (@@ (cont ,(lambda (context)
-                                   (show-book-detail key
-						     context
-                                                     standard-page-cont))))
-                      "詳しい情報を見る...")))))
+              (a/cont (@@ (cont ,books ,key)) "詳しい情報を見る...")))))
 
   `((h2 "最新ニュース")
     (p "本サイトは、Kahuaフレームワークのデモサイトです。")
@@ -126,6 +116,4 @@
          '(p "(書籍データがありません)"))))
   )
 
-(initialize-main-proc
- (lambda (context)
-   (standard-page '() context (cut interp-html <> <>))))
+(initialize-main-proc (cut standard-page '()))
