@@ -72,10 +72,13 @@ CONFIG_GENERATED = Makefile
 .in:
 	$(top_srcdir)/src/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(libexecdir)" $@
 
-all: $(SCM_SCRIPTS) kahua/config.scm
+all: $(SCM_SCRIPTS) kahua/config.scm kahua.conf
 
 kahua/config.scm:
 	sed -e "s@##sysconfdir##@$(sysconfdir)@" -e "s@##localstatedir##@$(localstatedir)@" -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##package##@$(package)@" $@.in > $@
+
+kahua.conf:
+	sed -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##localstatedir##@$(localstatedir)@" kahua.conf.sample > $@
 
 check:
 
@@ -94,7 +97,7 @@ install: all
 	  $(INSTALL) -m 555 $$f.sh $(SCRIPT_INSTALL_DIR)/$$f; \
 	done
 	@if test ! -f $(CONFFILE); then \
-	  $(INSTALL) -m 444 kahua.conf.sample $(CONFFILE); \
+	  $(INSTALL) -m 444 kahua.conf $(CONFFILE); \
 	fi
 	@if test ! -f $(USERCONFFILE); then \
 	  $(INSTALL) -m 644 user.conf.sample $(USERCONFFILE); \
