@@ -1,0 +1,59 @@
+#
+# Run "make install-examples" _AFTER_ "make install" and editing kahua.conf.
+#
+
+SHELL       = @SHELL@
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+srcdir      = @srcdir@
+VPATH       = $(srcdir)
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+DESTDIR  =
+
+GOSH = @GOSH@
+GAUCHE_CONFIG = @GAUCHE_CONFIG@
+INSTALL = ../src/kahua-install
+
+# specify -c ../kahua.conf etc. to give an alternative conf file
+KAHUACONFIG = 
+
+SCRIPTFILES = lambdabooks.kahua           \
+              lambdabooks/lister.kahua    \
+              lambdabooks/login.kahua     \
+              lambdabooks/book.kahua      \
+              lambdabooks/review.kahua    \
+              lambdabooks/partner.kahua   \
+              lambdabooks/useradmin.kahua
+
+STATICFILES = lambdabooks/images/lambda-books-logo.png \
+              lambdabooks/images/separator.jpg
+
+CONFIG_GENERATED = Makefile 
+.PHONY: all check clean distclean install maintainer-clean
+
+all:
+
+check:
+
+clean:
+	rm -rf core *~ lambdabooks/*~
+
+install: 
+
+install-examples: all
+	$(INSTALL) $(KAHUACONFIG) -t script $(SCRIPTFILES)
+	$(INSTALL) $(KAHUACONFIG) -t static $(STATICFILES)
+	$(INSTALL) $(KAHUACONFIG) -t base -r app-servers --no-overwrite app-servers.sample
+	$(GOSH) ./lambdabooks.init $(KAHUACONFIG) 
+
+distclean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+

@@ -1,0 +1,28 @@
+;;
+;; Kahua client interface for Emacs
+;;
+;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: kahua.el.in,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+;;
+
+(require 'cmuscheme)
+
+(add-hook 'inferior-scheme-mode-hook
+          '(lambda () 
+             (set-buffer-process-coding-system 'euc-jp 'euc-jp)))
+
+(defvar *kahua-admin* "##bindir##/kahua-admin")
+
+(defun run-kahua ()
+  "Run kahua Emacs interface in *scheme* buffer.  Make sure you're not running other inferior scheme."
+  (interactive)
+  (run-scheme *kahua-admin*))
+
+;; Local variables:
+;; mode: emacs-lisp
+;; end:
+
+
+

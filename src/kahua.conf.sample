@@ -1,0 +1,15 @@
+;;
+;; Sample Kahua configuration file
+;;
+;; $Id: kahua.conf.sample,v 1.1 2003/12/11 05:39:11 nobsun Exp $
+
+(make <kahua-config>
+  :sockbase             "unix:/tmp/kahua"
+  :working-directory    "/var/lib/kahua"
+  :static-document-path "/var/www/kahua"
+  :static-document-url  "/kahua"
+  )
+
+;; Local variables:
+;; mode: scheme
+;; end:

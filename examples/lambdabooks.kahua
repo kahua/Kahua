@@ -1,0 +1,134 @@
+;;-*-Scheme-*-
+;; sample kahua application using kahua.app.elua.alt
+;;
+;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: lambdabooks.kahua,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+
+(use file.util)
+(use util.list)
+(use srfi-2)
+(use gauche.logger)
+
+(primary-database-name
+ (build-path (ref (kahua-config) 'working-directory)
+             "lambdabooks"))
+
+(log-open (kahua-logpath "lambdabooks.log"))
+
+(load "lambdabooks/login.kahua")
+(load "lambdabooks/lister.kahua")
+(load "lambdabooks/book.kahua")
+(load "lambdabooks/review.kahua")
+(load "lambdabooks/partner.kahua")
+(load "lambdabooks/useradmin.kahua")
+
+;;========================================================
+;; Main application
+;;
+
+;; Standard page construction ----------------------------
+(define (imgpath filename)
+  (kahua-static-document-url #`"lambdabooks/images/,filename"))
+
+(define (img-logo)
+  `(img (@ (src ,(imgpath "lambda-books-logo.png")) (alt "[lambda books]")
+           (border "0") (width 216) (height 47))))
+
+(define (img-separator)
+  `(img (@ (src ,(imgpath "separator.jpg")) (alt "[separator]")
+           (width 480) (height 4))))
+
+(define (standard-frame context contents)
+  `(html
+    (head (title "Lambda books"))
+    (body (@ (style "background-color: #ffffff"))
+          ,@(standard-header context)
+          ,@contents
+          ,@(standard-footer context))))
+
+(define (standard-frame-cont nodes context)
+  (interp-html (standard-frame context nodes)
+               context
+               (lambda (stree context) stree)))
+
+(define (standard-page context contents)
+  (standard-frame context
+                  `((table (tr (td (@ (valign "top"))
+                                   ,@(standard-menu context))
+                               (td (@ (valign "top"))
+                                   ,@(if (null? contents)
+                                       (default-contents)
+                                       contents)))))))
+
+(define (standard-page-cont nodes context)
+  (interp-html (standard-page context nodes)
+               context
+               (lambda (stree context) stree)))
+
+(define (standard-header context)
+  `((a/cont (@@ (cont ,(cut standard-page-cont '() <>))) ,(img-logo))
+    (br)
+    ,(img-separator)))
+
+(define (standard-menu context)
+  `((table
+     (tr (td ,(user-box context
+                        standard-frame-cont
+                        standard-page-cont)))
+     (tr (td (a/cont (@@ (cont ,(lambda (context)
+                                  (show-book-list context
+                                                  standard-page-cont))))
+                     "Books")))
+                                        ;(tr (td "Software"))
+     (tr (td (a/cont (@@ (cont ,(lambda (context)
+                                  (partnership-info context
+                                                    standard-page-cont))))
+                     "Partnership")))
+     ;; admin roleのユーザーにのみ、リンクを見せる"
+     (tr (@@ (require-role admin))
+         (td (a/cont (@@ (cont ,(lambda (context)
+                                  (user-admin-panel context
+                                                    standard-page-cont))))
+                     "[ユーザ管理]"))))
+    ))
+
+(define (standard-footer context)
+  `(,(img-separator)
+    (div (@ (style "text-align: right"))
+         "Powered by " (a (@ (href "http://www.kahua.org/")) "Kahua"))))
+
+(define (default-contents)
+  (define (new-title key book)
+    `((tr (td (b ,(ref book 'title))))
+      (tr (td (@ (style "text-align: right"))
+              ,(ref book 'authors) "著"))
+      (tr (td (@ (style "text-align: right"))
+              "キャンペーン価格：" ,(ref book 'price) "円"))
+      (tr (td (@ (style "text-align: right"))
+              (a/cont (@@ (cont ,(lambda (context)
+                                   (show-book-detail context key
+                                                     standard-page-cont))))
+                      "詳しい情報を見る...")))))
+
+  `((h2 "最新ニュース")
+    (p "本サイトは、Kahuaフレームワークのデモサイトです。")
+    (h2 "新刊情報")
+    (p "サイト開設記念特別キャンペーン価格にて販売中!")
+    ;; ダミーデータ。最初の2冊を表示
+    ,(let ((book1 (find-kahua-instance <book> "0"))
+           (book2 (find-kahua-instance <book> "1")))
+       (if (and book1 book2)
+         `(table
+           ,@(append-map new-title (list "0" "1") (list book1 book2)))
+         '(p "(書籍データがありません)"))))
+  )
+
+(initialize-main-proc
+ (lambda (context)
+   (interp-html (standard-page context '())
+                context
+                (lambda (stree context) stree))))
+

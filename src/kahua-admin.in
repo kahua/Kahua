@@ -1,0 +1,131 @@
+#!/usr/bin/env gosh
+;; Administrative script
+;;
+;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: kahua-admin.in,v 1.1 2003/12/11 05:39:11 nobsun Exp $
+
+(use srfi-1)
+(use gauche.net)
+(use gauche.parseopt)
+(use util.list)
+(use kahua)
+
+;; Deal with supervisor command -----------------------------------
+(define (spvr-command-processor)
+  (with-error-handler
+      (lambda (e)
+        (print "ERROR: " (ref e 'message))
+        spvr-command-processor)
+    (lambda ()
+      (format #t "spvr> ")
+      (flush)
+      (let1 line (read-line)
+        (if (eof-object? line)
+          (exit 0)
+          (let1 cmd (call-with-input-string line port->sexp-list)
+            (if (null? cmd)
+              spvr-command-processor
+              (case (car cmd)
+                ((connect)
+                 (if (= (length cmd) 2)
+                   (connect-worker (cadr cmd))
+                   (begin (display "Usage: connect <worker-number>\n")
+                          spvr-command-processor)))
+                (else
+                 (let1 reply (send-command #f cmd)
+                   (case (car cmd)
+                     ((ls run kill) (ls-result reply))
+                     (else (write reply) (newline)))
+                   spvr-command-processor)
+                 ))))
+          ))
+      )))
+
+(define (ls-result reply)
+  (define now (sys-time))
+  (define (show-time time)
+    (sys-strftime "%b %e %H:%M" (sys-localtime time)))
+  
+  (format #t "wno   pid type     since        wid\n")
+  (dolist (w reply)
+    (format #t "~3d ~5d ~8a ~10a ~a\n"
+            (get-keyword :worker-count w)
+            (get-keyword :worker-pid w)
+            (get-keyword :worker-type w)
+            (show-time (get-keyword :start-time w))
+            (get-keyword :worker-id w)))
+  )
+
+;; Deal with worker command ------------------------------------
+
+(define (connect-worker wno)
+  (let* ((workers (send-command #f '(ls)))
+         (the-worker (find (lambda (w)
+                             (eqv? (get-keyword :worker-count w) wno))
+                           workers)))
+    (if the-worker
+      (make-worker-command-processor (get-keyword :worker-id the-worker))
+      (begin
+        (format #t "No such worker: ~a\n" wno)
+        spvr-command-processor))))
+
+(define (make-worker-command-processor wid)
+  (rec (worker-processor)
+    (with-error-handler
+        (lambda (e)
+          (display (ref e 'message)) (flush)
+          worker-processor)
+      (lambda ()
+        (format #t "~a> " wid)
+        (flush)
+        (let1 expr (read)
+          (cond
+           ((eof-object? expr) (exit 0))
+           ((memq expr '(disconnect bye)) spvr-command-processor)
+           (else
+            ;; NB: the first two elts of reply is error-output and std-output
+            (let1 reply (send-command wid expr)
+              (display (car reply)) (display (cadr reply))
+              (for-each (lambda (r) (display r) (newline)) (cddr reply))
+              worker-processor))
+           ))
+        ))
+    ))
+
+;; Utility -----------------------------------------------------
+(define (send-command wid cmd)
+  (let ((sockaddr (worker-id->sockaddr wid (kahua-sockbase))))
+    (call-with-client-socket (make-client-socket sockaddr)
+      (lambda (in out)
+        (if wid
+          (write '(("x-kahua-eval" "#t")) out)
+          (write '(("x-kahua-worker" "spvr")) out))
+        (newline out)
+        (write cmd out)
+        (newline out)
+        (flush out)
+        ;; special treatment of 'shutdown'-command: we won't get
+        ;; reply from that command.
+        (if (and (not wid) (eq? (car cmd) 'shutdown))
+          '()
+          (let* ((header (read in))
+                 (body   (read in)))
+            (if (equal? (assoc-ref header "x-kahua-status") '("OK"))
+              body
+              (errorf "~a" body))))))))
+
+;; Entry -------------------------------------------------------
+(define (main args)
+  (let-args (cdr args) ((conf-file "c=s" #f))
+    (set-signal-handler! SIGINT  (lambda _ (exit 0)))
+    (set-signal-handler! SIGTERM (lambda _ (exit 0)))
+    (kahua-init conf-file)
+    (let loop ((command-processor spvr-command-processor))
+      (loop (command-processor)))))
+
+;; Local variables:
+;; mode: scheme
+;; end:

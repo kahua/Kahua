@@ -1,0 +1,58 @@
+#
+# Installing Kahua-related cgi scripts.
+# The destination should be specified by --with-cgidir argument of configure
+# script.
+#
+# $Id: Makefile.in,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+#
+
+SHELL       = @SHELL@
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+srcdir      = @srcdir@
+VPATH       = $(srcdir)
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+KAHUA_CGIDIR = @KAHUA_CGIDIR@
+
+DESTDIR  =
+
+GOSH = @GOSH@
+GAUCHE_CONFIG = @GAUCHE_CONFIG@
+INSTALL = @INSTALL@
+MKINSTDIR = $(top_srcdir)/mkinstalldirs
+
+SCRIPTS = kahua.cgi
+
+CONFIG_GENERATED = Makefile 
+.PHONY: all check clean distclean install maintainer-clean
+
+.SUFFIXES: .in
+
+.in:
+	$(top_srcdir)/src/fix-shebang.sh "$(GOSH)" $@
+
+all: $(SCRIPTS)
+
+check:
+
+clean:
+	rm -rf core $(SCRIPTS) *~
+
+install:
+	if test "$(KAHUA_CGIDIR)" != ""; then \
+	  $(MKINSTDIR) $(KAHUA_CGIDIR); \
+	  for f in $(SCRIPTS); do \
+	    $(INSTALL) -m 555 $$f $(KAHUA_CGIDIR)/$$f; \
+	  done; \
+	fi
+
+distclean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+

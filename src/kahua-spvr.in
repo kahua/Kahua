@@ -1,0 +1,452 @@
+#!/usr/bin/env gosh
+;; "Supervisor" or super server for kahua
+;;
+;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: kahua-spvr.in,v 1.1 2003/12/11 05:39:11 nobsun Exp $
+
+;; For clients, this server works as a receptionist of kahua system.
+;; It opens a socket where initial clients will connect.
+;; This server doesn't know about internals of kahua server, but
+;; just dispatches it to the worker servers.
+;; Eventually, this server will manage multiple worker servers for
+;; load balancing or hot restarting.
+;; For now, we have only one worker server, so this is just an outline
+;; of what we will ultimately do.
+
+(use gauche.net)
+(use gauche.process)
+(use gauche.logger)
+(use gauche.selector)
+(use gauche.listener)
+(use gauche.parseopt)
+(use gauche.parameter)
+(use gauche.mop.singleton)
+(use srfi-2)
+(use srfi-11)
+(use rfc.822)
+(use file.util)
+(use util.queue)
+(use util.list)
+(use kahua.config)
+(use kahua.gsid)
+
+;; Eventually this should be configurable by some conf file
+(define *default-worker-type* 'dummy)
+
+(define *spvr* #f) ;; bound to supervisor object for convenience
+
+;; NB: patching gauche.process - would be included in next Gauche release.
+(with-module gauche.process
+  (export process-wait-any)
+  (use srfi-2)
+  (define (process-wait-any . args)
+    (let-optionals* args ((nohang? #f))
+      (and (not (null? (process-list)))
+           (receive (pid status) (sys-waitpid -1 :nohang nohang?)
+             (and pid
+                  (and-let* ((p (find (lambda (pp) (= (process-pid pp) pid))
+                                      (process-list))))
+                    (slot-set! p 'status status)
+                    (update! (ref p 'processes) (cut delete p <>))
+                    p)))))  )
+  )
+;; End of patch
+
+
+;; Supervisor protocol
+;;
+;; [Session initiation]
+;;
+;;  A client first connect to a well known socket of the supervisor.
+;;  This first request is called session-initiaing request.
+;;  At this point, a client wouldn't have complete GSID.  It may have
+;;  state ID from the last session, but it certainly doesn't have
+;;  continuation ID.
+;;
+;;  When the supervisor observes it, and the request is not for direct
+;;  administrative request for the supervisor itself, it assigns a
+;;  worker and forwards the session-initiating request to the worker.
+;;  The worker will return a reply, usually accompanied by GSID.
+;;  The supervisor forwards the reply to the client.
+;;
+;;  Afterwards, the client can figure out the worker ID encoded in GSID,
+;;  and directly connects to the worker.
+;;
+;;  Client can optionally pass the worker type it wants to talk to,
+;;  using "x-kahua-worker" header.   If such header is absent, the
+;;  supervisor selects the default worker.
+;;
+;;  As a special case, "spvr" is given to "x-kahua-worker", the body
+;;  is interpreted by the spvr process as a command.  See "supervisor
+;;  commands" below.
+;;
+;; [Message format]
+;;
+;;  Request and reply both consist of two S-expressions, a header and
+;;  a body.  A header is a list of two-element lists, resembles to
+;;  what rfc822-header->list returns.   A body can be any valid sexpr.
+;;  It is arguable whether this format is adequate or not.  Let's see.
+;;
+;;  In a request header, "x-kahua-sgsid" elemnt carries state GSID,
+;;  and "x-kahua-cgsid" carries continuation GSID.  Other header can
+;;  be freely used by the worker.  A client may send additional information
+;;  in the header, and the worker should ignore the header element that
+;;  it doesn't understand.
+;;
+;;  In a reply header, "x-kahua-sgsid" and "x-kahua-cgsid" are also
+;;  used to carry GSID.  It also contains "x-kahua-status", whose value
+;;  is either "OK", "ERROR", or "SPVR-ERROR".   "ERROR" indicates
+;;  an error occurred in the worker, and "SPVR-ERROR" indicates an
+;;  error occurred in the supervisor.  The message body of error replies
+;;  contains a list of a error message string (for now).
+;;
+
+;; Global structure -----------------------------------------------
+
+(define-class <kahua-spvr> ()
+  ((sockbase   :init-form (kahua-sockbase))
+   (workers    :init-form (make-queue) :getter workers-of)
+   (selector   :init-form (make <selector>) :getter selector-of)
+   ))
+
+(define-class <kahua-worker> ()
+  ((spvr   :init-keyword :spvr)               ;; back ptr to spvr
+   (worker-type :init-keyword :worker-type
+                :getter worker-type-of)       ;; worker type (symbol)
+   (worker-id :getter worker-id-of)           ;; worker id (string)
+   (worker-count :getter worker-count-of)     ;; an integer count for worker
+   (worker-process :getter worker-process-of) ;; worker process
+   (start-time :getter start-time-of          ;; timestamp
+               :init-form (sys-time))
+
+   ;; internal
+   (next-worker-count :allocation :class :init-value 0)
+   ))
+
+;; worker type entry - will be overridden by configuration file
+(define worker-types
+  (make-parameter
+   '()
+   ))
+
+(define (worker-script worker-type)
+  (cond ((assq worker-type (worker-types))
+         => (lambda (p)
+              (let1 template (get-keyword :script (cdr p))
+                (lambda (opts)
+                  (let loop ((t template)
+                             (r '()))
+                    (cond ((null? t) (reverse! r))
+                          ((eq? (car t) '@)
+                           (loop (cdr t) (append! (reverse opts) r)))
+                          (else
+                           (loop (cdr t) (cons (car t) r)))))))))
+        (else
+         (error "unknown worker type:" worker-type))))
+
+(define (load-worker-types)
+  (let1 app-map
+      (build-path (ref (instance-of <kahua-config>) 'working-directory)
+                  "app-servers")
+    (if (file-exists? app-map)
+      (with-error-handler
+          (lambda (e)
+            (log-format "error in reading ~a" app-map)
+            #f)
+        (lambda ()
+          (let1 lis (call-with-input-file app-map read)
+            (if (and (list? lis)
+                     (every (lambda (ent)
+                              (and (list? ent)
+                                   (symbol? (car ent))
+                                   (odd? (length ent))))
+                            lis))
+              (begin
+                (log-format "loaded ~a" app-map)
+                (worker-types lis)
+                #t)
+              (begin
+                (log-format "malformed app-servers file: ~a" app-map)
+                #f)))))
+      (begin
+        (log-format "app-servers file does not exist: ~a" app-map)
+        #f))))
+
+(define (run-default-workers spvr)
+  (for-each (lambda (w)
+              (dotimes (n (get-keyword :run-by-default (cdr w) 0))
+                (run-worker spvr (car w))))
+            (worker-types)))
+
+;;; utilities ------------------------------------------------------
+
+(define (send-message out header body)
+  (write header out) (newline out)
+  (write body out)   (newline out)
+  (flush out))
+
+(define (receive-message in)
+  (let* ((header (read in))
+         (body   (read in)))
+    (values header body)))
+
+(define (get-worker-type header)
+  (cond ((assoc "x-kahua-worker" header)
+         => (lambda (p) (string->symbol (cadr p))))
+        (else #f)))
+
+;;; Worker management ----------------------------------------------
+
+;; start worker specified by worker-class
+(define-method run-worker ((self <kahua-spvr>) worker-type)
+  (let1 worker (make <kahua-worker> :spvr self :worker-type worker-type)
+    (enqueue! (workers-of self) worker)
+    worker))
+
+;; returns a list of workers
+(define-method list-workers ((self <kahua-spvr>))
+  (queue->list (workers-of self)))
+
+;; collect exit status of workes that has exit.
+(define-method check-workers ((self <kahua-spvr>))
+  (and-let* ((wq (workers-of self))
+             ((not (null? wq)))
+             (p (process-wait-any #t))
+             (w (find (lambda (w) (eq? (worker-process-of w) p))
+                      (queue->list wq))))
+    ;; avoid a bug in Gauche 0.7.2
+    (if (eq? (queue-front wq) w)
+      (dequeue! wq)
+      (remove-from-queue! (cut eq? w <>) wq))
+    (finish-worker w)
+    w))
+
+;; terminate all workes
+(define-method nuke-all-workers ((self <kahua-spvr>))
+  (do ()
+      ((queue-empty? (workers-of self)))
+    (let ((w (queue-front (workers-of self))))
+      (terminate w)
+      (check-workers self))))
+
+;; pick one worker that has worker-id WID.  If WID is #f, pick arbitrary one.
+(define-method find-worker ((self <kahua-spvr>) (wid <string>))
+  (find-in-queue (lambda (w) (equal? (worker-id-of w) wid))
+                 (workers-of self)))
+
+(define-method find-worker ((self <kahua-spvr>) (wtype <symbol>))
+  (find-in-queue (lambda (w) (eq? (worker-type-of w) wtype))
+                 (workers-of self)))
+
+(define-method find-worker ((self <kahua-spvr>) (wcount <integer>))
+  (find-in-queue (lambda (w) (eq? (worker-count-of w) wcount))
+                 (workers-of self)))
+
+(define-method find-worker ((self <kahua-spvr>) wid)
+  ;; eventually we need some scheduling strategy
+  (if (queue-empty? (workers-of self))
+    (error "no worker available")
+    (queue-front (workers-of self))))
+
+;;; Worker implementation --------------------------------------------
+
+(define-method initialize ((self <kahua-worker>) initargs)
+  (next-method)
+  (let* ((cmd `(,@((worker-script (worker-type-of self))
+                   (cond ((kahua-config-file)
+                          => (lambda (c) `("-c" ,c)))
+                         (else '())))
+                :input  "/dev/null"
+                :output :pipe))
+         (p    (apply run-process cmd))
+         (id   (read-line (process-output p)))
+         (count (ref self 'next-worker-count)))
+    (slot-set! self 'worker-id id)
+    (slot-set! self 'worker-count count)
+    (slot-set! self 'worker-process p)
+    (inc! (ref self 'next-worker-count))
+    ))
+
+(define-method terminate ((self <kahua-worker>))
+  (process-send-signal (worker-process-of self) SIGINT))
+
+(define-method finish-worker ((self <kahua-worker>))
+  (close-input-port (process-output (worker-process-of self))))
+
+(define-method dispatch-to-worker ((self <kahua-worker>)
+                                   reply-sock
+                                   header body)
+  (let* ((spvr (ref self 'spvr))
+         (sock (make-client-socket
+                (worker-id->sockaddr (worker-id-of self)
+                                     (ref spvr 'sockbase))))
+         (out  (socket-output-port sock)))
+
+    (define (handle fd flags)
+      (receive (header body) (receive-message (socket-input-port sock))
+        (send-message (socket-output-port reply-sock) header body)
+        (socket-close reply-sock)
+        (selector-delete! (selector-of spvr) (socket-fd sock) handle #f)
+        (socket-close sock)))
+
+    (send-message out header body)
+    (selector-add! (selector-of spvr)
+                   (socket-fd sock)
+                   handle
+                   '(r)))
+  )
+
+;;; supervisor commands ----------------------------------------
+
+(define (handle-spvr-command body)
+  (define (worker-info w)
+    (list :worker-id    (worker-id-of w)
+          :worker-count (worker-count-of w)
+          :worker-type  (worker-type-of w)
+          :worker-pid   (process-pid (worker-process-of w))
+          :start-time   (start-time-of w)))
+  
+  (unless (pair? body) (error "bad spvr command:" body))
+  (case (car body)
+    ((ls)    ;; list active workers
+     (map worker-info (list-workers *spvr*)))
+    ((run)   ;; start specified worker type
+     (map (lambda (type) (worker-info (run-worker *spvr* type))) (cdr body)))
+    ((kill)  ;; kill the specified worker or worker(s) of type
+     (for-each
+      (lambda (type-or-count)
+        (cond ((eq? type-or-count '*)  (nuke-all-workers *spvr*))
+              ((or (symbol? type-or-count)
+                   (string? type-or-count)
+                   (integer? type-or-count))
+               (let loop ()
+                 (let1 w (find-worker *spvr* type-or-count)
+                   (when w (terminate w) (check-workers *spvr*) (loop)))))))
+      (cdr body))
+     (map worker-info (list-workers *spvr*)))
+    ((types)  ;; returns list of known worker types
+     (map car (worker-types)))
+    ((reload) ;; reload app-servers file
+     (load-worker-types))
+    ((shutdown) ;; shutting down the server
+     (log-format "shutdown requested")
+     (sys-kill (sys-getpid) SIGTERM))
+    ((help)   ;; returns list of commands
+     '(ls run kill types reload help shutdown))
+    (else
+     (error "unknown spvr command:" body))))
+
+;;; server loop ------------------------------------------------
+
+(define-method handle-request ((self <kahua-spvr>) client-sock)
+  (with-error-handler
+      (lambda (e)
+        (send-message (socket-output-port client-sock)
+                      '(("x-kahua-status" "SPVR-ERROR"))
+                      (list (ref e 'message)
+                            (call-with-output-string
+                              (lambda (o)
+                                (with-error-to-port o
+                                  (lambda ()
+                                    (report-error e))))))))
+    (lambda ()
+      (let*-values (((in) (socket-input-port client-sock))
+                    ((header body) (receive-message in))
+                    ((stat-gsid cont-gsid) (get-gsid-from-header header))
+                    ((stat-h stat-b) (decompose-gsid stat-gsid))
+                    ((cont-h cont-b) (decompose-gsid cont-gsid))
+                    ((wtype) (get-worker-type header)))
+        (log-format "header: ~s" header)
+        (cond
+         ((equal? wtype 'spvr)
+          ;; this is a supervisor command.
+          (send-message (socket-output-port client-sock)
+                        '(("x-kahua-status" "OK"))
+                        (handle-spvr-command body)))
+         (cont-h
+          ;; we know which worker handles the request
+          (let ((w (find-worker self cont-h)))
+            (unless w (error "stale session key" cont-gsid))
+            (dispatch-to-worker w client-sock header body)))
+         (else
+          ;; this is a session-initiating request.
+          (let ((w (find-worker self wtype)))
+            (unless w (error "don't have worker for" wtype))
+            (dispatch-to-worker w client-sock header body))))
+        ))
+    ))
+
+(define (run-server spvr sockaddr use-listener)
+  (let ((sock (make-server-socket sockaddr))
+        (listener (and use-listener
+                       (make <listener>
+                         :prompter (lambda () (display "kahua> ")))))
+        )
+    (selector-add! (selector-of spvr)
+                   (socket-fd sock)
+                   (lambda (fd flags)
+                     (handle-request spvr (socket-accept sock)))
+                   '(r))
+    (when listener
+      (let1 listener-handler (listener-read-handler listener)
+        (set! (port-buffering (current-input-port)) :none)
+        (selector-add! (selector-of spvr)
+                       (current-input-port)
+                       (lambda _ (listener-handler))
+                       '(r)))
+      (listener-show-prompt listener))
+
+    ;; hack
+    (when (is-a? sockaddr <sockaddr-un>)
+      (sys-chmod (sockaddr-name sockaddr) #o777))
+    (do () (#f)
+      (selector-select (selector-of spvr) 10.0e6)
+      (check-workers spvr))
+    ))
+
+(define (main args)
+  (let-args (cdr args)
+      ((conf-file "c=s" #f)
+       (listener "i" #f)
+       (sockbase "s=s" #f)  ;; overrides conf file settings
+       (logfile  "l=s" #f)  ;; overrides conf file settings
+       )
+    ;; initialization
+    (kahua-init conf-file)
+    (when sockbase (set! (kahua-sockbase) sockbase))
+    (cond ((equal? logfile "-") (log-open #t))
+          (logfile (log-open logfile))
+          (else    (log-open (kahua-logpath "kahua-spvr.log"))))
+    (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
+           (spvr     (make <kahua-spvr>))
+           (cleanup  (lambda ()
+                       (when (is-a? sockaddr <sockaddr-un>)
+                         (sys-unlink (sockaddr-name sockaddr)))
+                       (nuke-all-workers spvr)
+                       (log-format "exitting")))
+           )
+      (set! *spvr* spvr)
+      (log-format "started at ~a" sockaddr)
+      (call/cc
+       (lambda (bye)
+         (set-signal-handler! SIGTERM (lambda _ (cleanup) (bye 0)))
+         (set-signal-handler! SIGINT  (lambda _ (cleanup) (bye 0)))
+         (with-error-handler
+             (lambda (e)
+               (cleanup)
+               (display (ref e 'message) (current-error-port))
+               (report-error e)
+               (bye 70))
+           (lambda ()
+             (load-worker-types)
+             (run-default-workers spvr)
+             (run-server spvr sockaddr listener)
+             (bye 0))))))
+    ))
+
+;; Local variables:
+;; mode: scheme
+;; end:

@@ -1,0 +1,40 @@
+SHELL       = @SHELL@
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+srcdir      = @srcdir@
+VPATH       = $(srcdir)
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+DESTDIR  =
+
+INSTALL = @INSTALL@
+MKINSTDIR = $(top_srcdir)/mkinstalldirs
+
+ELISPS = kahua.el
+
+CONFIG_GENERATED = Makefile 
+.PHONY: all check clean distclean install maintainer-clean
+
+all: $(ELISPS)
+
+kahua.el : kahua.el.in
+	sed "s@##bindir##@${bindir}@" kahua.el.in > kahua.el.tmp && \
+	mv kahua.el.tmp kahua.el
+
+check:
+
+clean:
+	rm -rf core *~ $(ELISPS)
+
+install: all
+
+distclean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+

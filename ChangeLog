@@ -1,0 +1,304 @@
+2003-12-11  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* version 0.1.1 :
+	Made refactoring, most of kahua-elua integrated in kahua-server.
+
+	Most of kahua/app/elua.scm code was included into kahua-server.
+	kahua/app/elua/alt.scm --> kahua/html.scm
+	Removed kahua/app/
+
+	* configure.ac : modified version number from 0.1 to 0.2_pre0
+
+	* cgi/ : removed kahua-dummy.cgi kahua-ekahi.cgi
+
+	* cgi/Makefile.in : modified SCRITPTS from kahua-elua.cgi to kahua.cgi
+
+	* examples/lambdabooks.kahua: removed (use kahua.app.elua.alt)
+
+	* test/app/ : removed
+
+	* test/Makefile : removed line for app subdirectory
+
+	* test/gsid.scm : modified line for testing worker-id->sockaddr
+
+	* test/spvr.scm, test/worker.scm : almost all test lines commented out.
+	We *MUST* implement new testing
+
+	* src/Makefile.in : adjusted for new version
+
+	* src/kahua-dummy.in : removed
+
+	* src/kahua-server.in :
+	
+	Added following definitions from src/kahua/app/elua.scm
+	  primary-database-name
+	  main-proc
+	  initial-main-proc
+	  handle-request
+	  default-handler
+
+	Modified part for initializing local work-id variable in main
+
+	Modified load-kahua-module; use (load module) instead of (use module)
+	
+	* src/kahua-spvr.in :
+	modified worker-types to '()
+
+	* src/kahua.conf.sample :
+	removed '-elua' from path names.
+
+	* src/kahua.scm :
+	added kahua.html in extend list
+
+	* src/kahua/html.scm : added (almost same as old src/kahua/app/elua/alt.scm)
+
+	* src/kahua/config.scm, src/kahua/gsid.scm : remove '-elua' from path names.
+
+	* src/kahua/app/ : removed
+	
+2003-12-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/user.scm : added inactive flag to <kahua-user>.
+	kahua-check-user returns #f if the matched user is inactive.
+
+	* examples/lambdabooks/useradmin.kahua : enable display and
+	edit of inactive slot of user instances.
+
+2003-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.1: preliminary release.
+
+2003-11-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm (kahua-db-sync): made the db argument
+	optional; when omitted, assumes current-db.
+
+	* src/kahua/app/elua.scm (primary-database-name, handle-request):
+	application server can set a primary database name so that it is
+	always opened while the handler is called.
+	examples/lambadbooks is also changed to adapt to this feature.
+
+	* src/kahua/user.scm (kahua-user-has-role?): added.
+	* src/kahua/app/elua/alt.scm (not-accessible?): changed to check
+	require-role aux node info against current user's roles.
+
+	* examples/lambdabooks/useradmin.kahua : added user administration
+	module.
+	* examples/lambdabooks.init : make default users 'admin' and 'guest'.
+
+2003-11-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/user.scm (kahua-add-user, kahua-check-user,
+	kahua-find-user), test/register.kahua, test/user.scm,
+	examples/lambdabooks/login.kahua :
+	Renamed add-user and check-user for the names with kahua- prefix,
+	and added kahua-find-user.  Fixed users of those APIs respectively.
+
+	* src/kahua-admin.in, src/kahua/server.scm (kahua-default-handler):
+	capture current-output and error-output during calling eval-proc,
+	and send them to kahua-admin, so that external REPL interface
+	can see those output.
+
+	* examples/Makefile.in, examples/lambdabooks.init : allow to give
+	alternative Kahua config file at install-examples time, via the
+	KAHUACONFIG make varaible.  (Patch from K.Sasada).
+
+	* src/Makefile.in : installs /etc/kahua.conf if it doesn't exist.
+	
+	* examples/app-servers.sample, examples/Makefile.in : installs
+	sample app-servers file by "make install-examples" iff there's no
+	app-servers file.
+	
+	* src/kahua-install.in: added -r (rename) and --no-overwrite option.
+
+	* src/kahua/server.scm (kahua-context-add, kahua-context-ref,
+	kahua-current-user) : moved these from kahua.app.elua.alt and
+	lambdabooks.kahua, making them as standard API.
+
+	* examples/lambdabooks.kahua, examples/lambdabooks/* :
+	refactored individual modules.
+
+	* src/kahua/persistence.scm (kahua-object): fixed a problem that
+	instance-by-key table of database wasn't initialized properly
+	when a persistent instance was read from the disk.
+
+2003-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.in's, INSTALL : preparing packaging and installation.
+	
+	* src/kahua-install.in : added.
+
+	* all files : added copyright notice.
+
+	* src/Makefile.in, src/*.in, src/fix-shebang.sh : substitute the
+	first shebang line of executable scripts at make time.
+
+	* src/kahua/config.scm : added static-document-path and
+	static-document-url in configuration parameters.
+
+	* examples/lambadbooks.kahua, examples/lambdabooks/* :
+	moved from test/lambdabooks.kahua, and splitted to several files.
+
+	* test/lambdabooks.kahua, images/* : moved under examples.
+
+2003-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* emacs/Makefile.in, emacs/kahua.el.in : added emacs interface
+	(very simple one; just for starting point).
+
+	* src/kahua/app/elua/alt.scm : added.  a trial implementation of
+	  continuation-passing style interp-html.
+	* test/lambdabooks.kahua : added.  a sample site to test
+	  kahua.app.elua.alt.
+
+	* images/* : added.  general image directory.  currently contains
+	  some images used by lambdabooks.kahua.
+
+	* src/kahua/persistence.scm : fixed a problem that <kahua-proxy>
+	wasn't realized if the slot contains a list of persistent objects,
+	and a problem that instances that are read from disk are inadvertently
+	marked dirty.
+
+2003-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* cgi/kahua-elua.cgi : now it can dispatch session-initiating
+	request to different types of app-servers by looking at PATH_INFO,
+	e.g. http://foo/bar/kahua-elua.cgi/register to connect to register app.
+
+2003-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* test/spvr.scm : fixed path problem for loading *.kahua from
+	child processes.
+
+	* test/worker.scm : added some tests for evaluate handler.
+
+	* src/kahua/server.scm (kahua-default-handler) :
+	Added evaluate handler for emacs interface.
+
+	* src/kahua/app/elua.scm : adapted to kahua.server change.  fixed
+	a bug in init-server that returns wrong worker name.
+
+	* src/kahua/persistence.scm (make-kahua-collection):
+	* src/test/user.scm :
+	Fixed a bug that caused an error when there's no instance in the
+	specified class.
+
+	* src/kahua-admin :
+	Handles 'shutdown' command specially to avoid stale error message.
+	Added code to connect and interact with workers, using evaluate
+	handler of kahua.server.
+	
+	* src/kahua-spvr :
+	Loads application server specification from the
+	$(working-directory)/app-server file.  It can be reloaded by
+	'reload' spvr command, without restarting kahua-spvr.
+	Also added 'register' service.  Run check-workers for every second
+	using timeout.
+
+2003-11-20  Nobuo Yamashita <nobsun@sampou.org>
+
+	* src/kahua/app/elua/html.scm :
+	Modified form/cont to indicate input args' name as continuation.
+
+	* test/greeting.kahua :
+	Added for testing new form/cont
+
+	* test/worker.scm :
+	Added match&pick-form for testing form/cont, but i wonder if 
+	it's correct. 
+
+2003-11-17  Nobuo Yamashita <nobsun@sampou.org>
+
+	* src/kahua/app/elua/html.scm :
+	* test/lister.kahua : 
+	change to use context instead of main-proc-args, because
+	main-proc-args is global for service.
+
+	* src/kahua-spvr : hard-coded for lister service
+	
+	* test/worker.scm : add test for lister.kahua continuation
+
+2003-11-17  Nobuo Yamashita <nobsun@sampou.org>
+	
+	* src/kahua/app/elua/control.scm : remove items in export list
+	
+	* src/kahua/app/elua/html.scm : fixed bug in a/cont and form/cont
+
+2003-11-14  Nobuo Yamashita <nobsun@sampou.org>
+
+	* test/app/work.scm :
+	test for interp-html in src/kahua/app/elua/*
+
+	* test/app/hello-world.kahua :
+	* test/app/lister.kahua :
+	sample applications for testing src/kahua/app/elua/*
+		
+2003-11-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/app/elua/*, test/app/* : start integrating domain
+	  specific language code.
+
+	* src/kahua/persistence.scm : make it work with both Gauche 0.7.2
+	  and 0.7.3_pre1.
+
+	* src/kahua/config.scm : adds $(working-directory)/checkout to
+	  load-path.
+
+	* src/kahua-spvr : added 'test' worker type that uses test.kahua.
+
+2003-11-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm, test/server.scm, src/kahua/app/ekahi.scm :
+	  refactored common stuff from ekahi.scm into kahua.server module.
+
+	* src/kahua/user.scm, test/user.scm : let add-user return #f
+	  if a user with the same login name exists, instead of raising
+	  an error.
+
+	* src/kahua/session.scm, test/session.scm : added kahua.session
+	  module.
+
+2003-11-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr, src/kahua-admin : added supervisor command
+	  processing feature for kahua-spvr, and a script kahua-admin
+	  to control the suppervisor process.
+	
+	* src/kahua/config.scm : new module to handle configuration file
+	* src/kahua-spvr, test/test.conf, test/spvr.scm, src/Makefile.in :
+	  adapted to kahua.config.
+
+2003-11-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/app/ekahi.scm, cgi/kahua-ekahi.cgi : working snapshot
+	  of kahua.app.ekahi
+
+	* src/kahua/test/xml.scm : packaged kahua-ekahi's kahua-test
+	  as a module.
+
+2003-11-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-server, src/kahua/app/dummy.scm : added loadable
+	  application server framework.
+
+2003-11-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr, src/kahua-dummy : changed the invocation protocol
+	  of application server; now sockbase is passed via -s option.
+
+2003-10-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr, src/kahua-dummy : added the basic framework of
+	  servers.
+
+2003-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/gsid.scm, test/gsid.scm : added provisional session ID
+	  stuff.
+
+2003-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* Checked in the stuff about persistent storage
+	  (src/kahua/persistence.scm, test/persistence.scm).  They are just
+	  a placeholder and will be replaced by the "real" database later.
+

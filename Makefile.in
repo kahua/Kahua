@@ -1,0 +1,44 @@
+CONFIG_GENERATED = Makefile config.cache config.log config.status autom4te*.cache
+.PHONY: all check clean distclean install maintainer-clean install-examples
+
+
+all :
+	cd src; $(MAKE) all
+	cd cgi; $(MAKE) all
+	cd emacs; $(MAKE) all
+
+check : all
+	cd test; $(MAKE) check
+
+clean :
+	rm -rf core *~
+	cd src; $(MAKE) clean
+	cd cgi; $(MAKE) clean
+	cd emacs; $(MAKE) clean
+	cd examples; $(MAKE) clean
+	cd test; $(MAKE) clean
+
+distclean : clean
+	cd src; $(MAKE) distclean
+	cd cgi; $(MAKE) distclean
+	cd emacs; $(MAKE) distclean
+	cd examples; $(MAKE) distclean
+	cd test; $(MAKE) distclean
+	rm -rf $(CONFIG_GENERATED)
+
+install :
+	cd src; $(MAKE) install
+	cd cgi; $(MAKE) install
+
+# Run "make install-examples" AFTER "make install" and editing kahua.conf.
+install-examples :
+	cd examples; $(MAKE) install-examples
+
+maintainer-clean : clean
+	cd src; $(MAKE) maintainer-clean
+	cd cgi; $(MAKE) maintainer-clean
+	cd emacs; $(MAKE) maintainer-clean
+	cd examples; $(MAKE) maintainer-clean
+	cd test; $(MAKE) maintainer-clean
+	rm -rf configure VERSION $(CONFIG_GENERATED)
+

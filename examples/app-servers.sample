@@ -1,0 +1,10 @@
+;; -*-scheme-*-
+;; Sample app-servers file.
+;; $Id: app-servers.sample,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+
+(
+;; (<type> :script <script-spec> :run-by-default <num>)
+;; See http://www.kahua.org/cgi-bin/index.cgi/kahua-spvr
+ (books   :script ("kahua-server" @ "lambdabooks.kahua")
+          :run-by-default 1)
+)

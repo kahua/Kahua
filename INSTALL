@@ -1,0 +1,119 @@
+$Id: INSTALL,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+
+Installation procedure
+
+[Short Summary]
+
+  % ./configure --with-cgidir=$(KAHUA_CGIDIR)
+  % make
+  % make -s check
+  % su
+  # make install
+  # vi /etc/kahua.conf
+  # chgrp $(KAHUA_GROUP) $(KAHUA_DIRS)
+  # chmod g+ws $(KAHUA_DIRS)
+  # exit
+
+  % make install-examples
+  % vi $(KAHUA_WORK_DIR)/app-servers
+  % (kahua-spvr > /dev/null 2>&1) &
+
+[Step by step]
+
+1. Configuration and make
+-------------------------
+
+  % ./configure --with-cgidir=$(KAHUA_CGIDIR)
+  % make
+
+You need to give a directory name where cgi scripts should be installed
+by --with-cgidir option.   If the option is omitted, /usr/lib/cgi-bin
+is used.  But it should differ by your httpd settings, so make sure
+your httpd recognizes the files under that directory as cgi scripts.
+
+Optionally, you can give --with-cgidir=no (or --without-cgidir) to
+prevent 'make' from installing cgi scripts automatically.  In such
+a case, you need to copy scripts under cgi/ manually to the
+desired location.
+
+You can run a self test by 'make check'.
+
+  % make check
+
+
+2. Installation
+---------------
+
+Installation process writes to several locations.   You have to
+have permissions to do so.
+
+  /tmp/kahua-elua     : This directory is created for Unix domain sockets
+                        kahua servers will use.
+  /var/lib/kahua-elua : This directory is created for kahua to save
+                        various informations, including database.
+  $(KAHUA_CGIDIR)     : CGI scripts will be copied to the directory
+                        given to --with-cgidir configure option.
+  $(exec_prefix)/bin  : Kahua server executables will be copied to
+                        this location.  It can be customized by
+                        --prefix or --exec-prefix configure option.
+  `gauche-config --sitelibdir` : Kahua Scheme library files will be
+                        copied to the Gauche's site library directory.
+
+
+"make install" will do the job.
+
+
+3. Setting up
+-------------
+
+Check the file /etc/kahua.conf and edit it if necessary.
+
+During its normal operation, the Kahua system needs to write
+to the following directories:
+
+ - socket directory (specified by :sockbase in kahua.conf;
+   the default is /tmp/kahua-elua)
+
+ - working directory (specified by :working-directory
+   in kahua.conf; the default is /var/lib/kahua-elua)
+
+ - document directory (specified by :static-document-path
+   in kahua.conf; the default is /var/www/html/kahua)
+   This directory is not created by 'make install'.
+   You need to make sure creating this directory.
+
+The write permissions of these directories should be open
+to the user/group who runs Kahua servers.  One strategy is
+to create a group 'kahua' and chgrp those directories,
+then put the users that adminsters Kahua servers to the
+group.
+
+
+4. Running Examples
+-------------------
+
+Run "make install-examples" to install an example application
+server, "lambdabooks".
+
+  % make install-examples
+
+Check /var/lib/kahua-elua/app-servers file and make sure
+it contains the following line.  By default, unless you have
+already created app-servers file, "make install-examples"
+copies a sample app-servers file that contains the following
+entry.
+
+   (books   :script ("kahua-server" @ "kahua.app.elua" "lambdabooks.kahua")
+            :run-by-default 1)
+
+And run Kahua main server.
+
+  % (kahua-spvr > /dev/null 2>&1) &
+
+You can access the site via kahua-elua.cgi CGI script from
+your browser.
+
+Note: if you have already created multiple entries in app-servers
+file and running multiple application servers, use
+kahua-elua.cgi/books as URI to connect to the demo server.
+

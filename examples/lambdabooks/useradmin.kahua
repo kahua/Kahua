@@ -1,0 +1,116 @@
+;;-*-Scheme-*-
+;; Example kahua application (lambdabooks)
+;;
+;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: useradmin.kahua,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+
+;; User administration ----------------------------------------
+;;  Manages user information.
+
+(define (user-admin-panel context cont)
+
+  ;; this should eventually be in some library.
+  (define (auth-error)
+    (cont
+     `((h2 "認証エラー")
+       (p "あなたは指定のコンテンツにアクセスする権限を持っていません。"
+          "もし、普通の操作によってこの画面に到達したのなら、"
+          "サイト構築のミスである可能性が高いです。"
+          (a (@ (href "mailto:admin@kahua.org")) "サイト管理者")
+          "に連絡して下さい。")
+       (a/cont (@@ (cont ,(cut cont '() <>))) "[トップページに戻る]"))
+     context))
+
+  ;; For now, we hardcode roles
+  (define roles '(admin developer editor))
+
+  (define (make-role-checkboxes user-roles)
+    (append-map (lambda (role)
+                  `((input (@ (type "checkbox") (name ,#`"role-,role")
+                              ,@(if (memq role user-roles)
+                                  `((checked "checked"))
+                                  '())))
+                    ,(x->string role)
+                    (br)))
+                roles))
+
+  (define (get-roles context)
+    (filter-map (lambda (role)
+                  (and (kahua-context-ref context #`"role-,role") role))
+                roles))
+
+  (define (user-commit logname context)
+    (let* ((roles    (get-roles context))
+           (inactive (not (not (kahua-context-ref context "inactive"))))
+           (user     (kahua-find-user logname)))
+      (if (kahua-user-has-role? (kahua-current-user context) '(admin))
+        (begin
+          ;; kludge: make sure "admin" user won't lose admin priviledge
+          (when (and (equal? logname "admin")
+                     (not (memq 'admin roles)))
+            (push! roles 'admin))
+          (set! (ref user 'role-alist) roles)
+          (unless (equal? logname "admin")
+            (set! (ref user 'inactive) inactive))
+          (kahua-db-sync)
+          (user-edit-panel logname context #t))
+        (auth-error))))
+
+  (define (user-edit-panel logname context edited?)
+    (let ((user (kahua-find-user logname)))
+      (if (kahua-user-has-role? (kahua-current-user context) '(admin))
+        (cont
+         `((h2 "ユーザー" ,logname "の情報")
+           ,@(cond-list
+              (edited? `(p (font (@ (color "#ff3535")) "情報を変更しました"))))
+           (form/cont
+            (@@ (cont ,(cut user-commit logname <>)))
+            (table
+             (tr (th (@ (style "background-color:#d8d2c9")) "ログイン名")
+                 (td (@ (style "background-color:#ffd6b2;width:20em"))
+                     (p ,logname)))
+             (tr (th (@ (style "background-color:#d8d2c9")) "非アクティブ")
+                 (td (@ (style "background-color:#ffd6b2;width:20em"))
+                     (input (@ (type "checkbox") (name "inactive")
+                               ,@(if (ref user 'inactive)
+                                   `((checked "checked"))
+                                   '())))))
+             (tr (th (@ (style "background-color:#d8d2c9")) "役割")
+                 (td (@ (style "background-color:#ffd6b2;width:20em"))
+                     (p ,@(make-role-checkboxes (ref user 'role-alist)))))
+             (tr (td (@ (align "center") (bgcolor "#d8d2c9") (colspan 2))
+                     (input (@ (type "submit") (name "submit")
+                               (value "変更")))))))
+           (a/cont (@@ (cont ,(cut user-admin-panel <> cont)))
+                   "[ユーザー一覧へ]"))
+         context)
+        (auth-error))))
+  
+  (define (format-user-info user count context)
+    (define c (if (even? count) "#ffbbbb" "#ffdddd"))
+    `((tr (td (@ (style ,#`"background-color:,|c|;width:8em"))
+              (a/cont (@@ (cont ,(cute user-edit-panel (key-of user) <> #f)))
+                      ,(ref user 'login-name)))
+          (td (@ (style ,#`"background-color:,|c|"))
+              ,(if (ref user 'inactive) "inactive" "active"))
+          (td (@ (style ,#`"background-color:,|c|;width:25em"))
+              ,(string-join (map x->string (ref user 'role-alist)) ", ")))))
+
+  (let* ((user (kahua-current-user context)))
+    (if (kahua-user-has-role? user '(admin))
+      (lister context
+              (map key-of (make-kahua-collection <kahua-user>))
+              (lambda (key count)
+                (format-user-info (kahua-find-user key) count context))
+              (lambda (nodes context)
+                (cont `((h2 "登録ユーザー一覧") ,@nodes) context))
+              :header-formatter
+              (lambda ()
+                `((tr (th "ログイン名") (th "activeness") (th "役割"))))
+              )
+      (auth-error)))
+  )
+

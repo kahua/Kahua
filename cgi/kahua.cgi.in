@@ -1,0 +1,97 @@
+#!/usr/bin/env gosh
+;; Communicate to kahua application server
+;; $Id: kahua.cgi.in,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+
+;; This cgi script is kicked by httpd and pass through the request
+;; to one of kahua servers.
+
+;; The server to connect is determined as follows:
+;;
+;;  1. If PATH_INFO is given, its first component is regarded as a
+;;     app-server type, and the rest is used as a cgsid.  Query
+;;     parameters are ignored.   If more than one app-servers of
+;;     that type are running, the client can't specify which
+;;     server it will connect.
+;;  2. If "x-kahua-cgsid" query parameter is given, the cgsid is
+;;     taken from it and the app-server worker id is extracted.
+;;  3. Otherwise, just connect to the supervisor and let it decide
+;;     which app-server to handle the request.
+
+(use gauche.net)
+(use gauche.charconv)
+(use gauche.logger)
+(use srfi-2)
+(use www.cgi)
+(use util.list)
+(use rfc.cookie)
+(use text.html-lite)
+(use kahua.gsid)
+
+;; Change this if you're using non-default sockbase
+(define *sockbase* #f)
+;(define *sockbase* "unix:/home/shiro")
+
+(log-open "/tmp/t.log")
+
+(define (kcv value)
+  (ces-convert value "*jp" (gauche-character-encoding)))
+
+(define (compose-reply header body)
+  (receive (state cont) (get-gsid-from-header header)
+    (list
+     (cgi-header
+      :cookies (construct-cookie-string `(("x-kahua-sgsid" ,state))))
+     body)))
+
+;; determine dispatch destination.
+;; returns worker-id, preferable-worker-type, and cgsid.
+(define (dispatch-destination params)
+  (let* ((path-info (and-let* ((p (sys-getenv "PATH_INFO"))
+                               (l (string-split p #\/)))
+                      (and (pair? l) (pair? (cdr l))
+                           (not (equal? (cadr l) ""))
+                           (cdr l))))
+         (cont-gsid (cgi-get-parameter "x-kahua-cgsid" params)))
+    (cond
+     (path-info
+      (let ((type  (car path-info))
+            (cgsid (if (pair? (cdr path-info)) (cadr path-info) #f)))
+        (values #f type cgsid)))
+     (cont-gsid
+      (values (gsid->worker-id cont-gsid) #f cont-gsid))
+     (else
+      (values #f #f #f)))))
+
+(define (send-reply param)
+  (receive (worker-id worker-type cont-gsid)
+      (dispatch-destination param)
+    (log-format "~s ~s ~s" worker-id worker-type cont-gsid)
+    (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
+           (remote-addr (sys-getenv "REMOTE_ADDR"))
+           (header     (list*
+                        `("x-kahua-bridge" ,(sys-getenv "SCRIPT_NAME"))
+                        (cond-list
+                         (worker-type `("x-kahua-worker" ,worker-type))
+                         (state-gsid `("x-kahua-sgsid" ,state-gsid))
+                         (cont-gsid  `("x-kahua-cgsid" ,cont-gsid))
+                         (remote-addr `("remote-addr" ,remote-addr)))))
+           (sockaddr   (worker-id->sockaddr worker-id *sockbase*))
+           )
+      (log-format "cgsid: ~a (~a)" cont-gsid remote-addr)
+      (call-with-client-socket (make-client-socket sockaddr)
+        (lambda (in out)
+          (write header out) (newline out)
+          (write param  out) (newline out)
+          (flush out)
+          (let* ((header (read in))
+                 (body   (read in)))
+            (compose-reply header body))))
+      )))
+                      
+(define (main args)
+  (cgi-main send-reply :merge-cookies #t)
+  0)
+
+;; local variables:
+;; mode: scheme
+;; end:

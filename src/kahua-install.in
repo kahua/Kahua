@@ -1,0 +1,66 @@
+#!/usr/bin/env gosh
+;; Utility script to install kahua-related materials
+;;
+;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: kahua-install.in,v 1.1 2003/12/11 05:39:11 nobsun Exp $
+
+;; Installs Kahua's application server materials according to
+;; the kahua.conf configuration settings.
+
+(use kahua.config)
+(use gauche.parseopt)
+(use file.util)
+
+(define (usage)
+  (print "kahua-install [-c conf-file][-t type][-r name][--no-overwrite] file ...")
+  (print "   -t type: script | static | base.  static by default.")
+  (print "   -r (rename): rename file to name.  When this option is given,")
+  (print "      only one file can be specified.")
+  (print "   --no-overwrite : if the target file exists, the file won't be")
+  (print "         installed.")
+  (exit 0))
+
+(define (main args)
+  (let-args (cdr args)
+      ((conf-file "c=s")
+       (material-type "t=s" "static")
+       (rename    "r=s")
+       (no-over   "no-overwrite")
+       . files)
+    (unless (member material-type '("script" "static" "base")) (usage))
+    (when (and rename (not (= (length files) 1))) (usage))
+    (kahua-init conf-file)
+    (for-each (cut install-file <> material-type rename no-over) files))
+  0)
+
+(define (install-file file material-type rename no-over)
+  (let* ((target     (target-path material-type (or rename file)))
+         (target-dir (sys-dirname target)))
+    (cond
+     ((not (file-exists? file))
+      (warn "file ~a doesn't exist.  skipping installation."  file))
+     ((not (file-is-regular? file))
+      (warn "file ~a isn't a regular file.  skipping installation."  file))
+     ((and no-over (file-exists? target))
+      (warn "target file ~a exists, and not to be overwritten." target))
+     (else
+      (make-directory* target-dir #o755)
+      (copy-file file target :if-exists :supersede :safe #t)
+      (sys-chmod target #o444)))))
+
+(define (target-path material-type file)
+  (cond ((equal? material-type "script")
+         (build-path (ref (kahua-config) 'working-directory) "checkout" file))
+        ((equal? material-type "base")
+         (build-path (ref (kahua-config) 'working-directory) file))
+        ((equal? material-type "static")
+         (kahua-static-document-path file))
+        (else
+         (error "unknown material type:" material-type))))
+
+;; Local variables:
+;; mode: scheme
+;; end:
