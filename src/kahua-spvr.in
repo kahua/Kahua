@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.7 2004/02/12 11:42:39 nobsun Exp $
+;; $Id: kahua-spvr.in,v 1.8 2004/02/12 11:46:21 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -466,7 +466,7 @@
        (lambda (bye)
          (set-signal-handler! SIGTERM (lambda _ (cleanup) (bye 0)))
          (set-signal-handler! SIGINT  (lambda _ (cleanup) (bye 0)))
-         (set-signal-handler! SIGHUG  (lambda _ (cleanup) (bye 0)))
+         (set-signal-handler! SIGHUP  (lambda _ (cleanup) (bye 0)))
          (with-error-handler
              (lambda (e)
                (cleanup)
