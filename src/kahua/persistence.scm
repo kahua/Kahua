@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.13 2004/02/28 10:42:58 shiro Exp $
+;; $Id: persistence.scm,v 1.14 2004/02/28 10:54:52 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -757,12 +757,14 @@
 
 ;; Depending on path, select appropriate subclass of <kahua-db>.
 (define (select-db-class path)
-  (cond ((string-prefix? "mysql:" path)
-         <kahua-db-mysql>)
-        ((string-prefix? "pg:" path)
-         <kahua-db-postgresql>)
-        (else
-         <kahua-db-fs>)))
+  (cond ((#/^(.*?):/ path)
+         => (lambda (m)
+              (let1 dbtype (m 1)
+                (cond ((equal? dbtype "mysql") <kahua-db-mysql>)
+                      ((equal? dbtype "pg")    <kahua-db-postgresql>)
+                      (else (error "unknown external database driver: ~s"
+                                   dbtype))))))
+        (else <kahua-db-fs>)))
 
 (define-method write-object ((obj <kahua-db>) port)
   (format port "#<kahua-db ~s (~a)>"
