@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.in,v 1.1 2003/12/11 05:39:11 nobsun Exp $
+;; $Id: kahua-admin.in,v 1.2 2003/12/26 03:09:10 shiro Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -49,9 +49,9 @@
   (define (show-time time)
     (sys-strftime "%b %e %H:%M" (sys-localtime time)))
   
-  (format #t "wno   pid type     since        wid\n")
+  (format #t "wno   pid type         since        wid\n")
   (dolist (w reply)
-    (format #t "~3d ~5d ~8a ~10a ~a\n"
+    (format #t "~3d ~5d ~12a ~10a ~a\n"
             (get-keyword :worker-count w)
             (get-keyword :worker-pid w)
             (get-keyword :worker-type w)

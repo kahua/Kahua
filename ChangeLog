@@ -1,5 +1,7 @@
 2003-12-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua-admin.in : fixed "ls" output format.
+
 	* cgi/kahua.cgi.in: refactored PATH_INFO processing, allowing
 	  generated cgsid to be passed via kahua.cgi/$worker-type/$cgsid
 	  format.
