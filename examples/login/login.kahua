@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua,v 1.1 2004/02/22 23:59:09 shiro Exp $
+;; $Id: login.kahua,v 1.2 2004/02/29 12:59:23 nobsun Exp $
 
 ;; This module implements an application server that is used
 ;; to handle web-user login session.  This is an example to
@@ -132,9 +132,9 @@
   (let ((path (or return-cont "")))
     (node-set:
      (html: ;; Needed to make a single SXML node (for now)
-      `(extra-header (@ (name "Status") (value "302 Moved")))
-      `(extra-header (@ (name "Location")
-                        (value ,(format "~a~a/~a"
+      (extra-header: (@: (name "Status") (value "302 Moved")))
+      (extra-header: (@: (name "Location")
+                         (value (format "~a~a/~a"
                                         (kahua-server-uri)
                                         (kahua-bridge-name)
                                         path))))))))
