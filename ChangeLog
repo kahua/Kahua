@@ -1,5 +1,10 @@
 2004-05-07  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* src/kahua/server.scm:
+	Added kahua-current-user-name for get only user name
+	(not <kahua-user> object).  This is useful for supporting
+	non-registered users' login.
+
 	* src/kahua-server.in:
 	Added and exported kahua-app-args parameter in order to pass
 	:argument in app-servers to kahua applications.

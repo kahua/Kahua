@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.22 2004/04/26 06:49:59 nobsun Exp $
+;; $Id: server.scm,v 1.23 2004/05/07 08:20:15 nobsun Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -40,6 +40,7 @@
           kahua-current-context
           kahua-context-ref
           kahua-current-user
+          kahua-current-user-name
           kahua-worker-type
           kahua-merge-headers
           not-accessible?
@@ -285,6 +286,19 @@
    (lambda ()
      (and-let* ((logname (ref (kahua-context-ref "session-state") 'user)))
        (find-kahua-instance <kahua-user> logname)))
+   (lambda (logname)
+     (set! (ref (kahua-context-ref "session-state") 'user) logname))))
+
+;; KAHUA-CURRENT-USER-NAME
+;; (setter KAHUA-CURRENT-USER-NAME) user
+;;
+;;   Gets/sets current user name (N.B. not <kahua-user> object)
+;;   in the session state object.
+
+(define kahua-current-user-name
+  (getter-with-setter
+   (lambda ()
+     (ref (kahua-context-ref "session-state") 'user))
    (lambda (logname)
      (set! (ref (kahua-context-ref "session-state") 'user) logname))))
 
