@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.3 2004/10/19 02:41:52 shiro Exp $
+;; $Id: kahua-spvr.scm,v 1.4 2004/10/19 03:10:00 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -919,9 +919,7 @@
        (gosh      "gosh=s")  ;; wrapper script adds this.
        (httpd     "H|httpd=s") ;; standalone httpd mode
        (help      "h|help" => usage)
-       (else (option)
-             (app-error "Unknown option `~a'.  Try --help for the usage."
-                        (car option)))
+       (else _ (app-error "Unknown option.  Try --help for the usage."))
        )
     (let ((lib-path (car *load-path*))) ; kahua library path.  it is
                                         ; always the first one, since the
