@@ -2,7 +2,7 @@
 
 	* src/kahua/persistence.scm (kahua-object reader): check if the
 	generation of instance is newer than currently recorded in-db class
-	generation, and if so, relead metainfo.
+	generation, and if so, re-read metainfo.
 
 2004-02-27  Yusei Tahara  <tahara@timedia.co.jp>
 
