@@ -1,3 +1,13 @@
+2004-06-09  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-keyserv, src/kahua-server, src/kahua-spvr: 
+	modified unix-domain socket's permission from o777 to o770
+
+	* configure.ac: added --with-cgilogdir option
+
+	* cgi/Makefile.in, cgi/kahua.cgi.in: modified kahua cgi log path
+	from /tmp/t.log to $(KAHUA_CGILOG_PATH)/kahua-cgi.log.
+
 2004-06-02  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/Makefile.in: modified to make kahua-server and kahua-keyserv
