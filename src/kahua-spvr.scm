@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.4 2004/10/19 03:10:00 shiro Exp $
+;; $Id: kahua-spvr.scm,v 1.5 2004/10/19 06:23:32 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -175,6 +175,11 @@
 ;; to the http client.
 (define-class <spvr-worker-not-running> (<spvr-exception>) ())
 
+;; This exception occurs when the given session id is invalid
+;; or may be expired.  The httpd can return "200 OK" with
+;; an appropriate message.
+(define-class <spvr-expired-session> (<spvr-exception>) ())
+
 ;; If errors occur before spvr service starts, we should terminate
 ;; spvr with appropriate error message.
 (define (app-error msg . args)
@@ -215,16 +220,14 @@
 
 (define (run-piped-cmd cmd)
   (log-format "[spvr] running ~a" cmd)
-  (with-error-handler
-      (lambda (e)
-        (log-format "[spvr] running ~a failed: ~a"
-                    (car cmd) (kahua-error-string e #t))
-        (raise e))
-    (lambda ()
-      (let1 p (apply run-process
-                     `(,@cmd :input "/dev/null" :output :pipe))
-        (log-format "[spvr] running ~a: pid ~a" (car cmd) (process-pid p))
-        p))))
+  (guard (e (else 
+             (log-format "[spvr] running ~a failed: ~a"
+                         (car cmd) (kahua-error-string e #t))
+             (raise e)))
+    (let1 p (apply run-process
+                   `(,@cmd :input "/dev/null" :output :pipe))
+      (log-format "[spvr] running ~a: pid ~a" (car cmd) (process-pid p))
+      p)))
 
 ;; canonicalize string passed to --httpd option
 (define (canonicalize-httpd-option value)
@@ -232,7 +235,7 @@
        (rxmatch-case value
          (#/^\d+$/  (#f)  #`"localhost:,value")
          (#/^[\w._-]+:\d+$/ (#f) value)
-         (else (error "Bad value for --httpd option: must be a port number or servername:port, but got:" value)))))
+         (else (app-error "Bad value for --httpd option: must be a port number or servername:port, but got ~a" value)))))
 
 (define (httpd-port spvr)
   (and-let* ((httpd-name (ref spvr 'httpd-name))
@@ -282,36 +285,36 @@
                   (#t (cons (let1 type (symbol->string worker-type)
                               (string-append type "/" type ".kahua"))
                             args)))))))
-        (else
-         (error "unknown worker type:" worker-type))))
+        (else (spvr-errorf <spvr-unknown-worker-type>
+                          "unknown worker type: ~a" worker-type))))
 
 (define (load-app-servers-file)
   (let1 app-map
       (build-path (ref (instance-of <kahua-config>) 'working-directory)
                   "app-servers")
-    (if (file-exists? app-map)
-      (with-error-handler
-          (lambda (e)
-            (log-format "[spvr] error in reading ~a" app-map)
-            #f)
-        (lambda ()
-          (let1 lis (call-with-input-file app-map read)
-            (if (and (list? lis)
-                     (every (lambda (ent)
-                              (and (list? ent)
-                                   (symbol? (car ent))
-                                   (odd? (length ent))))
-                            lis))
-              (begin
-                (log-format "[spvr] loaded ~a" app-map)
-                (worker-types lis)
-                #t)
-              (begin
-                (log-format "[spvr] malformed app-servers file: ~a" app-map)
-                #f)))))
-      (begin
-        (log-format "app-servers file does not exist: ~a" app-map)
-        #f))))
+    (define (check-entries lis) ;; check vailidy of app-servers entries
+      (and (list? lis)
+           (every (lambda (ent)
+                    (and (list? ent)
+                         (symbol? (car ent))
+                         (odd? (length ent))))
+                  lis)))
+    (cond
+     ((file-exists? app-map)
+      (guard (e (else
+                 (log-format "[spvr] error in reading ~a" app-map)
+                 #f))
+        (let1 lis (call-with-input-file app-map read)
+          (cond ((check-entries lis)
+                 (log-format "[spvr] loaded ~a" app-map)
+                 (worker-types lis)
+                 #t)
+                (else
+                 (log-format "[spvr] malformed app-servers file: ~a" app-map)
+                 #f)))))
+     (else
+      (log-format "app-servers file does not exist: ~a" app-map)
+      #f))))
 
 ;; start workers that are specified as "run by default"
 (define (run-default-workers spvr)
@@ -435,15 +438,11 @@
 
     (set! (ref worker 'pinger)
 	  (lambda ()
-	    (with-error-handler
-	     (lambda (e)
-	       #t ;; do nothing, collected by check-workers
-	       )
-	     (lambda ()
-	       (reset-sock)
-	       (set! (ref worker 'ping-responded) #f)
-	       (send-message out `(("x-kahua-ping" ,(worker-id-of worker)))
-			     '())))))
+	    (guard (e (else #t)) ;; do nothing, collected by check-workers
+              (reset-sock)
+              (set! (ref worker 'ping-responded) #f)
+              (send-message out `(("x-kahua-ping" ,(worker-id-of worker)))
+                            '()))))
     (set! (ref worker 'ping-deactivator)
 	  (lambda () 
 	    (and in (selector-delete! selector in proc #f))
@@ -477,7 +476,7 @@
   ;; the worker.  For now, we just dispatch the request to the first
   ;; worker in the queue.  Eventually we need some scheduling strategy
   (if (queue-empty? (workers-of self))
-    (error "no worker available")
+    (spvr-errorf <spvr-worker-not-running> "no worker available")
     (queue-front (workers-of self))))
 
 ;; returns group of workers
@@ -536,17 +535,15 @@
          (out  (socket-output-port sock)))
 
     (define (handle fd flags)
-      (with-error-handler
-          (lambda (e)
-            (selector-delete! selector (socket-fd sock) handle #f)
-            (socket-close sock)
-            (cont '(("x-kahua-status" "SPVR-ERROR"))
-                  (list (ref e 'message) (kahua-error-string e #t))))
-        (lambda ()
-          (receive (header body) (receive-message (socket-input-port sock))
-            (selector-delete! selector (socket-fd sock) handle #f)
-            (socket-close sock)
-            (cont header body)))))
+      (guard (e (else
+                 (selector-delete! selector (socket-fd sock) handle #f)
+                 (socket-close sock)
+                 (cont '(("x-kahua-status" "SPVR-ERROR"))
+                       (list (ref e 'message) (kahua-error-string e #t)))))
+        (receive (header body) (receive-message (socket-input-port sock))
+          (selector-delete! selector (socket-fd sock) handle #f)
+          (socket-close sock)
+          (cont header body))))
 
     (send-message out header body)
     (selector-add! selector (socket-fd sock) handle '(r)))
@@ -627,12 +624,18 @@
      (cont-h
       ;; we know which worker handles the request
       (let ((w (find-worker self cont-h)))
-        (unless w (error "stale session key" cont-gsid))
+        (unless w
+          (spvr-errorf <spvr-expired-session> "Session key expired"))
         (dispatch-to-worker w header body cont)))
      (else
-      ;; this is a session-initiating request.
+      ;; this is a session-initiating request.  wtype must be symbol.
       (let ((w (find-worker self wtype)))
-        (unless w (error "don't have worker for" wtype))
+        (unless w
+          (if (assq wtype (worker-types))
+            (spvr-errorf <spvr-worker-not-running>
+                         "Application server for ~a is not running currently."
+                         wtype)
+            (spvr-errorf <spvr-unknown-worker-type> "/~a" wtype)))
         (dispatch-to-worker w header body cont))))
     ))
 
@@ -822,20 +825,16 @@
                        ,(html:html
                          (html:head (html:title status))
                          (html:body (html:h1 status) body
-                                    (html:hr)
-                                    (html:i "Kahua-spvr Version "
-                                            (kahua-version)
-                                            " running at "
-                                            (ref self 'httpd-name)))))))
+                                    (kahua-version-footer))))))
+
+    (define (kahua-version-footer)
+      (list (html:hr)
+            (html:i "Kahua-spvr Version " (kahua-version)
+                    " running at " (ref self 'httpd-name))))
 
     (define (bad-request msg)
       (http-diag-response "400 Bad Request"
                           (html:p (html-escape-string msg))))
-
-    (define (not-implemented msg)
-      (http-diag-response "501 Not Implemented"
-                          (html:p "The requested method isn't supported: "
-                                  (html-escape-string msg))))
 
     (define (forbidden path)
       (http-diag-response "403 Forbidden"
@@ -853,8 +852,38 @@
       (http-diag-response "500 Internal Server Error"
                           (html:pre (html-escape-string msg))))
 
+    (define (not-implemented msg)
+      (http-diag-response "501 Not Implemented"
+                          (html:p "The requested method isn't supported: "
+                                  (html-escape-string msg))))
+
+    (define (service-unavailable msg)
+      (http-diag-response "503 Service Unavailable"
+                          (list
+                           (html:p "Service temporarily unavailable ("
+                                   (html-escape-string msg)
+                                   ")")
+                           (html:p "Please try to access later."))))
+
+    (define (session-expired)
+      (http-response "200 OK"
+                     '((content-type "text/html"))
+                     `(,(html-doctype)
+                       ,(html:html
+                         (html:head (html:title "Session expired"))
+                         (html:body (html:h1 "Session expired")
+                                    (kahua-version-footer))))))
+
     ;; The body of handle-http
-    (guard (exc (#t (internal-error (kahua-error-string exc #t))))
+    (guard (e
+            ((is-a? e <spvr-unknown-worker-type>)
+             (not-found (ref e 'message)))
+            ((is-a? e <spvr-worker-not-running>)
+             (service-unavailable (ref e 'message)))
+            ((is-a? e <spvr-expired-session>)
+             (session-expired))
+            (else
+             (internal-error (kahua-error-string e #t))))
       (receive-http-request))
     ))
 
@@ -965,19 +994,17 @@
            (set-signal-handler! SIGHUP  (lambda _ (log-format "[spvr] SIGHUP")
 					        (cleanup) (bye 0)))
 
-           (with-error-handler
-               (lambda (e)
-                 (log-format "[spvr] error in main:\n~a" 
-                             (kahua-error-string e #t))
-                 (report-error e)
-                 (cleanup)
-                 (bye 70))
-             (lambda ()
-               (load-app-servers-file)
-               (run-default-workers spvr)
-               (run-server spvr kahua-sock http-sock listener)
-               (bye 0))))))
-      )))
+           (guard (e (else
+                      (log-format "[spvr] error in main:\n~a" 
+                                  (kahua-error-string e #t))
+                      (report-error e)
+                      (cleanup)
+                      (bye 70)))
+             (load-app-servers-file)
+             (run-default-workers spvr)
+             (run-server spvr kahua-sock http-sock listener)
+             (bye 0))))
+        ))))
 
 ;; Local variables:
 ;; mode: scheme

@@ -3,6 +3,8 @@
 	* src/kahua-spvr.scm :
 	- static document can be handled in httpd mode.
 	- handle worker-specified header (e.g. '302 Moved') properly.
+	- handle some class of errors properly in httpd mode (it should be
+	  done for cgi-bridge mode as well, but not done yet).
 	* src/Makefile.in, src/make-testconf.scm : allow 'in-place' test
 	  running.  It is done by creating required symlinks under
 	  $(top_builddir)/tmp, and generating a test.conf that points to
