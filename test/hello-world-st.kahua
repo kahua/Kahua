@@ -1,0 +1,12 @@
+;-*-scheme-*-
+
+(define (simple-page ttl . elems)
+  (html/ (head/ (title/ ttl))
+	 (body/ (@/ (bgcolor "white"))
+		(h1/ ttl)
+		(node-set elems))))
+
+(define (hello-world)
+  (simple-page "Hello, world!"))
+
+(initialize-main-proc hello-world)

@@ -1,0 +1,12 @@
+;-*-scheme-*-
+
+(define (acont/start)
+  (page-frame (a/cont/ (@@/ (cont next)) "next")))
+
+(define-entry (next)
+  (page-frame (a/cont/ "top")))
+
+(define (page-frame . contents)
+  (html/ (body/ (node-set contents))))
+
+(initialize-main-proc acont/start)
