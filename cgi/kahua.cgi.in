@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.12 2004/01/21 05:48:34 shiro Exp $
+;; $Id: kahua.cgi.in,v 1.13 2004/02/17 03:08:37 tahara Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -22,6 +22,7 @@
 (use gauche.logger)
 (use srfi-1)
 (use srfi-2)
+(use srfi-13)
 (use www.cgi)
 (use util.list)
 (use rfc.cookie)
@@ -58,16 +59,12 @@
         extra-headers)
        body))))
 
-;; load user-specific config file when PATH_INFO has ~user component.
+;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
 (define (load-user-config user-dir)
-        (let1 conf (string-append (expand-path user-dir)
-                                  ".kahua/kahua.conf")
-          (if (file-is-readable? conf)
-              (begin
-               (kahua-init conf #t)
-               (set! *bridge-option* (string-append "/" user-dir))
-               (set! *sockbase* (ref (kahua-config) 'sockbase)))
-            (error "no user kahua.conf"))))
+  ;; use default kahua conf file.
+  (kahua-init #f :user (string-drop user-dir 1))
+  (set! *bridge-option* (string-append "/" user-dir))
+  (set! *sockbase* (ref (kahua-config) 'sockbase)))
 
 ;; retrieve PATH_INFO, with processing ~user component.
 ;; returns #f if there's no PATH_INFO.

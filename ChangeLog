@@ -1,3 +1,11 @@
+2004-02-17  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/config.scm (kahua-init): bug fix. do sanity-check after
+	loading user custom.conf.
+	* cgi/kahua.cgi.in (load-user-config): change specification.
+	when PATH_INFO has ~user component, load the custom.conf and
+	connect user's spvr. don't tie to unix account.
+
 2004-02-16  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* src/custom.conf.sample: added configuration file for user mode.
