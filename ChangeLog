@@ -1,3 +1,15 @@
+2004-04-26  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/server.scm (a/cont, form/cont):
+	modified for @ and @@
+
+	* src/kahua/server.scm:
+	added frame/cont (source code by Kenji Hisazumi)
+	
+	* src/kahua/elem.scm:
+	added frameset:, frame:, frame/cont:, frameset/, frame/, and
+	frame/cont/
+
 2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* Version 0.2.3.1 released
