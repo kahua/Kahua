@@ -1,3 +1,9 @@
+2004-02-10  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* examples/lazy-nqueen/lazy-nqueen.kahua : added.
+
+	* test/nqueen.scm : added test part for examples/lazy-nqueen.
+	
 2004-02-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/persistence.scm : records persistent class information
