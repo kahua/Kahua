@@ -1,5 +1,10 @@
 2003-12-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua/html.scm (form/cont) : same change as a/cont, i.e.
+	  using PATH_INFO to pass session key instead of x-kahua-cgsid.
+
+	* test/lambdabooks.scm, test/worker.scm : adapted to form/cont change.
+
 	* test/worker.scm : added back the code to clean up the test
 	  worker process after each test section.
 

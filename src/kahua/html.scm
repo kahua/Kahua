@@ -148,10 +148,10 @@
          (id (session-cont-register (car cont-closure))))
     (cont
      `((form (@ (method "POST") 
-                (action ,(kahua-bridge-name)))
-             (input (@ (type "hidden")
-                       (name "x-kahua-cgsid")
-                       (value ,(x->string id))))
+                (action ,(format "~a/~a/~a"
+                                 (kahua-bridge-name)
+                                 (kahua-worker-type)
+                                 id)))
              ,@contents))
      context)))
 
