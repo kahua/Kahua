@@ -1,6 +1,6 @@
 TESTS = test-xml persistence user config gsid session partcont \
         server kahua-dbm worker lambdabooks wiki-iki nqueen \
-	spvr admin developer shell
+	spvr admin developer shell usermode sandbox plugin
 
 .PHONY: all check clean distclan maintainer-clean $(TESTS)
 
@@ -62,8 +62,17 @@ developer:
 shell:
 	@gosh -I../src ./shell.scm >> test.log
 
+usermode:
+	@gosh -I../src ./usermode.scm >> test.log
+
+sandbox:
+	@gosh -I../src ./sandbox.scm >> test.log
+
+plugin:
+	@gosh -I../src ./plugin.scm >> test.log
+
 clean:
-	rm -rf test.log app/test.log *~ _*
+	rm -rf test.log app/test.log *~ _* user.conf
 
 distclean: clean
 

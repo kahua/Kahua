@@ -1,7 +1,14 @@
 2004-02-25  Yusei Tahara  <tahara@timedia.co.jp>
 
+	* src/kahua/plugin.scm: added use-plugin to export.
+	* src/kahua/sandbox.scm (make-sandbox-module):
+	disable bindings import and require.
 	* test/shell.scm, test/testuser.conf: added kahua-shell test.
-	* test/Makefile: added 'shell' make target.
+	* test/usermode.scm: added user exclusive mode test.
+	* test/sandbox.scm: added sandbox test.
+	* test/plugin.scm: added plugin test.
+	* test/Makefile: added 'shell', 'usermode', 'plugin',
+	'sandbox' make target.
 
 2004-02-23  Koichi Sasada <sasada@namikilab.taut.ac.jp>
 
