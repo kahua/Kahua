@@ -62,29 +62,31 @@
 
 (define-syntax define-entry
   (syntax-rules ()
-     ((define-entry (name args) body . rest)
-      (add-entry! 'name (lambda (args) body . rest)))
-     ((define-entry name args body . rest)
-      (add-entry! 'name (lambda args body . rest)))))
+    ((define-entry (name . args) body . rest)
+     (define name
+       (let ((closure (lambda args body . rest)))
+         (add-entry! 'name closure)
+         closure)))
+    ))
 
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents content context
                            (lambda (stree context)
 			     (cont `("<" ,tag ,(map sxml:attr->xml attrs) ">"
-					    ,@stree
-					    "</" ,tag "\n>")
-					  context))))
+                                     ,@stree
+                                     "</" ,tag "\n>")
+                                   context))))
 
 (define (handle-element-contents contents context cont)
   (if (null? contents)
     (cont '() context)
     (interp-html-rec (car contents) context
-                 (lambda (stree context)
-		   (handle-element-contents (cdr contents) context
-					    (lambda (stree2 context)
-					      (cont (cons stree stree2)
-						    context)
-					      ))))))
+                     (lambda (stree context)
+                       (handle-element-contents (cdr contents) context
+                                                (lambda (stree2 context)
+                                                  (cont (cons stree stree2)
+                                                        context)
+                                                  ))))))
                                      
 ;; Interprete node
 ;;  interp-html :: Node -> Context -> (Stree -> Context -> Stree) -> Stree
@@ -93,8 +95,8 @@
   (let ((name (sxml:element-name node)))
     (if (not name)
       (cont (if (string? node) 
-		(sxml:string->xml node)
-		"")
+              (sxml:string->xml node)
+              "")
             context)
       (let ((attrs (sxml:attr-list-u node))
             (auxs  (sxml:aux-list-u node))
@@ -102,11 +104,9 @@
         (if (not-accessible? auxs context)
           (cont "" context)
           (cond ((get-element-handler name)
-;                 => (cut <> attrs auxs contents context cont))
 		 => (cut <> attrs auxs contents context
 			 (lambda (nds cntx)
 			   (handle-element-contents nds cntx cont))))
-;			   (interp-html-rec nds cntx cont))))
                 (else 
                  (default-element-handler name attrs contents context cont)))
           )))
@@ -129,22 +129,13 @@
 ;;
 
 (define-element a/cont (attrs auxs contents context cont)
-  (let ((cont-closure (car (assq-ref auxs 'cont '(#f)))))
-    (if (procedure? cont-closure)
-        (let ((id (session-cont-register cont-closure)))
-          (cont
-           `((a (@ (href ,(format "~a?x-kahua-cgsid=~a" (kahua-bridge-name) id)))
-               ,@contents))
-           context))
-      (if cont-closure
-          (cont
-           `((a (@ (href ,(format "~a/~a/~a"
-                                 (kahua-bridge-name) (kahua-worker-type) cont-closure)))
-               ,@contents))
-           context)
-        (cont
-         `((a (@ (href ,(format "~a/~a" (kahua-bridge-name) (kahua-worker-type)))) ,@contents))
-         context)))))
+  (let* ((cont-closure (car (assq-ref auxs 'cont '(#f))))
+         (id (or (session-cont-register cont-closure) "")))
+    (cont
+     `((a (@ (href ,(format "~a/~a/~a"
+                            (kahua-bridge-name) (kahua-worker-type) id)))
+          ,@contents))
+     context)))
 
 ;;
 ;; form/cont
@@ -157,11 +148,11 @@
          (id (session-cont-register (car cont-closure))))
     (cont
      `((form (@ (method "POST") 
-               (action ,(kahua-bridge-name)))
-            (input (@ (type "hidden")
-                      (name "x-kahua-cgsid")
-                      (value ,(x->string id))))
-            ,@contents))
+                (action ,(kahua-bridge-name)))
+             (input (@ (type "hidden")
+                       (name "x-kahua-cgsid")
+                       (value ,(x->string id))))
+             ,@contents))
      context)))
 
 (provide "kahua/html")

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: book.kahua,v 1.3 2003/12/21 15:25:44 nobsun Exp $
+;; $Id: book.kahua,v 1.4 2003/12/26 01:28:21 shiro Exp $
 
 (define-class <book> (<kahua-persistent-base>)
   ((product-id :init-keyword :product-id :init-value 0
@@ -56,7 +56,7 @@
                    "[読者レビューを読む]")))
     ,(book-review-link (key-of self) context cont)
     (p (@ (style "text-align:right"))
-       (a/cont (@@ (cont book-list-page)) "[書籍一覧へ]"))))
+       (a/cont (@@ (cont ,book-list-page)) "[書籍一覧へ]"))))
 
 (define (book-review-link key context cont)
   `(p ,@(if (kahua-current-user context)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.1 2003/12/11 05:39:12 nobsun Exp $
+;; $Id: session.scm,v 1.2 2003/12/26 01:28:22 shiro Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -20,6 +20,7 @@
 (define-module kahua.session
   (use kahua.gsid)
   (use gauche.parameter)
+  (use gauche.validator)
   (use util.list)
   (use srfi-2)
   (use srfi-27)
@@ -64,49 +65,91 @@
     (length discards)))
 
 ;;; continuation session table --------------------------------
-;;
-;; For now, we keep a pair of the timestamp when the continuation
-;; is registered, and the continuation itself.
 
-(define cont-sessions
-  (make-parameter (make-hash-table 'string=?)))
+(define-class <session-cont> (<validator-mixin>)
+  ((key               :init-keyword :key       ;; ID key string
+                      :validator (lambda (o v) (x->string v)))
+   (closure           :init-keyword :closure)  ;; closure
+   (timestamp         :init-form (sys-time))   ;; timestamp
+   (key->session      :allocation :class
+                      :init-form (make-hash-table 'string=?))
+   (closure->session  :allocation :class
+                      :init-form (make-hash-table 'eq?))
+   ))
+
+(define-method initialize ((self <session-cont>) initargs)
+  (next-method)
+  ;; NB: in MT, this is a critical section
+  (unless (slot-bound? self 'key)
+    (slot-set! self 'key (make-cont-key)))
+  (hash-table-put! (ref self 'key->session) (ref self 'key) self)
+  (hash-table-put! (ref self 'closure->session) (ref self 'closure) self)
+  ;; end of critical section
+  )
+
+(define-method replace-key ((self <session-cont>) new-key)
+  (let1 keytab (ref self 'key->session)
+    (hash-table-delete! keytab (ref self 'key))
+    (set! (ref self 'key) new-key)
+    (hash-table-put! keytab new-key self)
+    new-key))
+
+(define (cont-closure->session clo)
+  (hash-table-get (class-slot-ref <session-cont> 'closure->session) clo #f))
+
+(define (cont-key->session key)
+  (hash-table-get (class-slot-ref <session-cont> 'key->session) key #f))
 
 (define (make-cont-key)
   (check-initialized)
   (let loop ((id (make-gsid (worker-id) (x->string (random-integer IDRANGE)))))
-    (if (hash-table-exists? (cont-sessions) id)
-      (loop)
-      id)))
+    (if (cont-key->session id) (loop) id)))
 
 ;; SESSION-CONT-REGISTER cont [ id ]
-;;   Register continuation of CONT with id ID.  Usually ID should be
+;;   Register continuation closure CONT with id ID.  Usually ID should be
 ;;   omitted, and the session manager generates one for you.  Returns
-;;   the assigned ID.
+;;   the assigned ID.   If the same closure of CONT is already registered,
+;;   already-assigned ID is returned (explicitly giving different ID 
+;;   removes old entry).  If CONT is not a procedure, returns #f.
 (define (session-cont-register cont . maybe-id)
-  (let ((id (get-optional maybe-id (make-cont-key)))
-        (timestamp (sys-time)))
-    (hash-table-put! (cont-sessions) id (cons timestamp cont))
-    id))
+  (and (procedure? cont)
+       (let ((entry (cont-closure->session cont)))
+         (if entry
+           (if (or (null? maybe-id)
+                   (equal? (car maybe-id) (ref entry 'key)))
+             (ref entry 'key)
+             (replace-key entry (car maybe-id)))
+           (ref (apply make <session-cont>
+                       :closure cont
+                       (or (and-let* ((key (get-optional maybe-id #f)))
+                             `(:key ,key))
+                           '()))
+                'key)))))
 
 ;; SESSION-CONT-GET id
 ;;   Returns the continuation procedure associated with ID.
 ;;   If such a procedure doesn't exist, returns #f.
 (define (session-cont-get id)
-  (and-let* ((p (hash-table-get (cont-sessions) id #f)))
-    (cdr p)))
+  (and-let* ((entry (cont-key->session id)))
+    (ref entry 'closure)))
 
 ;; SESSION-CONT-DISCARD id
 ;;   Discards the session specified by ID.
 (define (session-cont-discard id)
-  (hash-table-delete! (cont-sessions) id))
+  (and-let* ((entry (cont-key->session id)))
+    (hash-table-delete! (ref entry 'key->session) (ref entry 'key))
+    (hash-table-delete! (ref entry 'closure->session) (ref entry 'closure))))
 
 ;; SESSION-CONT-SWEEP age
 ;;   Discards sessions that are older than AGE (in seconds)
 ;;   Returns # of sessions discarded.
 (define (session-cont-sweep age)
   (let ((cutoff (- (sys-time) age)))
-    (sweep-hash-table (cont-sessions)
-                      (lambda (val) (< (car val) cutoff)))))
+    (map (lambda (tab)
+           (sweep-hash-table
+            (class-slot-ref <session-cont> tab)
+            (lambda (entry) (< (ref entry 'timestamp) cutoff))))
+         '(key->session closure->session))))
 
 ;;; state session table ---------------------------------------
 ;;

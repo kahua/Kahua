@@ -1,3 +1,23 @@
+2003-12-25  Shiro Kawai  <shiro@acm.org>
+
+	* cgi/kahua.cgi.in: refactored PATH_INFO processing, allowing
+	  generated cgsid to be passed via kahua.cgi/$worker-type/$cgsid
+	  format.
+
+	* src/kahua/session.scm: changed cont-session table, so that
+	  the same cont-id will be returned when "known closure" is passed
+	  to session-cont-register.  This change allows global entry
+	  (defined via define-entry) to be treated in the same way as
+	  local closures.
+
+	* src/kahua/html.scm (a/cont): due to the above changes, a/cont
+	  is much simplified.
+	  (define-entry): does not only add-entry!, but also defines
+	  global named procedure.
+
+	* examples/lambdabooks/*.kahua, test/acont.kahua: adapted to
+	  above changes.
+
 2003-12-26  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* cgi/kahua.cgi.in: fix regexp miss.

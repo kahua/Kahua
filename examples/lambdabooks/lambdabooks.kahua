@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.1 2003/12/26 00:03:26 ko1 Exp $
+;; $Id: lambdabooks.kahua,v 1.2 2003/12/26 01:28:21 shiro Exp $
 
 (use file.util)
 (use util.list)
@@ -84,13 +84,13 @@
      (tr (td ,(user-box context
 			standard-frame-cont
 			standard-page-cont)))
-     (tr (td (a/cont (@@ (cont book-list-page))
+     (tr (td (a/cont (@@ (cont ,book-list-page))
 		     "Books")))
-     (tr (td (a/cont (@@ (cont partner-page))
+     (tr (td (a/cont (@@ (cont ,partner-page))
 		     "Partnership")))
      ;; admin roleのユーザーにのみ、リンクを見せる"
      (tr (@@ (require-role admin))
-	 (td (a/cont (@@ (cont user-admin-page)) "[ユーザ管理]"))))))
+	 (td (a/cont (@@ (cont ,user-admin-page)) "[ユーザ管理]"))))))
 
 (define (standard-footer context)
   `(,(img-separator)
