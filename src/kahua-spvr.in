@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.5 2004/01/23 22:17:10 shiro Exp $
+;; $Id: kahua-spvr.in,v 1.6 2004/02/02 05:41:30 tahara Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -367,7 +367,7 @@
      (log-format "shutdown requested")
      (sys-kill (sys-getpid) SIGTERM))
     ((help)   ;; returns list of commands
-     '(ls run kill types reload help shutdown))
+     '(ls run kill types reload restart help shutdown))
     (else
      (error "unknown spvr command:" body))))
 

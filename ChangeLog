@@ -1,3 +1,7 @@
+2004-02-02  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua-admin, src/kahua-spvr : fixed "help" command. now it shows all the commands on both scripts.
+
 2004-01-29  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* src/kahua/developer.scm, src/user.conf.sample : added the developer account.
