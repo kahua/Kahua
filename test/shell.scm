@@ -2,7 +2,7 @@
 ;; this test isn't for modules, but for actual scripts.
 ;; kahua-shell のテスト
 
-;; $Id: shell.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: shell.scm,v 1.2 2004/04/19 02:58:16 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -84,11 +84,11 @@
 
 ;; kahua-shell を起動する。
 (test* "start shell" "Welcome to Kahua."
-       (let ((p (run-process 'env "-u" "TERM" "gosh" "-I../src" "../src/kahua-shell"
+       (let ((p (run-process 'env "-i" "###GOSH###" "-I../src" "../src/kahua-shell"
 			     "-c" *config* 
 			     :input :pipe :output :pipe :error :pipe)))
 	 (set! *shell* p)
-	 (sys-sleep 1)
+	 (sys-sleep 3)
 	 (let* ((out (process-input  *shell*))
 		(in  (process-output *shell*)))
            (read-line in))

@@ -1,7 +1,7 @@
 ;; test user exclusive mode.
 ;; ユーザ専用モードのテスト
 
-;; $Id: usermode.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: usermode.scm,v 1.2 2004/04/19 02:58:16 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -117,12 +117,12 @@
 ;; kahua-admin をユーザ専用モードで起動する。
 ;; -user オプション付きで起動することを確認する。
 (test* "start shell" "Welcome to Kahua."
-       (let ((p (run-process 'env "-u" "TERM" "gosh" "-I../src"
+       (let ((p (run-process 'env "-i" "###GOSH###" "-I../src"
                              "../src/kahua-shell"
 			     "-c" *config* "-user" "gandalf"
 			     :input :pipe :output :pipe :error :pipe)))
 	 (set! *shell* p)
-	 (sys-sleep 1)
+	 (sys-sleep 3)
 	 (let* ((out (process-input  *shell*))
 		(in  (process-output *shell*)))
            (read-line in))
