@@ -1,3 +1,8 @@
+2004-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* test/admin.scm : set up enviornment variables correctly so that
+	  test can run without Kahua being installed.
+
 2004-01-05 Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* test/admin.scm : add keyword ":wait" as #t to each run-process.
