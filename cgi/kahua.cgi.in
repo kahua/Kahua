@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.7 2003/12/26 01:51:25 shiro Exp $
+;; $Id: kahua.cgi.in,v 1.8 2003/12/26 07:32:27 shiro Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -58,9 +58,9 @@
     (when (and (pair? l) (#/^~.+/ (car l)))
       (load-user-config (car l))
       (set! l (cdr l)))
-    (and (pair? l) (pair? (cdr l))
-         (not (equal? (cadr l) ""))
-         (map (lambda (p) (if (equal? p "") #f p)) (cdr l)))))
+    (and (pair? l)
+         (not (equal? (car l) ""))
+         (map (lambda (p) (if (equal? p "") #f p)) l))))
 
 ;; load user-specific config file when PATH_INFO has ~user component.
 (define (load-user-config user-dir)
