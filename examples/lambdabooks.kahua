@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.6 2003/12/23 09:53:46 nobsun Exp $
+;; $Id: lambdabooks.kahua,v 1.7 2003/12/23 22:37:51 shiro Exp $
 
 (use file.util)
 (use util.list)
@@ -51,10 +51,7 @@
 	context))
 
 (define (standard-frame-cont nodes context)
-  (interp-html 
-   (standard-frame nodes context
-		   (lambda (s _) s))
-   context))
+  (standard-frame nodes context (cut interp-html <> <>)))
 
 (define (standard-page contents context cont)
   (standard-frame `((table (tr (td (@ (valign "top"))
@@ -66,8 +63,7 @@
 		  context cont))
 
 (define (standard-page-cont nodes context)
-  (interp-html (standard-page nodes context
-			      (lambda (s _) s)) context))
+  (standard-page nodes context (cut interp-html <> <>)))
 
 (define (standard-header context)
   `((a/cont ,(img-logo))
@@ -75,16 +71,13 @@
     ,(img-separator)))
 
 (define-entry (book-list-page context)
-              (show-book-list context
-                              standard-page-cont))
+  (show-book-list context standard-page-cont))
 
 (define-entry (user-admin-page context)
-              (user-admin-panel context
-                                standard-page-cont))
+  (user-admin-panel context standard-page-cont))
 
 (define-entry (partner-page context)
-              (partnership-info context
-                                standard-page-cont))
+  (partnership-info context standard-page-cont))
 
 (define (standard-menu context)
   `((table
@@ -133,6 +126,4 @@
 
 (initialize-main-proc
  (lambda (context)
-   (standard-page '() context 
-		  (lambda (ns cs)
-		    (interp-html ns cs)))))
+   (standard-page '() context (cut interp-html <> <>))))

@@ -1,3 +1,9 @@
+2003-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* examples/lambdabooks.kahua
+	(standard-page-cont, standard-frame-cont):
+	fixed a couple of leftovers of type inconsistencies.
+
 2003-12-23  Nobuo Yamashita <nobsun@sampou.org>
 
 	* examples/lambdabooks.kahua:
