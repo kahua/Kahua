@@ -1,8 +1,19 @@
-TESTS = test-xml persistence user config gsid session partcont \
+#
+# 'make check' runs almost all tests.
+# 'make <testname>' runs a specific test.
+# 
+#  Test persistence-dbi isn't run by make check, since it assumes
+#  certain database settings.  See persistence-dbi.scm for the details.
+
+
+TESTS = test-xml persistence \
+        user config gsid session partcont \
         server kahua-dbm worker lambdabooks wiki-iki nqueen \
 	spvr admin developer shell usermode sandbox plugin
 
 .PHONY: all check clean distclan maintainer-clean $(TESTS)
+
+
 
 
 all:
@@ -28,6 +39,9 @@ partcont :
 
 persistence :
 	@gosh -I../src ./persistence.scm >> test.log
+
+persistence-dbi :
+	@gosh -I../src ./persistence-dbi.scm >> test.log
 
 user :
 	@gosh -I../src ./user.scm >> test.log

@@ -6,6 +6,20 @@
 	(compute-translation-directive): fixed a bug that the translation
 	directive might have been assigned incorrectly.
 
+	* src/kahua/persistence.scm:
+	(<kahua-db-dbi> etc): added support of DBI back-end.  Tested with
+	mysql.  The back-end database can be specified by "mysql:" or
+	"postgresql:" prefix in the database pathname.  If these paths
+	are specified, dbi module is autoloaded, so the caller doesn't
+	need to load dbi explicitly.  (And kahua.persistence still works
+	without dbi, as far as such pathnames aren't specified).
+	The current implementation is a prototype, inefficient and
+	not robust.
+	* test/persistence.scm : changed a bit so that it can test both
+	standard filesystem db and DBI-backed db.
+	* test/persistence-dbi.scm : added.  This isn't run by make check,
+	for it requires setup on RDBMS side.
+
 2004-02-27  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* src/kahua/sandbox.scm: requires gauche.redefutil module before
