@@ -1,3 +1,12 @@
+2004-02-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/test/worker.scm (call-worker/gsid->sxml): added.
+	(make-match&pick) : dropped the support of extra sxpath spec.
+	it is easier to apply sxpath in call-worker/gsid->sxml instead
+	of here; it will produce comprehensive error log.
+
+	* test/nqueen.scm : added to test examples/nqueen.
+
 2004-02-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/partcont.scm, test/partcont.scm :
