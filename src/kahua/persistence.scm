@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.18 2004/02/29 11:17:27 shiro Exp $
+;; $Id: persistence.scm,v 1.19 2004/02/29 11:29:03 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -685,8 +685,8 @@
          (dir (assq-ref (ref info 'translator-alist) generation)))
     (if (not dir)
       (begin
-        (warn "class translator doesn't exist: class ~a, generation ~a"
-              (class-name class) generation)
+        ;;(warn "class translator doesn't exist: class ~a, generation ~a"
+        ;;      (class-name class) generation)
         (values alist '()))
       (translate-slot-alist dir alist hidden 'a->b))))
 
@@ -695,8 +695,8 @@
          (dir (assq-ref (ref info 'translator-alist) (- generation 1))))
     (if (not dir)
       (begin
-        (warn "class translator doesn't exist: class ~a, generation ~a"
-              (class-name class) (- generation 1))
+        ;;(warn "class translator doesn't exist: class ~a, generation ~a"
+        ;;      (class-name class) (- generation 1))
         (values alist '()))
       (translate-slot-alist dir alist hidden 'b->a))))
 
