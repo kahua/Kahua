@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.15 2004/02/23 11:20:58 ko1 Exp $
+;; $Id: kahua-spvr.in,v 1.16 2004/02/26 19:36:00 ko1 Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -383,8 +383,8 @@
 			     '())))))
     (set! (ref worker 'ping-deactivator)
 	  (lambda () 
-	    (selector-delete! selector in proc #f)
-	    (socket-close sock)))
+	    (and in (selector-delete! selector in proc #f))
+	    (and sock (socket-close sock))))
 
     (ping-to-worker worker)
     ))

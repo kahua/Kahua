@@ -1,3 +1,7 @@
+2004-02-27  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in : fixed bug fixed about ping(error handling).
+
 2004-02-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/persistence.scm : implemented schema generation control;
