@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm,v 1.8 2004/02/17 03:07:33 tahara Exp $
+;; $Id: config.scm,v 1.9 2004/02/22 22:00:55 ko1 Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -29,6 +29,8 @@
           kahua-static-document-url
           kahua-timeout-mins
           kahua-userconf-file
+	  kahua-ping-timeout-sec
+	  kahua-ping-interval-sec
           ))
 (select-module kahua.config)
 
@@ -64,6 +66,13 @@
    ;; timeout-mins - session period of time
    (timeout-mins :init-keyword :timeout-mins
                  :init-value 60)
+
+   
+   ;; ping setting
+   (ping-timeout-sec :init-keyword :ping-timeout-sec
+		     :init-value 120)
+   (ping-interval-sec :init-keyword :ping-interval-sec
+		      :init-value 30)
 
    ;; userconf-file - developer account file
    (userconf-file :init-keyword :userconf-file
@@ -135,6 +144,10 @@
                    (ref kahua-custom 'static-document-url))
              (set! (ref (instance-of <kahua-config>) 'timeout-mins)
                    (ref kahua-custom 'timeout-mins))
+             (set! (ref (instance-of <kahua-config>) 'ping-timeout-sec)
+                   (ref kahua-custom 'ping-timeout-sec))
+             (set! (ref (instance-of <kahua-config>) 'ping-interval-sec)
+                   (ref kahua-custom 'ping-interval-sec))
              ))
          (unless skip-check? (sanity-check (instance-of <kahua-config>)))
          )
@@ -174,6 +187,12 @@
 
 (define (kahua-timeout-mins)
   (ref (kahua-config) 'timeout-mins))
+
+(define (kahua-ping-timeout-sec)
+  (ref (kahua-config) 'ping-timeout-sec))
+
+(define (kahua-ping-interval-sec)
+  (ref (kahua-config) 'ping-interval-sec))
 
 (define (kahua-userconf-file)
   (ref (kahua-config) 'userconf-file))
