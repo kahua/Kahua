@@ -1,3 +1,10 @@
+2003-12-15  Shiro Kawai  <shiro@acm.org>
+
+	* cgi/kahua.cgi.in (compose-reply): sets Path parameter of the state
+	session id cookie by the dirname of SCRIPT_NAME, to prevent clients
+	from being confused by extra pathname components added after
+	kahua.cgi.
+
 2003-12-16  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* src/kahua/gsid.scm : modified decompose-gsid to through

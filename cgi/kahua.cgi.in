@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.1 2003/12/11 05:39:09 nobsun Exp $
+;; $Id: kahua.cgi.in,v 1.2 2003/12/16 03:49:53 shiro Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -40,7 +40,9 @@
   (receive (state cont) (get-gsid-from-header header)
     (list
      (cgi-header
-      :cookies (construct-cookie-string `(("x-kahua-sgsid" ,state))))
+      :cookies (construct-cookie-string
+                `(("x-kahua-sgsid" ,state
+                   :path ,(sys-dirname (or (sys-getenv "SCRIPT_NAME") "/"))))))
      body)))
 
 ;; determine dispatch destination.
