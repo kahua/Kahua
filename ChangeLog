@@ -1,3 +1,10 @@
+2003-12-25  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* cgi/kahua.cgi.in:
+	  support connecting user independent kahua-spvr with
+	  path-info. If "~user" is given, read ~user/.kahua/kahua.conf
+	  and perform with this configuration.
+
 2003-12-23  Shiro Kawai  <shiro@acm.org>
 
 	* examples/lambdabooks.kahua
