@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.1.2.5 2004/10/16 09:22:23 shiro Exp $
+;; $Id: kahua-spvr.scm,v 1.1.2.6 2004/10/18 20:26:05 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -143,15 +143,44 @@
    (id      :init-keyword :id)      ;; keyserver id
    ))
 
-;; Some exceptions can be handled gracefully.  We use a special
-;; class for that.
-(define-class <spvr-exception> (<error>) ())
-
 ;; worker type entry - will be overridden by configuration file
 (define worker-types
   (make-parameter
    '()
    ))
+
+;;;=================================================================
+;;; Error handling
+;;;
+
+;; Spvr should handle all "expected" exceptional cases gracefully,
+;; which is indicated by throwing <spvr-exception> object.
+;; If an object other than <spvr-exception> is thrown, it should be
+;; a program bug.
+
+(define-class <spvr-exception> (<error>) ())
+
+;; A convenience function to raise <spvr-exception> or its subclasses
+(define (spvr-errorf class fmt . args)
+  (raise (make class :message (apply format fmt args))))
+
+;; This exception occurs when the URI given from the client doesn't
+;; correspond to any known worker type.    "404 Not found" may be
+;; an appropriate response to the http client.
+(define-class <spvr-unknown-worker-type> (<spvr-exception>) ())
+
+;; This exception occurs when the URI given form the client
+;; specifies a worker that is known, but is not running.
+;; "503 Service unavailable" may be an appropriate response
+;; to the http client.
+(define-class <spvr-worker-not-running> (<spvr-exception>) ())
+
+;; If errors occur before spvr service starts, we should terminate
+;; spvr with appropriate error message.
+(define (app-error msg . args)
+  (apply format #t msg args)
+  (newline)
+  (exit 1))
 
 ;;;=================================================================
 ;;; Miscellaneous utilities
@@ -256,7 +285,7 @@
         (else
          (error "unknown worker type:" worker-type))))
 
-(define (load-app-servers)
+(define (load-app-servers-file)
   (let1 app-map
       (build-path (ref (instance-of <kahua-config>) 'working-directory)
                   "app-servers")
@@ -556,7 +585,7 @@
      (map car (worker-types)))
     ((reload) ;; reload app-servers file
      (begin
-       (if (load-app-servers)
+       (if (load-app-servers-file)
 	   (run-default-workers *spvr*)
 	   #f)
        ))
@@ -813,15 +842,32 @@
 ;;; Main
 ;;;
 
+(define (usage)
+  (print "Usage: kahua-spvr [options ...]")
+  (print "Options:")
+  (print "  -c, --conf-file=file  Alternative location of kahua.conf")
+  (print "  -i, --interactive     Interactive REPL prompt to stdio")
+  (print "  -s, --sockbase=spec   Alternative socket base")
+  (print "  -l, --logfile=file    Alternative log file ('-' for stdout)")
+  (print "      --user=user       User-custom setting")
+  (print "  -H, --httpd=[host:]port  Accept http connection on port")
+  (print "  -h, --help            Show this")
+  (print "See http://www.kahua.org/ for the details")
+  (exit 0))
+
 (define (main args)
   (let-args (cdr args)
-      ((conf-file "c=s")
-       (listener  "i")
-       (sockbase  "s=s")  ;; overrides conf file settings
-       (logfile   "l=s")  ;; overrides conf file settings
+      ((conf-file "c|conf-file=s")
+       (listener  "i|interactive")
+       (sockbase  "s|sockbase=s")  ;; overrides conf file settings
+       (logfile   "l|logfile=s")  ;; overrides conf file settings
        (user      "user=s")
        (gosh      "gosh=s")  ;; wrapper script adds this.
        (httpd     "H|httpd=s") ;; standalone httpd mode
+       (help      "h|help" => usage)
+       (else (option)
+             (app-error "Unknown option `~a'.  Try --help for the usage."
+                        (car option)))
        )
     (let ((lib-path (car *load-path*))) ; kahua library path.  it is
                                         ; always the first one, since the
@@ -875,7 +921,7 @@
                  (cleanup)
                  (bye 70))
              (lambda ()
-               (load-app-servers)
+               (load-app-servers-file)
                (run-default-workers spvr)
                (run-server spvr kahua-sock http-sock listener)
                (bye 0))))))
