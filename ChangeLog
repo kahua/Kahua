@@ -1,5 +1,11 @@
 2004-05-17  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* src/kahua/persistence.scm, test/persistence.scm.in:
+	Hacked by Hisazumi san to enable make-kahua-collection to collect
+	subclass instances.
+	
+2004-05-17  Nobuo Yamashita  <nobsun@sampou.org>
+
 	* cgi/kahua.cgi.in:
 	Hacked by Hisazumi san to enable to use as fastcgi.
 	
