@@ -5,13 +5,14 @@
 ;;
 ;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.3 2004/02/27 12:53:52 tahara Exp $
+;; $Id: sandbox.scm,v 1.4 2004/03/02 06:47:03 tahara Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)
   (use srfi-2)
   (use srfi-13)
   (use srfi-14)
+  (use kahua.plugin)
   (export make-sandbox-module
           export-module export-module-except
           disable-bindings)
@@ -96,6 +97,8 @@
                           load transcript-on transcript-off
                           null-environment scheme-report-environment 
                           interaction-environment
+
+                          exit sys-exit sys-abort
 
                           import require
 
