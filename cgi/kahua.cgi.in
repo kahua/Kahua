@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.21 2004/05/17 04:32:45 nobsun Exp $
+;; $Id: kahua.cgi.in,v 1.22 2004/06/09 06:59:55 nobsun Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -40,6 +40,10 @@
 ;; Change this if you're using non-default sockbase
 (define *sockbase* "unix:##KAHUA_SOCKET_BASE##")
 
+;; Change this if you're using non-default log path
+;;(log-open "/tmp/kahua-cgi.log")
+(log-open "##KAHUA_CGI_LOGPATH##/kahua-cgi.log")
+
 ;; bridge name option, mainly to pass "~user" information
 (define *bridge-option* "")
 
@@ -50,8 +54,6 @@
                  (p  (assoc name mv)))
         (cadr p))
       (sys-getenv name)))
-
-(log-open "/tmp/t.log")
 
 (define (kcv value)
   (ces-convert value "*jp" (gauche-character-encoding)))
