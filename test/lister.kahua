@@ -1,0 +1,33 @@
+;-*-scheme-*-
+
+(use srfi-1)
+(use util.list)
+
+(define (simple-page ttl . elems)
+  `(html (head (title ,ttl))
+         (body (@ (bgcolor "white"))
+               (h1 ,ttl)
+               ,@elems)))
+
+(define (simple-page/context ttl . elems)
+  (lambda (context)
+    (interp-html (apply simple-page ttl elems)
+		 context
+		 (lambda (s _) s))))
+
+(define all-items
+  (map (lambda (n) (list 'li (x->string n))) (iota 15)))
+
+(define (lister items)
+  (lambda (context)
+    (receive (cur next)
+	     (split-at* items 10)
+	     ((simple-page/context 
+	       "Lister"
+	       `(ul ,@(append cur 
+			      (if (null? next) '() 
+				  `((li (a/cont (@@ (cont ,(lister next)))
+						    "Next")))))))
+	      context))))
+
+(initialize-main-proc (lister all-items))

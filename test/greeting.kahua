@@ -1,0 +1,27 @@
+;-*-scheme-*-
+
+(define (simple-page ttl . elems)
+  `(html (head (title ,ttl))
+         (body (@ (bgcolor "white"))
+               (h1 ,ttl)
+               ,@elems)))
+
+(define (simple-page/context ttl . elems)
+  (lambda (context)
+    (interp-html (apply simple-page ttl elems)
+		 context
+		 (lambda (s _) s))))
+
+(define greeting
+  (lambda (context)
+    (let ((name (kahua-context-ref context "name")))
+      ((if name
+	   (simple-page/context "Welcome" "Hello, " name "! How are you?") 
+	   (simple-page/context "Please tell me your name."
+				`(form/cont (@@ (cont ,greeting))
+					    (input (@ (type "text")
+						      (size "15")
+						      (name "name"))))))
+     context))))
+
+(initialize-main-proc greeting)

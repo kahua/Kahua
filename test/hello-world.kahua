@@ -1,0 +1,17 @@
+;-*-scheme-*-
+
+(define (simple-page ttl . elems)
+  `(html (head (title ,ttl))
+	 (body (@ (bgcolor "white"))
+	       (h1 ,ttl)
+	       ,@elems)))
+
+(define hello-world
+  (simple-page "Hello, world!"))
+
+(initialize-main-proc
+ (lambda (context)
+   (interp-html hello-world
+		context
+		(lambda (s _) s))))
+	
