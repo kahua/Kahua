@@ -1,3 +1,10 @@
+2004-04-27  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Version 0.2.4 released.
+	Added elements for frame.  
+	Added more entries in examples/app-servers.samples.
+	
+	
 2004-04-26  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua/server.scm (a/cont, form/cont):
