@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua.el.in,v 1.2 2004/02/15 06:23:57 tahara Exp $
+;; $Id: kahua.el.in,v 1.3 2004/02/23 07:16:28 tahara Exp $
 ;;
 
 (require 'cmuscheme)
@@ -26,6 +26,11 @@
 				  (getenv "LOGNAME")
 				  (user-login-name))
   "*Default username for running kahua server."
+  :type 'string
+  :group 'kahua)
+
+(defcustom kahua-user-mode nil
+  "*When kahua-user-mode is not nil, run kahua-shell with -user option."
   :type 'string
   :group 'kahua)
 

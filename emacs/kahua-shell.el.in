@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-shell.el.in,v 1.2 2004/02/15 06:23:57 tahara Exp $
+;; $Id: kahua-shell.el.in,v 1.3 2004/02/23 07:16:28 tahara Exp $
 ;;
 
 (require 'comint)
@@ -26,7 +26,11 @@
 		     (read-string "username: " kahua-default-user)))
 
   (if (not (comint-check-proc "*scheme*"))
-      (let ((args (list (concat user "@" host) "kahua-shell")))
+      (let* ((program (if kahua-user-mode
+			  '("kahua-shell" "-user" "tahara")
+			  '("kahua-shell")))
+
+	     (args `(,(concat user "@" host) ,@program)))
 	(set-buffer (apply 'make-comint "scheme" "ssh" nil args))
 	(inferior-scheme-mode)))
   (setq scheme-program-name "kahua-shell")
