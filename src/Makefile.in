@@ -104,6 +104,7 @@ server-scripts	:
 
 install: all server-scripts
 	$(MKINSTDIR) $(INSTALL_DIRS) $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir)
+	chmod o-rwx $(SOCKET_BASE_DIR)
 	@for f in $(SCMFILES); do \
 	  $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR)/$$f; \
 	done

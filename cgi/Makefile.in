@@ -3,7 +3,7 @@
 # The destination should be specified by --with-cgidir argument of configure
 # script.
 #
-# $Id: Makefile.in,v 1.5 2004/06/09 07:03:04 nobsun Exp $
+# $Id: Makefile.in,v 1.6 2004/06/09 08:29:54 nobsun Exp $
 #
 
 package	          = kahua
@@ -67,6 +67,7 @@ install:
 	fi; \
 	if test "$(KAHUA_CGILOG_DIR)" != ""; then \
 	  $(MKINSTDIR) $(KAHUA_CGILOG_DIR); \
+          chmod o-rwx $(KAHUA_CGILOG_DIR); \
 	fi; \
 
 uninstall:
