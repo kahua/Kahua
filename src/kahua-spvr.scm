@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.2 2004/10/19 02:37:34 shiro Exp $
+;; $Id: kahua-spvr.scm,v 1.3 2004/10/19 02:41:52 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -777,7 +777,6 @@
                   )
               ;; NB: The redirection should use "303 See Other" in HTTP/1.1,
               ;; but see the note of section 10.3.4. of RFC2616.
-              (log-format "http<# ~s" headers)
               (if status
                 (http-response (cadr status) headers body)
                 (http-response "200 OK" headers body)))))))

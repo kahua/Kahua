@@ -5,7 +5,7 @@
 ;;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;;  $Id: make-testconf.scm,v 1.2 2004/10/19 02:37:34 shiro Exp $
+;;;  $Id: make-testconf.scm,v 1.3 2004/10/19 02:41:52 shiro Exp $
 
 ;; Usage:
 ;;
@@ -55,8 +55,8 @@
       (remove-directory* tmpdir))
     (make-directory* tmpdir)
     (sys-symlink exdir codir)
-    (sys-symlink (build-path exdir "app-servers.sample")
-                 (build-path tmpdir "app-servers"))
+    (copy-file (build-path exdir "app-servers.sample")
+               (build-path tmpdir "app-servers"))
     (sys-symlink (build-path srcdir "plugins")
                  (build-path tmpdir "plugins"))
     ))
