@@ -1,3 +1,29 @@
+2004-03-26  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Install directory rearranged:
+	By default all install files located in /usr/local/*/kahua/.
+
+	* kahua-* commands: become shell scripts calling scheme scripts
+	
+	* configure.ac:
+	Default Kahua_CGIDIR modified
+
+	* cgi/fix-shebang.sh: added for embedding load-path into kahua.cgi.
+	* cgi/kahua.cgi.in: default socket_base_dir modified.
+	* cgi/Makefile.in: modified to embed load-path into kahua.cgi.
+	 
+	* examples/Makefile.in: modified KAHUACONFIG flag.
+
+	* src/Makefile.in: rearraged install directories.
+	Make shell script for kahua-* command
+	* src/fix-shebang.sh: Modified to make shell script for kahua-* commands.
+	* src/kahua.conf.sample: modified
+
+	* src/kahua/config.scm.in: added
+	  src/kahua/config.scm: removed 
+
+	* plugin/Makefile.in: modified INSTALL_DIR.
+
 2004-03-22  Shiro Kawai  <shiro@acm.org>
 
 	* examples/lambdabooks/login.kahua (user-box): check user name validity
