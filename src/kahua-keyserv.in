@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.in,v 1.3 2004/02/21 22:51:54 shiro Exp $
+;; $Id: kahua-keyserv.in,v 1.4 2004/03/03 01:23:52 ko1 Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -115,7 +115,8 @@
               (log-format "~a" (kahua-error-string e #t))
               (display "#f\n" output)
               (flush output)
-              (socket-shutdown client 2))
+              (socket-shutdown client 2)
+	      (socket-close client))
           (lambda ()
             (let1 result 
                 (if (and (pair? request)
@@ -132,7 +133,8 @@
                   #f)
               (write result output) (newline output)
               (flush output)
-              (socket-shutdown client 2)))
+              (socket-shutdown client 2)
+	      (socket-close client)))
           )))))
 
 (define (handle-object-command request)
