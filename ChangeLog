@@ -1,3 +1,9 @@
+2004-09-14 Kenji Hisazumi <nel@soraneko.com>
+
+	* src/kahua/query.scm, plugins/query.scm, test/query.scm:
+	- Rewrite query.scm as a plugin 
+	and move src/kahua/query.scm to plugins/query.scm.
+
 2004-09-07 Kenji Hisazumi <nel@soraneko.com>
 
 	* src/kahua/query.scm, test/query.scm:

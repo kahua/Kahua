@@ -3,19 +3,18 @@
 ;;; Query language for kahua.persistence
 ;;;
 
-(define-module kahua.query
-  (use srfi-1)
-  (use srfi-2)
-  (use kahua.persistence)
-  (use gauche.collection)
+(use srfi-1)
+(use srfi-2)
+(use kahua.persistence)
+(use gauche.collection)
 
+(define-plugin "query"
+  (version "0.1")
   (export QUERY
 	  FROM: WHERE: ORDERBY: PRJ: ref:
 	  =: <: >: %%: <=: >=:
-	  and: or:
-	  ))
-
-(select-module kahua.query)
+	  and: or:)
+  (depend #f))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -25,7 +24,10 @@
 (define class-pred-alist
   (list '(#f =: <: >: %%: <=: >=:)
         (list <string> string=? string<? string>? (cut string-scan <> <>) string<=? string>=?)
-        (list <integer> = < > = <= >=)))
+        (list <integer> = < > #f <= >=)
+	(list <boolean> eq? #f #f #f #f #f)
+	(list <null> eq? #f #f #f #f #f)
+	))
 
 (define (class->pred class n)
   (car (drop (assq class class-pred-alist) n)))
@@ -43,8 +45,21 @@
            (literal  (remove procedure? args))
            (class    (class-of (car literal))) ;;XXX check types
            (cpred    (c->p class)))
-      (lambda (o)
-        (apply cpred (eval-args o args))))))
+      
+      (cond ((= (length args) (length literal))
+	     (lambda (_)
+	       (apply cpred args)))
+	    ((or (eq? class <boolean>) (eq? class <null>))
+	     (lambda (n)
+	       (apply cpred (eval-args n args))))
+	    (#t
+	     (lambda (o)
+	       (let1 evaled-args (eval-args o args)
+		 (and (every (lambda (v)
+			       (and (not (null? v))
+				    v))
+			     evaled-args)
+		      (apply cpred evaled-args)))))))))
 
 (define-macro (define-predicates)
   `(begin
@@ -124,4 +139,3 @@
   (lambda (obj)
     (ref (proc obj) slot)))
 
-(provide "kahua/query")

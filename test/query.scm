@@ -7,11 +7,16 @@
 (use srfi-1)
 (use srfi-2)
 
-(test-start "kahua.query")
-(use kahua.query)
-(use kahua.persistence)
+(test-start "query plugin")
 
-(test-module 'kahua.query)
+(use kahua.plugin)
+(use kahua.config)
+
+(set! (ref (kahua-config) 'working-directory) "../")
+
+(initialize-plugins)
+(use-plugin query)
+(use kahua.persistence)
 
 (define *dbname* (build-path (sys-getcwd) "_tmp"))
 (sys-system #`"rm -rf ,*dbname*")
@@ -110,12 +115,22 @@
          (sort (map (cut ref <> 'num)
                     (QUERY (FROM: <numnum>)
                            (WHERE: (<: (ref: <numnum> 'num) 10))))))
+
+  (test* "pred: >" '(0 1 2 3 4 5 6 7 8 9)
+         (sort (map (cut ref <> 'num)
+                    (QUERY (FROM: <numnum>)
+                           (WHERE: (>: 10 (ref: <numnum> 'num)))))))
   
   (test* "pred: >" '(98 99)
          (sort (map (cut ref <> 'num)
                     (QUERY (FROM: <numnum>)
                            (WHERE: (>: (ref: <numnum> 'num) 97))))))
   
+  (test* "pred: <" '(98 99)
+         (sort (map (cut ref <> 'num)
+                    (QUERY (FROM: <numnum>)
+                           (WHERE: (<: 97 (ref: <numnum> 'num)))))))
+
   (testq "pred: %%" '(("hoge" "kenji hisazumi"))
          (QUERY (FROM:  <address>)
                 (WHERE: (%%: (ref: 'name) "kenji"))))
@@ -158,6 +173,21 @@
                 (ORDERBY: 'DESC (ref: <numnum> 'num))))
   )
 
+(with-db (db *dbname*)
+  (make <address>
+    :name #f
+    :address "hoge")
+  (make <address>
+    :name '()
+    :address "booo"))
+
+
+(with-db (db *dbname*)
+  (testq "null/#f value is regarded as a #f" '(("hoge" "kenji hisazumi"))
+	 (QUERY (FROM: <address>)
+		(WHERE: (%%: (ref: 'name) "kenji"))))
+  )
+
 
 (test-section "object references")
 
@@ -189,7 +219,5 @@
   (testq "db update" '((("sake freaks") "Hogee"))
          (QUERY (FROM: <person>) (WHERE: (=: (ref: 'name) "Hogee"))))
   )
-              
-  
 
 (test-end)
