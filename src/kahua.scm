@@ -4,10 +4,11 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua.scm,v 1.2 2004/01/16 09:40:20 shiro Exp $
+;; $Id: kahua.scm,v 1.3 2004/01/22 13:32:12 shiro Exp $
 
 (define-module kahua
   (extend kahua.config
+          kahua.util
           kahua.gsid
           kahua.persistence
           kahua.user

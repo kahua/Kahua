@@ -1,3 +1,8 @@
+2004-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/util.scm: added.
+	* src/kahua.scm: added kahua.util
+
 2004-01-20  Shiro Kawai  <shiro@acm.org>
 
 	* cgi/kahua.cgi.in (compose-reply): pass through the extra

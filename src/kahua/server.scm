@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.8 2004/01/21 05:48:34 shiro Exp $
+;; $Id: server.scm,v 1.9 2004/01/22 13:32:12 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -27,6 +27,7 @@
   (use kahua.session)
   (use kahua.persistence)
   (use kahua.user)
+  (use kahua.util)
   (export kahua-init-server
           kahua-bridge-name
           kahua-server-uri
@@ -157,9 +158,7 @@
                 (html:head (html:title "Kahua error"))
                 (html:body (html:pre
                             (html-escape-string
-                             (call-with-output-string
-                               (cut with-error-to-port <>
-                                    (lambda () (report-error e))))))))
+                             (kahua-error-string e)))))
                context))
           (if error-proc
             (lambda ()
@@ -231,10 +230,7 @@
 (define (kahua-eval-proc body env)
   (with-error-handler
       (lambda (e)
-        (values #f
-                (call-with-output-string
-                  (cut with-error-to-port <>
-                       (lambda () (report-error e))))))
+        (values #f (kahua-error-string e #t)))
     (lambda ()
       (receive r (eval body env)
         (values #t
