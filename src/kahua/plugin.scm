@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: plugin.scm,v 1.2 2004/02/22 12:05:31 tahara Exp $
+;; $Id: plugin.scm,v 1.3 2004/02/25 11:15:22 tahara Exp $
 
 (define-module kahua.plugin
   (use srfi-1)
@@ -12,7 +12,7 @@
   (use file.util)
   (use kahua.config)
   (export define-export <kahua-plugin> lookup-exports
-          expand-define load-plugin %load-plugin
+          expand-define load-plugin %load-plugin use-plugin
           define-plugin allow-module register-plugin
           initialize-plugins refresh-plugin
           all-plugins)
