@@ -1,3 +1,9 @@
+2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/shell.scm.in, test/usermode.scm.in:
+	use 'env -i' instead of 'env -u' (because BSD's env does not support
+	-u option).
+	
 2004-04-09  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* Version 0.2.2 released.
