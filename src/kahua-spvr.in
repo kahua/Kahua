@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.22 2004/03/16 07:50:02 nobsun Exp $
+;; $Id: kahua-spvr.in,v 1.23 2004/06/09 06:46:11 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -624,7 +624,7 @@
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
-      (sys-chmod (sockaddr-name sockaddr) #o777))
+      (sys-chmod (sockaddr-name sockaddr) #o770))
     (do () (#f)
       (selector-select (selector-of spvr) 10.0e6)
       (check-workers spvr))
