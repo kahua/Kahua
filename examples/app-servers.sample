@@ -1,11 +1,11 @@
 ;; -*-scheme-*-
 ;; Sample app-servers file.
-;; $Id: app-servers.sample,v 1.4 2004/02/22 23:59:09 shiro Exp $
+;; $Id: app-servers.sample,v 1.5 2004/02/23 06:05:57 shiro Exp $
 
 (
 ;; (<type> :arguments (<arg> ...) :run-by-default <num>)
 ;; See http://www.kahua.org/cgi-bin/index.cgi/kahua-spvr
  (lambdabooks   :arguments () :run-by-default 1)
  (wiki-iki      :arguments () :run-by-default 1)
- (login-manager :arguments () :run-by-default 1)
+ (login         :arguments () :run-by-default 1)
 )
