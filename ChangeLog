@@ -1,5 +1,9 @@
 2004-11-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua-admin.scm: Enabled batch execution---just give an
+	  admin command in the command line and it is executed immediately.
+	  E.g. "kahua-admin restart kahua-web" etc.
+
 	* src/kahua-spvr.scm (handle-http):
 	  Added support of enctype multipart/form-data.  This enables file
 	  uploading.  (NB: this requires Gauche 0.8.2 to work).

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.scm,v 1.2 2004/10/19 02:37:33 shiro Exp $
+;; $Id: kahua-admin.scm,v 1.3 2004/11/26 09:14:34 shiro Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -36,79 +36,80 @@
           (let1 cmd (call-with-input-string line port->sexp-list)
             (if (null? cmd)
               spvr-command-processor
-              (case (car cmd)
-                ((help)
-                 (let ((spvr-help (send-command #f cmd))
-                       (admin-help '(connect cvs
-                                     adduser deluser lsuser moduser
-                                     plugin)))
-                   (write (append spvr-help admin-help)) (newline)
-                   (spvr-command-processor)))
-                ((connect)
-                 (if (= (length cmd) 2)
-                   (connect-worker (cadr cmd))
-                   (begin (display "Usage: connect <worker-number>\n")
-                          spvr-command-processor)))
-		((cvs)
-		 (if (> (length cmd) 2)
-		   (apply cvs-command (cdr cmd))
-		   (begin (display "Usage: cvs update <worker-type/number>\n")
-			  spvr-command-processor)))
-		((update)
-		 (if (> (length cmd) 1)
-		     (apply update-command (cdr cmd))
-		     (begin (display 
-			     "Usage: update <worker-type/number> (files...)\n")
-			    spvr-command-processor)))
+              (dispatch-spvr-command cmd))))))))
 
-		;; user management
-                ((adduser)
-                 (if (>= (length cmd) 3)
-                     (let ((name (symbol->string (cadr cmd)))
+(define (dispatch-spvr-command cmd)
+  (case (car cmd)
+    ((help)
+     (let ((spvr-help (send-command #f cmd))
+           (admin-help '(connect cvs
+                                 adduser deluser lsuser moduser
+                                 plugin)))
+       (write (append spvr-help admin-help)) (newline)
+       (spvr-command-processor)))
+    ((connect)
+     (if (= (length cmd) 2)
+       (connect-worker (cadr cmd))
+       (begin (display "Usage: connect <worker-number>\n")
+              spvr-command-processor)))
+    ((cvs)
+     (if (> (length cmd) 2)
+       (apply cvs-command (cdr cmd))
+       (begin (display "Usage: cvs update <worker-type/number>\n")
+              spvr-command-processor)))
+    ((update)
+     (if (> (length cmd) 1)
+       (apply update-command (cdr cmd))
+       (begin (display 
+               "Usage: update <worker-type/number> (files...)\n")
+              spvr-command-processor)))
 
-                           (pw (symbol->string (caddr cmd)))
-                           (roles (cdddr cmd)))
-                       (kahua-add-developer name pw roles)
-                       (write 'done) (newline)
-                       spvr-command-processor)
-                     (begin
-                      (display "Usage: adduser <name> <password> <roles>...\n")
-                      spvr-command-processor)))
-                ((deluser)
-                 (if (= (length cmd) 2)
-                     (let1 name (symbol->string (cadr cmd))
-                           (kahua-delete-developer name)
-                           (write 'done) (newline)
-                           spvr-command-processor)
-                     (begin (display "Usage: deluser <name>\n")
-                            spvr-command-processor)))
-                ((moduser)
-                 (if (and (= (length cmd) 4) (eq? (cadr cmd) 'password))
-                   (begin
-                     (apply kahua-change-developer-password
-                            (map symbol->string (cddr cmd)))
-                     (write 'done) (newline)
-                     spvr-command-processor)
-                   (begin
-                     (display "Usage: moduser password <name> <new>\n")
-                     spvr-command-processor)))
-                ((lsuser)
-                 (write (kahua-list-developer)) (newline)
-                 spvr-command-processor)
+    ;; user management
+    ((adduser)
+     (if (>= (length cmd) 3)
+       (let ((name (symbol->string (cadr cmd)))
 
-                ;; plugin management
-                ((plugin)
-                 (plugin-command (cdr cmd))
-                 spvr-command-processor)
-                (else
-                 (let1 reply (send-command #f cmd)
-                   (case (car cmd)
-                     ((ls run kill) (ls-result reply))
-                     (else (write reply) (newline)))
-                   spvr-command-processor)
-                 ))))
-          ))
-      )))
+             (pw (symbol->string (caddr cmd)))
+             (roles (cdddr cmd)))
+         (kahua-add-developer name pw roles)
+         (write 'done) (newline)
+         spvr-command-processor)
+       (begin
+         (display "Usage: adduser <name> <password> <roles>...\n")
+         spvr-command-processor)))
+    ((deluser)
+     (if (= (length cmd) 2)
+       (let1 name (symbol->string (cadr cmd))
+         (kahua-delete-developer name)
+         (write 'done) (newline)
+         spvr-command-processor)
+       (begin (display "Usage: deluser <name>\n")
+              spvr-command-processor)))
+    ((moduser)
+     (if (and (= (length cmd) 4) (eq? (cadr cmd) 'password))
+       (begin
+         (apply kahua-change-developer-password
+                (map symbol->string (cddr cmd)))
+         (write 'done) (newline)
+         spvr-command-processor)
+       (begin
+         (display "Usage: moduser password <name> <new>\n")
+         spvr-command-processor)))
+    ((lsuser)
+     (write (kahua-list-developer)) (newline)
+     spvr-command-processor)
+
+    ;; plugin management
+    ((plugin)
+     (plugin-command (cdr cmd))
+     spvr-command-processor)
+    (else
+     (let1 reply (send-command #f cmd)
+       (case (car cmd)
+         ((ls run kill) (ls-result reply))
+         (else (write reply) (newline)))
+       spvr-command-processor)
+     )))
 
 (define (ls-result reply)
   (define now (sys-time))
@@ -286,12 +287,23 @@
       ((conf-file "c=s")
        (user      "user=s")
        (gosh      "gosh=s")  ;; wrapper script adds this.  ignore.
-       )
+       (help      "h|help" => (cut usage))
+       . args)
     (set-signal-handler! SIGINT  (lambda _ (exit 0)))
     (set-signal-handler! SIGTERM (lambda _ (exit 0)))
     (kahua-init conf-file :user user)
-    (let loop ((command-processor spvr-command-processor))
-      (loop (command-processor)))))
+    (cond
+     ((null? args) ;; interactive mode
+      (let loop ((command-processor spvr-command-processor))
+        (loop (command-processor))))
+     (else         ;; batch mode
+      (dispatch-spvr-command
+       (call-with-input-string (string-join args " ") port->sexp-list))
+      (exit 0)))))
+
+(define (usage)
+  (print "kahua-admin [-c=conf-file] [-user=user] [command ...]")
+  (exit 0))
 
 ;; Local variables:
 ;; mode: scheme
