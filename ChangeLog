@@ -1,3 +1,9 @@
+2004-02-14  Nobuo Yamashita  <nobsun@sampou.org>
+	
+	* src/kahua/elem.scm: newly added. It provides html tags implemented
+	as functions.
+	* src/kahua.scm: added kahua.elem.
+	
 2004-02-14  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* emacs/kahua-shell.el.in: added remote emacs interface. can use 'run-kahua-shell' like 'run-scheme'.
