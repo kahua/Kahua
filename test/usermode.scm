@@ -1,7 +1,7 @@
 ;; test user exclusive mode.
 ;; ユーザ専用モードのテスト
 
-;; $Id: usermode.scm,v 1.3 2004/04/19 03:33:37 nobsun Exp $
+;; $Id: usermode.scm,v 1.4 2004/08/12 05:03:38 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -174,8 +174,11 @@
 
 (define (shell-out)
   (process-input *shell*))
+
 (define (shell-in)
-  (process-output *shell*))
+  (let1 pt (process-output *shell*)
+;; ad hoc patch for Gauche 0.8.1
+    (begin ((setter port-buffering) pt :none) pt)))
 
 (define (send-shell msg)
   (let* ((out (shell-out)))
