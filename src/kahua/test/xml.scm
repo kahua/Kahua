@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: xml.scm,v 1.5 2003/12/20 00:37:54 shiro Exp $
+;; $Id: xml.scm,v 1.6 2003/12/21 11:11:39 shiro Exp $
 
 ;; This module provides the means of test the result of HTML
 ;; generating code, such as CGI programs.   The output of
@@ -116,6 +116,14 @@
 ;;         matches the input:
 ;;
 ;;          (dl (dt "foo") (dd "bar") (dt "foo2") (dd "bar2"))
+;;
+;;     (!contain <pattern> ...)
+;;
+;;         Matches any sequence that includes all of <pattern>s, in any
+;;         order.  The input pattern may contain items that doesn't
+;;         match any of <pattern>s.  It can be achieved by
+;;         (!permute ?* <pattern> ?* <pattern> ... <pattern> ?*),
+;;         but !contain is much more efficient.
 ;;
 ;;     When an optional argument extra-check is given, it is 
 ;;     called with one argument, an assoc list of pattern variable
@@ -270,10 +278,8 @@
 (define (any-permutation pred seq)
   (call/cc
    (lambda (break)
-     (permutations*-for-each
-      (lambda (seq) (cond ((pred seq) => break) (else #f)))
-      seq
-      equal?)
+     (permutations*-for-each (lambda (seq) (cond ((pred seq) => break)))
+                             seq equal?)
      #f)))
 
 ;; Match one pattern item.
@@ -321,6 +327,8 @@
        (match-contents (cdr pat) ls cont r))
       ((!permute)
        (any-permutation (cut match-contents <> ls cont r) (cdr pat)))
+      ((!contain)
+       (any-permutation (cut match-contain <> ls cont r) (cdr pat)))
       ((!or)
        (any (cut match-pattern <> ls cont r)
             (cdr pat)))
@@ -335,8 +343,18 @@
   (if (null? pats)
     (cont ls r)
     (match-pattern (car pats) ls
-                   (cut match-contents (cdr pats) <> cont <>)
+                   (cute match-contents (cdr pats) <> cont <>)
                    r)))
+
+(define (match-contain pats ls cont r)
+  (cond
+   ((null? pats) (cont '() r)) ;; discards remaining inputs
+   ((null? ls)   #f) ;; ran out inputs
+   (else
+    (or (match-pattern (car pats) ls
+                       (cute match-contain (cdr pats) <> cont <>)
+                       r)
+        (match-contain pats (cdr ls) cont r)))))
 
 (define (match-input pattern input . opts)
   (let ((extra-check (get-optional opts (lambda (r) #t))))
