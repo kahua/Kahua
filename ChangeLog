@@ -1,5 +1,10 @@
 2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* Version 0.2.3 released
+	Several modifications in testing part.
+
+2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
+
 	* test/admin.scm.in, shell.scm.in,
 	  test/spvr.scm.in, test/usermode.scm.in:
 	modified socket check rootine (because there are systems
