@@ -1,12 +1,25 @@
-SHELL       = @SHELL@
-prefix      = @prefix@
-exec_prefix = @exec_prefix@
-bindir      = @bindir@
-libdir      = @libdir@
+package           = kahua
+SHELL             = @SHELL@
+prefix            = @prefix@
+exec_prefix       = @exec_prefix@
+bindir            = @bindir@/$(package)
+sbindir           = @sbindir@/$(package)
+libexecdir        = @libexecdir@/$(package)
+datadir           = @datadir@/$(package)
+sysconfdir        = @sysconfdir@/$(package)
+sharedstatedir    = @sharedstatedir@/$(package)
+localstatedir     = @localstatedir@/$(package)
+libdir            = @libdir@/$(package)
+includedir        = @includedir@/$(package)
+oldincludedir     = @oldincludedir@/$(package)
+infodir           = @infodir@/$(package)
+mandir            = @mandir@/$(package)
+
 srcdir      = @srcdir@
 VPATH       = $(srcdir)
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
+KAHUA_ELISPDIR = @KAHUA_ELISPDIR@
 
 DESTDIR  =
 
@@ -34,6 +47,19 @@ clean:
 	rm -rf core *~ $(ELISPS)
 
 install: all
+	if test "$(KAHUA_ELISPDIR)" != ""; then \
+	  $(MKINSTDIR) $(KAHUA_ELISPDIR); \
+	  for f in $(ELISPS); do \
+	    $(INSTALL) -m 555 $$f $(KAHUA_ELISPDIR)/$$f; \
+	  done; \
+	fi
+
+uninstall:
+	for f in $(ELISPS); do \
+	  if test -r $(KAHUA_ELISPDIR)/$$f; then \
+	    rm -f $(KAHUA_ELISPDIR)/$$f; \
+	  fi; \
+	done; \
 
 distclean: clean
 	rm -rf $(CONFIG_GENERATED)
