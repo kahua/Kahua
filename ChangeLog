@@ -1,9 +1,8 @@
 2003-12-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/test/xml.scm : The last fix about *test-error* is wrong.
-	  If the test procedure gets *test-error* as input, it must compare
-	  whether the pattern is also *test-error*---otherwise, the test
-	  should fail anyway.
+	  If the test procedure gets *test-error* as input, it should return
+	  #f---it never matches any pattern anyway.
 
 2003-12-28  Shiro Kawai  <shiro@acm.org>
 
