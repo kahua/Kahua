@@ -4,16 +4,14 @@
 (use util.list)
 
 (define (simple-page ttl . elems)
-  `(html (head (title ,ttl))
+  `((html (head (title ,ttl))
          (body (@ (bgcolor "white"))
                (h1 ,ttl)
-               ,@elems)))
+               ,@elems))))
 
 (define (simple-page/context ttl . elems)
   (lambda (context)
-    (interp-html (apply simple-page ttl elems)
-		 context
-		 (lambda (s _) s))))
+    (interp-html (apply simple-page ttl elems) context)))
 
 (define all-items
   (map (lambda (n) (list 'li (x->string n))) (iota 15)))

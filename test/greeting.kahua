@@ -1,16 +1,14 @@
 ;-*-scheme-*-
 
 (define (simple-page ttl . elems)
-  `(html (head (title ,ttl))
-         (body (@ (bgcolor "white"))
-               (h1 ,ttl)
-               ,@elems)))
+  `((html (head (title ,ttl))
+	  (body (@ (bgcolor "white"))
+		(h1 ,ttl)
+		,@elems))))
 
 (define (simple-page/context ttl . elems)
   (lambda (context)
-    (interp-html (apply simple-page ttl elems)
-		 context
-		 (lambda (s _) s))))
+    (interp-html (apply simple-page ttl elems) context)))
 
 (define greeting
   (lambda (context)
