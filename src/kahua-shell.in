@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-shell.in,v 1.2 2004/02/14 09:05:17 tahara Exp $
+;; $Id: kahua-shell.in,v 1.3 2004/02/16 12:55:34 tahara Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -155,10 +155,12 @@
 
 ;; Entry -------------------------------------------------------
 (define (main args)
-  (let-args (cdr args) ((conf-file "c=s" #f))
+  (let-args (cdr args)
+      ((conf-file "c=s" #f)
+       (user "user=s" #f))
     (set-signal-handler! SIGINT  (lambda _ (exit 0)))
     (set-signal-handler! SIGTERM (lambda _ (exit 0)))
-    (kahua-init conf-file)
+    (kahua-init conf-file :user user)
     (let loop ((command-processor login-processor))
       (loop (command-processor)))))
 

@@ -1,7 +1,26 @@
 2004-02-16  Yusei Tahara  <tahara@timedia.co.jp>
 
-	* src/kahua-admin.in (spvr-command-processor):
-	added help command list, adduser, deluser, lsuser.
+	* src/kahua/config.scm
+	(<kahua-custom>): added. and added new internal slot, "user-mode" for
+	running user mode. when running under user mode, "user-mode" value
+	is a user name.
+	(<kahua-config>): change inheritance. now <kahua-config> inherit
+	two classes, <kahua-custom> and <singleton-mixin>.
+	(kahua-init): change arguments. now "cfile" must need.
+	"user" and "skip-check?" are optional keyword arguments.
+	when apply "user" argument, load the user's "custom.conf"
+	after "kahua.conf".
+	* src/kahua-server.in (kahua-server-main):added optional argument
+	"-user" for running user mode.
+	* src/kahua-spvr.in
+	(worker-script): when running under user mode, run kahua-server process
+	with "-user" argument.
+	(main): added optinal argument "-user" for running user mode.
+	* src/kahua-shell.in (main): added optional argument "-user"
+	for running user mode.
+	* src/kahua-admin.in (spvr-command-processor): added help command list.
+	adduser, deluser, lsuser.
+	(main): added optional argument "-user" for running user mode.
 
 2004-02-15  Yusei Tahara  <tahara@timedia.co.jp>
 

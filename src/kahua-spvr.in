@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.8 2004/02/12 11:46:21 nobsun Exp $
+;; $Id: kahua-spvr.in,v 1.9 2004/02/16 12:55:34 tahara Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -33,6 +33,7 @@
 (use util.list)
 (use kahua.config)
 (use kahua.gsid)
+(use kahua.developer)
 
 ;; Eventually this should be configurable by some conf file
 (define *default-worker-type* 'dummy)
@@ -137,10 +138,14 @@
 (define (worker-script worker-type)
   (cond ((assq worker-type (worker-types))
          => (lambda (p)
-              (let1 args (get-keyword :arguments (cdr p) '())
+              (let ((args (get-keyword :arguments (cdr p) '()))
+                    (user (ref (kahua-config) 'user-mode)))
                     `("kahua-server"
                       ,@(cond ((kahua-config-file)
-                               => (lambda (c) `("-c" ,c)))
+                               => (lambda (c) `("-c" ,c
+                                                ,@(if user
+                                                    `("-user" ,user) '())
+                                                )))
                               (else '()))
                       ,(let1 type (symbol->string worker-type)
                              (string-append type "/" type ".kahua"))
@@ -444,9 +449,10 @@
        (listener "i" #f)
        (sockbase "s=s" #f)  ;; overrides conf file settings
        (logfile  "l=s" #f)  ;; overrides conf file settings
+       (user "user=s" #f)
        )
     ;; initialization
-    (kahua-init conf-file)
+    (kahua-init conf-file :user user)
     (when sockbase (set! (kahua-sockbase) sockbase))
     (cond ((equal? logfile "-") (log-open #t))
           (logfile (log-open logfile))

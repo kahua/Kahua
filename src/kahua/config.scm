@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm,v 1.6 2004/01/29 07:19:18 tahara Exp $
+;; $Id: config.scm,v 1.7 2004/02/16 12:55:34 tahara Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -20,7 +20,7 @@
 (define-module kahua.config
   (use gauche.mop.singleton)
   (use file.util)
-  (export kahua-init <kahua-config>
+  (export kahua-init <kahua-custom> <kahua-config>
           kahua-config
           kahua-sockbase
           kahua-logpath
@@ -34,7 +34,7 @@
 
 (define *kahua-conf-default* "/etc/kahua.conf")
 
-(define-class <kahua-config> (<singleton-mixin>)
+(define-class <kahua-custom> ()
   (;; sockbase - specifies where to open the server socket.
    ;;     Currently only unix domain socket is supported.
    ;;     The socket directory must be writable by kahua processes.
@@ -71,9 +71,14 @@
 
 
    ;; internal
+   (user-mode :init-value #f)
    (conf-file :init-value #f)
    )
   )
+
+
+(define-class <kahua-config> (<kahua-custom> <singleton-mixin>) ())
+
 
 (define-method initialize ((self <kahua-config>) initargs)
   (next-method)
@@ -95,16 +100,44 @@
 
 ;; kahua-init [conf-file] [skip-check?]
 ;; if "skip-check?" is #t, read kahua.conf only(not check 
-(define (kahua-init . args)
-  (let-optionals* args
-		  ((cfile #f)
-		   (skip-check? #f))
+(define (kahua-init cfile . args)
+  (let-keywords* args
+      ((user #f)
+       (skip-check? #f))
     (let1 cfile (or cfile *kahua-conf-default*)
       (if (file-is-readable? cfile)
         (begin
          (load cfile :environment (find-module 'kahua.config))
          (set! (ref (instance-of <kahua-config>) 'conf-file) cfile)
-         (unless skip-check? (sanity-check (instance-of <kahua-config>))))
+         (unless skip-check? (sanity-check (instance-of <kahua-config>)))
+         ;; for running user-mode
+         ;; make <kahua-custom> instance then copy slots value to
+         ;; instance of <kahua-config>
+         (if user
+           (let* ((custom-file
+                   (build-path
+                    (ref (instance-of <kahua-config>) 'working-directory)
+                    "user" user "custom.conf"))
+                  (kahua-custom
+                   (eval (call-with-input-file custom-file read)
+                         (find-module 'kahua.config)))
+                  (sockbase (build-path
+                             (ref (instance-of <kahua-config>) 'sockbase)
+                             "user" user)))
+             ;; Copy instance of <kahua-custom> slot values
+             ;; to instance of <kahua-config>. This is not good.
+             (set! (ref (instance-of <kahua-config>) 'sockbase) sockbase)
+             (set! (ref (instance-of <kahua-config>) 'user-mode) user)
+             (set! (ref (instance-of <kahua-config>) 'working-directory)
+                   (ref kahua-custom 'working-directory))
+             (set! (ref (instance-of <kahua-config>) 'static-document-path)
+                   (ref kahua-custom 'static-document-path))
+             (set! (ref (instance-of <kahua-config>) 'static-document-url)
+                   (ref kahua-custom 'static-document-url))
+             (set! (ref (instance-of <kahua-config>) 'timeout-mins)
+                   (ref kahua-custom 'timeout-mins))
+             ))
+         )
       (error "configuration file ~a is not readable.  using default settings."
             cfile))))
   ;; Include working directory to *load-path*.
