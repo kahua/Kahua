@@ -1,8 +1,20 @@
-SHELL       = @SHELL@
-prefix      = @prefix@
-exec_prefix = @exec_prefix@
-bindir      = @bindir@
-libdir      = @libdir@
+package           = kahua
+SHELL             = @SHELL@
+prefix            = @prefix@
+exec_prefix       = @exec_prefix@
+bindir            = @bindir@/$(package)
+sbindir           = @sbindir@/$(package)
+libexecdir        = @libexecdir@/$(package)
+datadir           = @datadir@/$(package)
+sysconfdir        = @sysconfdir@/$(package)
+sharedstatedir    = @sharedstatedir@/$(package)
+localstatedir     = @localstatedir@/$(package)
+libdir            = @libdir@/$(package)
+includedir        = @includedir@/$(package)
+oldincludedir     = @oldincludedir@/$(package)
+infodir           = @infodir@/$(package)
+mandir            = @mandir@/$(package)
+
 srcdir      = @srcdir@
 VPATH       = $(srcdir)
 top_builddir = @top_builddir@
@@ -13,7 +25,7 @@ DESTDIR  =
 INSTALL = @INSTALL@
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
 
-INSTALL_DIR = /var/lib/kahua/plugins
+INSTALL_DIR = $(localstatedir)/plugins
 CREATE_DIR = $(INSTALL_DIR)
 
 
