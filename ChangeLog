@@ -16,6 +16,7 @@
 	(kahua-persistent-class-definition): added metalevel API.
 	(translate-up, translate-down): fixed a bug that caused an error
 	when upgrading databases created by older kahua.persistence.
+	(autoloads): make the test pass without dbi.
 
 2004-02-27  Shiro Kawai  <shiro@acm.org>
 

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.16 2004/02/29 03:53:06 shiro Exp $
+;; $Id: persistence.scm,v 1.17 2004/02/29 05:56:45 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -780,9 +780,10 @@
 (define-class <kahua-db-mysql> (<kahua-db-dbi>) ())
 (define-class <kahua-db-postgresql> (<kahua-db-dbi>) ())
 
-(autoload dbi
-          dbi-make-driver dbi-make-connection dbi-make-query
-          dbi-execute-query dbi-close dbi-get-value)
+(when (library-exists? 'dbi :strict? #f)
+  (autoload dbi
+            dbi-make-driver dbi-make-connection dbi-make-query
+            dbi-execute-query dbi-close dbi-get-value))
 
 (define-method initialize ((db <kahua-db-dbi>) initargs)
   (next-method)
