@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: review.kahua,v 1.3 2004/01/16 09:40:19 shiro Exp $
+;; $Id: review.kahua,v 1.4 2004/02/16 02:21:26 nobsun Exp $
 
 (define-class <review> (<kahua-persistent-base>)
   ((about     :init-keyword :about  :init-value #f
@@ -36,44 +36,44 @@
         (show-reviews (key-of book) cont)
         (cont '()))))
   
-  `((tr (@ (style "border-bottom: 2px solid black"))
-        (td
-         (table
-          (tr (th (@ (style "background-color:#dddddd; width:7em"))
-                  "レビューア")
-              (td ;(@ (style "width:35em"))
-                  ,(cond ((ref self 'author) => (cut ref <> 'login-name))
-                         (else "guest"))))
-          (tr (th (@ (style "background-color:#dddddd")) "評価(1〜5)")
-              (td ,@(make-list (ref self 'evaluation) "★")))
-          (tr (th (@ (style "background-color:#dddddd")) "コメント")
-              (td ,(ref self 'comment)))
-          ,@(cond-list
-             ((and (kahua-current-user)
-                   (equal? (key-of (kahua-current-user))
-                           (key-of (ref self 'author))))
-              `(tr (th) (td (a/cont (@@ (cont ,delete-review))
-                                    "[レビューを削除]")))))))))
+  (list
+   (tr: (@: (style "border-bottom: 2px solid black"))
+        (td:
+         (apply table:
+          (tr: (th: (@: (style "background-color:#dddddd; width:7em"))
+		    "レビューア")
+	       (td: ;(@: (style "width:35em"))
+                  (cond ((ref self 'author) => (cut ref <> 'login-name))
+			(else "guest"))))
+          (tr: (th: (@: (style "background-color:#dddddd")) "評価(1〜5)")
+	       (apply td: (make-list (ref self 'evaluation) "★")))
+          (tr: (th: (@: (style "background-color:#dddddd")) "コメント")
+	       (td: (ref self 'comment)))
+          (cond-list
+	   ((and (kahua-current-user)
+		 (equal? (key-of (kahua-current-user))
+			 (key-of (ref self 'author))))
+	    (tr: (th:) (td: (a/cont: (@@: (cont delete-review))
+				     "[レビューを削除]")))))))))
   )
 
 (define (show-reviews key cont)
   (let ((book (find-kahua-instance <book> key)))
     (if (not book)
-      (cont '((p "(書籍データがありません)")))
+      (cont (list (p: "(書籍データがありません)")))
       ((lister (map key-of (ref book 'reviews))
 	       (lambda (key count)
 		 (format-review (find-kahua-instance <review> key)
 				cont))
-	       :table-attrs '(@ (style "border-collapse: collapse; width:95%")))
+	       :table-attrs (@: (style "border-collapse: collapse; width:95%")))
        (lambda (nodes)
-	 (cont `((h2 ,(ref book 'title)
-		     "に対する読者レビュー")
-		 ,@nodes
-		 (a/cont (@@ (cont ,books ,(key-of book))) "[書籍情報に戻る]")
-		 ,(book-review-link (key-of book) cont))
-               ))
-       )
-      )))
+	 (cont (cons
+		(h2: (ref book 'title) "に対する読者レビュー")
+		(append nodes
+			(list
+			 (a/cont: (@@: (cont books (key-of book)))
+				  "[書籍情報に戻る]")
+			 (book-review-link (key-of book) cont))))))))))
 
 (define (write-review key cont)
   (define (commit-review)
@@ -91,27 +91,28 @@
                  (ref book 'reviews)))
           (kahua-db-sync)
           (show-reviews key cont))
-        (cont '((p "(書籍データがありません)"))))))
+        (cont (list (p: "(書籍データがありません)"))))))
   
   (let ((book (find-kahua-instance <book> key))
         (user (kahua-current-user)))
     (if (not book)
-      (cont '((p "(書籍データがありません)")))
-      (cont `((h2 ,(ref book 'title) "についてのレビューを書く")
-              (form/cont
-               (@@ (cont ,commit-review))
-               (table
-                (tr (th "レビューア")
-                    (td ,(if user (ref user 'login-name) "guest")))
-                (tr (th "評価")
-                    (td (select (@ (name "evaluation"))
-                                ,@(map (lambda (s) `(option ,s))
-                                       '("1" "2" "3" "4" "5")))))
-                (tr (th "コメント")
-                    (td (textarea (@ (name "comment") (cols 40)))))
-                (tr (th)
-                    (td (input (@ (type "submit") (name "submit")
-                                  (value "レビューを送信"))))))))
+      (cont (list (p: "(書籍データがありません)")))
+      (cont (list
+	     (h2: (ref book 'title) "についてのレビューを書く")
+	     (form/cont:
+	      (@@: (cont commit-review))
+	      (table:
+	       (tr: (th: "レビューア")
+                    (td: (if user (ref user 'login-name) "guest")))
+	       (tr: (th: "評価")
+                    (td: (apply select: (@: (name "evaluation"))
+                                (map (lambda (s) `(option ,s))
+				     '("1" "2" "3" "4" "5")))))
+	       (tr: (th: "コメント")
+                    (td: (textarea: (@: (name "comment") (cols 40)))))
+	       (tr: (th:)
+                    (td: (input: (@: (type "submit") (name "submit")
+				     (value "レビューを送信"))))))))
             )))
   )
 
