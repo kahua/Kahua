@@ -3,24 +3,26 @@
 (use srfi-1)
 (use util.list)
 
-(define (simple-page ttl . elems)
-  `((html (head (title ,ttl))
-         (body (@ (bgcolor "white"))
-               (h1 ,ttl)
-               ,@elems))))
+(define (simple-page-template ttl)
+  (lambda (elems)
+    `((html (head (title ,ttl))
+	    (body (@ (bgcolor "white"))
+		  (h1 ,ttl)
+		  ,@elems)))))
 
 (define all-items
   (map (lambda (n) (list 'li (x->string n))) (iota 15)))
 
-(define (lister items)
+(define (lister items template)
   (lambda ()
     (receive (cur next)
-        (split-at* items 10)
-      (simple-page
-       "Lister"
-       `(ul ,@(append cur 
-                      (if (null? next) '() 
-                          `((li (a/cont (@@ (cont ,(lister next)))
-                                        "Next"))))))))))
+	     (split-at* items 10)
+	     (template
+	      `((ul 
+		 ,@(append cur 
+			   (if (null? next) '() 
+			       `((li (a/cont (@@ (cont 
+						  ,(lister next template)))
+					     "Next")))))))))))
 
-(initialize-main-proc (lister all-items))
+(initialize-main-proc (lister all-items (simple-page-template "Lister")))
