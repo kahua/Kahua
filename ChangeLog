@@ -1,5 +1,8 @@
 2004-02-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua/developer.scm (save-conf): made it more robust to save
+	user.conf.
+
 	* src/kahua/gsid.scm (make-worker-id): do not include worker type
 	in the worker id.   It is redundant.
 	* src/kahua/persistence.scm (kahua-serializable-object?): added.

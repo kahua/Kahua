@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: developer.scm,v 1.1 2004/01/29 07:19:18 tahara Exp $
+;; $Id: developer.scm,v 1.2 2004/02/18 22:54:26 shiro Exp $
 
 
 (define-module kahua.developer
@@ -56,6 +56,7 @@
 
 (define (save-conf)
   (let* ((conf-file (kahua-userconf-file))
+         (temp-file (string-append conf-file ".tmp"))
          (lock-file (string-append conf-file ".lock"))
          (lock-port #f))
 
@@ -73,12 +74,16 @@
     (define (unlock)
       (let ((record (make <sys-flock> :type F_UNLCK)))
         (sys-fcntl lock-port F_SETLK record)))
+    
     (if (lock)
-        (begin
+      (with-error-handler
+          (lambda (e) (unlock) (sys-unlink temp-file) (raise e))
+        (lambda ()
           (let ((temp (developers)))
-          (with-output-to-file conf-file (lambda () (write temp)))
-          (unlock)))
-        (error "can't lock userconf file" conf-file))))
+            (with-output-to-file temp-file (lambda () (write temp)))
+            (sys-rename temp-file conf-file)
+            (unlock))))
+      (error "can't lock userconf file" conf-file))))
 
 
 ;; misc functions
