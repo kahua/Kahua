@@ -1,3 +1,9 @@
+2004-02-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm (kahua-db-open-dbi): handles
+	<dbi-exception> correctly.
+	* test/persistence-dbi.scm : handles <dbi-exception> correctly.
+
 2004-02-29  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* src/kahua-admin.in : add moduser command that changes password.
