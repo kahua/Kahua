@@ -17,10 +17,12 @@
 
   (export initialize-main-proc
           not-accessible?
-	  add-element!
+          add-element!
           define-element
-	  main-proc
-	  interp-html))
+          define-entry
+          main-proc
+          interp-html
+          ))
 (select-module kahua.html)
 
 ;; Patch to fix 0.7.2 bug
@@ -58,6 +60,16 @@
   (syntax-rules ()
     ((define-element name args . body)
      (add-element! 'name (lambda args . body)))))
+
+(define (add-entry! name proc)
+  (session-cont-register proc (symbol->string name)))
+
+(define-syntax define-entry
+  (syntax-rules ()
+     ((define-entry (name args) body . rest)
+      (add-entry! 'name (lambda (args) body . rest)))
+     ((define-entry name args body . rest)
+      (add-entry! 'name (lambda args body . rest)))))
 
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents content context
@@ -108,16 +120,29 @@
 ;; a/cont element
 ;;
 ;; `(a/cont (@@ (cont ,closure)) contents)
+;; or
+;; `(a/cont (@@ (cont entry-name)) contents)
 ;;
 
 (define-element a/cont (attrs auxs contents context cont)
-  (let* ((cont-closure (assq-ref auxs 'cont))
-	 (id (session-cont-register (car cont-closure))))
-    (interp-html 
-     `(a (@ (href ,(format "~a?x-kahua-cgsid=~a" (kahua-bridge-name) id)))
-         ,@contents)
-     context
-     cont)))
+  (let ((cont-closure (car (assq-ref auxs 'cont '(#f)))))
+    (if (procedure? cont-closure)
+        (let ((id (session-cont-register cont-closure)))
+          (interp-html 
+           `(a (@ (href ,(format "~a?x-kahua-cgsid=~a" (kahua-bridge-name) id)))
+               ,@contents)
+           context
+           cont))
+      (if cont-closure
+          (interp-html
+           `(a (@ (href ,(format "~a/~a/~a"
+                                 (kahua-bridge-name) (kahua-worker-type) cont-closure)))
+               ,@contents)
+           context cont)
+        (interp-html
+         `(a (@ (href ,(format "~a/~a" (kahua-bridge-name) (kahua-worker-type)))) ,@contents)
+         context cont)))))
+
 ;;
 ;; form/cont
 ;; 
@@ -126,7 +151,7 @@
 
 (define-element form/cont (attrs auxs contents context cont)
   (let* ((cont-closure (assq-ref auxs 'cont))
-	 (id (session-cont-register (car cont-closure))))
+         (id (session-cont-register (car cont-closure))))
     (interp-html
      `(form (@ (method "POST") 
                (action ,(kahua-bridge-name)))
@@ -138,4 +163,5 @@
      cont)))
 
 (provide "kahua/html")
+
 

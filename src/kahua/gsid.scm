@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: gsid.scm,v 1.1 2003/12/11 05:39:12 nobsun Exp $
+;; $Id: gsid.scm,v 1.2 2003/12/15 21:12:03 ko1 Exp $
 
 (define-module kahua.gsid
   (use gauche.uvector)
@@ -49,10 +49,10 @@
 (define (decompose-gsid gsid)
   (if (string? gsid)
     (let1 l (string-split gsid #\-)
-      (unless (and (= (length l) 3)
-                   (equal? (car l) "1"))
-        (error "bad session ID"))
-      (values (cadr l) (caddr l)))
+      (if (and (= (length l) 3)
+               (equal? (car l) "1"))
+          (values (cadr l) (caddr l))
+        (values #f gsid)))
     (values #f #f)))
 
 (define (gsid->worker-id gsid)

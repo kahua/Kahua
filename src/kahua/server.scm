@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.1 2003/12/11 05:39:12 nobsun Exp $
+;; $Id: server.scm,v 1.2 2003/12/15 21:12:03 ko1 Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -25,20 +25,28 @@
           kahua-default-handler
           kahua-context-add
           kahua-context-ref
-          kahua-current-user)
+          kahua-current-user
+          kahua-worker-type)
   )
 (select-module kahua.server)
 
 ;; internally keep worker-id
 (define worker-id (make-parameter "dummy"))
 
+;; internally keep worker-type
+(define worker-type (make-parameter "dummy"))
+(define (kahua-worker-type)
+        (worker-type))
+        
+
 ;; KAHUA-INIT-SERVER worker-type
 ;;   Application server should use it within init-server procedure.
 ;;   Returns worker id.
-(define (kahua-init-server worker-type)
+(define (kahua-init-server wtype)
   (random-source-randomize! default-random-source)
-  (let ((wid (make-worker-id worker-type)))
+  (let ((wid (make-worker-id wtype)))
     (session-manager-init wid)
+    (worker-type wtype)
     (worker-id wid)
     wid))
 
