@@ -1,3 +1,8 @@
+2004-01-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in (INSTALL_DIRS): added directory to install
+	  kahua.* modules.
+
 2004-01-02 Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* test/admin.scm : change to use cvs import, checkout.

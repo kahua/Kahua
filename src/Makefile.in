@@ -18,7 +18,7 @@ MKINSTDIR = $(top_srcdir)/mkinstalldirs
 SCM_INSTALL_DIR = $(DESTDIR)`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
 SCRIPT_INSTALL_DIR = $(bindir)
 
-INSTALL_DIRS = $(SCRIPT_INSTALL_DIR)
+INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) $(SCM_INSTALL_DIR)/kahua/
 CREATE_DIRS = /var/lib/kahua /tmp/kahua
 
 SCRIPTS  = kahua-spvr kahua-server kahua-admin kahua-install
