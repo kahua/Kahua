@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.2 2003/12/25 23:46:34 ko1 Exp $
+;; $Id: kahua-spvr.in,v 1.3 2003/12/26 07:33:13 shiro Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -210,7 +210,7 @@
 (define-method list-workers ((self <kahua-spvr>))
   (queue->list (workers-of self)))
 
-;; collect exit status of workes that has exit.
+;; collect exit status of workers that has exit.
 (define-method check-workers ((self <kahua-spvr>))
   (and-let* ((wq (workers-of self))
              ((not (null? wq)))
@@ -224,13 +224,24 @@
     (finish-worker w)
     w))
 
-;; terminate all workes
+;; terminate all workers
 (define-method nuke-all-workers ((self <kahua-spvr>))
   (do ()
       ((queue-empty? (workers-of self)))
     (let ((w (queue-front (workers-of self))))
       (terminate w)
       (check-workers self))))
+
+;; terminates given workers, and starts the same number of
+;; the same type workers.  Returns terminated worker id.
+(define-method restart-workers ((self <kahua-spvr>) workers)
+  (let1 type&ids (map (lambda (w)
+                       (let1 type&id (cons (worker-type-of w)
+                                           (worker-id-of w))
+                         (terminate w) (check-workers self) type&id))
+                      workers)
+    (for-each (lambda (t&i) (run-worker self (car t&i))) type&ids)
+    (map cdr type&ids)))
 
 ;; pick one worker that has worker-id WID.  If WID is #f, pick arbitrary one.
 (define-method find-worker ((self <kahua-spvr>) (wid <string>))
@@ -250,6 +261,19 @@
   (if (queue-empty? (workers-of self))
     (error "no worker available")
     (queue-front (workers-of self))))
+
+;; returns group of workers
+(define-method find-workers ((self <kahua-spvr>) (wtype <symbol>))
+  (if (eq? wtype '*)
+    (queue->list (workers-of self))
+    (filter (lambda (w) (eq? (worker-type-of w) wtype))
+            (queue->list (workers-of self)))))
+
+(define-method find-workers ((self <kahua-spvr>) (wid <string>))
+  (cond ((find-worker self wid) => list) (else '())))
+
+(define-method find-workers ((self <kahua-spvr>) (wcount <integer>))
+  (cond ((find-worker self wcount) => list) (else '())))
 
 ;;; Worker implementation --------------------------------------------
 
@@ -328,6 +352,16 @@
      (map car (worker-types)))
     ((reload) ;; reload app-servers file
      (load-worker-types))
+    ((restart)
+     (fold (lambda (spec lis)
+             (if (or (symbol? spec)
+                       (string? spec)
+                       (integer? spec))
+               (append lis
+                       (restart-workers *spvr* (find-workers *spvr* spec)))
+               lis))
+           '()
+           (cdr body)))
     ((shutdown) ;; shutting down the server
      (log-format "shutdown requested")
      (sys-kill (sys-getpid) SIGTERM))

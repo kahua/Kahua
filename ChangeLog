@@ -1,5 +1,8 @@
 2003-12-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua-spvr.in : added "restart" spvr command to restart
+	  specified worker, for the convenience of development.
+
 	* src/kahua-admin.in : fixed "ls" output format.
 
 	* cgi/kahua.cgi.in: refactored PATH_INFO processing, allowing
