@@ -1,3 +1,10 @@
+2003-12-22  Nobuo Yamashita <nobsun@sampou.org>
+
+	* examples/lambdabooks.kahua (standard-frame, standard-page):
+
+	position of 'context' arg rearraged to be at last but 'cont' arg.
+	(fixed bug: the previous commit did not changed them).
+
 2003-12-21  Nobuo Yamashita <nobsun@sampou.org>
 
 	* examples/lambdabooks.kahua (standard-frame, standard-page):
