@@ -1,0 +1,265 @@
+;; -*-scheme-*-
+;; lambdacalcul.kahua
+;;
+;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: lambdacalcul.kahua,v 1.1 2004/03/05 23:10:41 shiro Exp $
+;;
+;; This example shows simple application by kahua.
+;;
+
+(use srfi-1)
+
+;; グローバル変数 (free variable)
+(define-class <var> ()
+  ((var :init-keyword :var)
+   (val :init-keyword :val)
+   ))
+
+;; ローカル変数 (bound variable)
+(define-class <lvar> ()
+  ((var :init-keyword :var)
+   (id  :init-keyword :id)
+   ))
+
+;; クロージャ
+(define-class <closure> ()
+  ((arg  :init-keyword :arg)
+   (body :init-keyword :body)
+   (env  :init-keyword :env))
+  )
+
+;; デフォルトのグローバル定義。
+(define *definitions*
+  '(;; ブール代数
+    (true  (λ t λ f t))
+    (false (λ t λ f f))
+    (if    (λ t λ a λ b t a b))
+    (and   (λ a λ b a b false))
+    (or    (λ a λ b a true b))
+    (not   (λ a a false true))
+    ;; ペア
+    (pair  (λ ca λ cd λ b b ca cd))
+    (car   (λ p p true))
+    (cdr   (λ p p false))
+    ;; church numerals
+    (zero  (λ s λ z z))
+    (one   (λ s λ z s z))
+    (two   (λ s λ z s (s z)))
+    (succ  (λ n λ s λ z s (n s z)))
+    (+     (λ m λ n λ s λ z m s (n s z)))
+    )
+  )
+
+;; 例として示す式。
+(define *examples*
+  '((if true X Y)
+    (car (pair X Y))
+    (car (cdr (pair X (pair Y Z))))
+    (succ zero)
+    (succ one)
+    (+ one two)))
+
+;; ヘルプ
+(define *help*
+  (node-set:
+   (h3: "ヘルプ")
+   (ul:
+    (li: "λ式  '" (tt: "λx.x y") "' は (λ x x y) 等と表現されます。")
+    (li: "定義を追加するには、(def シンボル λ式) を入力します。")
+    (li: "free variableは一種の定数として扱われます。"
+         "free variableがグローバルな定義を持つ場合はそこにリンクが現れ、"
+         "クリックすると定義に置換されます。")
+    (li: "適用可能なλ式には、「λ」のところにリンクが現れます。"
+         "クリックすると、λ式の適用を行います。"))))
+
+(define (page contents)
+  (node-set:
+   (html:
+    (head: (title: "Lambda Calculator"))
+    (body: (h1: "λ計算機") contents))))
+
+(define-entry (start)
+  (let ((definitions *definitions*))
+
+    (define calcul
+      (entry-lambda (:keyword expr)
+        (let1 x (with-error-handler
+                    (lambda (e) (input "文法が不正です" expr))
+                  (lambda () (read-from-string expr)))
+          (cond ((eof-object? x) (input "" ""))
+                ((and (pair? x)
+                      (eq? (car x) 'def))
+                 (if (and (= (length x) 3)
+                          (symbol? (cadr x)))
+                   (definition x)
+                   (input "定義は、 (def <シンボル> <λ式>) です" expr)))
+                (else (render (parse x '())))
+                ))))
+
+    (define (definition x)
+      (push! definitions (cdr x))
+      (input "" ""))
+
+    (define (show-defs)
+      (node-set:
+       (hr:)
+       (p: "既にある定義"
+           (apply pre: (map (lambda (p)
+                              (format "(def ~s ~s)\n" (car p) (cadr p)))
+                            definitions)))))
+
+    ;; parse は、ユーザが入力した式をトラバースして、内部表現に直す。
+    ;; 内部表現の基本はS式だが、変数およびクロージャが構造体に置き換わっている。
+    ;; envは静的環境で束縛されている<lvar>のリスト。
+    (define (parse x env)
+      (cond
+       ((symbol? x)
+        (cond ((find (lambda (v) (eq? (ref v 'var) x)) env))
+              ((assq x definitions)
+               => (lambda (def)
+                    (make <var> :var x :val (parse (cadr def) '()))))
+              (else x)))
+       ((not (pair? x)) x)
+       ((and (eq? (car x) 'λ)
+             (pair? (cdr x)))
+        (let* ((arg (cadr x))
+               (id (count (lambda (v) (eq? (ref v 'var) arg)) env))
+               (lvar (make <lvar> :var arg :id id)))
+          (make <closure>
+            :arg lvar :env env :body (parse (cddr x) (cons lvar env)))))
+       (else (map (cut parse <> env) x))))
+
+    ;; 式の変換
+    ;; ユーザのアクションによって式を変換する。
+
+    ;; グローバル変数置換
+    (define (substitute-var tree var)
+      (cond ((eq? tree var) (ref var 'val))
+            ((is-a? tree <closure>)
+             (make <closure> :arg (ref tree 'arg)
+                   :body (substitute-var (ref tree 'body) var)))
+            ((list? tree)
+             (map (cut substitute-var <> var) tree))
+            (else tree)))
+
+    ;; 関数適用
+    (define (apply-closure tree clo)
+      (cond ((and (pair? tree)
+                  (eq? (car tree) clo)
+                  (pair? (cdr tree)))
+             (let* ((body (ref clo 'body))
+                    (arg  (cadr tree))
+                    (rest (cddr tree))
+                    (result (substitute-local body (ref clo 'arg) arg))
+                    (result (if (and (list? result) (null? (cdr result)))
+                              (car result)
+                              result)))
+               (if (null? rest)
+                 result
+                 (cons result rest))))
+            ((is-a? tree <closure>)
+             (make <closure> :arg (ref tree 'arg)
+                   :body (apply-closure (ref tree 'body) clo)))
+            ((list? tree)
+             (map (cut apply-closure <> clo) tree))
+            (else
+             tree)))
+
+    (define (substitute-local expr var val)
+      (cond ((eq? expr var) val)
+            ((list? expr)
+             (map (cut substitute-local <> var val) expr))
+            ((is-a? expr <closure>)
+             (make <closure> :arg (ref expr 'arg)
+                   :body (substitute-local (ref expr 'body) var val)))
+            (else expr)))
+      
+    ;; 式の表示
+    ;;   グローバル変数 - 変数名をリンクに
+    ;;   クロージャ - 「λ」をリンクに
+    (define (render tree)
+      (define (render-1 t)
+        (cond ((is-a? t <var>)
+               (a/cont: (@@: (cont (action substitute-var tree t)))
+                        (x->string (ref t 'var))))
+              ((is-a? t <lvar>) (render-lvar t))
+              ((is-a? t <closure>)
+               (node-set: "(" (render-clo t #f) ")"))
+              ((list? t)
+               (node-set: "(" (render-list t) ")"))
+              (else (x->string t))))
+
+      (define (render-list t)
+        (if (and (is-a? (car t) <closure>)
+                 (not (null? (cdr t))))
+          (node-set: "(" (render-clo (car t) #t) ") "
+                     (render-map (cdr t)))
+          (node-set: (render-map t))))
+        
+      (define (render-lvar lvar)
+        (if (zero? (ref lvar 'id))
+          (x->string (ref lvar 'var))
+          (node-set: (x->string (ref lvar 'var))
+                     (sub: (x->string (ref lvar 'id))))))
+
+      (define (render-clo clo applicable?)
+        (node-set: (if applicable?
+                     (a/cont: (@@: (cont (action apply-closure tree clo)))
+                              "λ")
+                     "λ")
+                   " " (render-lvar (ref clo 'arg)) " "
+                   (cond ((list? (ref clo 'body))
+                          (render-list (ref clo 'body)))
+                         ((is-a? (ref clo 'body) <closure>)
+                          (render-clo (ref clo 'body) #f))
+                         (else
+                          (render-1 (ref clo 'body))))))
+
+      (define (render-map lis)
+        (define (rec lis r)
+          (if (null? lis)
+            (apply node-set: (reverse! r))
+            (rec (cdr lis) (list* (render-1 (car lis)) " " r))))
+        (cond ((null? lis) "")
+              ((null? (cdr lis)) (render-1 (car lis)))
+              (else (rec (cdr lis) (list (render-1 (car lis)))))))
+
+      (page
+       (node-set:
+        (p: (render-1 tree))
+        (p: (a/cont: (@@: (cont start)) "始めから"))
+        (show-defs))))
+
+    (define (action proc tree node)
+      (lambda () (render (parse (proc tree node) '()))))
+
+    (define (input mesg text)
+      (page
+       (node-set:
+        (p: (or mesg ""))
+        (p: "式または定義を記入して下さい。")
+        (p: "例:")
+        (apply ul:
+               (map (lambda (ex)
+                      (li: (x->string ex)
+                           "  ["
+                           (a/cont: (@@: (cont calcul
+                                               `(expr ,(x->string ex))))
+                                    "この式を評価")
+                           "]"))
+                    *examples*))
+        (form/cont:
+         (@@: (cont calcul))
+         (textarea: (@: (name "expr") (rows 10) (cols 60)) text)
+         (input: (@: (type "submit") (name "submit") (value "Submit"))))
+        (show-defs)
+        *help*)))
+
+    (input "" "(if true X Y)")))
+
+(initialize-main-proc start)
+
+

@@ -30,8 +30,9 @@ SCRIPTFILES = lambdabooks/lambdabooks.kahua     \
               lambdabooks/useradmin.kahua       \
               wiki-iki/wiki-iki.kahua           \
               login/login.kahua                 \
-	      nqueen/nqueen.kahua	        \
-	      lazy-nqueen/lazy-nqueen.kahua
+              nqueen/nqueen.kahua               \
+              lazy-nqueen/lazy-nqueen.kahua     \
+              lambdacalcul/lambdacalcul.kahua
 
 STATICFILES = lambdabooks/images/lambda-books-logo.png \
               lambdabooks/images/separator.jpg \
