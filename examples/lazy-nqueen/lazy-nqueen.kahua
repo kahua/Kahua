@@ -1,111 +1,146 @@
 ;; -*-scheme-*-
 ;; lazy-nqueen.kahua
-;; $Id: lazy-nqueen.kahua,v 1.1 2004/02/10 11:00:19 nobsun Exp $
+;; $Id: lazy-nqueen.kahua,v 1.2 2004/02/10 18:56:13 nobsun Exp $
 ;;
-;; This example shows how to lazy stream works.
+;; This example shows how to lazy style works.
 ;; 
 
-;; Stream's staffs
+;; Lazy staffs
 
-(define-syntax stream-cons
-  (syntax-rules ()
-    ((_ hd tl) (cons  hd (delay tl)))))
+(define (whnf obj)
+  (let1 forced (force obj)
+    (if (promise? forced)
+	(whnf forced)
+	forced)))
 
-(define (stream-car stream) (car stream))
-(define (stream-cdr stream) (force (cdr stream)))
+(define (nf obj)
+  (let1 eobj (whnf obj)
+    (if (pair? eobj) 
+	(cons (nf (car eobj)) (nf (cdr eobj)))
+	eobj)))
 
-(define (force-stream strm)
-  (cond ((empty-stream? strm) '())
-	((pair? strm) (cons (force-stream (stream-car strm))
-			    (force-stream (stream-cdr strm))))
-	(else (force strm))))
+(define (lazy-cons hd tl)
+  (delay (cons hd tl)))
 
-(define empty-stream '())
-(define (empty-stream? stream) (null? stream))
+(define (lazy-car obj)
+  (delay (car (whnf obj))))
 
-(define (stream-map f stream)
-  (if (empty-stream? stream)
-      empty-stream
-      (stream-cons (f (stream-car stream)) (stream-map f (stream-cdr stream)))))
-(define (stream-filter p stream)
-  (if (empty-stream? stream)
-      empty-stream
-      (let ((hd (stream-car stream))
-	    (tl (stream-cdr stream)))
-	(if (p hd)
-	    (stream-cons hd (stream-filter p tl))
-	    (stream-filter p tl)))))
+(define (lazy-cdr obj)
+  (delay (cdr (whnf obj))))
 
-(define (stream-take stream n)
-  (cond ((<= n 0) empty-stream)
-	((empty-stream? stream) empty-stream)
-	(else (stream-cons (stream-car stream) 
-			 (stream-take (stream-cdr stream) (- n 1))))))
 
-(define (stream-split-at stream n)
-  (cond ((empty-stream? stream) (values empty-stream empty-stream))
-	((= n 0) (values empty-stream stream))
-	(else (receive (xs ys)
-		       (stream-split-at (stream-cdr stream) (- n 1))
-		       (values (stream-cons (stream-car stream) xs) ys)))))
+(define (lazy-map f obj)
+  (delay 
+    (let1 eobj (whnf obj)
+      (if (null? eobj)
+	  '()
+	  (lazy-cons (f (lazy-car eobj)) 
+		     (lazy-map f (lazy-cdr eobj)))))))
 
-(define (stream-append xs ys)
-  (if (empty-stream? xs)
-      ys
-      (stream-cons (stream-car xs) (stream-append (stream-cdr xs) ys))))
+(define (lazy-filter p obj)
+  (delay 
+    (let1 eobj (whnf obj)
+      (if (null? eobj)
+	  '()
+	  (let ((hd (lazy-car eobj))
+		(tl (lazy-cdr eobj)))
+	    (if (whnf (p hd))
+		(lazy-cons hd (lazy-filter p tl))
+		(lazy-filter p tl)))))))
 
-(define (stream-foldr f i xs)
-  (if (empty-stream? xs)
-      i
-      (f (stream-car xs) (stream-foldr f i (stream-cdr xs)))))
+(define (lazy-take obj n)
+  (delay
+    (let1 en (whnf n)
+      (if (<= en 0)
+	  '()
+	  (let1 eobj (whnf obj)
+	    (if (null? eobj)
+		'()
+		(lazy-cons (lazy-car eobj) 
+			   (lazy-take (lazy-cdr eobj) (- en 1)))))))))
 
-;; utilities
+(define (lazy-split-at obj n)
+  (delay
+    (let1 eobj (whnf obj)
+      (if (null? eobj)
+	  (lazy-cons '() '())
+	  (let1 en (whnf n)
+	    (if (= en 0)
+		(lazy-cons '() eobj)
+		(let1 rc (lazy-split-at (lazy-cdr eobj) (- en 1))
+                  (lazy-cons (lazy-cons (lazy-car eobj) (lazy-car rc))
+			     (lazy-cdr rc)))))))))
+			     
+(define (lazy-append xs ys)
+  (delay
+    (let1 exs (whnf xs)
+      (if (null? exs)
+          ys
+	  (lazy-cons (lazy-car exs) (lazy-append (lazy-cdr exs) ys))))))
 
-(define (stream-enumerate-interval low high)
-  (if (> low high)
-      empty-stream
-      (stream-cons low (stream-enumerate-interval (+ low 1) high))))
+(define (lazy-foldr f i xs)
+  (delay
+    (let1 exs (whnf xs)
+      (if (null? exs)
+	  i
+          (f (lazy-car exs) (lazy-foldr f i (lazy-cdr exs)))))))
 
-(define (stream-flatmap proc seq)
-  (stream-foldr stream-append empty-stream (stream-map proc seq)))
+(define (lazy-enumerate-interval low high)
+  (delay
+    (let ((elow (whnf low))
+	  (ehigh (whnf high)))
+      (if (> elow ehigh)
+          '()
+          (lazy-cons elow (lazy-enumerate-interval (+ elow 1) ehigh))))))
 
-;; queens
+(define (lazy-flatmap proc seq)
+  (delay
+    (lazy-foldr lazy-append '() (lazy-map proc seq))))
 
-(define (stream-queens board-size)
+;; lazy-queens
+
+(define (lazy-queens board-size)
   (define (queen-cols k)
-    (if (= k 0)
-        (stream-cons stream-empty-board empty-stream)
-        (stream-filter
-          (lambda (positions) (stream-safe? k positions))
-          (stream-flatmap 
-	   (lambda (rest-of-queens)
-	     (stream-map (lambda (new-row)
-		      (stream-adjoin-position new-row k rest-of-queens))
-		    (stream-enumerate-interval 1 board-size)))
-	   (queen-cols (- k 1))))))
-  (queen-cols board-size))
+    (delay
+      (let1 ek (whnf k)
+	(if (= ek 0)
+	    (lazy-cons '() '())
+	    (lazy-filter
+	     (lambda (positions) (delay (lazy-safe? ek positions)))
+	     (lazy-flatmap 
+	      (lambda (rest-of-queens) 
+		(delay 
+		  (lazy-map 
+		   (lambda (new-row)
+		     (delay 
+		       (lazy-adjoin-position new-row ek rest-of-queens)))
+		   (lazy-enumerate-interval 1 board-size))))
+	      (queen-cols (- ek 1))))))))
+  (delay (queen-cols board-size)))
 
-(define (stream-adjoin-position row k qs)
-  (stream-cons (stream-cons k row) qs))
+(define (lazy-adjoin-position row k qs)
+  (delay (lazy-cons (lazy-cons k row) qs)))
 
-(define stream-empty-board empty-stream)
+(define (lazy-safe? col positions)
+  (delay
+    (let ((hd (lazy-car positions))
+	  (tl (lazy-cdr positions)))
+      (lazy-all (lambda (pos) (lazy-safe-simple? col (lazy-cdr hd) pos)) tl))))
 
-(define (stream-safe? col positions)
-  (let ((hd (stream-car positions))
-        (tl (stream-cdr positions)))
-    (stream-all (lambda (pos) (stream-safe-simple? col (stream-cdr hd) pos)) tl)))
+(define (lazy-all p ls)
+  (delay
+    (let1 els (whnf ls)
+      (if (null? els)
+	  #t
+	  (and (whnf (p (lazy-car ls))) (whnf (lazy-all p (lazy-cdr ls))))))))
 
-(define (stream-all p ls)
-  (if (empty-stream? ls)
-      #t
-      (and (p (stream-car ls)) (stream-all p (stream-cdr ls)))))
-
-(define (stream-safe-simple? col row pos)
-  (let ((lu (- (stream-cdr pos) (stream-car pos)))
-        (ll (+ (stream-cdr pos) (stream-car pos))))
-    (and (not (= lu (- row col)))
-         (not (= ll (+ row col)))
-         (not (= (stream-cdr pos) row)))))
+(define (lazy-safe-simple? col row pos)
+  (delay
+    (let ((lu (- (whnf (lazy-cdr pos)) (whnf (lazy-car pos))))
+	  (ll (+ (whnf (lazy-cdr pos)) (whnf (lazy-car pos)))))
+      (and (not (= lu (- (whnf row) (whnf col))))
+	   (not (= ll (+ (whnf row) (whnf col))))
+	   (not (= (whnf (lazy-cdr pos)) (whnf row)))))))
 
 ;; page
 
@@ -118,49 +153,213 @@
 
 (define (lister q n s items template)
   (lambda ()
-    (receive (cur next)
-	     (stream-split-at items n)
-	     (template
-	      `((ul 
-		 ,@(append (map (lambda (l) `(li ,(x->string l)))
-				(map (cut map (cut cdr <>) <>)
-				     (force-stream cur)))
-			   (if (empty-stream? next) '() 
-			       `((li (a/cont (@@ (cont 
-						  ,(lister q n (+ s n) 
-							   next template)))
-					     "Next")))))))))))
+    (let* ((curnext (lazy-split-at items n))
+	   (cur (lazy-car curnext))
+	   (next (lazy-cdr curnext)))
+      (template
+       `((ul 
+	  ,@(append (map (lambda (l) `(li ,(x->string l)))
+			 (map (cut map (cut cdr <>) <>) (nf cur)))
+		    (let1 enext (whnf next)
+			  (if (null? enext) 
+			      '() 
+			      `((li (a/cont (@@ (cont 
+						 ,(lister q n (+ s n) 
+							  enext template)))
+					    "Next"))))))))))))
 
 (define (nqueens-start template)
   (lambda ()
     (template 
-     `((a/cont (@@ (cont ,(lister 6 5 0 (stream-queens 6)
+     `((a/cont (@@ (cont ,(lister 6 5 0 (lazy-queens 6)
 				  (simple-page-template "6-Queens"))))
 	       "6-Queens")
        " , "
-       (a/cont (@@ (cont ,(lister 7 10 0 (stream-queens 7)
+       (a/cont (@@ (cont ,(lister 7 10 0 (lazy-queens 7)
  				  (simple-page-template "7-Queens"))))
  	       "7-Queens")
        " , "
-       (a/cont (@@ (cont ,(lister 8 20 0 (stream-queens 8)
+       (a/cont (@@ (cont ,(lister 8 20 0 (lazy-queens 8)
  				  (simple-page-template "8-Queens"))))
  	       "8-Queens")
-;        " , "
-;        (a/cont (@@ (cont ,(lister 9 20 0 (stream-queens 9)
-;  				  (simple-page-template "9-Queens"))))
-;  	       "9-Queens")
-;        " , "
-;        (a/cont (@@ (cont ,(lister 10 20 0 (stream-queens 10)
-; 				  (simple-page-template "10-Queens"))))
-; 	       "10-Queens")
-;        " , "
-;        (a/cont (@@ (cont ,(lister 11 20 0 (stream-queens 11)
-; 				  (simple-page-template "11-Queens"))))
-; 	       "11-Queens")
-;        " , "
-;        (a/cont (@@ (cont ,(lister 12 20 0 (stream-queens 12)
-; 				  (simple-page-template "12-Queens"))))
-; 	       "12-Queens")
+       " , "
+       (a/cont (@@ (cont ,(lister 9 20 0 (lazy-queens 9)
+ 				  (simple-page-template "9-Queens"))))
+ 	       "9-Queens")
+       " , "
+       (a/cont (@@ (cont ,(lister 10 20 0 (lazy-queens 10)
+				  (simple-page-template "10-Queens"))))
+	       "10-Queens")
+       " , "
+       (a/cont (@@ (cont ,(lister 11 20 0 (lazy-queens 11)
+				  (simple-page-template "11-Queens"))))
+	       "11-Queens")
+       " , "
+       (a/cont (@@ (cont ,(lister 12 20 0 (lazy-queens 12)
+				  (simple-page-template "12-Queens"))))
+	       "12-Queens")
 ))))
 
 (initialize-main-proc (nqueens-start (simple-page-template "N-Queens")))
+
+
+
+; ;; Stream's staffs
+
+; (define-syntax stream-cons
+;   (syntax-rules ()
+;     ((_ hd tl) (cons  hd (delay tl)))))
+
+; (define (stream-car stream) (car stream))
+; (define (stream-cdr stream) (force (cdr stream)))
+
+; (define (force-stream strm)
+;   (cond ((empty-stream? strm) '())
+; 	((pair? strm) (cons (force-stream (stream-car strm))
+; 			    (force-stream (stream-cdr strm))))
+; 	(else (force strm))))
+
+; (define empty-stream '())
+; (define (empty-stream? stream) (null? stream))
+
+; (define (stream-map f stream)
+;   (if (empty-stream? stream)
+;       empty-stream
+;       (stream-cons (f (stream-car stream)) (stream-map f (stream-cdr stream)))))
+; (define (stream-filter p stream)
+;   (if (empty-stream? stream)
+;       empty-stream
+;       (let ((hd (stream-car stream))
+; 	    (tl (stream-cdr stream)))
+; 	(if (p hd)
+; 	    (stream-cons hd (stream-filter p tl))
+; 	    (stream-filter p tl)))))
+
+; (define (stream-take stream n)
+;   (cond ((<= n 0) empty-stream)
+; 	((empty-stream? stream) empty-stream)
+; 	(else (stream-cons (stream-car stream) 
+; 			 (stream-take (stream-cdr stream) (- n 1))))))
+
+; (define (stream-split-at stream n)
+;   (cond ((empty-stream? stream) (values empty-stream empty-stream))
+; 	((= n 0) (values empty-stream stream))
+; 	(else (receive (xs ys)
+; 		       (stream-split-at (stream-cdr stream) (- n 1))
+; 		       (values (stream-cons (stream-car stream) xs) ys)))))
+
+; (define (stream-append xs ys)
+;   (if (empty-stream? xs)
+;       ys
+;       (stream-cons (stream-car xs) (stream-append (stream-cdr xs) ys))))
+
+; (define (stream-foldr f i xs)
+;   (if (empty-stream? xs)
+;       i
+;       (f (stream-car xs) (stream-foldr f i (stream-cdr xs)))))
+
+; ;; utilities
+
+; (define (stream-enumerate-interval low high)
+;   (if (> low high)
+;       empty-stream
+;       (stream-cons low (stream-enumerate-interval (+ low 1) high))))
+
+; (define (stream-flatmap proc seq)
+;   (stream-foldr stream-append empty-stream (stream-map proc seq)))
+
+; ;; queens
+
+; (define (stream-queens board-size)
+;   (define (queen-cols k)
+;     (if (= k 0)
+;         (stream-cons stream-empty-board empty-stream)
+;         (stream-filter
+;           (lambda (positions) (stream-safe? k positions))
+;           (stream-flatmap 
+; 	   (lambda (rest-of-queens)
+; 	     (stream-map (lambda (new-row)
+; 		      (stream-adjoin-position new-row k rest-of-queens))
+; 		    (stream-enumerate-interval 1 board-size)))
+; 	   (queen-cols (- k 1))))))
+;   (queen-cols board-size))
+
+; (define (stream-adjoin-position row k qs)
+;   (stream-cons (stream-cons k row) qs))
+
+; (define stream-empty-board empty-stream)
+
+; (define (stream-safe? col positions)
+;   (let ((hd (stream-car positions))
+;         (tl (stream-cdr positions)))
+;     (stream-all (lambda (pos) (stream-safe-simple? col (stream-cdr hd) pos)) tl)))
+
+; (define (stream-all p ls)
+;   (if (empty-stream? ls)
+;       #t
+;       (and (p (stream-car ls)) (stream-all p (stream-cdr ls)))))
+
+; (define (stream-safe-simple? col row pos)
+;   (let ((lu (- (stream-cdr pos) (stream-car pos)))
+;         (ll (+ (stream-cdr pos) (stream-car pos))))
+;     (and (not (= lu (- row col)))
+;          (not (= ll (+ row col)))
+;          (not (= (stream-cdr pos) row)))))
+
+; ;; page
+
+; (define (simple-page-template ttl)
+;   (lambda (elems)
+;     `((html (head (title ,ttl))
+; 	    (body (@ (bgcolor "white"))
+; 		  (h1 ,ttl)
+; 		  ,@elems)))))
+
+; (define (lister q n s items template)
+;   (lambda ()
+;     (receive (cur next)
+; 	     (stream-split-at items n)
+; 	     (template
+; 	      `((ul 
+; 		 ,@(append (map (lambda (l) `(li ,(x->string l)))
+; 				(map (cut map (cut cdr <>) <>)
+; 				     (force-stream cur)))
+; 			   (if (empty-stream? next) '() 
+; 			       `((li (a/cont (@@ (cont 
+; 						  ,(lister q n (+ s n) 
+; 							   next template)))
+; 					     "Next")))))))))))
+
+; (define (nqueens-start template)
+;   (lambda ()
+;     (template 
+;      `((a/cont (@@ (cont ,(lister 6 5 0 (stream-queens 6)
+; 				  (simple-page-template "6-Queens"))))
+; 	       "6-Queens")
+;        " , "
+;        (a/cont (@@ (cont ,(lister 7 10 0 (stream-queens 7)
+;  				  (simple-page-template "7-Queens"))))
+;  	       "7-Queens")
+;        " , "
+;        (a/cont (@@ (cont ,(lister 8 20 0 (stream-queens 8)
+;  				  (simple-page-template "8-Queens"))))
+;  	       "8-Queens")
+; ;        " , "
+; ;        (a/cont (@@ (cont ,(lister 9 20 0 (stream-queens 9)
+; ;  				  (simple-page-template "9-Queens"))))
+; ;  	       "9-Queens")
+; ;        " , "
+; ;        (a/cont (@@ (cont ,(lister 10 20 0 (stream-queens 10)
+; ; 				  (simple-page-template "10-Queens"))))
+; ; 	       "10-Queens")
+; ;        " , "
+; ;        (a/cont (@@ (cont ,(lister 11 20 0 (stream-queens 11)
+; ; 				  (simple-page-template "11-Queens"))))
+; ; 	       "11-Queens")
+; ;        " , "
+; ;        (a/cont (@@ (cont ,(lister 12 20 0 (stream-queens 12)
+; ; 				  (simple-page-template "12-Queens"))))
+; ; 	       "12-Queens")
+; ))))
+
+; (initialize-main-proc (nqueens-start (simple-page-template "N-Queens")))
