@@ -1,10 +1,10 @@
-;; A quick hack of persistent metaclass
+;; Persistent metaclass
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2004 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.3 2004/01/22 15:57:47 shiro Exp $
+;; $Id: persistence.scm,v 1.4 2004/02/08 03:22:49 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -33,13 +33,30 @@
     slot-set-using-accessor!))
 ;; End patch
 
-;;--------------------------------------------------
+;;=========================================================
 ;; Persistent metaclass
 ;;
 
+;; Special allocation options:
+;;
+;;   :persistent
+;;       - The slot is stored in the persistent db.
+;;
+
 (define-class <kahua-persistent-meta> (<class>)
-  ((class-alist :allocation :class :init-value '()))
-  )
+  (;; In-memory catalog of persistent classes.
+   ;; maps class name to class object.
+   (class-alist :allocation :class :init-value '())
+
+   ;; A signature given in the class definition in the source file
+   ;; to be used to determine class' generation.
+   (source-id   :init-keyword :source-id :init-value "")
+   
+   ;; The following metainformation is set up when a first instance of
+   ;; the class is realized (either read from DB or newly created)
+   (generation    :init-value 0)   ;; generation of in-memory class
+   (persistent-generation :init-value 0) ;; generation in persistent db
+   ))
 
 (define-method initialize ((class <kahua-persistent-meta>) initargs)
   (next-method)
@@ -81,6 +98,10 @@
 (define (make-kahua-boundp acc)
   (lambda (o)
     (slot-bound-using-accessor? o acc)))
+
+;;=========================================================
+;; Persistent baseclass
+;;
 
 (define-class <kahua-persistent-base> ()
   (;; unique ID 
@@ -217,9 +238,66 @@
   (lambda (class-name key)
     (make <kahua-proxy> :class (find-kahua-class class-name) :key key)))
 
-;;--------------------------------------------------
+;;=========================================================
+;; Persistent metainformation
+;;
+
+;; Information of persitent class metaobject is stored using
+;; a special persistent class, <persistent-metainfo>.
+
+(define-class <kahua-persistent-metainfo> (<kahua-persistent-base>)
+  (;; class name
+   (name             :allocation :persistent :init-value #f
+                     :init-keyword :name)
+   ;; current generation
+   (persistent-generation :allocation :persistent :init-value 0
+                          :init-keyword :persistent-generation)
+   ;; map from source-id to generation
+   (source-id-map    :allocation :persistent :init-value '()
+                     :init-keyword :source-id-map)
+   ;; alist of generation and class signatures
+   (signature-alist  :allocation :persistent :init-value '()
+                     :init-keyword :signature-alist)
+   ))
+
+(define-method persistent-class-signature ((class <kahua-persistent-base>))
+  (define (extract-slot-def slot)
+    (and (memq (slot-definition-allocation slot) '(:persistent))
+         (list (slot-definition-name slot)
+               :allocation (slot-definition-allocation slot)
+               )))
+  (sort (filter-map extract-slot-def (class-slots class))
+        (lambda (x y)
+          (string<? (symbol->string x) (symbol->string y)))))
+
+;; When an instance of a persistent class is realized for the first
+;; time within the process, the in-memory class and the in-DB class
+;; are compared.
+(define-method persistent-class-bind-metainfo ((class <kahua-persistent-base>))
+
+  (define (register-metainfo)
+    (make <persistent-metainfo>
+      :name (class-name class) :persistent-generation 0
+      :source-id-map `((,(ref class 'source-id) . 0))
+      :signature-alist `((0 . ,(persistent-class-signature class)))))
+
+  (define (get-signature metainfo)
+    (and-let* ((generation (assoc-ref (ref metainfo 'source-id-map)
+                                      (ref class 'source-id))))
+      (assv-ref (ref metanifo 'signature-alist) generation)))
+  
+  (let1 metainfo
+      (find-kahua-instance <persistent-metainfo> (class-name class))
+    (cond ((not metainfo) (register-metainfo))
+          ((get-signature metainfo))
+          (else ...)) ;; writeme
+    ))
+
+;;=========================================================
 ;; Database
 ;;
+
+;; Database class -----------------------------------------
 (define current-db (make-parameter #f))
 
 (define-class <kahua-db> ()
@@ -257,27 +335,6 @@
              (lambda ()
                (begin0 (begin . body) (kahua-db-close db #t))))))))))
 
-;; Lookup
-
-(define (id->kahua-instance id)
-  (unless (current-db)
-    (error "id->kahua-instance: No db is active"))
-  (hash-table-get (ref (current-db) 'instance-by-id) id #f))
-
-(define (class&key->kahua-instance class key)
-  (unless (current-db)
-    (error "clas&key->kahua-instance: No db is active"))
-  (hash-table-get (ref (current-db) 'instance-by-key)
-                  (cons (class-name class) key) #f))
-
-(define (find-kahua-instance class key)
-  (let1 db (current-db)
-    (unless db (error "find-kahua-instance: No database is active"))
-    (or (class&key->kahua-instance class key)
-        (and (file-exists? (data-path db class key))
-             (read-kahua-instance db class key)))))
-
-;; utilities
 (define (id-counter-path path)
   (build-path path "id-counter"))
 
@@ -330,6 +387,12 @@
           db))
       )))
 
+(define (kahua-db-sync . maybe-db)
+  (let1 db (get-optional maybe-db (current-db))
+    (for-each (cut write-kahua-instance db <>)
+              (ref db 'modified-instances))
+    (set! (ref db 'modified-instances) '())))
+
 (define (kahua-db-close db commit)
   (when commit
     (with-output-to-file (id-counter-path (ref db 'path))
@@ -344,6 +407,26 @@
          (ref db 'path)
          (string-trim-both (x->string (class-name class)) #[<>])
          key))
+
+;; Instance I/O ----------------------------------------------
+
+(define (id->kahua-instance id)
+  (unless (current-db)
+    (error "id->kahua-instance: No db is active"))
+  (hash-table-get (ref (current-db) 'instance-by-id) id #f))
+
+(define (class&key->kahua-instance class key)
+  (unless (current-db)
+    (error "clas&key->kahua-instance: No db is active"))
+  (hash-table-get (ref (current-db) 'instance-by-key)
+                  (cons (class-name class) key) #f))
+
+(define (find-kahua-instance class key)
+  (let1 db (current-db)
+    (unless db (error "find-kahua-instance: No database is active"))
+    (or (class&key->kahua-instance class key)
+        (and (file-exists? (data-path db class key))
+             (read-kahua-instance db class key)))))
 
 (define-method read-kahua-instance ((db <kahua-db>)
                                     (class <kahua-persistent-meta>)
@@ -362,13 +445,7 @@
           (close-output-port p)
           (sys-rename tmp path))))))
 
-(define (kahua-db-sync . maybe-db)
-  (let1 db (get-optional maybe-db (current-db))
-    (for-each (cut write-kahua-instance db <>)
-              (ref db 'modified-instances))
-    (set! (ref db 'modified-instances) '())))
-
-;;--------------------------------------------------
+;;=========================================================
 ;; "View" as a collection
 ;;
 
