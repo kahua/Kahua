@@ -1,3 +1,8 @@
+2004-02-23  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in (unexpected-end): 
+	added dummy procedure to hook unexpected end of a worker.
+	
 2004-02-23  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* emacs/kahua.el.in, emacs/kahua-shell.el:

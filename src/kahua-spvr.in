@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.in,v 1.13 2004/02/23 06:15:11 tahara Exp $
+;; $Id: kahua-spvr.in,v 1.14 2004/02/23 08:34:51 ko1 Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -450,8 +450,14 @@
 	(log-worker-action "terminate" self)
 	(ping-deactivate self)
 	(process-send-signal (worker-process-of self) SIGINT))))
-      
+
+;; dummy method to do something when a worker ends unexpected
+(define-method unexpected-end ((self <kahua-worker>))
+  #f)
+
 (define-method finish-worker ((self <kahua-worker>))
+  (if (not (zombee? self))
+      (unexpected-end self))
   (close-input-port (process-output (worker-process-of self))))
 
 (define-method dispatch-to-worker ((self <kahua-worker>)
