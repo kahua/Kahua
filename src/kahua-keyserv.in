@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.in,v 1.1 2004/02/21 12:24:52 shiro Exp $
+;; $Id: kahua-keyserv.in,v 1.2 2004/02/21 22:18:03 shiro Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -66,6 +66,7 @@
       (set-signal-handler! SIGINT  (lambda _ (cleanup) (exit 0)))
       (set-signal-handler! SIGHUP  (lambda _ (cleanup) (exit 0)))
       (set-signal-handler! SIGTERM (lambda _ (cleanup) (exit 0)))
+      (set-signal-handler! SIGPIPE #f)
       (with-error-handler
           (lambda (e)
             (log-format "~a" (kahua-error-string e #t))
@@ -104,28 +105,33 @@
     (with-error-handler
         (lambda (e)
           (log-format "~a" (kahua-error-string e #t))
-          (display "#f\n" output)
-          (flush output)
-          (socket-shutdown client))
+          (socket-shutdown client 2))
       (lambda ()
         (set! request (read input))
-        (let1 result 
-            (if (and (pair? request)
-                     (>= (length request) 1))
-              (case (car request)
-                ((flush)
-                 (sweep-objects (x->integer (and (pair? (cdr request))
-                                                 (cadr request))))
-                 (list (num-objects)))
-                ((stat)
-                 (list (num-objects)))
-                (else
-                 (handle-object-command request)))
-              #f)
-          (write result output) (newline output)
-          (flush output)
-          (socket-shutdown client)))
-      )))
+        (with-error-handler
+            (lambda (e)
+              (log-format "~a" (kahua-error-string e #t))
+              (display "#f\n" output)
+              (flush output)
+              (socket-shutdown client 2))
+          (lambda ()
+            (let1 result 
+                (if (and (pair? request)
+                         (>= (length request) 1))
+                  (case (car request)
+                    ((flush)
+                     (sweep-objects (x->integer (and (pair? (cdr request))
+                                                     (cadr request))))
+                     (list (num-objects)))
+                    ((stat)
+                     (list (num-objects)))
+                    (else
+                     (handle-object-command request)))
+                  #f)
+              (write result output) (newline output)
+              (flush output)
+              (socket-shutdown client 2)))
+          )))))
 
 (define (handle-object-command request)
   (let loop ((obj (get-object (car request)))
