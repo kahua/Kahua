@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.17 2004/03/26 10:39:11 nobsun Exp $
+;; $Id: kahua.cgi.in,v 1.18 2004/04/07 09:51:30 nobsun Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -36,6 +36,7 @@
 (use kahua.developer)
 (use file.util)
 
+
 ;; Change this if you're using non-default sockbase
 (define *sockbase* "unix:##KAHUA_SOCKET_BASE##")
 
@@ -50,7 +51,9 @@
 (define (compose-reply header body)
   (let ((status (assoc-ref header "x-kahua-status"))
 	(header (if (assoc-ref header "content-type") header
-		    (cons '("content-type" "text/html; charset=euc-jp")
+		    (cons '("content-type" 
+                            (format "text/html; charset=~s" 
+                                    (gauche-character-encoding)))
 			  header))))
     (if (and status (equal? (car status) "SPVR-ERROR"))
 	(cgi-error-page (string-append "SPVR-ERROR: " (car body)) (cadr body))
