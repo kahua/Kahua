@@ -1,3 +1,12 @@
+2003-12-26  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* cgi/kahua.cgi.in: fix regexp miss.
+
+	* src/kahua-spvr.in: change app-servers format,
+	  and a directory rule of checkout directory.
+	  remove ":script" keyword, add ":arguments" keyword,
+	  location of type.kahua to work/checkout/type/type.kahua
+
 2003-12-25  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* cgi/kahua.cgi.in:
