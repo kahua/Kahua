@@ -1,3 +1,19 @@
+2004-11-04  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.3:
+	- Added in-place mode for kahua-spvr (enable run in-place).
+	- Added httpd mode for kahua-spvr (enable own httpd function).
+	- Added API(kahua-context-ref*) for name having multiple values
+	in a form.
+	- Added interp-rss for issuing RSS
+	- Added simple Query Language plugin for kahua.persistence
+	
+
+2004-11-04  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* doc/Scripts/kahua-spvr.ja : added description for --test option and
+	for -H option of kahua-spvr
+
 2004-10-31  Shiro Kawai  <shiro@acm.org>
 
 	* test/spvr-httpd.scm.in : added for testing stand-alone httpd mode
