@@ -1,3 +1,11 @@
+2003-12-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/test/xml.scm
+	(match-pattern) : treat attribute node (@ ...) specially; in it,
+	patterns match any permutations of the input.
+
+	* test/test-xml.scm : added tests for the above change.
+
 2003-12-19  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* test/lambdabooks.scm:

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: xml.scm,v 1.1 2003/12/11 05:39:12 nobsun Exp $
+;; $Id: xml.scm,v 1.2 2003/12/19 12:18:52 shiro Exp $
 
 ;; This module provides the means of test the result of HTML
 ;; generating code, such as CGI programs.   The output of
@@ -67,6 +67,9 @@
 ;;
 ;;     A special pattern variable ?* matches as if (!repeat ?_), that is,
 ;;     matches everything after.
+;;
+;;     Attr node is treated specially.  Its contents matches arbitrary
+;;     permutation of the pattern.
 ;;
 ;;     (!seq <pattern> ...)
 ;;         Matches the sequcne of <pattern> ....  When it appears as
@@ -253,6 +256,24 @@
 (define (attr-node? node)
   (and (pair? node) (eq? (car node) '@)))
 
+(define (sort-nodes nodes)
+  (sort nodes
+        (lambda (a b)
+          (if (pair? a)
+            (if (pair? b)
+              (string<? (x->string (car a)) (x->string (car b)))
+              #t)
+            #f))))
+
+(define (any-permutation pred seq)
+  (call/cc
+   (lambda (break)
+     (permutations*-for-each
+      (lambda (seq) (cond ((pred seq) => break) (else #f)))
+      seq
+      equal?)
+     #f)))
+
 ;; Match one pattern item.
 ;; Because of "splicing" nature of the pattern, it takes a list of inputs.
 ;; When matched, the continuation procedure is called with the rest of
@@ -276,22 +297,28 @@
     (and (not (null? ls))
          (equal? pat (car ls))
          (cont (cdr ls) r)))
+   ((attr-node? pat)
+    (and (not (null? ls))
+         (attr-node? (car ls))
+         (any-permutation (cute match-contents (sort-nodes (cdr pat)) <>
+                                (lambda (more r)
+                                  (and (null? more) (cont (cdr ls) r)))
+                                r)
+                          (sort-nodes (cdar ls)))))
    ((not (pattern-key? (car pat)))
     (and (pair? ls)
          (pair? (car ls))
          (eq? (car pat) (caar ls))
          (match-contents (cdr pat) (cdar ls)
                          (lambda (more r)
-                           (and (null? more)
-                                (cont (cdr ls) r)))
+                           (and (null? more) (cont (cdr ls) r)))
                          r)))
    (else
     (case (car pat)
       ((!seq)
        (match-contents (cdr pat) ls cont r))
       ((!permute)
-       (any (cut match-contents <> ls cont r)
-            (permutations (cdr pat))))
+       (any-permutation (cut match-contents <> ls cont r) (cdr pat)))
       ((!or)
        (any (cut match-pattern <> ls cont r)
             (cdr pat)))
