@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-install.in,v 1.2 2004/01/13 08:55:56 shiro Exp $
+;; $Id: kahua-install.in,v 1.3 2004/02/20 10:47:28 tahara Exp $
 
 ;; Installs Kahua's application server materials according to
 ;; the kahua.conf configuration settings.
@@ -18,7 +18,7 @@
   (print "kahua-install [-c conf-file][-U][-t type][-r name][--no-overwrite] file ...")
   (print "  Install files under kahua-managed directories.")
   (print "   -U : uninstall files instead of installing.")
-  (print "   -t type: script | static | base.  static by default.")
+  (print "   -t type: script | static | base | plugin.  static by default.")
   (print "   -r (rename): rename file to name.  When this option is given,")
   (print "      only one file can be specified.")
   (print "   --no-overwrite : if the target file exists, the file won't be")
@@ -37,7 +37,8 @@
        (dirs?     "dirs")
        (no-over   "no-overwrite")
        . files)
-    (unless (member material-type '("script" "static" "base")) (usage))
+    (unless (member material-type
+                    '("script" "static" "base" "plugin")) (usage))
     (when (and rename (not (= (length files) 1))) (usage))
     (kahua-init conf-file)
     (if dirs?
@@ -97,6 +98,8 @@
          (build-path (ref (kahua-config) 'working-directory) "checkout" file))
         ((equal? material-type "base")
          (build-path (ref (kahua-config) 'working-directory) file))
+        ((equal? material-type "plugin")
+         (build-path (ref (kahua-config) 'working-directory) "plugins" file))
         ((equal? material-type "static")
          (kahua-static-document-path file))
         (else
