@@ -2,7 +2,7 @@ dnl
 dnl Configuring kahua-elua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
-dnl $Id: configure.ac,v 1.12 2004/05/25 04:48:36 nobsun Exp $
+dnl $Id: configure.ac,v 1.13 2004/06/09 07:03:04 nobsun Exp $
 AC_PREREQ(2.54)
 AC_INIT(kahua, 0.2.6, shiro@acm.org)
 AC_GAUCHE_INIT_EXT
@@ -31,6 +31,20 @@ are not installed automatically.  Default: $libexecdir/kahua]),
     esac
   ])
 AC_SUBST(KAHUA_CGIDIR)
+
+dnl Sets cgi log directory
+KAHUA_CGILOGDIR=$localstatedir/kahua/cgilog
+AC_ARG_WITH(cgilogdir,
+  AC_HELP_STRING([--with-cgilogdir=PATH],
+                 [Specifies the directory where Kahua cgi script log should be
+output to.  If disabled (--with-cgilogdir=no or --without-cgilogdir), cgi script log directory is not specified automatically.  Default: $localstatedir/kahua/cgilog]),
+  [
+    case "$with_cgilogdir" in
+      yes|no) KAHUA_CGILOGDIR= ;;
+      *)      KAHUA_CGILOGDIR=$with_cgilogdir ;;
+    esac
+  ])
+AC_SUBST(KAHUA_CGILOGDIR)
 
 dnl Add more test
 

@@ -3,7 +3,7 @@
 # The destination should be specified by --with-cgidir argument of configure
 # script.
 #
-# $Id: Makefile.in,v 1.4 2004/04/07 12:21:32 nobsun Exp $
+# $Id: Makefile.in,v 1.5 2004/06/09 07:03:04 nobsun Exp $
 #
 
 package	          = kahua
@@ -27,7 +27,9 @@ srcdir      = @srcdir@
 VPATH       = $(srcdir)
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
-KAHUA_CGIDIR = @KAHUA_CGIDIR@
+KAHUA_CGI_DIR = @KAHUA_CGIDIR@
+KAHUA_CGI_USER = @KAHUA_CGIUSER@
+KAHUA_CGILOG_DIR = @KAHUA_CGILOGDIR@
 
 SOCKET_BASE_DIR = $(prefix)/tmp/$(package)
 
@@ -46,7 +48,7 @@ CONFIG_GENERATED = Makefile
 .SUFFIXES: .in
 
 .in:
-	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(SOCKET_BASE_DIR)" $@
+	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(SOCKET_BASE_DIR)" "$(KAHUA_CGILOG_DIR)" $@
 	chmod -w $@
 
 all: $(SCRIPTS)
@@ -57,17 +59,20 @@ clean:
 	rm -rf core $(SCRIPTS) *~
 
 install:
-	if test "$(KAHUA_CGIDIR)" != ""; then \
-	  $(MKINSTDIR) $(KAHUA_CGIDIR); \
+	if test "$(KAHUA_CGI_DIR)" != ""; then \
+	  $(MKINSTDIR) $(KAHUA_CGI_DIR); \
 	  for f in $(SCRIPTS); do \
-	    $(INSTALL) -m 555 $$f $(KAHUA_CGIDIR)/$$f; \
+	    $(INSTALL) -m 555 $$f $(KAHUA_CGI_DIR)/$$f; \
 	  done; \
-	fi
+	fi; \
+	if test "$(KAHUA_CGILOG_DIR)" != ""; then \
+	  $(MKINSTDIR) $(KAHUA_CGILOG_DIR); \
+	fi; \
 
 uninstall:
 	for f in $(SCRIPTS); do \
-	  if test -r $(KAHUA_CGIDIR)/$$f; then \
-	    rm -f $(KAHUA_CGIDIR)/$$f; \
+	  if test -r $(KAHUA_CGI_DIR)/$$f; then \
+	    rm -f $(KAHUA_CGI_DIR)/$$f; \
 	  fi; \
 	done; \
 
