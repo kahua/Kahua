@@ -4,12 +4,35 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.4 2004/02/17 10:08:10 nobsun Exp $
+;; $Id: elem.scm,v 1.5 2004/02/19 02:28:54 nobsun Exp $
 
 ;; This module implements tags of SXML as functions
 
 (define-module kahua.elem
-  (export node-list-to-node-set
+  (export >>=
+	  >>
+	  get
+	  put
+	  update
+          rev-nodes
+	  node-set
+	  empty
+	  exec
+	  text/
+	  tt/ i/ b/ big/ small/ em/ strong/ dfn/ code/ samp/ kbd/ var/
+	  cite/ abbr/ acronym/ sub/ sup/ span/ bdo/ br/ body/ address/ div/
+	  a/ area/ link/ img/ hr/ p/ h1/ h2/ h3/ h4/ h5/ h6/
+	  pre/ q/ blockquote/ ins/ del/ dl/ dt/ dd/ ol/ ul/ li/
+	  form/ label/ input/ select/ optgroup/ option/ textarea/ fieldset/
+	  legend/ button/ table/ caption/ thead/ tfoot/ tbody/ colgroup/
+          col/ tr/ th/ td/ head/ title/ base/ meta/ style/ script/ noscript/
+	  html/
+	  @/
+	  @@/
+	  a/cont/
+	  form/cont/
+
+	  node-list-to-node-set
 	  node-set:
 	  tt: i: b: big: small: em: strong: dfn: code: samp: kbd: var:
 	  cite: abbr: acronym: sub: sup: span: bdo: br: body: address: div:
@@ -26,6 +49,221 @@
 ))
 
 (select-module kahua.elem)
+
+;; -------------------------------------------------------------------------
+;; State thread : State -> State
+;; This state thread is a spcial case of the state monad :
+;;   State -> (a, State)
+
+(define (>>= st f)
+  (lambda (s)
+    (let1 s1 (st s)
+      ((f s1) s1))))
+(define (>> st1 st2)
+  (>>= st1 (lambda (_) st2)))
+(define get (lambda (s) s))
+(define (put s) (lambda (_) s))
+(define (update f) 
+  (>>= get (lambda (s) (put (f s)))))
+
+(define (exec s0 st) (st s0))
+
+(define (node-set sts)
+  (if (null? sts)
+      identity
+      (let1 st (car sts)
+	(if (string? st)
+	    (>> (text/ st) (node-set (cdr sts)))
+	    (>> st (node-set (cdr sts)))))))
+
+(define empty (lambda (s) s))
+
+;; Special tags
+
+(define (text/ . args)
+  (update (cut append args <>)))
+
+(define (a/cont/ . args)
+  (update (cut cons `(a/cont ,@(exec '() (node-set args))) <>)))
+  
+(define (form/cont/ . args)
+  (update (cut cons `(form/cont ,@(exec '() (node-set args))) <>)))
+
+;; SXML tag
+
+(define-syntax @/
+  (syntax-rules ()
+    ((_ (name val1) ...)
+     (update (cut cons `(@ (name ,val1) ...) <>)))
+    ((_ (name val1 val2) ...)
+     (update (cut cons `(@ (name ,val1 ,val2) ...) <>)))
+    ((_ (name val1 val2 ...) ...)
+     (update (cut cons `(@ (name ,val1 ,val2 ...) ...) <>)))))
+
+(define-syntax @@/
+  (syntax-rules ()
+    ((_ (name val1) ...)
+     (update (cut append <> `((@@ (name ,val1) ...)))))
+    ((_ (name val1 val2) ...)
+     (update (cut append <> `((@@ (name ,val1 ,val2) ...)))))
+    ((_ (name val1 val2 ...) ...)
+     (update (cut append <> `((@@ (name ,val1 ,val2 ...) ...)))))))
+
+(define (rev-nodes node-set)
+  (define (rev node)
+    (cond ((string? node) node)
+	  ((or (eq? (car node) '@) (eq? (car node) '@@)) node)
+	  (else (cons (car node) (rev-nodes (cdr node))))))
+  (reverse (map rev node-set)))
+
+(define (tt/ . args) 
+  (update (cut cons `(tt ,@(exec '() (node-set args))) <>)))
+(define (b/ . arg)
+  (update (cut cons `(b ,@(exec '() (node-set args))) <>)))
+(define (i/ . arg)
+  (update (cut cons `(i ,@(exec '() (node-set args))) <>)))
+(define (small/ . args)
+  (update (cut cons `(small ,@(exec '() (node-set args))) <>)))
+(define (em/ . args)
+  (update (cut cons `(em ,@(exec '() (node-set args))) <>)))
+(define (strong/ . args)
+  (update (cut cons `(strong ,@(exec '() (node-set args))) <>)))
+(define (dfn/ . args)
+  (update (cut cons `(dfn ,@(exec '() (node-set args))) <>)))
+(define (code/ . args)
+  (update (cut cons `(code ,@(exec '() (node-set args))) <>)))
+(define (samp/ . args)
+  (update (cut cons `(samp ,@(exec '() (node-set args))) <>)))
+(define (kbd/ . args)
+  (update (cut cons `(kbd ,@(exec '() (node-set args))) <>)))
+(define (var/ . args)
+  (update (cut cons `(var ,@(exec '() (node-set args))) <>)))
+(define (cite/ . args)
+  (update (cut cons `(cite ,@(exec '() (node-set args))) <>)))
+(define (abbr/ . args)
+  (update (cut cons `(abbr ,@(exec '() (node-set args))) <>)))
+(define (acronym/ . args)
+  (update (cut cons `(acronym ,@(exec '() (node-set args))) <>)))
+(define (sub/ . args)
+  (update (cut cons `(sub ,@(exec '() (node-set args))) <>)))
+(define (sup/ . args)
+  (update (cut cons `(sup ,@(exec '() (node-set args))) <>)))
+(define (span/ . args)
+  (update (cut cons `(span ,@(exec '() (node-set args))) <>)))
+(define (bdo/ . args)
+  (update (cut cons `( ,@(exec '() (node-set args))) <>)))
+(define (br/ . args)
+  (update (cut cons `(br ,@(exec '() (node-set args))) <>)))
+(define (body/ . args)
+  (update (cut cons `(body ,@(exec '() (node-set args))) <>)))
+(define (address/ . args)
+  (update (cut cons `(address ,@(exec '() (node-set args))) <>)))
+(define (div/ . args)
+  (update (cut cons `(div ,@(exec '() (node-set args))) <>)))
+(define (a/ . args)
+  (update (cut cons `(a ,@(exec '() (node-set args))) <>)))
+(define (area/ . args)
+  (update (cut cons `(area ,@(exec '() (node-set args))) <>)))
+(define (link/ . args)
+  (update (cut cons `(link ,@(exec '() (node-set args))) <>)))
+(define (img/ . args)
+  (update (cut cons `(img ,@(exec '() (node-set args))) <>)))
+(define (hr/ . args)
+  (update (cut cons `(hr ,@(exec '() (node-set args))) <>)))
+(define (p/ . args)
+  (update (cut cons `(p ,@(exec '() (node-set args))) <>)))
+(define (h1/ . args)
+  (update (cut cons `(h1 ,@(exec '() (node-set args))) <>)))
+(define (h2/ . args)
+  (update (cut cons `(h2 ,@(exec '() (node-set args))) <>)))
+(define (h3/ . args)
+  (update (cut cons `(h3 ,@(exec '() (node-set args))) <>)))
+(define (h4/ . args)
+  (update (cut cons `(h4 ,@(exec '() (node-set args))) <>)))
+(define (h5/ . args)
+  (update (cut cons `(h5 ,@(exec '() (node-set args))) <>)))
+(define (h6/ . args)
+  (update (cut cons `(h6 ,@(exec '() (node-set args))) <>)))
+(define (pre/ . args)
+  (update (cut cons `(pre ,@(exec '() (node-set args))) <>)))
+(define (q/ . args)
+  (update (cut cons `(q ,@(exec '() (node-set args))) <>)))
+(define (blockquote/ . args)
+  (update (cut cons `(blockquote ,@(exec '() (node-set args))) <>)))
+(define (ins/ . args)
+  (update (cut cons `(ins ,@(exec '() (node-set args))) <>)))
+(define (del/ . args)
+  (update (cut cons `(del ,@(exec '() (node-set args))) <>)))
+(define (dl/ . args)
+  (update (cut cons `(dl ,@(exec '() (node-set args))) <>)))
+(define (dt/ . args)
+  (update (cut cons `(dt ,@(exec '() (node-set args))) <>)))
+(define (dd/ . args)
+  (update (cut cons `(dd ,@(exec '() (node-set args))) <>)))
+(define (ol/ . args)
+  (update (cut cons `(ol ,@(exec '() (node-set args))) <>)))
+(define (ul/ . args)
+  (update (cut cons `(ul ,@(exec '() (node-set args))) <>)))
+(define (li/ . args)
+  (update (cut cons `(li ,@(exec '() (node-set args))) <>)))
+(define (form/ . args)
+  (update (cut cons `(form ,@(exec '() (node-set args))) <>)))
+(define (label/ . args)
+  (update (cut cons `(label ,@(exec '() (node-set args))) <>)))
+(define (input/ . args)
+  (update (cut cons `(input ,@(exec '() (node-set args))) <>)))
+(define (select/ . args)
+  (update (cut cons `(select ,@(exec '() (node-set args))) <>)))
+(define (optgroup/ . args)
+  (update (cut cons `(optgroup ,@(exec '() (node-set args))) <>)))
+(define (option/ . args)
+  (update (cut cons `(option ,@(exec '() (node-set args))) <>)))
+(define (textarea/ . args)
+  (update (cut cons `(textarea ,@(exec '() (node-set args))) <>)))
+(define (fieldset/ . args)
+  (update (cut cons `(fieldset ,@(exec '() (node-set args))) <>)))
+(define (legend/ . args)
+  (update (cut cons `(legend ,@(exec '() (node-set args))) <>)))
+(define (button/ . args)
+  (update (cut cons `(button ,@(exec '() (node-set args))) <>)))
+(define (table/ . args)
+  (update (cut cons `(table ,@(exec '() (node-set args))) <>)))
+(define (caption/ . args)
+  (update (cut cons `(caption ,@(exec '() (node-set args))) <>)))
+(define (thead/ . args)
+  (update (cut cons `(thead ,@(exec '() (node-set args))) <>)))
+(define (tbody/ . args)
+  (update (cut cons `(tbody ,@(exec '() (node-set args))) <>)))
+(define (tfoot/ . args)
+  (update (cut cons `(tfoot ,@(exec '() (node-set args))) <>)))
+(define (colgroup/ . args)
+  (update (cut cons `(colgroup ,@(exec '() (node-set args))) <>)))
+(define (col/ . args)
+  (update (cut cons `(col ,@(exec '() (node-set args))) <>)))
+(define (tr/ . args)
+  (update (cut cons `(tr ,@(exec '() (node-set args))) <>)))
+(define (th/ . args)
+  (update (cut cons `(th ,@(exec '() (node-set args))) <>)))
+(define (td/ . args)
+  (update (cut cons `(td ,@(exec '() (node-set args))) <>)))
+(define (head/ . args)
+  (update (cut cons `(head ,@(exec '() (node-set args))) <>)))
+(define (title/ . args)
+  (update (cut cons `(title ,@(exec '() (node-set args))) <>)))
+(define (base/ . args)
+  (update (cut cons `(base ,@(exec '() (node-set args))) <>)))
+(define (meta/ . args)
+  (update (cut cons `(meta ,@(exec '() (node-set args))) <>)))
+(define (style/ . args)
+  (update (cut cons `(style ,@(exec '() (node-set args))) <>)))
+(define (script/ . args)
+  (update (cut cons `(script ,@(exec '() (node-set args))) <>)))
+(define (noscript/ . args)
+  (update (cut cons `(noscript ,@(exec '() (node-set args))) <>)))
+(define (html/ . args)
+  (update (cut cons `(html ,@(exec '() (node-set args))) <>)))
+
+;;--------------------------------------------------------------------------
 
 (define (flatten ls)
   (define (iter acc ls)
@@ -139,5 +377,3 @@
 (define (form/cont: . arg) `(form/cont ,@(flatten arg)))
      
 (provide "kahua.elem")
-
-
