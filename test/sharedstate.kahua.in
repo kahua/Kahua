@@ -1,6 +1,6 @@
 ;; -*-scheme-*-
 ;; Test kahua application that shares <session-state> between processes.
-;; $Id: sharedstate.kahua,v 1.1 2004/02/21 12:24:52 shiro Exp $
+;; $Id: sharedstate.kahua.in,v 1.1 2004/04/07 09:55:33 nobsun Exp $
 
 (use srfi-1)
 (use srfi-13)

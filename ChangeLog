@@ -1,4 +1,4 @@
-2004-03-26  Nobuo Yamashita  <nobsun@sampou.org>
+2004-04-02  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* examples/Makefile.in: added load-path for kahua.scm in calling lambdabooks.init. 
 	

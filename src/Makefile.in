@@ -72,10 +72,13 @@ CONFIG_GENERATED = Makefile
 .in:
 	$(top_srcdir)/src/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(libexecdir)" $@
 
-all: $(SCM_SCRIPTS) kahua/config.scm kahua.conf
+all: $(SCM_SCRIPTS) kahua/config.scm kahua.conf kahua/pdf/typeset.scm
 
 kahua/config.scm:
 	sed -e "s@##sysconfdir##@$(sysconfdir)@" -e "s@##localstatedir##@$(localstatedir)@" -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##package##@$(package)@" $@.in > $@
+
+kahua/pdf/typeset.scm:
+	$(GOSH) cesconv -o kahua/pdf/typeset.scm -f euc-jp kahua/pdf/typeset.scm.in
 
 kahua.conf:
 	sed -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##localstatedir##@$(localstatedir)@" kahua.conf.sample > $@

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua,v 1.6 2004/03/22 22:29:44 shiro Exp $
+;; $Id: login.kahua.in,v 1.1 2004/04/07 09:55:30 nobsun Exp $
 
 ;; User login management ----------------------------------------
 ;;   Receives two continuation procedure.

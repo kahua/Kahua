@@ -1,4 +1,40 @@
-#
+package	          = kahua
+SHELL             = @SHELL@
+prefix            = @prefix@
+exec_prefix       = @exec_prefix@
+bindir            = @bindir@/$(package)
+sbindir           = @sbindir@/$(package)
+libexecdir	  = @libexecdir@/$(package)
+datadir		  = @datadir@/$(package)
+sysconfdir        = @sysconfdir@/$(package)
+sharedstatedir    = @sharedstatedir@/$(package)
+localstatedir     = @localstatedir@/$(package)
+libdir            = @libdir@/$(package)
+includedir        = @includedir@/$(package)
+oldincludedir     = @oldincludedir@/$(package)
+infodir           = @infodir@/$(package)
+mandir            = @mandir@/$(package)
+srcdir            = @srcdir@
+VPATH             = $(srcdir)
+top_builddir      = @top_builddir@
+top_srcdir        = @top_srcdir@
+
+DESTDIR           =
+
+GOSH                   = @GOSH@
+
+SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
+	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm pdf.scm \
+	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
+	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
+	shell.scm spvr.scm test-xml.scm user.scm usermode.scm wiki-iki.scm \
+	worker.scm
+
+KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
+	hello-world-st.kahua hello-world.kahua lister-st.kahua lister.kahua \
+	sharedstate.kahua
+
+
 # 'make check' runs almost all tests.
 # 'make <testname>' runs a specific test.
 # 
@@ -12,14 +48,22 @@ TESTS = test-xml persistence \
 	lambdabooks wiki-iki nqueen foldlist \
 	spvr admin developer shell usermode sandbox plugin pdf
 
-.PHONY: all check clean distclan maintainer-clean $(TESTS)
+CONFIG_GENERATED = Makefile
 
+.PHONY: all check clean distclean maintainer-clean $(TESTS)
 
+all: $(SCMFILES) $(KAHUAFILES) pdf-01.sxml
 
+$(SCMFILES) :
+	$(GOSH) cesconv -o $@ -f euc-jp $@.in
 
-all:
+$(KAHUAFILES) :
+	$(GOSH) cesconv -o $@ -f euc-jp $@.in
 
-check:
+pdf-01.sxml : 
+	$(GOSH) cesconv -o $@ -f euc-jp $@.in
+
+check: all
 	rm -f test.log
 	$(MAKE) $(TESTS)
 
@@ -93,9 +137,11 @@ pdf:
 	@gosh -I../src ./pdf.scm >> test.log
 
 clean:
-	rm -rf test.log app/test.log *~ _* user.conf
+	rm -rf test.log app/test.log *~ _* user.conf *.scm *.kahua
 
 distclean: clean
+	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean: clean
+	rm -rf $(CONFIG_GENERATED)
 
