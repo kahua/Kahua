@@ -1,6 +1,6 @@
 TESTS = test-xml persistence user config gsid session partcont \
-        server kahua-dbm worker lambdabooks wiki-iki spvr admin \
-        developer
+        server kahua-dbm worker lambdabooks wiki-iki nqueen \
+	spvr admin developer
 
 .PHONY: all check clean distclan maintainer-clean $(TESTS)
 
@@ -43,6 +43,9 @@ lambdabooks :
 
 wiki-iki :
 	@gosh -I../src -I../examples ./wiki-iki.scm >> test.log
+
+nqueen :
+	@gosh -I../src -I../examples ./nqueen.scm >> test.log
 
 spvr :
 	@gosh -I../src ./spvr.scm >> test.log

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.2 2004/01/16 09:40:21 shiro Exp $
+;; $Id: worker.scm,v 1.3 2004/02/09 03:11:53 shiro Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -15,13 +15,17 @@
   (use gauche.test)
   (use gauche.process)
   (use gauche.net)
+  (use text.tree)
+  (use sxml.ssax)
+  (use sxml.sxpath)
   (use util.list)
   (use kahua.config)
   (use kahua.gsid)
   (use kahua.test.xml)
-  (export run-worker worker-running? call-worker call-worker/gsid
+  (export run-worker worker-running?
+          call-worker call-worker/gsid call-worker/gsid->sxml
           reset-gsid shutdown-worker with-worker
-          make-match&pick)
+          make-match&pick make-match&pick)
   )
 (select-module kahua.test.worker)
 
@@ -70,6 +74,17 @@
                               (get-gsid-from-header header))
                  (proc header body))))
 
+(define-method call-worker/gsid->sxml
+  ((worker <worker-subprocess>) header body . maybe-sxpath)
+  (call-worker/gsid worker header body
+                    (lambda (h b)
+                      (let1 r (call-with-input-string (tree->string b)
+                                (cut ssax:xml->sxml <> '()))
+                        (cond ((get-optional maybe-sxpath #f)
+                               => (lambda (path)
+                                    (cons '*TOP* ((sxpath path) r))))
+                              (else r))))))
+
 (define-method reset-gsid ((worker <worker-subprocess>))
   (set! (ref worker 'state-sid) #f)
   (set! (ref worker 'cont-sid) #f))
@@ -93,7 +108,7 @@
 ;; to match the resulting xml, as well as to save the session id
 ;; matched to a pattern variable ?&.
 
-(define-method make-match&pick ((worker <worker-subprocess>) . maybe-sxpath)
+(define-method make-match&pick ((worker <worker-subprocess>))
   (define (pick matches)
     (and-let* ((p (assoc-ref matches '?&)))
       ;; cut parameter from url
@@ -107,11 +122,10 @@
       (set! (ref worker 'path-info)
             (and xtra-path
                  (list* "dummy" "dummy" (string-split xtra-path "/"))))))
-  (cond ((get-optional maybe-sxpath #f)
-         => (cute text-xml-select-matcher <> (compose save pick)))
-        (else
-         (lambda (pattern input)
-           (test-xml-match? pattern input (compose save pick)))))
-  )
+  (lambda (pattern input)
+    (if (and (pair? input)
+             (symbol? (car input)))
+      (test-sxml-match? pattern input (compose save pick))
+      (test-xml-match? pattern input (compose save pick)))))
 
 (provide "kahua/test/worker")
