@@ -1,3 +1,8 @@
+2004-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/config.scm (<kahua-config>):
+	  typo fix :init-base -> :init-value
+
 2004-01-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/Makefile.in (INSTALL_DIRS): added directory to install
