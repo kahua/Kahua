@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.7 2004/02/18 22:01:25 shiro Exp $
+;; $Id: persistence.scm,v 1.8 2004/02/22 23:05:29 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -498,7 +498,7 @@
         (cond ((zero? retry) #f)
               ((sys-fcntl lock-port F_SETLK record)
                (set! (ref db 'lock-port) lock-port) #t)
-              (else (try-lock (- retry 1)))))
+              (else (sys-sleep 1) (try-lock (- retry 1)))))
       (try-lock 10))))
 
 (define (unlock-db db)

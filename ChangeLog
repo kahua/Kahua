@@ -1,3 +1,8 @@
+2004-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm (lock-db): sleep before retrying locking
+	the DB.
+
 2004-02-23  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
 	* src/kahua-spvr.in : supported restarting a server which has no
