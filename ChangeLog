@@ -1,3 +1,10 @@
+2004-02-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm :
+	(kahua-persistent-classes-in-db):
+	(kahua-persistent-class-generation):
+	(kahua-persistent-class-definition): added metalevel API.
+
 2004-02-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/persistence.scm (kahua-object reader): check if the

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.14 2004/02/28 10:54:52 shiro Exp $
+;; $Id: persistence.scm,v 1.15 2004/02/29 02:08:31 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -22,6 +22,9 @@
           key-of find-kahua-class find-kahua-instance
           touch-kahua-instance!
           kahua-serializable-object?
+          kahua-persistent-classes-in-db
+          kahua-persistent-class-generation
+          kahua-persistent-class-definition
           <kahua-db> <kahua-db-fs> <kahua-db-dbi>
           current-db with-db kahua-db-sync
           id->kahua-instance class&key->kahua-instance
@@ -696,6 +699,44 @@
               (class-name class) (- generation 1))
         alist)
       (translate-slot-alist dir alist hidden 'b->a))))
+
+;; Metainformation retrieval utilities:
+;;
+;; The following several APIs provide a way to query DB about
+;; persistent classes without prior knowledge of them.
+;; It is useful to write metalevel tools.
+
+;; Returns a list of persistent classes in the current database.
+(define (kahua-persistent-classes-in-db)
+  (map (cut ref <> 'name)
+       (make-kahua-collection <kahua-persistent-metainfo>)))
+
+;; Returns a the current generation of the named class.
+(define (kahua-persistent-class-generation name)
+  (and-let* ((info (find-kahua-instance <kahua-persistent-metainfo>
+                                        (x->string name))))
+    (ref info 'generation)))
+
+;; Returns a define-class form, which creates the definition
+;; of the persistent class if evaluated.  NOTE: This does not
+;; reproduce the original class definition, but merely creates
+;; a class definition that is 'compatible' enough to read/write
+;; the persistent object.  It loses class hierarchy (it becomes
+;; direct subclass of <kahua-persistent-base>), all slot options
+;; except :allocation, and all non-persistent slots.
+
+(define (kahua-persistent-class-definition name . maybe-generation)
+  (and-let* ((info (find-kahua-instance <kahua-persistent-metainfo>
+                                        (x->string name)))
+             (gen (get-optional maybe-generation (ref info 'generation)))
+             (sig (if (= gen (ref info 'generation))
+                    (ref info 'signature)
+                    (assv-ref (ref info 'signature-alist) gen)))
+             (sid (find (lambda (p) (memv gen (cdr p)))
+                        (ref info 'source-id-map))))
+    `(define-class ,name (<kahua-persistent-base>)
+       ,(signature->slot-definitions sig)
+       :source-id ,(car sid))))
 
 ;;=========================================================
 ;; Database
