@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.27 2004/11/26 11:40:23 shiro Exp $
+;; $Id: server.scm,v 1.28 2005/01/25 14:20:21 nobsun Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -453,30 +453,28 @@
 (define (interp-html nodes context)
   (interp-html-rec (car nodes) context (lambda (s _) s)))
 
-;; internal loop 
-(define (interp-html-rec node context cont)
-  (let ((name (sxml:element-name node)))
-    (if (not name)
-      (cont (if (string? node) 
-              (sxml:string->html node)
-              "")
-            context)
-      (let ((attrs (sxml:attr-list-u node))
-            (auxs  (sxml:aux-list-u node))
-            (contents (sxml:content node)))
-        (if (not-accessible? auxs context)
-          (cont "" context)
-          (cond ((get-element-handler name)
-		 => (cut <> attrs auxs contents context
-			 (lambda (nds cntx)
-			   (handle-element-contents nds cntx cont))))
-                (else 
-                 (default-element-handler name attrs contents context cont)))
-          )))
-    ))
-
-;; set interp-html-rec as default interp
-(add-interp! 'html interp-html-rec #t)
+;; internal loop
+(define (interp-html-rec-gen default-handler)
+  (lambda (node context cont)
+    (let ((name (sxml:element-name node)))
+      (if (not name)
+          (cont (if (string? node) 
+                    (sxml:string->html node)
+                    "")
+                context)
+          (let ((attrs (sxml:attr-list-u node))
+                (auxs  (sxml:aux-list-u node))
+                (contents (sxml:content node)))
+            (if (not-accessible? auxs context)
+                (cont "" context)
+                (cond ((get-element-handler name)
+                       => (cut <> attrs auxs contents context
+                               (lambda (nds cntx)
+                                 (handle-element-contents nds cntx cont))))
+                      (else 
+                       (default-handler name attrs contents context cont)))
+                )))
+      )))
 
 ;; Ad hoc patch by nobsun
 ;; The sxml:attr->xml in sxml.tools module should satisfy this spec.
@@ -498,6 +496,15 @@
                "</" ,tag "\n>")
              context)))))
 
+(define (default-element-handler-bis tag attrs content context cont)
+  (handle-element-contents-bis
+   content context
+   (lambda (stree context)
+     (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
+             ,@stree
+             "</" ,tag "\n>")
+           context))))
+
 (define (handle-element-contents contents context cont)
   (if (null? contents)
     (cont '() context)
@@ -508,6 +515,24 @@
                                                   (cont (cons stree stree2)
                                                         context)
                                                   ))))))
+
+(define (handle-element-contents-bis contents context cont)
+  (if (null? contents)
+    (cont '() context)
+    (interp-html-rec-bis
+     (car contents) context
+     (lambda (stree context)
+       (handle-element-contents-bis (cdr contents) context
+                                    (lambda (stree2 context)
+                                      (cont (cons stree stree2)
+                                            context)
+                                      ))))))
+
+(define interp-html-rec (interp-html-rec-gen default-element-handler))
+(define interp-html-rec-bis  (interp-html-rec-gen default-element-handler-bis))
+
+;; set interp-html-rec as default interp
+(add-interp! 'html interp-html-rec #t)
 
 ;;==========================================================
 ;; Element management
@@ -762,7 +787,7 @@
 (define (interp-rss nodes context cont)
   (let1 enc (gauche-character-encoding)
     (receive (stree context)
-             (interp-html-rec nodes context cont)
+             (interp-html-rec-bis nodes context cont)
              (values
               ;; Stree
               (cons "<?xml version=\"1.0\" encoding=\""

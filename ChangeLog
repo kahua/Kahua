@@ -1,5 +1,9 @@
 2005-01-25  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* src/kahua/server.scm (default-element-handler):
+	Revived old default-element-handler as default-element-handler-bis
+	to use for issuing rss.
+
 	* doc/Setup.ja:
 	Modified required Gauche version (-> 0.8.3)
 
