@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.6 2004/01/25 23:26:29 shiro Exp $
+;; $Id: session.scm,v 1.7 2004/02/18 22:01:25 shiro Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -20,6 +20,7 @@
 (define-module kahua.session
   (use kahua.gsid)
   (use kahua.config)
+  (use kahua.persistence)
   (use gauche.parameter)
   (use gauche.validator)
   (use util.list)
@@ -168,16 +169,25 @@
 ;; This module associates state session ID and <session-state>
 ;; object.   This module doesn't care the content of <session-state>;
 ;; it's up to the application to use it.
+;;
+;; The content of session-state is stored in persistent DB, so
+;; only serializable object can be stored.
 
 (define-class <session-state> ()
   ((%properties :init-value '())))
 
+;; pseudo getter
 (define-method slot-missing ((class <class>) (obj <session-state>) slot)
   (assq-ref (ref obj '%properties) slot))
 
+;; pseudo setter
 (define-method slot-missing ((class <class>) (obj <session-state>) slot val)
+  (unless (kahua-serializable-object? val)
+    (error "attempted to enter unserializable object to <session-state>: ~s"
+           val))
   (set! (ref obj '%properties)
-        (assq-set! (ref obj '%properties) slot val)))
+        (assq-set! (ref obj '%properties) slot val))
+  )
 
 (define state-sessions
   (make-parameter (make-hash-table 'string=?)))
@@ -242,6 +252,8 @@
 (define (session-flush-all)
   (cont-sessions  (make-hash-table 'string=?))
   (state-sessiosn (make-hash-table 'string=?)))
+
+
 
 (provide "kahua/session")
 

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.in,v 1.7 2004/02/16 12:55:34 tahara Exp $
+;; $Id: kahua-admin.in,v 1.8 2004/02/18 22:01:25 shiro Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -99,19 +99,21 @@
                              (eqv? (get-keyword :worker-count w) wno))
                            workers)))
     (if the-worker
-      (make-worker-command-processor (get-keyword :worker-id the-worker))
+      (make-worker-command-processor
+       (get-keyword :worker-type the-worker)
+       (get-keyword :worker-id the-worker))
       (begin
         (format #t "No such worker: ~a\n" wno)
         spvr-command-processor))))
 
-(define (make-worker-command-processor wid)
+(define (make-worker-command-processor type wid)
   (rec (worker-processor)
     (with-error-handler
         (lambda (e)
           (display (ref e 'message)) (flush)
           worker-processor)
       (lambda ()
-        (format #t "~a> " wid)
+        (format #t "~a(~a)> " type wid)
         (flush)
         (let1 expr (read)
           (cond

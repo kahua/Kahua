@@ -1,3 +1,15 @@
+2004-02-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/gsid.scm (make-worker-id): do not include worker type
+	in the worker id.   It is redundant.
+	* src/kahua/persistence.scm (kahua-serializable-object?): added.
+	* src/kahua/session.scm:
+	(slot-missing class (obj <session-state>) slot val): check if
+	the value is serializable.
+	* src/kahua-admin.in (make-worker-command-processor): changed prompt
+	to use worker type explicitly (since worker id doesn't include
+	worker type anymore).
+
 2004-02-17  Yusei Tahara  <tahara@timedia.co.jp>
 
 	* cgi/kahua.cgi.in:

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: gsid.scm,v 1.3 2003/12/28 13:01:19 shiro Exp $
+;; $Id: gsid.scm,v 1.4 2004/02/18 22:01:25 shiro Exp $
 
 (define-module kahua.gsid
   (use gauche.uvector)
@@ -89,7 +89,7 @@
     (apply supervisor-sockaddr opts)))
 
 (define (make-worker-id worker-type)
-  (format "~a:~a:~a" worker-type
+  (format "~a:~a"
           (number->string (sys-getpid) 36)
           (number->string (random-integer 10000000) 36)))
 

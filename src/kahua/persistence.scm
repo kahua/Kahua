@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.6 2004/02/11 11:05:23 shiro Exp $
+;; $Id: persistence.scm,v 1.7 2004/02/18 22:01:25 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -19,6 +19,7 @@
   (use gauche.logger)
   (export <kahua-persistent-meta> <kahua-persistent-base>
           key-of find-kahua-class find-kahua-instance
+          kahua-serializable-object?
           <kahua-db> current-db with-db kahua-db-sync
           id->kahua-instance class&key->kahua-instance
           <kahua-collection> make-kahua-collection
@@ -213,6 +214,7 @@
                 (class-slots (class-of obj)))
       (display ")\n"))))
 
+;; serialization
 (define (serialize-value v)
   (cond
    ((any (cut is-a? v <>)
@@ -240,6 +242,26 @@
     (serialize-value (ref v 'value)))
    (else
     (error "object not serializable:" v))))
+
+(define (kahua-serializable-object? v)
+  (or (any (cut is-a? v <>)
+           (list <boolean> <number> <string> <symbol> <keyword>
+                 <kahua-persistent-base> <kahua-proxy> <kahua-wrapper>))
+      (and (pair? v)
+           (let loop ((v v))
+             (cond ((null? v) #t)
+                   ((pair? v)
+                    (and (kahua-serializable-object? (car v))
+                         (loop (cdr v))))
+                   (else
+                    (kahua-serializable-object? (cdr v))))))
+      (and (vector? v)
+           (let loop ((i (- (vector-length v) 1)))
+             (if (negative? i)
+               #t
+               (and (kahua-serializable-object? (vector-ref v i))
+                    (loop (- i 1))))))
+      ))
 
 ;; The bottom-level reader ----------------------------------------
 ;;   read-kahua-instance will read srfi-10 syntax of
