@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.5 2003/12/22 00:53:47 nobsun Exp $
+;; $Id: lambdabooks.kahua,v 1.6 2003/12/23 09:53:46 nobsun Exp $
 
 (use file.util)
 (use util.list)
@@ -41,38 +41,38 @@
   `(img (@ (src ,(imgpath "separator.jpg")) (alt "[separator]")
            (width 480) (height 4))))
 
-(define (standard-frame contents context)
-  `(html
-    (head (title "Lambda books"))
-    (body (@ (style "background-color: #ffffff"))
-          ,@(standard-header context)
-          ,@contents
-          ,@(standard-footer context))))
+(define (standard-frame contents context cont)
+  (cont `((html
+	   (head (title "Lambda books"))
+	   (body (@ (style "background-color: #ffffff"))
+		 ,@(standard-header context)
+		 ,@contents
+		 ,@(standard-footer context))))
+	context))
 
 (define (standard-frame-cont nodes context)
-  (interp-html (standard-frame nodes context)
-               context
-               (lambda (stree context) stree)))
+  (interp-html 
+   (standard-frame nodes context
+		   (lambda (s _) s))
+   context))
 
-(define (standard-page contents context)
+(define (standard-page contents context cont)
   (standard-frame `((table (tr (td (@ (valign "top"))
                                    ,@(standard-menu context))
                                (td (@ (valign "top"))
                                    ,@(if (null? contents)
-                                       (default-contents)
-                                       contents)))))
-		  context))
+					 (default-contents)
+					 contents)))))
+		  context cont))
 
 (define (standard-page-cont nodes context)
-  (interp-html (standard-page nodes context)
-               context
-               (lambda (stree context) stree)))
+  (interp-html (standard-page nodes context
+			      (lambda (s _) s)) context))
 
 (define (standard-header context)
   `((a/cont ,(img-logo))
     (br)
     ,(img-separator)))
-
 
 (define-entry (book-list-page context)
               (show-book-list context
@@ -86,21 +86,18 @@
               (partnership-info context
                                 standard-page-cont))
 
-
 (define (standard-menu context)
   `((table
      (tr (td ,(user-box context
-                        standard-frame-cont
-                        standard-page-cont)))
+			standard-frame-cont
+			standard-page-cont)))
      (tr (td (a/cont (@@ (cont book-list-page))
-                     "Books")))
-                                        ;(tr (td "Software"))
+		     "Books")))
      (tr (td (a/cont (@@ (cont partner-page))
-                     "Partnership")))
+		     "Partnership")))
      ;; admin roleのユーザーにのみ、リンクを見せる"
      (tr (@@ (require-role admin))
-         (td (a/cont (@@ (cont user-admin-page)) "[ユーザ管理]"))))
-    ))
+	 (td (a/cont (@@ (cont user-admin-page)) "[ユーザ管理]"))))))
 
 (define (standard-footer context)
   `(,(img-separator)
@@ -136,10 +133,6 @@
 
 (initialize-main-proc
  (lambda (context)
-   (interp-html (standard-page '() context)
-                context
-                (lambda (stree context) stree))))
-
-
-
-
+   (standard-page '() context 
+		  (lambda (ns cs)
+		    (interp-html ns cs)))))

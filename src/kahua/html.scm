@@ -22,6 +22,7 @@
           define-entry
           main-proc
           interp-html
+	  interp-html-rec
           ))
 (select-module kahua.html)
 
@@ -32,11 +33,6 @@
 ;;
 ;; preliminary staff
 ;;
-
-; (define main-proc (make-parameter (lambda (context)
-; 				    (error "Not initialized!"))))
-; (define (initialize-main-proc proc)
-;   (main-proc proc))
 
 (define (not-accessible? auxs context)
   (cond ((assq-ref auxs 'require-role)
@@ -74,30 +70,31 @@
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents content context
                            (lambda (stree context)
-                             (cont `("<" ,tag ,(map sxml:attr->xml attrs) ">"
-                                     ,@stree
-                                     "</" ,tag "\n>")
-                                   context))))
+			     (cont `("<" ,tag ,(map sxml:attr->xml attrs) ">"
+					    ,@stree
+					    "</" ,tag "\n>")
+					  context))))
 
 (define (handle-element-contents contents context cont)
   (if (null? contents)
     (cont '() context)
-    (interp-html (car contents) context
+    (interp-html-rec (car contents) context
                  (lambda (stree context)
-                   (handle-element-contents (cdr contents) context
-                                            (lambda (stree2 context)
-                                              (cont (cons stree stree2)
-                                                    context)
-                                              )))
-                 )))
+		   (handle-element-contents (cdr contents) context
+					    (lambda (stree2 context)
+					      (cont (cons stree stree2)
+						    context)
+					      ))))))
                                      
 ;; Interprete node
 ;;  interp-html :: Node -> Context -> (Stree -> Context -> Stree) -> Stree
 
-(define (interp-html node context cont)
+(define (interp-html-rec node context cont)
   (let ((name (sxml:element-name node)))
     (if (not name)
-      (cont (if (string? node) (sxml:string->xml node) "")
+      (cont (if (string? node) 
+		(sxml:string->xml node)
+		"")
             context)
       (let ((attrs (sxml:attr-list-u node))
             (auxs  (sxml:aux-list-u node))
@@ -105,11 +102,18 @@
         (if (not-accessible? auxs context)
           (cont "" context)
           (cond ((get-element-handler name)
-                 => (cut <> attrs auxs contents context cont))
+;                 => (cut <> attrs auxs contents context cont))
+		 => (cut <> attrs auxs contents context
+			 (lambda (nds cntx)
+			   (handle-element-contents nds cntx cont))))
+;			   (interp-html-rec nds cntx cont))))
                 (else 
                  (default-element-handler name attrs contents context cont)))
           )))
     ))
+
+(define (interp-html nodes context)
+  (interp-html-rec (car nodes) context (lambda (s _) s)))
 
 ;; Element handlers
 ;;
@@ -128,20 +132,19 @@
   (let ((cont-closure (car (assq-ref auxs 'cont '(#f)))))
     (if (procedure? cont-closure)
         (let ((id (session-cont-register cont-closure)))
-          (interp-html 
-           `(a (@ (href ,(format "~a?x-kahua-cgsid=~a" (kahua-bridge-name) id)))
-               ,@contents)
-           context
-           cont))
+          (cont
+           `((a (@ (href ,(format "~a?x-kahua-cgsid=~a" (kahua-bridge-name) id)))
+               ,@contents))
+           context))
       (if cont-closure
-          (interp-html
-           `(a (@ (href ,(format "~a/~a/~a"
+          (cont
+           `((a (@ (href ,(format "~a/~a/~a"
                                  (kahua-bridge-name) (kahua-worker-type) cont-closure)))
-               ,@contents)
-           context cont)
-        (interp-html
-         `(a (@ (href ,(format "~a/~a" (kahua-bridge-name) (kahua-worker-type)))) ,@contents)
-         context cont)))))
+               ,@contents))
+           context)
+        (cont
+         `((a (@ (href ,(format "~a/~a" (kahua-bridge-name) (kahua-worker-type)))) ,@contents))
+         context)))))
 
 ;;
 ;; form/cont
@@ -152,16 +155,17 @@
 (define-element form/cont (attrs auxs contents context cont)
   (let* ((cont-closure (assq-ref auxs 'cont))
          (id (session-cont-register (car cont-closure))))
-    (interp-html
-     `(form (@ (method "POST") 
+    (cont
+     `((form (@ (method "POST") 
                (action ,(kahua-bridge-name)))
             (input (@ (type "hidden")
                       (name "x-kahua-cgsid")
                       (value ,(x->string id))))
-            ,@contents)
-     context
-     cont)))
+            ,@contents))
+     context)))
 
 (provide "kahua/html")
+
+
 
 
