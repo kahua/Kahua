@@ -1,3 +1,20 @@
+2003-12-15  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/lambdabooks.scm:
+	Added for testing examples/lambdabooks.kahua 
+	The test script is work but not yet completed.
+
+	* test/Makefile: 
+	Added a entry for lambdabooks.scm.
+
+	* examples/lambdabooks.init: 
+	Changed specifyings for loading book.kahua and review.kahua
+	to relative paths.
+
+	* examples/Makefile.in:
+	Modified command for excuting lambdabooks.init.
+	
+
 2003-12-15  Shiro Kawai  <shiro@acm.org>
 
 	* cgi/kahua.cgi.in (compose-reply): sets Path parameter of the state
