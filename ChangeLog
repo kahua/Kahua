@@ -1,5 +1,8 @@
 2004-01-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/kahua/persistence.scm (initialize): fixed a problem when
+	class definition is changed to remove an existing slot.
+
 	* src/kahua/server.scm (form/cont): allow to pass extra parameters
 	to the continuation closure, much like a/cont.
 

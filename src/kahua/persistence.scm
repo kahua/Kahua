@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.2 2003/12/23 04:36:39 shiro Exp $
+;; $Id: persistence.scm,v 1.3 2004/01/22 15:57:47 shiro Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -114,7 +114,8 @@
     (when rsv
       ;; we are realizing an instance from the saved one
       (dolist (p rsv)
-        (slot-set! obj (car p) (make <kahua-wrapper> :value (cdr p))))
+        (when (assq (car p) (class-slots (class-of obj)))
+          (slot-set! obj (car p) (make <kahua-wrapper> :value (cdr p)))))
       ;; obj is marked dirty because of the above setup.
       ;; we revert it to clean.  it is ugly, but it's the easiest
       ;; way to prevent obj from being marked dirty inadvertently.
