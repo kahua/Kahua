@@ -5,24 +5,25 @@
 
 (define (simple-page-template ttl)
   (lambda (elems)
-    `((html (head (title ,ttl))
-	    (body (@ (bgcolor "white"))
-		  (h1 ,ttl)
-		  ,@elems)))))
+    (list (html: (head: (title: ttl))
+		 (apply body: (@: (bgcolor "white"))
+			(h1: ttl)
+			elems)))))
 
 (define all-items
-  (map (lambda (n) (list 'li (x->string n))) (iota 15)))
+  (map (lambda (n) (li: (x->string n))) (iota 15)))
 
 (define (lister items template)
   (lambda ()
     (receive (cur next)
 	     (split-at* items 10)
 	     (template
-	      `((ul 
-		 ,@(append cur 
-			   (if (null? next) '() 
-			       `((li (a/cont (@@ (cont 
-						  ,(lister next template)))
-					     "Next")))))))))))
+	       (list (apply ul:
+		            (append cur 
+				    (if (null? next) '() 
+					(list (li: 
+					       (a/cont: 
+						(@@: (cont (lister next template)))
+						"Next")))))))))))
 
 (initialize-main-proc (lister all-items (simple-page-template "Lister")))

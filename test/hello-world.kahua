@@ -2,9 +2,9 @@
 
 (define (simple-page ttl . elems)
   (list (html: (head: (title: ttl))
-	       (body: (@: (bgcolor "white"))
-		      (h1: ttl)
-		      elems))))
+	       (apply body: (@: (bgcolor "white"))
+		            (h1: ttl)
+		            elems))))
 
 (define (hello-world)
   (simple-page "Hello, world!"))
