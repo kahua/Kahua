@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.6 2004/02/29 12:38:02 nobsun Exp $
+;; $Id: elem.scm,v 1.7 2004/03/02 09:47:40 tahara Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -26,7 +26,7 @@
 	  form/ label/ input/ select/ optgroup/ option/ textarea/ fieldset/
 	  legend/ button/ table/ caption/ thead/ tfoot/ tbody/ colgroup/
           col/ tr/ th/ td/ head/ title/ base/ meta/ style/ script/ noscript/
-	  html/
+	  html/ pdf/
 	  @/
 	  @@/
 	  a/cont/
@@ -42,7 +42,7 @@
 	  form: label: input: select: optgroup: option: textarea: fieldset:
 	  legend: button: table: caption: thead: tfoot: tbody: colgroup:
           col: tr: th: td: head: title: base: meta: style: script: noscript:
-	  html:
+	  html: pdf:
 	  @:
 	  @@:
 	  a/cont:
@@ -269,6 +269,8 @@
   (update (cut cons `(noscript ,@(exec '() (node-set args))) <>)))
 (define (html/ . args)
   (update (cut cons `(html ,@(exec '() (node-set args))) <>)))
+(define (pdf/ . args)
+  (update (cut cons `(pdf ,@(exec '() (node-set args))) <>)))
 
 ;;--------------------------------------------------------------------------
 
@@ -361,6 +363,7 @@
 (define (script: . arg) `(script ,@(flatten arg)))
 (define (noscript: . arg) `(noscript ,@(flatten arg)))
 (define (html: . arg) `(html ,@(flatten arg)))
+(define (pdf: . arg) `(pdf ,@(flatten arg)))
 
 (define-syntax @:
   (syntax-rules ()

@@ -1,5 +1,6 @@
 2004-03-02  Yusei Tahara  <tahara@timedia.co.jp>
 
+	* src/kahua/elem.scm: added pdf: and pdf/ for publishing pdf document.
 	* src/kahua/sandbox.scm (make-sandbox-module):
 	fixed a module dependency. now use kahua.plugin.
 	disabled exit, sys-exit, sys-abort bindings in sandbox module.
