@@ -1,3 +1,9 @@
+2004-06-28  Kimura Fuyuki  <fuyuki@hadaly.org>
+
+	* Makefile.in, src/Makefile.in, cgi/fix-shebang.sh: Yet more
+	cleanups; now the whole build-(clean)-edit-rebuild process is
+	believed to have been sanitized.
+
 2004-06-26  Kimura Fuyuki  <fuyuki@hadaly.org>
 
 	* examples/Makefile.in, src/Makefile.in, test/Makefile.in: More

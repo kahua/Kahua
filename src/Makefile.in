@@ -77,7 +77,6 @@ CONFIG_GENERATED = Makefile
 
 all: $(SCM_SCRIPTS) $(SCM_SVR_SCRIPTS) kahua/config.scm kahua.conf kahua/pdf/typeset.scm
 
-
 kahua/config.scm: kahua/config.scm.in
 	test ! -f $@ || chmod +w $@
 	sed -e "s@##sysconfdir##@$(sysconfdir)@" -e "s@##localstatedir##@$(localstatedir)@" -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##package##@$(package)@" $@.in > $@
@@ -96,7 +95,9 @@ kahua.conf: kahua.conf.sample
 check:
 
 clean:
-	rm -rf core *~ kahua/*~ $(SCRIPTS) $(SCM_SCRIPTS) kahua/config.scm
+	rm -rf core *~ kahua/*~ \
+	  $(SCRIPTS) $(SCM_SCRIPTS) $(SVR_SCRIPTS) $(SCM_SVR_SCRIPTS) \
+	  kahua/config.scm kahua/pdf/typeset.scm kahua.conf
 
 server-scripts	:
 	@for f in $(SVR_SCRIPTS); do \

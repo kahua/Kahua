@@ -1,4 +1,4 @@
-CONFIG_GENERATED = Makefile config.cache config.log config.status autom4te*.cache
+CONFIG_GENERATED = Makefile config.cache config.log config.status configure.lineno autom4te*.cache
 .PHONY: all check clean distclean install maintainer-clean install-examples
 
 
