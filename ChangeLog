@@ -9,6 +9,7 @@
 	* src/kahua-admin.in (make-worker-command-processor): changed prompt
 	to use worker type explicitly (since worker id doesn't include
 	worker type anymore).
+	* src/kahua-shell.in (make-worker-command-processor): ditto.
 
 2004-02-17  Yusei Tahara  <tahara@timedia.co.jp>
 
