@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.7 2004/03/02 09:47:40 tahara Exp $
+;; $Id: elem.scm,v 1.8 2004/03/15 04:18:13 nobsun Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -19,7 +19,7 @@
 	  empty
 	  exec
 	  text/
-	  tt/ i/ b/ big/ small/ em/ strong/ dfn/ code/ samp/ kbd/ var/
+	  font/ tt/ i/ b/ big/ small/ em/ strong/ dfn/ code/ samp/ kbd/ var/
 	  cite/ abbr/ acronym/ sub/ sup/ span/ bdo/ br/ body/ address/ div/
 	  a/ area/ link/ img/ hr/ p/ h1/ h2/ h3/ h4/ h5/ h6/
 	  pre/ q/ blockquote/ ins/ del/ dl/ dt/ dd/ ol/ ul/ li/
@@ -35,7 +35,7 @@
 
 	  node-list-to-node-set
 	  node-set:
-	  tt: i: b: big: small: em: strong: dfn: code: samp: kbd: var:
+	  font: tt: i: b: big: small: em: strong: dfn: code: samp: kbd: var:
 	  cite: abbr: acronym: sub: sup: span: bdo: br: body: address: div:
 	  a: area: link: img: hr: p: h1: h2: h3: h4: h5: h6:
 	  pre: q: blockquote: ins: del: dl: dt: dd: ol: ul: li:
@@ -123,6 +123,8 @@
 	  (else (cons (car node) (rev-nodes (cdr node))))))
   (reverse (map rev node-set)))
 
+(define (font/ . args) 
+  (update (cut cons `(font ,@(exec '() (node-set args))) <>)))
 (define (tt/ . args) 
   (update (cut cons `(tt ,@(exec '() (node-set args))) <>)))
 (define (b/ . arg)
@@ -290,6 +292,7 @@
 (define (node-list-to-node-set ls) (cons 'node-set ls))
 (define (node-set: . arg) `(node-set ,@(flatten arg)))
   
+(define (font: . arg) `(font ,@(flatten arg)))
 (define (tt: . arg) `(tt ,@(flatten arg)))
 (define (b: . arg) `(b ,@(flatten arg)))
 (define (i: . arg) `(i ,@(flatten arg)))
