@@ -1,3 +1,13 @@
+2004-02-29  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua-admin.in : add moduser command that changes password.
+	* src/kahua/developer.scm :
+	(developer-password-set!): bug fixed.
+	(developer-roles-set!): added.
+	(find-developer): user does not found, raise error.
+	(kahua-change-developer-password): removed old-password argument
+	and added validation for new-password.
+
 2004-02-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/persistence.scm :

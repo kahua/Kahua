@@ -1,151 +1,108 @@
-;; Manage application developer's account.
-;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
-;;  See COPYING for terms and conditions of using this software
-;;
-;; $Id: developer.scm,v 1.3 2004/02/23 05:49:15 tahara Exp $
+;; $id$
+
+;; test kahua.developer
+
+(use gauche.test)
+(use srfi-1)
+(use file.util)
+
+(test-start "developer")
+(use kahua.developer)
+(test-module 'kahua.developer)
 
 
-(define-module kahua.developer
-  (use srfi-1)
-  (use rfc.sha1)
-  (use rfc.base64)
-  (use file.util)
-  (use gauche.parameter)
-  (use gauche.fcntl)
-  (use gauche.parameter)
-  (use kahua.config)
-  (export kahua-add-developer kahua-delete-developer
-          kahua-check-developer kahua-change-developer-password
-          kahua-list-developer))
+;; make test environment
+(define conf-file (build-path (sys-getcwd) "user.conf"))
+(define conf-lock-file (string-append conf-file ".lock"))
 
-(select-module kahua.developer)
+(use kahua.config)
+(slot-set! (kahua-config) 'userconf-file conf-file)
+
+(sys-system #`"rm -rf ,conf-file ,conf-lock-file")
+(sys-system #`"touch ,conf-file")
 
 
-;; inner data and functions
-(define developers (make-parameter '()))
+;; start test
+;; 開発者アカウント操作のテストを開始
 
-(define (load-developers)
-  (developers (load-conf)))
+;; アカウント一覧表示
+;; まだ一人も登録していないので、空リストになる。
+(test* "kahua-list-developer" '()
+       (kahua-list-developer))
 
-(define (developer-name x) (car x))
+;; アカウント 3人分を登録
+;; 全て成功して #t を返す。
+(test* "kahua-add-developer" #t
+       (every (cut eq? <> #t)
+              (list (kahua-add-developer "yusei" "^Epc4q-D" '(manager))
+                    (kahua-add-developer "admin" "yqX^Vj8q" '(manager))
+                    (kahua-add-developer "guest" "N_HHmW6h" '()))))
 
-(define (developer-password x) (cadr x))
+;; アカウントを登録
+;; パスワードが短いので登録失敗。エラーが起きる。
+(test* "kahua-add-developer bad password"
+       *test-error*
+       (kahua-add-developer "anonymous" "a" '()))
 
-(define (developer-roles x) (caddr x))
+;; アカウント登録
+;; 名前が短いので登録失敗。エラーが起きる。
+(test* "kahua-add-developer bad name"
+       *test-error*
+       (kahua-add-developer "" "anonymous" '()))
 
-(define (developer-password-set! x pw) (set-cdr! x pw))
+;; アカウント一覧表示 ２回目
+;; 今度は登録が成功した3人の名前を返す。
+(test* "kahua-list-developer" '("yusei" "admin" "guest")
+       (kahua-list-developer))
 
-(define (developer-exists? name)
-  (any (lambda (x) (equal? name (developer-name x)))
-       (developers)))
+;; アカウント削除
+;; guest を削除、成功して真を返す。
+(test* "kahua-delete-developer" #t
+       (kahua-delete-developer "guest"))
 
-(define (find-developer name)
-  (find (lambda (x) (equal? name (developer-name x)))
-        (developers)))
+;; アカウント一覧表示 ３回目
+;; guest を削除したので、残り2人の名前を返す。
+(test* "kahua-list-developer" '("yusei" "admin")
+       (kahua-list-developer))
 
+;; アカウント登録
+;; 削除したあとに、新しいアカウントを作成。成功して真を返す。
+(test* "kahua-add-developer" #t
+       (kahua-add-developer "anonymous" "anonymous" '()))
 
-;; read/write configuration file
-(define (load-conf)
-  (let ((conf-file (kahua-userconf-file)))
-    (if (file-exists? conf-file)
-        (let ((temp (call-with-input-file (kahua-userconf-file) read)))
-          (cond ((eof-object? temp) '())
-                ((list? temp) temp)
-                (else (error "unknown data" temp))))
-        (error "userconf file does not exists" conf-file))))
+;; アカウント一覧表示 ４回目
+;; 追加したアカウントを含めて、3人の名前を返す。
+(test* "kahua-list-developer" '("yusei" "admin" "anonymous")
+       (kahua-list-developer))
 
-(define (save-conf)
-  (let* ((conf-file (kahua-userconf-file))
-         (temp-file (string-append conf-file ".tmp"))
-         (lock-file (string-append conf-file ".lock"))
-         (lock-port #f))
+;; 認証
+;; 登録した名前とパスワードが一致するので真を返す。
+(test* "kahua-check-developer" #t
+       (kahua-check-developer "yusei" "^Epc4q-D"))
 
-    (define (lock)
-      (let ((record (make <sys-flock> :type F_WRLCK)))
-        (define (try-lock retry)
-          (cond ((zero? retry) #f)
-                ((sys-fcntl lock-port F_SETLK record) lock-port)
-                (else (try-lock (- record 1)))))
-        (unless (file-exists? lock-file)
-          (with-output-to-file lock-file (lambda () (newline))))
-        (set! lock-port (open-output-file lock-file :if-exists? :append))
-        (try-lock 10)))
+;; 認証２回目
+;; 名前が間違っているので偽を返す。
+(test* "kahua-check-developer the name not found"
+       *test-error*
+       (kahua-check-developer "yus" "^Epc4q-D"))
 
-    (define (unlock)
-      (let ((record (make <sys-flock> :type F_UNLCK)))
-        (sys-fcntl lock-port F_SETLK record)))
-    
-    (if (lock)
-      (with-error-handler
-          (lambda (e) (unlock) (sys-unlink temp-file) (raise e))
-        (lambda ()
-          (let ((temp (developers)))
-            (with-output-to-file temp-file (lambda () (write temp)))
-            (sys-rename temp-file conf-file)
-            (unlock))))
-      (error "can't lock userconf file" conf-file))))
+;; 認証３回目
+;; パスワードが間違っているので偽を返す。
+(test* "kahua-check-developer incorrect password" #f
+       (kahua-check-developer "yusei" "^Epc4"))
 
+;; パスワード変更
+;; 名前、パスワードが正しいので真を返す。
+(test* "kahua-change-developer-password" #t
+       (kahua-change-developer-password "admin" "WpX^krRS"))
 
-;; misc functions
-(define (valid-name? name)
-  (and (string? name)
-       (>= (string-length name) 3)))
-
-(define (valid-password? password)
-  (and (string? password)
-       (>= (string-length password) 4)))
-
-(define (gen-password password)
-  (base64-encode-string (sha1-digest-string password)))
-
-
-;; user interface
-;; TODO: load-developers should be use implicitly.
-(define (kahua-add-developer name password roles)
-  (load-developers)
-  (if (developer-exists? name)
-      (error "the name already exists." name)
-      (begin
-        (cond ((not (valid-name? name))
-               (error "invalid name" name))
-              ((not (valid-password? password))
-               (error "invalid password" password))
-              (else
-               (let ((pw (gen-password password)))
-                 (developers
-                  (append (developers) `((,name ,pw ,roles))))
-                 (save-conf)))))))
-
-(define (kahua-delete-developer name)
-  (load-developers)
-  (if (developer-exists? name)
-      (begin
-        (developers
-         (remove (lambda (x) (equal? name (developer-name x)))
-                 (developers)))
-         (save-conf))
-      (error "the developer does not exists" name)))
-
-(define (kahua-check-developer name password)
-  (load-developers)
-  (let ((developer (find-developer name))
-        (pw (gen-password password)))
-    (if developer
-        (equal? pw (developer-password developer))
-        #f)))
-
-(define (kahua-change-developer-password name old-password new-password)
-  (load-developers)
-  (if (kahua-check-developer name old-password)
-      (let ((developer (find-developer name)))
-        (developer-password-set! developer new-password) #t)
-      (error "name and/or password may be incorrect" name)))
-
-(define (kahua-list-developer)
-  (load-developers)
-  (map (lambda (x) (car x)) (developers)))
+;; パスワード変更２回目
+;; 名前が間違っているので、エラーが起きる。
+(test* "kahua-change-developer-password the name not found"
+       *test-error*
+       (kahua-change-developer-password "adnim" "WpX^krRS"))
 
 
-(provide "kahua/developer")
+(sys-system #`"rm -rf ,conf-file ,conf-lock-file")
+
+(test-end)

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.in,v 1.11 2004/02/23 11:20:58 ko1 Exp $
+;; $Id: kahua-admin.in,v 1.12 2004/02/29 04:04:40 tahara Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -40,7 +40,8 @@
               (case (car cmd)
                 ((help)
                  (let ((spvr-help (send-command #f cmd))
-                       (admin-help '(connect cvs adduser deluser lsuser
+                       (admin-help '(connect cvs
+                                     adduser deluser lsuser moduser
                                      plugin)))
                    (write (append spvr-help admin-help)) (newline)
                    (spvr-command-processor)))
@@ -82,9 +83,21 @@
                            spvr-command-processor)
                      (begin (display "Usage: deluser <name>\n")
                             spvr-command-processor)))
+                ((moduser)
+                 (if (and (= (length cmd) 4) (eq? (cadr cmd) 'password))
+                   (begin
+                     (apply kahua-change-developer-password
+                            (map symbol->string (cddr cmd)))
+                     (write 'done) (newline)
+                     spvr-command-processor)
+                   (begin
+                     (display "Usage: moduser password <name> <new>\n")
+                     spvr-command-processor)))
                 ((lsuser)
                  (write (kahua-list-developer)) (newline)
                  spvr-command-processor)
+
+                ;; plugin management
                 ((plugin)
                  (plugin-command (cdr cmd))
                  spvr-command-processor)
