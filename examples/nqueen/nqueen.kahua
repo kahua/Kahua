@@ -1,7 +1,11 @@
 ;; -*-scheme-*-
 ;; nqueen.kahua
-;;   Koichi Sasada
-;; $Id: nqueen.kahua,v 1.3 2004/02/16 07:54:30 nobsun Exp $
+;;
+;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: nqueen.kahua,v 1.4 2004/02/29 17:03:41 ko1 Exp $
 ;;
 ;; This example shows how to capture continuations within Kahua application.
 ;; You need to use call/pc instead of call/cc --- that's it.

@@ -1,0 +1,111 @@
+;; -*-scheme-*-
+;; foldlist.kahua
+;;
+;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id :$
+;;
+;; This example shows simple application by kahua.
+;;
+
+(define (page ttl . elems)
+  (node-set: (html:
+			     ;(extra-header: (@: (name "content-type")
+			      ;  (value "text/html; charset=euc-jp")))
+	      (head: (title: ttl))
+	      (body:
+	       (node-list-to-node-set elems)))))
+
+(define *tree*
+  '(a1 ((c1 d1 d2)) b1))
+;; 
+;; foldlist structure
+;; leaf:
+;;   not pair
+;; branch:
+;; (branch-open? branch-entry [entry_1 ...])
+
+(define (tree->foldlist tree default)
+  (if (pair? tree)
+      (cons default
+	    (map (lambda (t)
+		   (tree->foldlist t default))
+		 (if (pair? (car tree))
+		     (cons "..." tree)
+		       tree)))
+      (x->string tree)))
+
+(define (foldlist tree default)
+  (let ((fl (tree->foldlist tree default)))
+    (define (foldlist-view)
+      (page "foldlist sample"
+	    (div:
+	     (ul:
+	      (node-list-to-node-set
+	       (open-tree fl)))
+	     ; (pre: (format "~A" fl))
+	     (a: (@: (href "./")) "goto start")
+	     )))
+
+    (define (make/acont tree open?)
+      (a/cont: (@@: (cont 
+		     (lambda ()
+		       (set-car! tree (not open?))
+		       (foldlist-view))))
+	       (if open? "[close] " "[open] ")))
+      
+    (define (open-tree tree)
+      (if (pair? tree)
+	  (if (car tree)
+	      ; open tree
+	      (li: (make/acont tree #t) (cadr tree)
+		   (ul: 
+		    (node-list-to-node-set
+		     (map (cut open-tree <>) (cddr tree)))))
+ 	      ; close tree
+	      (li: (make/acont tree #f) (cadr tree))
+	      )
+	  (li: tree)
+	  ))
+      
+    (foldlist-view)))
+
+; (use sxml.ssax)
+
+(define (foldlist-start)
+  (define viewer
+    (entry-lambda (:keyword content default)
+      (let ((default (and (equal? default "true") #t))
+	    ;(sexp (ssax:xml->sxml (open-input-string content) '()))
+	    (sexp (read-from-string content))
+	    )
+	(foldlist sexp default))))
+  (page "foldlist" (div:
+		    (h1: "fold list sample")
+		    (form/cont:
+		     (@@: (cont viewer))
+		     (div:
+		      "表示したい S式"
+		      (div:
+		       (textarea: (@: (name "content")
+				      (cols "80")
+				      (rows "20"))
+				      "(a b (c d (e f) g) h))"
+				      )))
+		     (div:
+		      (input: (@: (type "checkbox")
+				  (name "default")
+				  (value "true")))
+		      "すべて開いた状態にする")
+		     (div:
+		      (input: (@: (type "submit") 
+				  (name "submit")
+				  (value "決定"))))
+		      ))))
+
+
+(initialize-main-proc foldlist-start)
+
+

@@ -8,7 +8,8 @@
 
 TESTS = test-xml persistence \
         user config gsid session partcont \
-        server kahua-dbm worker lambdabooks wiki-iki nqueen \
+        server kahua-dbm worker \
+	lambdabooks wiki-iki nqueen foldlist \
 	spvr admin developer shell usermode sandbox plugin
 
 .PHONY: all check clean distclan maintainer-clean $(TESTS)
@@ -60,6 +61,9 @@ wiki-iki :
 
 nqueen :
 	@gosh -I../src -I../examples ./nqueen.scm >> test.log
+
+foldlist :
+	@gosh -I../src -I../examples ./foldlist.scm >> test.log
 
 spvr :
 	@gosh -I../src ./spvr.scm >> test.log

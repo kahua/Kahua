@@ -1,5 +1,11 @@
 2004-03-01  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
 
+	* examples/foldlist/foldlist.kahua : added foldlist sample program.
+	* examples/Makefile : added foldlist.kahua entry
+	* test/Makefile, test/foldlist.scm : added test for foldlist.kahua
+	
+2004-03-01  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
         * src/kahua-spvr.in : support restarting the unexpected terminated
         worker.
         * src/kahua/config.scm : added "auto-restart" slot to <kahua-config>
