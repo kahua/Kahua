@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.16 2004/02/29 15:29:37 ko1 Exp $
+;; $Id: kahua.cgi.in,v 1.17 2004/03/26 10:39:11 nobsun Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -16,6 +16,8 @@
 ;;     taken from it and the app-server worker id is extracted.
 ;;  3. Otherwise, just connect to the supervisor and let it decide
 ;;     which app-server to handle the request.
+
+(add-load-path "##libdir##")
 
 (use gauche.net)
 (use gauche.charconv)
@@ -35,8 +37,7 @@
 (use file.util)
 
 ;; Change this if you're using non-default sockbase
-(define *sockbase* #f)
-;(define *sockbase* "unix:/home/shiro")
+(define *sockbase* "unix:##KAHUA_SOCKET_BASE##")
 
 ;; bridge name option, mainly to pass "~user" information
 (define *bridge-option* "")
