@@ -7,6 +7,6 @@
   (page-frame (a/cont: "top")))
 
 (define (page-frame . contents)
-  (list (html: (apply body: contents))))
+  (node-set: (html: (body: (node-list-to-node-set contents)))))
 
 (initialize-main-proc acont/start)
