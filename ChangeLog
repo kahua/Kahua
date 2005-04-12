@@ -1,3 +1,8 @@
+2005-04-12  Kenji Hisazumi  <nel@soraneko.com>
+
+	* src/kahua/session.scm (make-state-key, make-cont-key): 
+	- fixed a bug of the case where a duplicated key are generated.
+
 2005-03-23  Kenji Hisazumi  <nel@soraneko.com>
 
 	* src/kahua/persistence.scm:

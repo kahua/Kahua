@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.9 2004/05/18 03:54:15 nobsun Exp $
+;; $Id: session.scm,v 1.10 2005/04/12 04:25:05 nel Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -127,9 +127,9 @@
 
 (define (make-cont-key)
   (check-initialized)
-  (let loop ((id (make-gsid (worker-id)
-                            (number->string (random-integer IDRANGE) 36))))
-    (if (cont-key->session id) (loop) id)))
+  (let ((id (make-gsid (worker-id)
+                       (number->string (random-integer IDRANGE) 36))))
+    (if (cont-key->session id) (make-cont-key) id)))
 
 ;; SESSION-CONT-REGISTER cont [ id ]
 ;;   Register continuation closure CONT with id ID.  Usually ID should be
@@ -232,10 +232,10 @@
 ;; Creates local key.  Only used in process-local mode.
 (define (make-state-key)
   (check-initialized)
-  (let loop ((id (make-gsid (worker-id) (x->string (random-integer IDRANGE)))))
+  (let ((id (make-gsid (worker-id) (x->string (random-integer IDRANGE)))))
     (if (hash-table-exists? (state-sessions) id)
-      (loop)
-      id)))
+        (make-state-key)
+        id)))
 
 ;; Communicate to keyserver
 (define (keyserver request)
