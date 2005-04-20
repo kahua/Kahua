@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.9 2004/04/26 06:50:39 nobsun Exp $
+;; $Id: elem.scm,v 1.10 2005/04/20 04:30:18 nel Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -132,9 +132,9 @@
   (update (cut cons `(font ,@(exec '() (node-set args))) <>)))
 (define (tt/ . args) 
   (update (cut cons `(tt ,@(exec '() (node-set args))) <>)))
-(define (b/ . arg)
+(define (b/ . args)
   (update (cut cons `(b ,@(exec '() (node-set args))) <>)))
-(define (i/ . arg)
+(define (i/ . args)
   (update (cut cons `(i ,@(exec '() (node-set args))) <>)))
 (define (small/ . args)
   (update (cut cons `(small ,@(exec '() (node-set args))) <>)))

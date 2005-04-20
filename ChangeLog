@@ -1,3 +1,7 @@
+2005-04-20  Kenji Hisazumi  <nel@soraneko.com>
+
+	* src/kahua/elem.scm (b/, i/): fixed typo arg -> args
+
 2005-04-12  Kenji Hisazumi  <nel@soraneko.com>
 
 	* src/kahua/session.scm (make-state-key, make-cont-key): 
