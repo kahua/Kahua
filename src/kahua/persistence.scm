@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.22 2005/03/23 05:09:36 nel Exp $
+;; $Id: persistence.scm,v 1.23 2005/04/21 05:04:04 nel Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -216,7 +216,14 @@
 
 ;; this method should be overriden by subclasses for convenience.
 (define-method key-of ((obj <kahua-persistent-base>))
-  (format "~6,'0d" (ref obj 'id)))
+  (define (id->idstr num)
+    (let* ((ml  6)
+	   (str (number->string num))
+	   (pad (- ml (string-length str))))
+      (string-append
+       (make-string (if (< pad 0) 0 pad) #\0)
+       str)))
+  (id->idstr (ref obj 'id)))
 
 ;; Initializing persistent instance:
 ;;  * (initialize (obj <kahua-persistent-base>)) initializes in-memory
@@ -313,15 +320,21 @@
 ;; for now, we don't consider shared structure
 (define-method kahua-write ((obj <kahua-persistent-base>) port)
   (define (save-slot s)
-    (format #t "(~a . " (car s))
+    (display "(")
+    (display (car s))
+    (display " . ")
     (serialize-value (cdr s))
-    (format #t ")\n"))
+    (display ")\n"))
   (with-output-to-port port
     (lambda ()
       (receive (generation vals hidden)
           (export-slot-values obj)
-        (format #t "#,(kahua-object (~a ~a) ~a\n"
-                (class-name (class-of obj)) generation (ref obj 'id))
+	(display "#,(kahua-object ( ")
+	(display (class-name (class-of obj)))
+	(display " ")
+	(display generation)
+	(display ") ")
+	(display (ref obj 'id))
         (for-each save-slot
                   (if (null? hidden)
                     vals
@@ -347,11 +360,17 @@
     (for-each serialize-value v)
     (display ")"))
    ((is-a? v <kahua-persistent-base>)
-    (format #t "#,(kahua-proxy ~a ~s)"
-            (class-name (class-of v)) (key-of v)))
+    (display "#,(kahua-proxy ")
+    (display (class-name (class-of v)))
+    (display " ")
+    (write (key-of v))
+    (display " )"))
    ((is-a? v <kahua-proxy>)
-    (format #t "#,(kahua-proxy ~a ~s)"
-            (class-name (ref v 'class)) (ref v 'key)))
+    (display "#,(kahua-proxy ")
+    (display (class-name (ref v 'class)))
+    (display " ")
+    (write (ref v 'key))
+    (display " )"))
    ((is-a? v <kahua-wrapper>)
     (serialize-value (ref v 'value)))
    (else
