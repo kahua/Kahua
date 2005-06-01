@@ -1,3 +1,8 @@
+2005-06-01  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.3.2
+	- Fixed bug which disabled using with new Gauche-0.8.4.
+
 2005-04-20  Kenji Hisazumi  <nel@soraneko.com>
 
 	* src/kahua/elem.scm (b/, i/): fixed typo arg -> args
