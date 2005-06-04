@@ -1,3 +1,8 @@
+2005-06-04  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* plugins/allow-module.scm:
+	Added text.tree module.
+
 2005-06-01  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* Release 0.3.2
