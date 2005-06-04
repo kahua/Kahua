@@ -5,6 +5,7 @@
 (allow-module srfi-13)
 (allow-module srfi-2)
 (allow-module text.parse)
+(allow-module text.tree)
 (allow-module util.list)
 (allow-module rfc.uri)
 (allow-module gauche.charconv)
