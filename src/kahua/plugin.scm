@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: plugin.scm,v 1.3 2004/02/25 11:15:22 tahara Exp $
+;; $Id: plugin.scm,v 1.4 2005/06/26 12:27:40 tahara Exp $
 
 (define-module kahua.plugin
   (use srfi-1)
@@ -12,7 +12,7 @@
   (use file.util)
   (use kahua.config)
   (export define-export <kahua-plugin> lookup-exports
-          expand-define load-plugin %load-plugin use-plugin
+          expand-define %load-plugin use-plugin
           define-plugin allow-module register-plugin
           initialize-plugins refresh-plugin
           all-plugins)
@@ -24,13 +24,20 @@
 (define *plugins* (make-hash-table 'string=?))
 
 ;; make anonymous module for binding plugin procedues.
-(define (make-sandbox-plugin)
+(define (make-sandbox-module)
   (let ((m (make-module #f)))
     (eval '(import kahua.plugin) m)
     m))
 
+(define (get-sandbox-module name)
+  (if (hash-table-exists? *sandbox-plugin* name)
+      (hash-table-get *sandbox-plugin* name)
+      (let ((m (make-sandbox-module)))
+        (hash-table-put! *sandbox-plugin* name m)
+        m)))
+
 ;; plugin's procedues are bound this module.
-(define *sandbox-plugin* #f)
+(define *sandbox-plugin* (make-hash-table 'eq?))
 
 ;; plugin class.
 (define-class <kahua-plugin> ()
@@ -52,8 +59,13 @@
 
 ;; find out which symbols a plugin defines.
 (define (lookup-exports name)
-  (let ((symbols (ref (hash-table-get *plugins* name) 'export))
-        (modules (cons *sandbox-plugin* (all-modules))))
+  (let ((symbols (ref (hash-table-get *plugins*
+                                      (symbol->string name)) 'export))
+        (modules (cons (get-sandbox-module name)
+                       (append (filter (lambda (m) (eq? (module-name m) name))
+                                       (all-modules))
+                               (hash-table-values *sandbox-plugin*)
+                               (all-modules)))))
     (map (lambda (s)
            (cons s
                  (or (find (lambda (m)
@@ -69,21 +81,21 @@
        ,@(map (lambda (e)
                 `(define-in-module ,module
                    ,(car e)
-                   (eval ,(car e) ,(cdr e))))
+                   (eval ',(car e) ,(cdr e))))
               exports)
        )))
 
 ;; safe plugin loader for sandbox.
-(define-syntax load-plugin
+(define-syntax use-plugin
   (syntax-rules ()
-    ((load-plugin file)
-     (%load-plugin file (current-module)))))
-
-(define-macro (use-plugin name)
-  `(load-plugin (symbol->string ',name)))
+    ((use-plugin name)
+     (if (hash-table-exists? *plugins* (symbol->string 'name))
+         (%load-plugin 'name (current-module))
+         (error "cannot find plugin" 'name)))))
 
 (define (%load-plugin name target-module)
-  (eval `(expand-define ,name ,target-module) *sandbox-plugin*))
+  (eval `(expand-define ,name ,target-module)
+        (get-sandbox-module name)))
 
 (define (register-plugin name version export depend)
   (hash-table-put! *plugins*
@@ -92,7 +104,11 @@
                      :name name
                      :version version
                      :export export
-                     :depend depend)))
+                     :depend depend))
+  (hash-table-put! *sandbox-plugin*
+                   (string->symbol name)
+                   (get-sandbox-module
+                    (string->symbol (port-name (current-load-port))))))
 
 ;; plugin registrar.
 (define-syntax define-plugin
@@ -105,15 +121,16 @@
                         '(symbol1 symbol2 ...) '(module1 module2 ...))
      )))
 
-
 ;; plugin registrar for gauche module.
-(define-macro (allow-module module)
-  `(begin
-     (use ,module)
-     (register-plugin (symbol->string ',module) "1.0"
-                      (module-exports (find-module ',module)) ())
-     )
-  )
+(define-syntax allow-module
+  (syntax-rules ()
+    ((allow-module module)
+     (let ((m (get-sandbox-module 'module)))
+       (eval '(use module) m)
+       (eval '(register-plugin (symbol->string 'module) "1.0"
+                               (module-exports (find-module 'module)) ())
+             m)
+       ))))
 
 ;; load all plugin file.
 (define (initialize-plugins)
@@ -123,7 +140,7 @@
                         :filter (lambda (n) (string-suffix? ".scm" n)))))
     (set! *plugins* (make-hash-table 'string=?))
     ;; make new module.
-    (set! *sandbox-plugin* (make-sandbox-plugin))
+    (set! *sandbox-plugin* (make-hash-table 'eq?))
     (for-each refresh-plugin plugin-files)))
 
 ;; refresh a target plugin.
@@ -133,7 +150,8 @@
                    (build-path workdir "plugins" filename)
                    (build-path (current-directory) workdir
                                "plugins" filename))))
-    (load plugin :environment *sandbox-plugin*)))
+    (load plugin :environment (get-sandbox-module (string->symbol plugin)))
+    ))
 
 (define (all-plugins)
   (hash-table-map *plugins* (lambda (name p) (cons name (ref p 'version)))))

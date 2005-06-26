@@ -1,7 +1,7 @@
 ;; test plugin module.
 ;; Kahua.plugin モジュールのテスト
 
-;; $Id: plugin.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: plugin.scm,v 1.2 2005/06/26 12:27:38 tahara Exp $
 
 (use gauche.test)
 (use file.util)
@@ -58,6 +58,17 @@
 (test* "load srfi-1 plugin"
        '(1 3 5)
        (eval '(begin (use srfi-1) (filter odd? '(1 2 3 4 5))) *sandbox*))
+
+;; プラグイン srfi-1 の filter 手続きであることを確認する。
+(test* "this is srfi-1's filter"
+       (eval 'filter (find-module 'srfi-1))
+       (eval 'filter *sandbox*))
+
+;; プラグイン gauche.collection をロードしたあとに filter 手続きが
+;; gauche.collectionのものであることを確認する。
+(test* "replace filter to the gauche.collections's one"
+       (eval 'filter (find-module 'gauche.collection))
+       (eval '(begin (use gauche.collection) filter) *sandbox*))
 
 ;; プラグイン sendmail をロードする前には sendmail 手続きがないことを
 ;; 確認する。

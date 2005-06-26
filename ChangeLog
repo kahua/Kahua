@@ -1,3 +1,9 @@
+2005-06-26  TAHARA Yusei  <yusei@domen.cx>
+
+	* src/kahua/plugin.scm, test/plugin.scm:
+	  fixed a bug that loads object that is same name as given one
+	  in another module.
+
 2005-06-04  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* plugins/allow-module.scm:

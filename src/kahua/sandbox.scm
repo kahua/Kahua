@@ -5,7 +5,7 @@
 ;;
 ;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.7 2004/09/14 07:27:37 nel Exp $
+;; $Id: sandbox.scm,v 1.8 2005/06/26 12:27:40 tahara Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)
@@ -88,7 +88,7 @@
         ;; TODO: but why does autoload in sandbox module??
         (require "gauche/redefutil")
 
-        (export-module kahua.plugin load-plugin use-plugin)
+        (export-module kahua.plugin use-plugin)
 
 
         (disable-bindings open-input-file open-output-file
