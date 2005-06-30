@@ -1,3 +1,9 @@
+2005-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (sxml:attr->xml-bis attr): omit attributes
+	  that have #f in their value.  This simplifies SXML constuction
+	  a lot.
+
 2005-06-26  TAHARA Yusei  <yusei@domen.cx>
 
 	* src/kahua/plugin.scm, test/plugin.scm:

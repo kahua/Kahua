@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.28 2005/01/25 14:20:21 nobsun Exp $
+;; $Id: server.scm,v 1.29 2005/06/30 10:16:27 shiro Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -476,13 +476,15 @@
                 )))
       )))
 
-;; Ad hoc patch by nobsun
-;; The sxml:attr->xml in sxml.tools module should satisfy this spec.
-
+;; customized version of sxml:attr->xml
+;;  - fixes single-quote bug
+;;  - omits attributes with value #f
 (define (sxml:attr->xml-bis attr)
-  (let* ((v (x->string (cadr attr)))
-	 (q (if (string-any #\' v) "\"" "'")))
-    (list " " (sxml:ncname attr) "=" q v q)))
+  (if (cadr attr)
+    (let* ((v (x->string (cadr attr)))
+           (q (if (string-any #\' v) "\"" "'")))
+      (list " " (sxml:ncname attr) "=" q v q))
+    ""))
 
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents
