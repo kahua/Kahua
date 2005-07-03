@@ -1,6 +1,6 @@
-;; -*-scheme-*-
+;; -*- coding: euc-jp ; mode: scheme-*-
 ;; lazy-nqueen.kahua
-;; $Id: lazy-nqueen.kahua.in,v 1.1 2004/04/07 09:55:31 nobsun Exp $
+;; $Id: lazy-nqueen.kahua,v 1.5 2005/07/03 04:02:56 nobsun Exp $
 ;;
 ;; This example shows how to lazy style works.
 ;; 

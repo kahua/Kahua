@@ -1,11 +1,11 @@
-;;-*-Scheme-*-
+;; -*- coding: euc-jp ; mode: scheme-*-
 ;; Common Login Manager
 ;;
 ;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua.in,v 1.1 2004/04/07 09:55:31 nobsun Exp $
+;; $Id: login.kahua,v 1.4 2005/07/03 04:02:56 nobsun Exp $
 
 ;; This module implements an application server that is used
 ;; to handle web-user login session.  This is an example to

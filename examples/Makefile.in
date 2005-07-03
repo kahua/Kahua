@@ -60,20 +60,20 @@ all:	lambdabooks.init $(SCRIPTFILES)
 
 .SUFFIXES: .kahua.in .kahua
 
-.kahua.in.kahua:
-	test ! -f $@ || chmod +w $@
-	$(GOSH) cesconv -o $@ -f euc-jp $@.in
-	chmod -w $@
+# .kahua.in.kahua:
+# 	test ! -f $@ || chmod +w $@
+# 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
+# 	chmod -w $@
 
-lambdabooks.init: lambdabooks.init.in
-	test ! -f $@ || chmod +w $@
-	$(GOSH) cesconv -o $@ -f euc-jp $@.in
-	chmod -w $@
+# lambdabooks.init: lambdabooks.init.in
+# 	test ! -f $@ || chmod +w $@
+# 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
+# 	chmod -w $@
 
 check:
 
 clean:
-	rm -rf core *~ lambdabooks/*~ wiki-iki/*~ login/*~ lambdabooks.init $(SCRIPTFILES)
+	rm -rf core *~ lambdabooks/*~ wiki-iki/*~ login/*~
 
 install: 
 	@echo "use 'make install-examples'"
