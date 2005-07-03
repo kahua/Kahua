@@ -1,6 +1,6 @@
 ;; test supervisor scripts in http mode. -*-mode: scheme-*-
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: spvr-httpd.scm,v 1.1 2004/11/01 09:37:03 shiro Exp $
+;; $Id: spvr-httpd.scm,v 1.2 2005/07/03 04:00:58 yasuyuki Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -19,7 +19,7 @@
 
 (test* "start" #t
        (let* ((p (run-process "../src/kahua-spvr" "--test"
-                              "--httpd" (x->string *port*) "-l" "/dev/null")))
+                              "--httpd" (x->string *port*) "> /dev/null")))
          (set! *spvr* p)
          #t))
 
