@@ -1,3 +1,4 @@
+;; -*- coding: euc-jp -*-
 (define-module kahua.pdf.typeset
   (extend kahua.pdf.main)
   ;(extend kahua.pdf.interp)

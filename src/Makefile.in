@@ -67,7 +67,7 @@ CONFFILE = $(sysconfdir)/kahua.conf
 USERCONFFILE = $(localstatedir)/user.conf
 
 GENERATED = $(SH_SCRIPTS) kahua.conf test.conf \
-            kahua/config.scm kahua/pdf/typeset.scm kahua.conf
+            kahua/config.scm kahua.conf
 
 CONFIG_GENERATED = Makefile 
 .PHONY: all check testenv clean distclean install maintainer-clean
@@ -97,11 +97,6 @@ kahua/config.scm: kahua/config.scm.in
 	    -e "s@##package##@$(package)@" \
 	    -e "s@##KAHUA_VERSION##@$(KAHUA_VERSION)@" \
             $@.in > $@
-	chmod -w $@
-
-kahua/pdf/typeset.scm: kahua/pdf/typeset.scm.in
-	test ! -f $@ || chmod +w $@
-	$(GOSH) cesconv -o kahua/pdf/typeset.scm -f euc-jp kahua/pdf/typeset.scm.in
 	chmod -w $@
 
 kahua.conf: kahua.conf.sample
