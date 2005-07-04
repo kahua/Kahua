@@ -58,18 +58,6 @@ CONFIG_GENERATED = Makefile
 
 all:	lambdabooks.init $(SCRIPTFILES)
 
-.SUFFIXES: .kahua.in .kahua
-
-# .kahua.in.kahua:
-# 	test ! -f $@ || chmod +w $@
-# 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
-# 	chmod -w $@
-
-# lambdabooks.init: lambdabooks.init.in
-# 	test ! -f $@ || chmod +w $@
-# 	$(GOSH) cesconv -o $@ -f euc-jp $@.in
-# 	chmod -w $@
-
 check:
 
 clean:
