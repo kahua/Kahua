@@ -1,3 +1,4 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
 ;;; Copyright (c) 2004 Hisazumi, Kenji. All rights reserved.
 
 (use gauche.test)

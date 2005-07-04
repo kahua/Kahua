@@ -1,5 +1,6 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test kahua.partcont
-;; $Id: partcont.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: partcont.scm,v 1.2 2005/07/04 05:09:21 nobsun Exp $
 
 (use gauche.test)
 

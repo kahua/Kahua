@@ -1,6 +1,7 @@
-;; test wiki-iki script. -*-Scheme-*-
+;; -*- coding: euc-jp ; mode: scheme -*-
+;; test wiki-iki script.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: wiki-iki.scm,v 1.2 2004/10/19 02:37:35 shiro Exp $
+;; $Id: wiki-iki.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
 
 (use srfi-2)
 (use srfi-11)

@@ -1,7 +1,8 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test kahua.developer
 ;; Kahua.developer モジュールのテスト
 
-;; $Id: developer.scm,v 1.1 2004/04/07 09:55:32 nobsun Exp $
+;; $Id: developer.scm,v 1.2 2005/07/04 05:09:21 nobsun Exp $
 
 (use gauche.test)
 (use srfi-1)

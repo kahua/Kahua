@@ -1,6 +1,7 @@
-;; test supervisor scripts in http mode. -*-mode: scheme-*-
+;; -*- coding: euc-jp ; mode: scheme -*-
+;; test supervisor scripts in http mode.
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: spvr-httpd.scm,v 1.2 2005/07/03 04:00:58 yasuyuki Exp $
+;; $Id: spvr-httpd.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)

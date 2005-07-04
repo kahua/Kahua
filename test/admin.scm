@@ -1,8 +1,9 @@
-;; test admin scripts.  -*-mode:scheme-*-
+;; -*- coding: euc-jp ; mode: scheme -*-
+;; test admin scripts.
 ;; this test isn't for modules, but for actual scripts.
 ;; kahua-admin ¥Æ¥¹¥È
 
-;; $Id: admin.scm,v 1.3 2004/10/19 02:37:34 shiro Exp $
+;; $Id: admin.scm,v 1.4 2005/07/04 05:09:21 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)

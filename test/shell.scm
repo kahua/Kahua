@@ -1,8 +1,9 @@
-;; test shell scripts. -*-mode:scheme-*-
+;; -*- coding: euc-jp ; mode: scheme -*-
+;; test shell scripts.
 ;; this test isn't for modules, but for actual scripts.
 ;; kahua-shell のテスト
 
-;; $Id: shell.scm,v 1.5 2004/10/19 02:37:34 shiro Exp $
+;; $Id: shell.scm,v 1.6 2005/07/04 05:09:21 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)

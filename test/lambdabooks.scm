@@ -1,6 +1,7 @@
-;; test lambdabooks scripts. -*-Scheme-*-
+;; -*- coding: euc-jp ; mode: scheme -*-
+;; test lambdabooks scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: lambdabooks.scm,v 1.2 2004/10/19 02:37:34 shiro Exp $
+;; $Id: lambdabooks.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
 
 (use srfi-2)
 (use srfi-11)

@@ -1,7 +1,8 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test plugin module.
 ;; Kahua.plugin モジュールのテスト
 
-;; $Id: plugin.scm,v 1.2 2005/06/26 12:27:38 tahara Exp $
+;; $Id: plugin.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
 
 (use gauche.test)
 (use file.util)

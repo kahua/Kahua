@@ -1,7 +1,8 @@
-;; test user exclusive mode. -*-mode:scheme-*-
+;; -*- coding: euc-jp ; mode: scheme -*-
+;; test user exclusive mode.
 ;; ユーザ専用モードのテスト
 
-;; $Id: usermode.scm,v 1.5 2004/10/19 02:37:35 shiro Exp $
+;; $Id: usermode.scm,v 1.6 2005/07/04 05:09:21 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)

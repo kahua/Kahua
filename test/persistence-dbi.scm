@@ -1,7 +1,8 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test kahua.persistence with dbi
 ;; DBIバックエンドを用いたkahua.persistenceモジュールのテスト
 
-;; $Id: persistence-dbi.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: persistence-dbi.scm,v 1.2 2005/07/04 05:09:21 nobsun Exp $
 
 ;; Clear the data remaining from the other test
 (define (cleanup-db dbtype user pass options)

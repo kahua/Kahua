@@ -1,6 +1,7 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: worker.scm,v 1.1 2004/04/07 09:55:33 nobsun Exp $
+;; $Id: worker.scm,v 1.2 2005/07/04 05:09:21 nobsun Exp $
 
 (use srfi-2)
 (use gauche.test)
