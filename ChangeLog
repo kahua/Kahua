@@ -1,3 +1,16 @@
+2005-07-04  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* examples/Makefile.in, src/Makefile.in, test/Makefile.in:
+	  removed ces conversion process in building.
+
+	* examples/lambdabooks.init.in, examples/*/*.kahua.in,
+	  src/kahua/pdf/typeset.scm.in, test/*.kahua.in:
+	  added coding ditective at top of file, and removing .in
+	  extension from file name.
+
+	* test/*.scm.in:
+	  added coding ditective at top of file.
+
 2005-06-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/server.scm (sxml:attr->xml-bis attr): omit attributes
