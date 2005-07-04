@@ -1,17 +1,17 @@
-;-*-scheme-*-
+;; -*- coding: euc-jp ; mode: scheme -*-
 
 (define (simple-page ttl . elems)
-  (node-set: (html: (head: (title: ttl))
-		    (body: (@: (bgcolor "white"))
-			   (h1: ttl)
-			   (node-list-to-node-set elems)))))
+  (html/ (head/ (title/ ttl))
+	 (body/ (@/ (bgcolor "white"))
+		(h1/ ttl)
+		(node-set elems))))
 
 (define-entry (greeting :keyword name)
   (if name
     (simple-page "Welcome" "Hello, " name "! How are you?") 
     (simple-page "Please tell me your name."
-                 (form/cont: (@@: (cont greeting))
-                             (input: (@: (type "text")
+                 (form/cont/ (@@/ (cont greeting))
+                             (input/ (@/ (type "text")
                                          (size "15")
 					 (name "name")))))))
 

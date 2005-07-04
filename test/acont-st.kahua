@@ -1,4 +1,4 @@
-;-*-scheme-*-
+;; -*- coding: euc-jp ; mode: scheme -*-
 
 (define (acont/start)
   (page-frame (a/cont/ (@@/ (cont next)) "next")))

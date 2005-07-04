@@ -21,7 +21,7 @@ top_srcdir        = @top_srcdir@
 
 DESTDIR           =
 
-GOSH                   = @GOSH@
+GOSH              = @GOSH@
 
 SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
 	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm pdf.scm \
@@ -56,16 +56,12 @@ CONFIG_GENERATED = Makefile
 
 all: $(SCMFILES) $(SCMFILES2) $(KAHUAFILES) pdf-01.sxml
 
-.SUFFIXES: .scm.in .scm .kahua.in .kahua
+# .SUFFIXES: .scm.in .scm .kahua.in .kahua
+.SUFFIXES: .scm.in .scm
 
 .scm.in.scm:
 	test ! -f $@ || chmod +w $@
-	$(GOSH) cesconv -f euc-jp $@.in | sed -e "s@###GOSH###@$(GOSH)@" > $@
-	chmod -w $@
-
-.kahua.in.kahua:
-	test ! -f $@ || chmod +w $@
-	$(GOSH) cesconv -o $@ -f euc-jp $@.in
+	sed -e "s@###GOSH###@$(GOSH)@" $@.in > $@
 	chmod -w $@
 
 pdf-01.sxml: pdf-01.sxml.in
@@ -154,7 +150,7 @@ query:
 
 
 clean:
-	rm -rf test.log app/test.log *~ _* user.conf *.scm *.kahua *.sxml
+	rm -rf test.log app/test.log *~ _* user.conf *.scm *.sxml
 
 distclean: clean
 	rm -rf $(CONFIG_GENERATED)

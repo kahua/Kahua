@@ -1,4 +1,4 @@
-;-*-scheme-*-
+;; -*- coding: euc-jp ; mode: scheme -*-
 
 (use srfi-1)
 (use util.list)
