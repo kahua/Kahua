@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.3 2005/01/31 22:40:28 nobsun Exp $
+;; $Id: kahua-server.scm,v 1.4 2005/07/11 05:20:10 nobsun Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -97,9 +97,12 @@
              )
         (handle-request header body
                         (lambda (r-header r-body)
-                          (write r-header output) (newline output)
-                          (write r-body output)   (newline output)
-                          (flush output)
+                          (guard (e
+                                  (#t (log-format "[server]: client closed connection")))
+                            (begin
+                              (write r-header output) (newline output)
+                              (write r-body output)   (newline output)
+                              (flush output)))
                           (socket-close client))
                         selector)))
 
