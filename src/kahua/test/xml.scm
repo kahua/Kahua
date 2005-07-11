@@ -1,11 +1,11 @@
-;;
+;; -*- coding: euc-jp -*-
 ;; generic framework to test XML generation code
 ;;
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: xml.scm,v 1.10 2003/12/30 07:24:05 shiro Exp $
+;; $Id: xml.scm,v 1.11 2005/07/11 05:17:51 nobsun Exp $
 
 ;; This module provides the means of test the result of HTML
 ;; generating code, such as CGI programs.   The output of
