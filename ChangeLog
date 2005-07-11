@@ -1,3 +1,14 @@
+2005-07-11  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua-cgi.in: 
+	log when SPVR-ERROR occured.
+
+	* src/kahua-server.scm (run-srver):
+	added guard in replying function for closing connection by client.
+	
+	* src/kahua/test/xml.scm:
+	added coding directive.
+
 2005-07-04  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* examples/Makefile.in, src/Makefile.in, test/Makefile.in:
