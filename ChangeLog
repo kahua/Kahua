@@ -1,3 +1,13 @@
+2005-07-12  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in:
+	guraded IO
+
+	* src/kahua-server.scm:
+	- guarded read operation in accept-handler.
+	- remove SIGPIPE handler.
+	- log when errors without caught by signal handlers occur.
+	
 2005-07-11  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* cgi/kahua-cgi.in: 
