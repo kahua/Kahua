@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.26 2005/07/11 05:17:10 nobsun Exp $
+;; $Id: kahua.cgi.in,v 1.27 2005/07/12 05:19:11 nobsun Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -154,12 +154,16 @@
       (log-format "cgsid: ~a (~a)" cont-gsid remote-addr)
       (call-with-client-socket (make-client-socket sockaddr)
         (lambda (in out)
-          (write header out) (newline out)
-          (write param  out) (newline out)
-          (flush out)
-          (let* ((header (read in))
-                 (body   (read in)))
-            (compose-reply header body))))
+          (guard
+           (eo (#t (log-format "(send-reply): Write error")))
+           (write header out) (newline out)
+           (write param  out) (newline out)
+           (flush out)
+           (guard
+            (ei (#t (log-format "(send-reply): Read error")))
+            (let* ((header (read in))
+                   (body   (read in)))
+              (compose-reply header body))))))
       )))
 
 ;; class of http response representation.
