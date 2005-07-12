@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.4 2005/07/11 05:20:10 nobsun Exp $
+;; $Id: kahua-server.scm,v 1.5 2005/07/12 06:39:22 nobsun Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -91,20 +91,25 @@
     (define (accept-handler fd flag)
       (let* ((client (socket-accept sock))
              (input  (socket-input-port client :buffered? #f))
-             (output (socket-output-port client))
-             (header (read input))
-             (body   (read input))
-             )
-        (handle-request header body
-                        (lambda (r-header r-body)
-                          (guard (e
-                                  (#t (log-format "[server]: client closed connection")))
-                            (begin
-                              (write r-header output) (newline output)
-                              (write r-body output)   (newline output)
-                              (flush output)))
-                          (socket-close client))
-                        selector)))
+             (output (socket-output-port client)))
+        (guard (e
+                (#t (log-format
+                     "[server]: Read error occured in accept-handler")))
+               (let ((header (read input))
+                     (body   (read input)))
+                 (handle-request
+                  header body
+                  (lambda (r-header r-body)
+                    (guard (e
+                            (#t (log-format
+                                 "[server]: client closed connection")))
+                           (begin
+                             (write r-header output) (newline output)
+                             (write r-body output)   (newline output)
+                             (flush output)))
+                    (socket-close client))
+                  selector)))
+        ))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
@@ -164,12 +169,10 @@
                                      (log-format "[~a] SIGTERM" worker-name)
                                      (cleanup)
                                      (exit 0)))
-      (set-signal-handler! SIGPIPE (lambda _
-                                     (log-format "[~a] SIGPIPE" worker-name)
-                                     (cleanup)
-                                     (exit 0)))
       (with-error-handler
           (lambda (e)
+            (log-format "[server] error in main:\n~a"
+                        (kahua-error-string e #t))
             (report-error e)
             (cleanup)
             70)
