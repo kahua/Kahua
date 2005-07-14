@@ -1,3 +1,8 @@
+2005-07-14  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in:
+	added SIGPIPE handling.
+	
 2005-07-12  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* cgi/kahua.cgi.in:

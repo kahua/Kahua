@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.27 2005/07/12 05:19:11 nobsun Exp $
+;; $Id: kahua.cgi.in,v 1.28 2005/07/14 05:00:47 nobsun Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -255,12 +255,17 @@
 
 (define (main args)
   (log-format "CGI start")
-  (parameterize ((response (make <response>)))
-    (cgi-main publisher
-              :merge-cookies #t
-              :on-error cgi-error-proc
-              :part-handlers '((#t file+name))
-              ))
+  (with-signal-handlers
+   ((SIGPIPE (log-format "SIGPIPE caught in main.")
+             (for-each sys-unlink (cgi-temporary-files))
+             (exit 0)))
+   (lambda ()
+     (parameterize ((response (make <response>)))
+       (cgi-main publisher
+                 :merge-cookies #t
+                 :on-error cgi-error-proc
+                 :part-handlers '((#t file+name))
+                 ))))
   (log-format "CGI end")
   0)
 
@@ -279,10 +284,16 @@
 	(html:pre (html-escape-string detail)))))))
 
 (define (cgi-error-proc e)
-  `(,(cgi-header)
-    ,(cgi-error-page (string-append "CGI Error: " (slot-ref e 'message))
-		  (get-error-string e))))
-
+  (with-signal-handlers
+   ((SIGPIPE (log-format "SIGPIPE caught in error handling.")
+             (for-each sys-unlink (cgi-temporary-files))
+             (exit 0)))
+   (lambda ()
+     (let ((errmsg (string-append "CGI Error: " (slot-ref e 'message)))
+           (errdetail (get-error-string e)))
+       (log-format "CGI error caught: ~a ~a" errmsg errdetail)
+       `(,(cgi-header)
+         ,(cgi-error-page errmsg errdetail))))))
 
 ;; local variables:
 ;; mode: scheme
