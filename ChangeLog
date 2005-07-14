@@ -1,5 +1,12 @@
 2005-07-14  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* src/kahua-spvr.scm, src/kahua/config.scm.in:
+	Enabled to record kahua-spvr's process id in 
+	work-directory/kahua-spvr.pid 
+	
+
+2005-07-14  Nobuo Yamashita  <nobsun@sampou.org>
+
 	* cgi/kahua.cgi.in:
 	added SIGPIPE handling.
 	

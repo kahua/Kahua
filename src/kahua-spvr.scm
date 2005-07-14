@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.9 2005/01/25 03:56:14 nobsun Exp $
+;; $Id: kahua-spvr.scm,v 1.10 2005/07/14 12:11:17 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -195,7 +195,8 @@
 (define (send-message out header body)
   (write header out) (newline out)
   (write body out)   (newline out)
-  (flush out))
+  (flush out)
+  )
 
 (define (receive-message in)
   (let* ((header (read in))
@@ -985,11 +986,14 @@
       ;; initialization
       (kahua-init conf-file :user user) ; this must come after getting lib-path
                                         ; since kahua-init adds to *load-path*
+      (sys-unlink (kahua-pidpath))
+      (with-output-to-file (kahua-pidpath) (lambda () (write (sys-getpid))))
       (when sockbase (set! (kahua-sockbase) sockbase))
       (cond ((equal? logfile "-") (log-open #t :prefix "~Y ~T ~P[~$]: "))
             (logfile (log-open logfile :prefix "~Y ~T ~P[~$]: "))
             (else    (log-open (kahua-logpath "kahua-spvr.log")
                                :prefix "~Y ~T ~P[~$]: ")))
+      
       (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
              (spvr     (make <kahua-spvr>
                          :gosh-path gosh
@@ -1006,7 +1010,8 @@
                          (nuke-all-workers spvr)
                          (stop-keyserv spvr)
                          (when http-socks (map socket-close http-socks))
-                         (log-format "[spvr] exitting")))
+                         (log-format "[spvr] exitting")
+                         (sys-unlink (kahua-pidpath))))
              )
         (set! *spvr* spvr)
         ;; hack
@@ -1034,6 +1039,7 @@
              (load-app-servers-file)
              (run-default-workers spvr)
              (run-server spvr kahua-sock http-socks listener)
+             (sys-unlink (kahua-pidpath))
              (bye 0))))
         ))))
 
