@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.28 2005/07/14 05:00:47 nobsun Exp $
+;; $Id: kahua.cgi.in,v 1.29 2005/07/20 03:14:14 nobsun Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -26,6 +26,7 @@
 (use srfi-1)
 (use srfi-2)
 (use srfi-13)
+(use srfi-19)
 (use www.cgi)
 (use util.list)
 (use rfc.cookie)
@@ -254,46 +255,47 @@
                    (html:input :type "submit" :value "login"))))))
 
 (define (main args)
-  (log-format "CGI start")
-  (with-signal-handlers
-   ((SIGPIPE (log-format "SIGPIPE caught in main.")
-             (for-each sys-unlink (cgi-temporary-files))
-             (exit 0)))
-   (lambda ()
-     (parameterize ((response (make <response>)))
-       (cgi-main publisher
-                 :merge-cookies #t
-                 :on-error cgi-error-proc
-                 :part-handlers '((#t file+name))
-                 ))))
-  (log-format "CGI end")
-  0)
+  (let1 cleanup (lambda () (for-each sys-unlink
+                                     (cgi-temporary-files)))
+    (log-format "CGI start")
+    (guard (e (else (log-format "error(ignored): ~a" e)))
+      (set-signal-handler! SIGTERM (lambda _ (log-format "SIGTERM")
+                                           (cleanup) (sys-exit 0)))
+      (set-signal-handler! SIGINT  (lambda _ (log-format "SIGINT")
+                                           (cleanup) (sys-exit 0)))
+      (set-signal-handler! SIGHUP  (lambda _ (log-format "SIGHUP")
+                                           (cleanup) (sys-exit 0)))
+      (set-signal-handler! SIGPIPE (lambda _ (log-format "SIGPIPE")
+                                           (cleanup) (sys-exit 0)))
+      (parameterize ((response (make <response>)))
+        (cgi-main publisher
+                  :merge-cookies #t
+                  :on-error cgi-error-proc
+                  :part-handlers '((#t file+name))
+                  )))
+    (cleanup)
+    (log-format "CGI end")
+    (sys-exit 0)))
 
 (define (get-error-string e)
   (call-with-output-string
    (cut with-error-to-port <> (cut report-error e))))
 
-(define (cgi-error-page message detail)
+(define (cgi-error-page message)
   `(,(html-doctype)
     ,(html:html
       (html:head (html:title "Error"))
       (html:body
        (html:h1 "Error")
        (html:div
-	(html:p (html-escape-string message))
-	(html:pre (html-escape-string detail)))))))
+	(html:p (html-escape-string message)))))))
 
 (define (cgi-error-proc e)
-  (with-signal-handlers
-   ((SIGPIPE (log-format "SIGPIPE caught in error handling.")
-             (for-each sys-unlink (cgi-temporary-files))
-             (exit 0)))
-   (lambda ()
-     (let ((errmsg (string-append "CGI Error: " (slot-ref e 'message)))
-           (errdetail (get-error-string e)))
-       (log-format "CGI error caught: ~a ~a" errmsg errdetail)
-       `(,(cgi-header)
-         ,(cgi-error-page errmsg errdetail))))))
+  (let ((errmsg (string-append "CGI Error: " (slot-ref e 'message)))
+        (errdetail (get-error-string e)))
+    (log-format "CGI error caught: ~a ~a" errmsg errdetail)
+    `(,(cgi-header)
+      ,(cgi-error-page errmsg))))
 
 ;; local variables:
 ;; mode: scheme
