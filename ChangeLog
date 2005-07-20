@@ -1,3 +1,15 @@
+2005-07-20  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in (cgi-error-page):
+	modified to take only message argument.
+
+	* cgi/kahua.cgi.in (cgi-error-proc):
+	modified to log error detail.
+
+	* cgi/kahua.cgi.in (main):
+	modified to error handling to avoid anoying error output was 
+	taken by Apache.
+
 2005-07-14  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua-spvr.scm, src/kahua/config.scm.in:
