@@ -1,3 +1,9 @@
+2005-08-06  Kenji Hisazumi  <nel@soraneko.com>
+
+	* src/kahua-server.scm (kahua-add-hook!, kahua-delete-hook!): 
+	added hook function, which is called whenever before and/or after
+	processing a request to kahua applications.
+
 2005-07-20  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* cgi/kahua.cgi.in (cgi-error-page):

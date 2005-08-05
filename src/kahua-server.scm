@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.5 2005/07/12 06:39:22 nobsun Exp $
+;; $Id: kahua-server.scm,v 1.6 2005/08/05 16:40:18 nel Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -25,6 +25,7 @@
   (use gauche.parameter)
   (use gauche.collection)
   (use gauche.parseopt)
+  (use gauche.hook)
   (use file.util)
   (use srfi-1)
   (use kahua)
@@ -33,7 +34,10 @@
           kahua-error-proc
           kahua-app-args
           initialize-main-proc
-          kahua-server-main)
+          kahua-server-main
+          kahua-add-hook!
+          kahua-delete-hook!
+          )
   )
 (select-module kahua-server)
 
@@ -60,6 +64,19 @@
 (define (initialize-main-proc proc)
   (main-proc proc))
 
+(define kahua-hook-before (make-parameter (make-hook)))
+(define kahua-hook-after  (make-parameter (make-hook)))
+
+(define (kahua-add-hook! place thunk)
+  (case place
+    ((before) (add-hook! (kahua-hook-before) thunk))
+    ((after)  (add-hook! (kahua-hook-after)  thunk))
+    (else     (error "illigal place is specified: ~S" place))
+    ))
+
+(define (kahua-delete-hook! place thunk)
+  #f)
+
 (define (ping-request? header)
   (assoc "x-kahua-ping" header))
 
@@ -69,10 +86,13 @@
     (let1 dbname (or (primary-database-name)
                      (build-path (ref (kahua-config) 'working-directory) "db"))
       (with-db (db dbname)
-        (kahua-default-handler header body reply-cont default-handler
-                               :error-proc (kahua-error-proc)
-                               :eval-environment (current-module)))))
-  )
+        (run-hook (kahua-hook-before))
+        (begin0
+          (kahua-default-handler header body reply-cont default-handler
+                                 :error-proc (kahua-error-proc)
+                                 :eval-environment (current-module))
+          (run-hook (kahua-hook-after))
+          )))))
 
 (define (default-handler) ((main-proc)))
 
