@@ -3,7 +3,7 @@
 # The destination should be specified by --with-cgidir argument of configure
 # script.
 #
-# $Id: Makefile.in,v 1.8 2005/08/06 01:46:45 nel Exp $
+# $Id: Makefile.in,v 1.9 2005/08/06 05:10:50 nel Exp $
 #
 
 package	          = kahua
@@ -40,20 +40,22 @@ GAUCHE_CONFIG = @GAUCHE_CONFIG@
 INSTALL = @INSTALL@
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
 
-FASTCGIP= @FASTCGIP@
+SCRIPTS = kahua.cgi @FASTCGI_SCRIPT@
 
-SCRIPTS = kahua.cgi
-
-CONFIG_GENERATED = Makefile 
+CONFIG_GENERATED = Makefile
 .PHONY: all check clean distclean install maintainer-clean
 
 .SUFFIXES: .in
 
-.in:
-	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(SOCKET_BASE_DIR)" "$(KAHUA_CGILOG_DIR)" "$(FASTCGIP)" $@
+all: $(SCRIPTS)
+
+kahua.cgi: kahua.cgi.in
+	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(SOCKET_BASE_DIR)" "$(KAHUA_CGILOG_DIR)" no kahua.cgi.in kahua.cgi
 	chmod -w $@
 
-all: $(SCRIPTS)
+kahua.fcg: kahua.cgi.in
+	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(SOCKET_BASE_DIR)" "$(KAHUA_CGILOG_DIR)" yes kahua.cgi.in kahua.fcg
+	chmod -w $@
 
 check:
 

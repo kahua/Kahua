@@ -2,7 +2,7 @@ dnl
 dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
-dnl $Id: configure.ac,v 1.19 2005/08/06 01:46:44 nel Exp $
+dnl $Id: configure.ac,v 1.20 2005/08/06 05:10:50 nel Exp $
 AC_PREREQ(2.54)
 AC_INIT(kahua, 0.3.2, shiro@acm.org)
 AC_GAUCHE_INIT_EXT
@@ -46,18 +46,16 @@ output to.  If disabled (--with-cgilogdir=no or --without-cgilogdir), cgi script
   ])
 AC_SUBST(KAHUA_CGILOGDIR)
 
-FASTCGIP=no
 AC_ARG_WITH(fastcgi,
   AC_HELP_STRING([--with-fastcgi=yes|no],
                  [If yes, kahua.cgi will be generated as a fastcgi script. Default: no]),
   [
     case "$with_fastcgi" in
-      no) FASTCGIP=no  ;;
-      *)  FASTCGIP=yes ;;
+      no) FASTCGI_SCRIPT=          ;;
+      *)  FASTCGI_SCRIPT=kahua.fcg ;;
     esac
   ])
-AC_SUBST(FASTCGIP)
-
+AC_SUBST(FASTCGI_SCRIPT)
 
 dnl Add more test
 
