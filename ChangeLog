@@ -1,5 +1,8 @@
 2005-08-06  Kenji Hisazumi  <nel@soraneko.com>
 
+	* cgi/fix-shebang.sh: 
+	modified to generate a fastcgi script.
+
 	* src/kahua-server.scm (kahua-add-hook!, kahua-delete-hook!): 
 	added hook function, which is called whenever before and/or after
 	processing a request to kahua applications.

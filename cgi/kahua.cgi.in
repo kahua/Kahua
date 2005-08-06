@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.29 2005/07/20 03:14:14 nobsun Exp $
+;; $Id: kahua.cgi.in,v 1.30 2005/08/06 01:06:12 nel Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -37,7 +37,7 @@
 (use kahua.config)
 (use kahua.developer)
 (use file.util)
-
+##ADDITIONAL_LIBS##
 
 ;; Change this if you're using non-default sockbase
 (define *sockbase* "unix:##KAHUA_SOCKET_BASE##")
@@ -267,12 +267,15 @@
                                            (cleanup) (sys-exit 0)))
       (set-signal-handler! SIGPIPE (lambda _ (log-format "SIGPIPE")
                                            (cleanup) (sys-exit 0)))
+      ##CGIBEGIN##
       (parameterize ((response (make <response>)))
         (cgi-main publisher
                   :merge-cookies #t
                   :on-error cgi-error-proc
                   :part-handlers '((#t file+name))
-                  )))
+                  ))
+      ##CGIEND##
+      )
     (cleanup)
     (log-format "CGI end")
     (sys-exit 0)))
