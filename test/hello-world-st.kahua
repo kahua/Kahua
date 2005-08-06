@@ -17,6 +17,8 @@
 		(map/ identity elems))))
 
 (define (hello-world)
-  (simple-page "Hello, world!"))
+  (simple-page "Hello, world!"
+	       (h2/ "Hello")
+	       (p/ "hello, world")))
 
 (initialize-main-proc hello-world)

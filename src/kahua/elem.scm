@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.11 2005/08/06 04:47:59 cut-sea Exp $
+;; $Id: elem.scm,v 1.12 2005/08/06 06:33:18 cut-sea Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -51,6 +51,7 @@
 	  form/cont:
           frame/cont:
           extra-header:
+	  map:
 ))
 
 (select-module kahua.elem)
@@ -100,8 +101,8 @@
 (define (extra-header/ . args)
   (update (cut cons `(extra-header ,@(exec '() (node-set args))) <>)))
 
-(define (map/ proc . args)
-  (node-set (apply map proc args)))
+(define (map/ proc arg1 . args)
+  (node-set (apply map proc arg1 args)))
 
 ;; SXML tag
 
@@ -403,5 +404,7 @@
 (define (form/cont: . arg) `(form/cont ,@(flatten arg)))
 (define (frame/cont: . arg) `(frame/cont ,@(flatten arg)))
 (define (extra-header: . arg) `(extra-header ,@(flatten arg)))
-     
+(define (map: proc arg1 . args)
+  (node-list-to-node-set (apply map proc arg1 args)))
+
 (provide "kahua.elem")
