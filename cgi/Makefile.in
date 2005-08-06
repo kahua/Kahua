@@ -3,7 +3,7 @@
 # The destination should be specified by --with-cgidir argument of configure
 # script.
 #
-# $Id: Makefile.in,v 1.7 2005/08/06 01:06:12 nel Exp $
+# $Id: Makefile.in,v 1.8 2005/08/06 01:46:45 nel Exp $
 #
 
 package	          = kahua
@@ -40,8 +40,9 @@ GAUCHE_CONFIG = @GAUCHE_CONFIG@
 INSTALL = @INSTALL@
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
 
+FASTCGIP= @FASTCGIP@
+
 SCRIPTS = kahua.cgi
-NO_INSTALL_SCRIPTS = kahua.cgi.fcgi
 
 CONFIG_GENERATED = Makefile 
 .PHONY: all check clean distclean install maintainer-clean
@@ -49,7 +50,7 @@ CONFIG_GENERATED = Makefile
 .SUFFIXES: .in
 
 .in:
-	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(SOCKET_BASE_DIR)" "$(KAHUA_CGILOG_DIR)" $@
+	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(SOCKET_BASE_DIR)" "$(KAHUA_CGILOG_DIR)" "$(FASTCGIP)" $@
 	chmod -w $@
 
 all: $(SCRIPTS)
@@ -57,7 +58,7 @@ all: $(SCRIPTS)
 check:
 
 clean:
-	rm -rf core $(SCRIPTS) $(NO_INSTALL_SCRIPTS) *~
+	rm -rf core $(SCRIPTS) *~
 
 install:
 	if test "$(KAHUA_CGI_DIR)" != ""; then \

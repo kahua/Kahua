@@ -2,6 +2,8 @@
 
 	* cgi/fix-shebang.sh: 
 	modified to generate a fastcgi script.
+	* configure.ac, cgi/Makefile.in:
+	added a configure option '--with-fastcgi'.
 
 	* src/kahua-server.scm (kahua-add-hook!, kahua-delete-hook!): 
 	added hook function, which is called whenever before and/or after
