@@ -1,5 +1,10 @@
 2005-08-06  Kenji Hisazumi  <nel@soraneko.com>
 
+	* src/kahua/error-report.scm, src/kahua.scm, src/kahua/sandbox.scm:
+	added error report system which handles exception occured in kahua
+	applicatoin and logs these exceptions to kahua-spvr.log.
+	we can use it with (kahua-error-proc kahua-error-report-proc).
+
 	* cgi/fix-shebang.sh: 
 	modified to generate a fastcgi script.
 	* configure.ac, cgi/Makefile.in:
