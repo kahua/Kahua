@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.scm,v 1.3 2004/11/26 09:14:34 shiro Exp $
+;; $Id: kahua-admin.scm,v 1.4 2005/08/06 04:47:58 cut-sea Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -46,7 +46,7 @@
                                  adduser deluser lsuser moduser
                                  plugin)))
        (write (append spvr-help admin-help)) (newline)
-       (spvr-command-processor)))
+       spvr-command-processor))
     ((connect)
      (if (= (length cmd) 2)
        (connect-worker (cadr cmd))
