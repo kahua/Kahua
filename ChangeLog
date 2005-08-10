@@ -1,3 +1,8 @@
+2005-08-06  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/Makefile.in:
+	modified in order to install src/kahua/error-report.scm.
+
 2005-08-06  Kenji Hisazumi  <nel@soraneko.com>
 
 	* src/kahua/error-report.scm, src/kahua.scm, src/kahua/sandbox.scm:
