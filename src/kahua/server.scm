@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.29 2005/06/30 10:16:27 shiro Exp $
+;; $Id: server.scm,v 1.30 2005/08/13 05:43:54 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -786,15 +786,15 @@
 ;;
 ;; interp-rss :: Node -> Context -> Stree
 
-(define (interp-rss nodes context cont)
-  (let1 enc (gauche-character-encoding)
-    (receive (stree context)
+(define interp-rss
+  (let1 enc (symbol->string (gauche-character-encoding))
+        (lambda (nodes context cont)
+          (receive (stree context)
              (interp-html-rec-bis nodes context cont)
              (values
               ;; Stree
-              (cons "<?xml version=\"1.0\" encoding=\""
-                    (cons (symbol->string (gauche-character-encoding))
-                          (cons "\" ?>\n" stree)))
+              (cons #`"<?xml version=\"1.0\" encoding=\",|enc|\" ?>\n"
+                    stree)
               ;; Context
               (let1 headers (assoc-ref-car context "extra-headers" '())
                     (if (assoc "content-type" headers)
@@ -802,12 +802,10 @@
                         (cons `("extra-headers"
                                 ,(kahua-merge-headers
                                   headers 
-                                  '(("content-type" 
-                                     (string-append 
-                                      "text/xml; charset="
-                                      (symbol->string
-                                       (gauche-character-encoding)))))))
-                              context)))))))
+                                  `(("content-type" 
+                                     ,#`"text/xml; charset=,|enc|"
+                                     ))))
+                              context))))))))
 
 (add-interp! 'rss interp-rss)
 
