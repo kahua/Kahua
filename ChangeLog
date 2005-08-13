@@ -1,3 +1,9 @@
+2005-08-13  SHIBATA Tomohisa  <shibata@timedia.co.jp>
+
+	* src/kahua/server.scm:
+	Fixed quasiquote miss(RSS).
+	Improved encoding check(RSS).
+
 2005-08-06  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/Makefile.in:
