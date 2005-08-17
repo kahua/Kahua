@@ -1,3 +1,8 @@
+2005-08-17  ENDO Yasuyuki <yasuyuki@javaopen.org>
+	
+	* Release 0.3.3
+	Supported FastCGI.
+
 2005-08-13  SHIBATA Tomohisa  <shibata@timedia.co.jp>
 
 	* src/kahua/server.scm:
