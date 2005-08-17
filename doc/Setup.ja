@@ -6,10 +6,10 @@
 
 *** Gauche のインストール
 
-0.8.3 以降のバージョンのGaucheがインストールされているかを確認します。
+0.8.5 以降のバージョンのGaucheがインストールされているかを確認します。
 
     $ gosh -V
-    Gauche scheme interpreter, version 0.8.3 [euc-jp]
+    Gauche scheme interpreter, version 0.8.5 [euc-jp]
 
 適切なバージョンの Gauche がインストールされていなければ、インストール
 してください。
@@ -64,6 +64,10 @@ httpd を再起動する必要があります。
 
         標準のconfigureオプションは、kahua関連のスクリプトファイルを
         インストールする先を指定する。
+
+    --with-fastcgi
+
+        kahua.cgiに加え、FastCGI対応のkahua.fcgを生成します。
 
 
 ** セルフテスト
