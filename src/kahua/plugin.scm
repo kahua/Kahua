@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: plugin.scm,v 1.4 2005/06/26 12:27:40 tahara Exp $
+;; $Id: plugin.scm,v 1.5 2005/08/17 06:02:34 cut-sea Exp $
 
 (define-module kahua.plugin
   (use srfi-1)
@@ -57,6 +57,18 @@
        (define ,def ,@body)
        )))
 
+;; get symbols which exported from module,
+;; this procedure treats the case of 'export-all'd module.
+(define (%get-export-symbols name)
+  (let1 m (filter (lambda (m)
+		    (eq? (module-name m) name))
+		  (all-modules))
+    (if (null? m)
+	'()
+	(hash-table-map
+	 (module-table (car m))
+	 (lambda (k v) k)))))
+
 ;; find out which symbols a plugin defines.
 (define (lookup-exports name)
   (let ((symbols (ref (hash-table-get *plugins*
@@ -72,7 +84,9 @@
                              (hash-table-exists? (module-table m) s))
                            modules)
                      (error "symbol not found." name s))))
-         symbols)))
+         (if (eq? symbols #t)
+	     (%get-export-symbols name)
+	     symbols))))
 
 ;; find symbol then define in sandbox plugin module.
 (define-macro (expand-define name module)
