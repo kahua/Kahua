@@ -5,7 +5,7 @@
 ;;
 ;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.9 2005/08/06 09:33:28 nel Exp $
+;; $Id: sandbox.scm,v 1.10 2005/08/19 01:37:22 cut-sea Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)
@@ -91,21 +91,21 @@
 
         (export-module kahua.plugin use-plugin)
 
+	(if (kahua-secure-sandbox)
+	    (disable-bindings open-input-file open-output-file
+			      call-with-input-file call-with-output-file
+			      with-input-from-file with-output-to-file
+			      load transcript-on transcript-off
+			      null-environment scheme-report-environment 
+			      interaction-environment
 
-        (disable-bindings open-input-file open-output-file
-                          call-with-input-file call-with-output-file
-                          with-input-from-file with-output-to-file
-                          load transcript-on transcript-off
-                          null-environment scheme-report-environment 
-                          interaction-environment
+			      exit sys-exit sys-abort
 
-                          exit sys-exit sys-abort
+			      import require
 
-                          import require
-
-                          select-module
-                          with-module define-module
-                          define-in-module find-module)
+			      select-module
+			      with-module define-module
+			      define-in-module find-module))
 
         ;; override
         (define use use-plugin)

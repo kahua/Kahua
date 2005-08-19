@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm.in,v 1.4 2005/07/14 12:11:18 nobsun Exp $
+;; $Id: config.scm.in,v 1.5 2005/08/19 01:37:22 cut-sea Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -33,6 +33,7 @@
 	  kahua-ping-timeout-sec
 	  kahua-ping-interval-sec
 	  kahua-auto-restart
+	  kahua-secure-sandbox
           kahua-version
           ))
 (select-module kahua.config)
@@ -69,7 +70,6 @@
    ;; timeout-mins - session period of time
    (timeout-mins :init-keyword :timeout-mins
                  :init-value 60)
-
    
    ;; ping setting
    (ping-timeout-sec :init-keyword :ping-timeout-sec
@@ -81,10 +81,13 @@
    (auto-restart :init-keyword :auto-restart
 		 :init-value #f)
 
+   ;; secure sandbox
+   (secure-sandbox :init-keyword :secure-sandbox
+		   :init-value #t)
+
    ;; userconf-file - developer account file
    (userconf-file :init-keyword :userconf-file
                   :init-value "##localstatedir##/user.conf")
-
 
    ;; internal
    (user-mode :init-value #f)
@@ -158,6 +161,8 @@
                    (ref kahua-custom 'ping-interval-sec))
              (set! (ref (instance-of <kahua-config>) 'auto-restart)
                    (ref kahua-custom 'auto-restart))
+	     (set! (ref (instance-of <kahua-config>) 'secure-sandbox)
+		   (ref kahua-custom 'secure-sandbox))
              ))
          (unless skip-check? (sanity-check (instance-of <kahua-config>)))
          )
@@ -211,6 +216,9 @@
 
 (define (kahua-auto-restart)
   (ref (kahua-config) 'auto-restart))
+
+(define (kahua-secure-sandbox)
+  (ref (kahua-config) 'secure-sandbox))
 
 (define (kahua-version) "##KAHUA_VERSION##")
 
