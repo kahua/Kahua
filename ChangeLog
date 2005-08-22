@@ -1,3 +1,11 @@
+2005-08-22 ENDO Yasuyuki <yasuyuki@javaopen.org>
+	* src/kahua/user.scm
+	Add and export kahua-user-password-change-force.
+	
+	* test/user.scm.in
+	Add test "kahua-user-password-change" and
+	"kahua-user-password-change-force".
+
 2005-08-19 Katsutoshi Itoh <cut-sea@timedia.co.jp>
 	* src/kauha/config.scm.in
 	Add new slot into kahua-custom.

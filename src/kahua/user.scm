@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.2 2004/01/25 14:37:28 shiro Exp $
+;; $Id: user.scm,v 1.3 2005/08/22 09:27:12 yasuyuki Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -13,7 +13,8 @@
   (use srfi-27)
   (use gauche.collection)
   (export <kahua-user> kahua-add-user kahua-check-user kahua-find-user
-          kahua-user-password-change kahua-user-has-role?))
+          kahua-user-password-change kahua-user-password-change-force
+	  kahua-user-has-role?))
 (select-module kahua.user)
 
 (define-class <kahua-user> (<kahua-persistent-base>)
@@ -51,6 +52,12 @@
 (define (kahua-user-password-change user old-password new-password)
   (and (is-a? user <kahua-user>)
        (kahua-check-user (ref user 'login-name) old-password)
+       (kahua-user-password-change-force user new-password)
+       #t))
+
+;; user must be <kahua-user>.  caller must sync db.
+(define (kahua-user-password-change-force user new-password)
+  (and (is-a? user <kahua-user>)
        (set! (ref user 'password-hash) (crypt-passwd new-password))
        #t))
 
