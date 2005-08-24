@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.3 2005/01/18 05:16:37 nobsun Exp $
+;; $Id: kahua-keyserv.scm,v 1.4 2005/08/24 02:29:16 nobsun Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -57,13 +57,17 @@
   (let-args (cdr args) ((conf-file "c=s")
                         (user "user=s"))
     (kahua-init conf-file :user user)
+    (sys-unlink (kahua-keyserv-pidpath))
+    (with-output-to-file (kahua-keyserv-pidpath)
+      (lambda () (write (sys-getpid))))
     (log-open (kahua-logpath "keyserv") :prefix "~Y ~T ~P[~$]: ")
     (random-source-randomize! default-random-source)
     (let* ((wid (make-worker-id "%keyserv"))
            (sockaddr (worker-id->sockaddr wid (kahua-sockbase)))
            (cleanup (lambda ()
                       (when (is-a? sockaddr <sockaddr-un>)
-                        (sys-unlink (sockaddr-name sockaddr))))))
+                        (sys-unlink (sockaddr-name sockaddr)))
+                      (sys-unlink (kahua-keyserv-pidpath)))))
       (set-signal-handler! SIGINT  (lambda _ (cleanup) (exit 0)))
       (set-signal-handler! SIGHUP  (lambda _ (cleanup) (exit 0)))
       (set-signal-handler! SIGTERM (lambda _ (cleanup) (exit 0)))

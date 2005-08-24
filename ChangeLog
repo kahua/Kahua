@@ -1,4 +1,12 @@
+2005-08-24  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-keyserv.scm, src/kahua/config.scm.in:
+	Enabled to record kahua-keyserv's process id in 
+	work-directory/kahua-keyserv.pid
+	
+
 2005-08-22 ENDO Yasuyuki <yasuyuki@javaopen.org>
+
 	* src/kahua/user.scm
 	Add and export kahua-user-password-change-force.
 	
@@ -7,6 +15,7 @@
 	"kahua-user-password-change-force".
 
 2005-08-19 Katsutoshi Itoh <cut-sea@timedia.co.jp>
+
 	* src/kauha/config.scm.in
 	Add new slot into kahua-custom.
 	The new slot name is secure-sandbox,
@@ -16,6 +25,7 @@
 	A value #f means we can make insecure sandbox.
 
 2005-08-17 Katsutoshi Itoh <cut-sea@timedia.co.jp>
+
 	* src/kahua/plugin.scm
 	take care of a module which include export-all like as sxml.ssax.
 
