@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.23 2005/04/21 05:04:04 nel Exp $
+;; $Id: persistence.scm,v 1.24 2005/08/30 09:34:36 yasuyuki Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -922,7 +922,7 @@
   (autoload dbi
             <dbi-exception>
             dbi-make-driver dbi-make-connection dbi-make-query
-            dbi-execute-query dbi-close dbi-get-value))
+            dbi-execute-query dbi-close dbi-get-value dbi-escape-sql))
 
 (define-method initialize ((db <kahua-db-dbi>) initargs)
   (next-method)
@@ -1207,12 +1207,12 @@
                                     (class <kahua-persistent-meta>)
                                     (key <string>))
   (define (escape-string str)
-    (regexp-replace-all #/'/ str "''"))
+    (dbi-escape-sql (ref db 'connection) str))
 
   (and-let* ((tab (assq-ref (ref db 'table-map) (class-name class)))
              (r   (dbi-query
                    (ref db 'query)
-                   #`"select dataval from ,|tab| where keyval = ',(escape-string key)'"))
+                   #`"select dataval from ,|tab| where keyval = (escape-string key)"))
              (rv  (map (cut dbi-get-value <> 0) r))
              ((not (null? rv))))
     (call-with-input-string (car rv) read)))
@@ -1233,7 +1233,7 @@
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
                                      (obj <kahua-persistent-base>))
   (define (escape-string str)
-    (regexp-replace-all #/'/ str "''"))
+    (dbi-escape-sql (ref db 'connection) str))
   
   (define (table-name)
     (let1 cname (class-name (class-of obj))
@@ -1254,10 +1254,10 @@
     (if (ref obj '%floating-instance)
       (dbi-query
        (ref db 'query)
-       #`"insert into ,|tab| values (',(escape-string key)',, ',(escape-string data)')")
+       #`"insert into ,|tab| values (,(escape-string key),, ,(escape-string data))")
       (dbi-query
        (ref db 'query)
-       #`"update ,|tab| set dataval = ',(escape-string data)' where keyval = ',(escape-string key)'"))
+       #`"update ,|tab| set dataval = ,(escape-string data) where keyval = ,(escape-string key)"))
     (set! (ref obj '%floating-instance) #f)
     ))
 
