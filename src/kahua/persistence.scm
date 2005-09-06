@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.24 2005/08/30 09:34:36 yasuyuki Exp $
+;; $Id: persistence.scm,v 1.25 2005/09/06 01:08:04 cut-sea Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1212,7 +1212,7 @@
   (and-let* ((tab (assq-ref (ref db 'table-map) (class-name class)))
              (r   (dbi-query
                    (ref db 'query)
-                   #`"select dataval from ,|tab| where keyval = (escape-string key)"))
+                   #`"select dataval from ,|tab| where keyval = ,(escape-string key)"))
              (rv  (map (cut dbi-get-value <> 0) r))
              ((not (null? rv))))
     (call-with-input-string (car rv) read)))
