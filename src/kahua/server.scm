@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.31 2005/09/08 08:29:11 cut-sea Exp $
+;; $Id: server.scm,v 1.32 2005/09/08 10:05:12 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -111,7 +111,7 @@
 
 (define (kahua-self-uri-full . paths)
   (apply build-path
-         (format "~a/~a/~a/"
+         (format "~a~a/~a/"
                  (kahua-server-uri) (kahua-bridge-name) (kahua-worker-type))
          paths))
 
