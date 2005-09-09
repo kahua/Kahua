@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.32 2005/09/08 10:05:12 cut-sea Exp $
+;; $Id: server.scm,v 1.33 2005/09/09 15:03:31 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -808,5 +808,38 @@
                               context))))))))
 
 (add-interp! 'rss interp-rss)
+
+;;===========================================================
+;; SXML tree interpreter - for XML
+;;
+;; interp-xml :: Node -> Context -> Stree
+;;
+;; This is copied and a little modify form interp-rss.
+;; From this reason, the interp is not satisfy for XML interp.
+;;
+(define interp-xml
+  (let1 enc (symbol->string (gauche-character-encoding))
+        (lambda (nodes context cont)
+          (receive (stree context)
+              ;; (cadr nodes) deletes xml symbol tag.
+              ;;
+             (interp-html-rec-bis (cadr nodes) context cont)
+             (values
+              ;; Stree
+              (cons #`"<?xml version=\"1.0\" encoding=\",|enc|\" ?>\n"
+                    stree)
+              ;; Context
+              (let1 headers (assoc-ref-car context "extra-headers" '())
+                    (if (assoc "content-type" headers)
+                        context
+                        (cons `("extra-headers"
+                                ,(kahua-merge-headers
+                                  headers 
+                                  `(("content-type" 
+                                     ,#`"text/xml; charset=,|enc|"
+                                     ))))
+                              context))))))))
+
+(add-interp! 'xml interp-xml)
 
 (provide "kahua/server")
