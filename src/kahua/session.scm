@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.10 2005/04/12 04:25:05 nel Exp $
+;; $Id: session.scm,v 1.11 2005/09/12 09:45:40 shiro Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -34,7 +34,7 @@
   (use kahua.config)
   (use kahua.persistence)
   (use gauche.parameter)
-  (use gauche.validator)
+  (use gauche.mop.validator)
   (use gauche.net)
   (use util.list)
   (use srfi-2)

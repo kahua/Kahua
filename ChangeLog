@@ -1,3 +1,9 @@
+2005-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/session.scm: 
+	(use gauche.validator) -> (use gauche.mop.validator)  The former name
+	is obsoleted.
+
 2005-08-30  ENDO Yasuyuki <yasuyuki@javaopen.org>
 
         * src/kahua/persistence.scm : use dbi-escape-sql.
