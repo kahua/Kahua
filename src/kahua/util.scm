@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.2 2004/02/21 04:15:31 shiro Exp $
+;; $Id: util.scm,v 1.3 2005/09/12 09:45:06 shiro Exp $
 
 ;; This module contains generally useful routines, which don't belong to
 ;; a particular module.
@@ -16,7 +16,7 @@
   (export kahua-error-string))
 (select-module kahua.util)
 
-;; KAHUA-FORMAT-ERROR <error> [detail?]
+;; KAHUA-ERROR-STRING <error> [detail?]
 ;;  Returns a string representation of error.  If detail? is given,
 ;;  includes the stack trace.  Otherwise, just an error message.
 
