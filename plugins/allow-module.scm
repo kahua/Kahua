@@ -1,9 +1,10 @@
 ;; allow module as plugin
 (allow-module file.util)
 (allow-module srfi-1)
+(allow-module srfi-2)
 (allow-module srfi-11)
 (allow-module srfi-13)
-(allow-module srfi-2)
+(allow-module srfi-19)
 (allow-module text.parse)
 (allow-module text.tree)
 (allow-module util.list)

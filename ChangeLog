@@ -1,3 +1,8 @@
+2005-09-23  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* plugins/allow-module.scm:
+	added srfi-19
+
 2005-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/session.scm: 
