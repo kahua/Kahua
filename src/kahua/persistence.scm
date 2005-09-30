@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.25 2005/09/06 01:08:04 cut-sea Exp $
+;; $Id: persistence.scm,v 1.26 2005/09/30 05:22:25 yasuyuki Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1076,7 +1076,7 @@
         ;; TODO: error check
         (for-each
          (cut dbi-query q <>)
-         '("create table kahua_db_classes (class_name varchar(255), table_name varchar(255))"
+         '("create table kahua_db_classes (class_name varchar(255), table_name varchar(255), primary key (class_name))"
            "create table kahua_db_idcount (value integer)"
            "insert into kahua_db_idcount values (0)"))
         (let1 zz (query-idcount)
@@ -1244,7 +1244,7 @@
              #`"insert into kahua_db_classes values (',|cname|',, ',|newtab|')")
             (dbi-query
              (ref db 'query)
-             #`"create table ,|newtab| (keyval varchar(255),, dataval text)")
+             #`"create table ,|newtab| (keyval varchar(255),, dataval text,, primary key (keyval))")
             (push! (ref db 'table-map) (cons cname newtab))
             newtab))))
 
