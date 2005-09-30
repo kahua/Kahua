@@ -1,3 +1,8 @@
+2005-09-30  ENDO Yasuyuki <yasuyuki@javaopen.org>
+
+	* src/kahua/persistence.scm :
+	add primary key in create table of kahua_db_classes and kahua_*
+
 2005-09-23  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* plugins/allow-module.scm:
