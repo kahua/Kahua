@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.30 2005/08/06 01:06:12 nel Exp $
+;; $Id: kahua.cgi.in,v 1.31 2005/10/03 15:48:49 shibata Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -56,6 +56,40 @@
                  (p  (assoc name mv)))
         (cadr p))
       (sys-getenv name)))
+
+;; send standard metavariables to worker.
+(define *metavariables*
+  '("AUTH_TYPE"
+    "CONTENT_LENGTH"
+    "CONTENT_TYPE"
+    "GATEWAY_INTERFACE"
+    "HTTP_ACCEPT"
+    "HTTP_ACCEPT_CHARSET"
+    "HTTP_ACCEPT_ENCODING"
+    "HTTP_ACCEPT_LANGUAGE"
+    "HTTP_HOST"
+    "HTTP_KEEP_ALIVE"
+    "HTTP_USER_AGENT"
+    "PATH_INFO"
+    "PATH_TRANSLATED"
+    "REMOTE_ADDR"
+    "REMOTE_HOST"
+    "REMOTE_IDENT"
+    "REMOTE_USER"
+    "REQUEST_METHOD"
+    "SCRIPT_NAME"
+    "SERVER_NAME"
+    "SERVER_PORT"
+    "SERVER_PROTOCOL"
+    "SERVER_SOFTWARE"
+    ))
+
+(define (metavariable-alist)
+  (filter-map (lambda (meta)
+                (let1 meta-var (get-meta meta)
+                  (and meta-var
+                       (cons meta meta-var))))
+              *metavariables*))
 
 (define (kcv value)
   (ces-convert value "*jp" (gauche-character-encoding)))
@@ -144,6 +178,7 @@
                           ,(string-append (get-meta "SCRIPT_NAME")
                                           *bridge-option*))
                         `("x-kahua-server-uri" ,(server-uri))
+                        `("x-kahua-metavariables" ,(metavariable-alist))
                         (cond-list
                          (worker-type `("x-kahua-worker" ,worker-type))
                          (state-gsid `("x-kahua-sgsid" ,state-gsid))

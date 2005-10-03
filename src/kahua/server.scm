@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.33 2005/09/09 15:03:31 cut-sea Exp $
+;; $Id: server.scm,v 1.34 2005/10/03 15:48:49 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -40,6 +40,7 @@
           kahua-default-handler
           kahua-current-context
           kahua-context-ref
+          kahua-meta-ref
           kahua-context-ref*
           kahua-current-user
           kahua-current-user-name
@@ -220,6 +221,9 @@
                              ,(drop* (assoc-ref-car header "x-kahua-path-info"
                                                     '())
                                      2))
+                           `("x-kahua-metavariables"
+                             ,(assoc-ref-car header "x-kahua-metavariables"
+                                             '()))
                            body))
               (let1 extra-headers
                   (assoc-ref-car context "extra-headers" '())
@@ -275,6 +279,15 @@
 
 (define (kahua-context-ref key . maybe-default)
   (apply assoc-ref-car (kahua-current-context) key maybe-default))
+
+;; KAHUA-META-REF key [default]
+;;
+;;  Gets CGI metavaliable.
+;;  Key should be in upper case plus underscore.
+
+(define (kahua-meta-ref key . maybe-default)
+  (apply assoc-ref
+         (kahua-context-ref "x-kahua-metavariables" '()) key maybe-default))
 
 ;; KAHUA-CONTEXT-REF* key [default]
 ;;
