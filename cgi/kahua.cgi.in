@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.31 2005/10/03 15:48:49 shibata Exp $
+;; $Id: kahua.cgi.in,v 1.32 2005/10/05 23:14:39 cut-sea Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -41,6 +41,8 @@
 
 ;; Change this if you're using non-default sockbase
 (define *sockbase* "unix:##KAHUA_SOCKET_BASE##")
+(define *tmpbase*
+        (build-path (ref (kahua-config) 'working-directory) "tmp" "kahua-"))
 
 ;; Change this if you're using non-default log path
 ;;(log-open "/tmp/kahua-cgi.log" :prefix "~Y ~T ~P[~$]: ")
@@ -188,6 +190,7 @@
            (sockaddr   (worker-id->sockaddr worker-id *sockbase*))
            )
       (log-format "cgsid: ~a (~a)" cont-gsid remote-addr)
+      (for-each (cut sys-chmod <> #o660) (cgi-temporary-files))
       (call-with-client-socket (make-client-socket sockaddr)
         (lambda (in out)
           (guard
@@ -307,7 +310,7 @@
         (cgi-main publisher
                   :merge-cookies #t
                   :on-error cgi-error-proc
-                  :part-handlers '((#t file+name))
+                  :part-handlers `((#t file+name ,*tmpbase*))
                   ))
       ##CGIEND##
       )

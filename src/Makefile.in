@@ -28,6 +28,7 @@ INSTALL_TYPE           = @INSTALL_TYPE@
 SCM_INSTALL_DIR        = $(libdir)
 SCRIPT_INSTALL_DIR     = $(bindir)
 SOCKET_BASE_DIR        = $(prefix)/tmp/$(package)
+TMP_BASE_DIR           = $(localstatedir)/tmp
 KAHUA_VERSION          = $(shell cat $(top_srcdir)/VERSION)
 
 MAKE_SH_SCRIPT   = $(GOSH) $(top_srcdir)/src/make-script.scm "$(GOSH)" "$(libdir)"
@@ -119,7 +120,7 @@ clean:
 # NB: libexecdir is created for backward compatibility.  Eventually
 # we'll remove it.
 install: all
-	$(INSTALL) -m 770 -d $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir) $(libexecdir)
+	$(INSTALL) -m 770 -d $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir) $(libexecdir) $(TMP_BASE_DIR)
 	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR) -S $(srcdir) $(SCMFILES)
 	$(INSTALL) -m 555 -T $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
 	@if test ! -f $(sysconfdir)/kahua.conf; then \
