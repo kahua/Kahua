@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.10 2005/07/14 12:11:17 nobsun Exp $
+;; $Id: kahua-spvr.scm,v 1.11 2005/10/06 05:30:03 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -1029,7 +1029,7 @@
 					        (cleanup) (bye 0)))
            (set-signal-handler! SIGHUP  (lambda _ (log-format "[spvr] SIGHUP")
 					        (cleanup) (bye 0)))
-
+           (set-signal-handler! SIGPIPE #f) ; ignore SIGPIPE
            (guard (e (else
                       (log-format "[spvr] error in main:\n~a" 
                                   (kahua-error-string e #t))

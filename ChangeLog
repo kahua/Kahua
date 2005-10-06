@@ -1,3 +1,8 @@
+2005-10-06  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-spvr.scm:
+	added a signal handler which catches SIGPIPE and ignores it.
+
 2005-10-04  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* cgi/kahua.cgi.in:
