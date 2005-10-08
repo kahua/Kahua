@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.32 2005/10/05 23:14:39 cut-sea Exp $
+;; $Id: kahua.cgi.in,v 1.33 2005/10/08 05:19:52 cut-sea Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -190,7 +190,10 @@
            (sockaddr   (worker-id->sockaddr worker-id *sockbase*))
            )
       (log-format "cgsid: ~a (~a)" cont-gsid remote-addr)
-      (for-each (cut sys-chmod <> #o660) (cgi-temporary-files))
+      (for-each (lambda (f)
+		  (if (file-exists? f)
+		      (sys-chmod f #o660)))
+		(cgi-temporary-files))
       (call-with-client-socket (make-client-socket sockaddr)
         (lambda (in out)
           (guard
