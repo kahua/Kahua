@@ -1,10 +1,19 @@
+2005-11-03  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	supported class redefine.
+	changed to use slot-*-using-class in primitive procedure.
+	added change-class method to <kahua-persistnet-base>.
+	* test/persistence.scm.in:
+	fixed key duplicate.
+
 2005-10-16  Kenji Hisazumi  <nel@soraneko.com>
 
 	* plugins/sendmail.scm:
 	fixed for the case if the default encoding is not "eucjp".
 
 2005-10-12  ENDO Yasuyuki <yasuyuki@javaopen.org>
-	
+
 	* Release 0.3.4
 	- Known Bugs: kahua-spvr will dead-locks some situation.
 
