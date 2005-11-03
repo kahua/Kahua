@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.26 2005/09/30 05:22:25 yasuyuki Exp $
+;; $Id: persistence.scm,v 1.27 2005/11/03 08:33:48 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -223,7 +223,7 @@
       (string-append
        (make-string (if (< pad 0) 0 pad) #\0)
        str)))
-  (id->idstr (ref obj 'id)))
+  (id->idstr (slot-ref-using-class (current-class-of obj) obj 'id)))
 
 ;; Initializing persistent instance:
 ;;  * (initialize (obj <kahua-persistent-base>)) initializes in-memory
@@ -312,7 +312,10 @@
                         (cons (class-name (ref proxy 'class))
                               (ref proxy 'key))
                         #f)
-        (read-kahua-instance db (ref proxy 'class) (ref proxy 'key)))))
+        (and-let* ((i (read-kahua-instance db (ref proxy 'class) (ref proxy 'key))))
+          (set! (ref i '%floating-instance) #f)
+          i)
+        )))
 
 ;; The bottom-level writer ----------------------------------------
 ;;   write-kahua-instance calls kahua-write.
@@ -1136,20 +1139,23 @@
 
 (define (current-transaction? o)
   (and (current-db)
-       (= (ref o '%transaction-id)
+       (= (slot-ref-using-class (current-class-of o) o '%transaction-id)
           (current-transaction-id))))
 
 (define (update-transaction! o)
-  (set! (ref o '%transaction-id) (current-transaction-id)))
+  (slot-set-using-class! (current-class-of o) o
+                         '%transaction-id
+                         (current-transaction-id)))
 
 (define (ensure-transaction o)
-  (unless (or (is-a? o <kahua-persistent-metainfo>)
-              (not (slot-bound? o '%transaction-id))
-              (current-transaction? o))
-    ;; First, we update %transaction-id slot to avoid infinit loop.
-    (update-transaction! o)
-    ;; read-kahua-instance syncs in-db and in-memory object.
-    (read-kahua-instance o)))
+  (let1 klass (current-class-of o)
+    (unless (or (eq? klass <kahua-persistent-metainfo>)
+                (not (slot-bound-using-class? klass o '%transaction-id))
+                (current-transaction? o))
+      ;; First, we update %transaction-id slot to avoid infinit loop.
+      (update-transaction! o)
+      ;; read-kahua-instance syncs in-db and in-memory object.
+      (read-kahua-instance o))))
 
 (define (persistent-slot-syms class)
   (map car (filter (lambda (slot)
@@ -1194,7 +1200,7 @@
           i))))
 
 (define-method read-kahua-instance ((object <kahua-persistent-base>))
-  (read-kahua-instance (current-db) (class-of object) (key-of object)))
+  (read-kahua-instance (current-db) (current-class-of object) (key-of object)))
 
 (define-method read-kahua-instance ((db <kahua-db-fs>)
                                     (class <kahua-persistent-meta>)
@@ -1322,5 +1328,54 @@
 	  (append subs
 		  (append-map class-subclasses* subs)))))
   (delete-duplicates (class-subclasses* class)))
+
+(define instance-changing-class-stack (make-parameter '()))
+
+(define-method change-class ((obj <kahua-persistent-base>) (new-class <class>))
+  (let* ((old-class (current-class-of obj))
+         ;; dump persisten slot value using old-class.
+         (carry-over-slots
+          (cond
+           ((assq obj (instance-changing-class-stack))
+            => (lambda (p) ((cdr p) #f)))
+           ;; change-class is called recursively.  abort change-class protocol.
+           (else
+            (filter-map
+             (lambda (slot)
+               (let1 slot-name (slot-definition-name slot)
+                 (and (eq? (slot-definition-allocation slot) :persistent)
+                      (or (and
+                           (slot-exists-using-class? old-class obj slot-name)
+                           (call/cc
+                            (lambda (pcont)
+                              (parameterize
+                                  ((instance-changing-class-stack
+                                    (acons obj pcont (instance-changing-class-stack))))
+                                (and (slot-bound-using-class? old-class obj slot-name)
+                                     (cons slot-name
+                                           (slot-ref-using-class old-class obj slot-name)))))))
+                          slot-name))))
+             (class-slots new-class))))))
+    ;; change-class
+    (next-method)
+    (unless (eq? (class-name old-class)
+                 (class-name new-class))
+      (let1 tmp (ref (current-db) 'modified-instances)
+        (set! (ref (current-db) 'modified-instances) '())
+        (ensure-metainfo new-class)
+        (set! (ref (current-db) 'modified-instances) tmp))
+      (slot-set-using-class! new-class obj 'id (kahua-db-unique-id))
+      (slot-set-using-class! new-class obj '%persistent-generation 0)
+      (slot-set-using-class! new-class obj '%floating-instance #t)
+      )
+    ;; restore persistent slots value.
+    (unless (memq obj (ref (current-db) 'modified-instances))
+      (push! (ref (current-db) 'modified-instances) obj))
+    (dolist (slot carry-over-slots)
+      (if (pair? slot)
+          (slot-set! obj (car slot) (cdr slot))
+        (let ((acc (class-slot-accessor new-class slot)))
+          (slot-initialize-using-accessor! obj acc '()))))))
+
 
 (provide "kahua/persistence")
