@@ -18,5 +18,5 @@
      (display "Content-Transfer-Encoding: 7bit\n" p)
      (display "Content-Type: text/plain; charset=ISO-2022-JP\n" p)
      (display "\n\n" p)
-     (display (ces-convert body "eucjp" "iso2022jp") p)
+     (display (ces-convert body "*JP" "iso2022jp") p)
      )))
