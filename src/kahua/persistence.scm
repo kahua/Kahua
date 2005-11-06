@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.26.2.1 2005/11/06 08:58:09 shibata Exp $
+;; $Id: persistence.scm,v 1.26.2.2 2005/11/06 15:26:33 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1025,8 +1025,8 @@
         (let1 db (make class :path path)
           (set! (ref db 'active) #t)
           (set! (ref db 'id-counter) (with-input-from-file cntfile read))
-          (unless (lock-db db)
-            (error "kahua-db-open: couldn't obtain database lock: " path))
+;;           (unless (lock-db db)
+;;             (error "kahua-db-open: couldn't obtain database lock: " path))
           db)
         (error "kahua-db-open: path is not a db: " path))
       (begin
@@ -1037,8 +1037,8 @@
         (with-output-to-file cntfile (cut write 0))
         (let1 db (make class :path path)
           (set! (ref db 'active) #t)
-          (unless (lock-db db)
-            (error "kahua-db-open: couldn't obtain database lock: " path))
+;;           (unless (lock-db db)
+;;             (error "kahua-db-open: couldn't obtain database lock: " path))
           db))
       )))
 
@@ -1108,6 +1108,8 @@
 
 (define-method kahua-db-close ((db <kahua-db-fs>) commit)
   (when commit
+    (unless (lock-db db)
+      (error "kahua-db-open: couldn't obtain database lock: " path))
     (with-output-to-file (id-counter-path (ref db 'path))
       (cut write (ref db 'id-counter)))
     (kahua-db-sync db))
