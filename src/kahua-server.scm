@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.6 2005/08/05 16:40:18 nel Exp $
+;; $Id: kahua-server.scm,v 1.6.2.1 2005/11/06 15:21:13 shibata Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -26,6 +26,7 @@
   (use gauche.collection)
   (use gauche.parseopt)
   (use gauche.hook)
+  (use gauche.threads)
   (use file.util)
   (use srfi-1)
   (use kahua)
@@ -106,37 +107,40 @@
       (load mod :environment kahua-app-server))))
 
 (define (run-server worker-id sockaddr)
-  (let ((sock (make-server-socket sockaddr :reuse-addr? #t))
-        (selector (make <selector>)))
+  (let ((sock (make-server-socket sockaddr :reuse-addr? #t)))
+
     (define (accept-handler fd flag)
       (let* ((client (socket-accept sock))
              (input  (socket-input-port client :buffered? #f))
              (output (socket-output-port client)))
-        (guard (e
-                (#t (log-format
-                     "[server]: Read error occured in accept-handler")))
-               (let ((header (read input))
-                     (body   (read input)))
-                 (handle-request
-                  header body
-                  (lambda (r-header r-body)
-                    (guard (e
-                            (#t (log-format
-                                 "[server]: client closed connection")))
-                           (begin
-                             (write r-header output) (newline output)
-                             (write r-body output)   (newline output)
-                             (flush output)))
-                    (socket-close client))
-                  selector)))
+        (thread-start!
+         (make-thread
+          (lambda ()
+            (guard (e
+                      (#t (log-format
+                           "[server]: Read error occured in accept-handler")))
+                     (let ((header (read input))
+                           (body   (read input)))
+                       (handle-request
+                        header body
+                        (lambda (r-header r-body)
+                          (guard (e
+                                  (#t (log-format
+                                       "[server]: client closed connection")))
+                                 (begin
+                                   (write r-header output) (newline output)
+                                   (write r-body output)   (newline output)
+                                   (flush output)))
+                          (socket-close client))
+                        #f)
+                       )))))
         ))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
       (sys-chmod (sockaddr-name sockaddr) #o770))
     (format #t "~a\n" worker-id)
-    (selector-add! selector (socket-fd sock) accept-handler '(r))
-    (do () (#f) (selector-select selector))
+    (do () (#f) (accept-handler #f #f))
     ))
 
 (define *kahua-top-module* #f)
@@ -189,6 +193,8 @@
                                      (log-format "[~a] SIGTERM" worker-name)
                                      (cleanup)
                                      (exit 0)))
+      (set-signal-handler! SIGPIPE #f) ; ignore SIGPIPE
+
       (with-error-handler
           (lambda (e)
             (log-format "[server] error in main:\n~a"
