@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.4 2005/03/23 05:09:36 nel Exp $
+;; $Id: persistence.scm,v 1.4.2.1 2005/11/06 08:58:09 shibata Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -809,9 +809,6 @@
 (define-class <transaction-test-2> (<kahua-persistent-base>)
   ((a :init-value 0 :init-keyword :a :allocation :persistent
       :out-of-transaction :denied)))
-
-(define-method key-of ((self <transaction-test-2>))
-  "key")
 
 (test "ref out of transaction" *test-error*
       (lambda ()
