@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.4 2004/02/09 06:48:56 shiro Exp $
+;; $Id: worker.scm,v 1.4.4.1 2005/11/06 15:29:18 shibata Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -94,6 +94,7 @@
   (and-let* ((p (ref worker 'worker-process)))
     (set! (ref worker 'worker-process) #f)
     (set! (ref worker 'worker-id) #f)
+    (sys-sleep 1)
     (process-send-signal p SIGINT)
     (process-wait p)))
 
