@@ -1,3 +1,21 @@
+2005-11-06  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* test/spvr-httpd.scm.in, src/kahua/test/worker.scm:
+	added sleep before sending SIGINT signal to worker.
+
+	* src/kahua/util.scm: add-hoc patch to kahua-error-string.
+	fix me!
+
+	* src/kahua/persistence.scm:
+	changed timing of db-lock to kahua-db-close step from kahua-db-open step.
+
+	* src/kahua-server.scm:
+	added a signal handler which catches SIGPIPE and ignores it.
+	changed accept-handler makes threads.
+
+	* ChangeLog, src/kahua/persistence.scm, test/persistence.scm.in:
+	marged for HEAD.
+
 2005-11-03  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/persistence.scm:
