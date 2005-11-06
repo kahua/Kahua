@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.3 2005/09/12 09:45:06 shiro Exp $
+;; $Id: util.scm,v 1.3.2.1 2005/11/06 15:27:54 shibata Exp $
 
 ;; This module contains generally useful routines, which don't belong to
 ;; a particular module.
@@ -22,8 +22,9 @@
 
 (define (kahua-error-string e . maybe-detail?)
   (if (get-optional maybe-detail? #f)
-    (call-with-output-string
-      (cut with-error-to-port <> (cut report-error e)))
+      (format "~a~%" (ref e 'message))
+;;     (call-with-output-string
+;;       (cut with-error-to-port <> (cut report-error e)))
     (ref e 'message)))
 
 (provide "kahua/util")
