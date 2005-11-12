@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.27 2005/11/03 08:33:48 shibata Exp $
+;; $Id: persistence.scm,v 1.28 2005/11/12 07:31:01 yasuyuki Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1213,7 +1213,11 @@
                                     (class <kahua-persistent-meta>)
                                     (key <string>))
   (define (escape-string str)
-    (dbi-escape-sql (ref db 'connection) str))
+    (if (memq 'dbi-do (module-exports (find-module 'dbi))) ;; Gauche-dbi 0.2 and later.
+	(string-append "'"
+		       (dbi-escape-sql (ref db 'connection) str)
+		       "'")
+	(dbi-escape-sql (ref db 'connection) str)))
 
   (and-let* ((tab (assq-ref (ref db 'table-map) (class-name class)))
              (r   (dbi-query
@@ -1239,7 +1243,11 @@
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
                                      (obj <kahua-persistent-base>))
   (define (escape-string str)
-    (dbi-escape-sql (ref db 'connection) str))
+    (if (memq 'dbi-do (module-exports (find-module 'dbi))) ;; Gauche-dbi 0.2 and later.
+	(string-append "'"
+		       (dbi-escape-sql (ref db 'connection) str)
+		       "'")
+	(dbi-escape-sql (ref db 'connection) str)))
   
   (define (table-name)
     (let1 cname (class-name (class-of obj))
