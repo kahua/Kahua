@@ -1,3 +1,8 @@
+2005-11-12  ENDO Yasuyuki
+
+	* src/kahua/persistence.scm:
+	  check Gauche-dbi 0.2 and later in read-kahua-instance and write-kahua-instance.
+
 2005-11-03  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/persistence.scm:
