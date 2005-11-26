@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.28 2005/11/12 07:31:01 yasuyuki Exp $
+;; $Id: persistence.scm,v 1.29 2005/11/26 10:15:41 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -381,7 +381,7 @@
 
 (define (kahua-serializable-object? v)
   (or (any (cut is-a? v <>)
-           (list <boolean> <number> <string> <symbol> <keyword>
+           (list <boolean> <number> <string> <symbol> <keyword> <null>
                  <kahua-persistent-base> <kahua-proxy> <kahua-wrapper>))
       (and (pair? v)
            (let loop ((v v))

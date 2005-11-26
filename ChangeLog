@@ -1,3 +1,8 @@
+2005-11-26  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Changed kahua-serializable-object? to return #t for null list.
+
 2005-11-12  ENDO Yasuyuki
 
 	* src/kahua/persistence.scm:
