@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.26.2.2 2005/11/06 15:26:33 shibata Exp $
+;; $Id: persistence.scm,v 1.26.2.3 2005/11/29 15:13:47 cut-sea Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -245,9 +245,9 @@
   (let ((db (current-db))
         (id (ref obj 'id))
         (rsv (get-keyword :%realization-slot-values initargs #f)))
-    (when (id->kahua-instance id)
-      (errorf "instance with same ID (~s) is active (class ~s)"
-              id (class-of obj)))
+;;    (when (id->kahua-instance id)
+;;      (errorf "instance with same ID (~s) is active (class ~s)"
+;;              id (class-of obj)))
     
     (update-transaction! obj)
     
