@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.6.2.3 2005/12/04 02:50:09 nobsun Exp $
+;; $Id: kahua-server.scm,v 1.6.2.4 2005/12/04 05:17:56 shibata Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -107,7 +107,7 @@
       (load mod :environment kahua-app-server))))
 
 (define (run-server worker-id sockaddr)
-  (define (accept-handler input output)
+  (define (accept-handler client input output)
     (thread-start!
      (make-thread
       (lambda ()
@@ -137,7 +137,7 @@
     (let* ((client (socket-accept sock))
 	   (input  (socket-input-port client :buffered? #t))
 	   (output (socket-output-port client)))
-      (accept-handler input output))
+      (accept-handler client input output))
     (loop sock))
   )
 
