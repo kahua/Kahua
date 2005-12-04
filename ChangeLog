@@ -2,6 +2,8 @@
 
 	* src/kahua/persistence.scm:
 	fixed unlock db timing.
+	added with-fsdb-lock syntax.
+	changed to use mutex.
 
 2005-12-04  Nobuo Yamashita  <nobsun@sampou.org>
 

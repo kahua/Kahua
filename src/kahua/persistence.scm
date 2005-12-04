@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.26.2.4 2005/12/04 04:42:01 shibata Exp $
+;; $Id: persistence.scm,v 1.26.2.5 2005/12/04 06:17:54 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -18,6 +18,7 @@
   (use gauche.fcntl)
   (use gauche.logger)
   (use gauche.collection)
+  (use gauche.threads)
   (export <kahua-persistent-meta> <kahua-persistent-base>
           <kahua-persistent-metainfo>
           key-of find-kahua-class find-kahua-instance
@@ -33,6 +34,8 @@
           )
   )
 (select-module kahua.persistence)
+
+(define *mutex* (make-mutex))
 
 ;;=========================================================
 ;; Persistent metaclass
@@ -977,6 +980,18 @@
                ;(kahua-meta-write-syncer)
                (begin0 (begin . body) (kahua-db-close db #t))))))))))
 
+
+(define-syntax with-fsdb-lock
+  (syntax-rules ()
+    ((with-fsdb-lock db . body)
+     (with-locking-mutex *mutex*
+         (lambda ()
+           (unless (lock-db db)
+             (error "kahua-db-open: couldn't obtain database lock: " (ref db 'path)))
+           (begin0
+               (begin . body)
+             (unlock-db db)))))))
+
 (define (kahua-db-purge-objs)
   (let ((db (current-db)))
     (set! (ref db 'instance-by-id)  (make-hash-table 'eqv?))
@@ -1024,9 +1039,8 @@
       (if (file-is-regular? cntfile)
         (let1 db (make class :path path)
           (set! (ref db 'active) #t)
-          (set! (ref db 'id-counter) (with-input-from-file cntfile read))
-;;           (unless (lock-db db)
-;;             (error "kahua-db-open: couldn't obtain database lock: " path))
+          (with-fsdb-lock db
+           (set! (ref db 'id-counter) (with-input-from-file cntfile read)))
           db)
         (error "kahua-db-open: path is not a db: " path))
       (begin
@@ -1037,8 +1051,6 @@
         (with-output-to-file cntfile (cut write 0))
         (let1 db (make class :path path)
           (set! (ref db 'active) #t)
-;;           (unless (lock-db db)
-;;             (error "kahua-db-open: couldn't obtain database lock: " path))
           db))
       )))
 
@@ -1100,20 +1112,27 @@
     (lambda ()
       (dbi-execute-query q sql))))
 
-(define (kahua-db-sync . maybe-db)
-  (let1 db (get-optional maybe-db (current-db))
-    (for-each (cut write-kahua-instance db <>)
-              (ref db 'modified-instances))
-    (set! (ref db 'modified-instances) '())))
+(define (%kahua-db-sync db)
+  (for-each (cut write-kahua-instance db <>)
+            (ref db 'modified-instances))
+  (set! (ref db 'modified-instances) '()))
+
+(define-method kahua-db-sync ()
+  (%kahua-db-sync (current-db)))
+
+(define-method kahua-db-sync ((db <kahua-db-fs>))
+  (with-fsdb-lock db
+   (%kahua-db-sync db)))
+
+(define-method kahua-db-sync ((db <kahua-db-dbi>))
+  (%kahua-db-sync db))
 
 (define-method kahua-db-close ((db <kahua-db-fs>) commit)
   (when commit
-    (unless (lock-db db)
-      (error "kahua-db-open: couldn't obtain database lock: " path))
-    (with-output-to-file (id-counter-path (ref db 'path))
-      (cut write (ref db 'id-counter)))
-    (kahua-db-sync db)
-    (unlock-db db))
+    (with-fsdb-lock db
+     (with-output-to-file (id-counter-path (ref db 'path))
+       (cut write (ref db 'id-counter))))
+    (kahua-db-sync db))
   (set! (ref db 'modified-instances) '())
   (set! (ref db 'active) #f))
 
