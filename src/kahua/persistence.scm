@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.26.2.3 2005/11/29 15:13:47 cut-sea Exp $
+;; $Id: persistence.scm,v 1.26.2.4 2005/12/04 04:42:01 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1112,8 +1112,8 @@
       (error "kahua-db-open: couldn't obtain database lock: " path))
     (with-output-to-file (id-counter-path (ref db 'path))
       (cut write (ref db 'id-counter)))
-    (kahua-db-sync db))
-  (unlock-db db)
+    (kahua-db-sync db)
+    (unlock-db db))
   (set! (ref db 'modified-instances) '())
   (set! (ref db 'active) #f))
 
