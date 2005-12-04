@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test nqueen script.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: nqueen.scm,v 1.2 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: nqueen.scm,v 1.3 2005/12/04 02:22:04 nobsun Exp $
 
 (use srfi-2)
 (use srfi-11)
@@ -67,7 +67,7 @@
         (call-worker/gsid->sxml w '() '() '(// (or@ a li)))
         (make-match&pick w))
 
-  (test* "8 queen (1)"
+  (test* "8 queen (2)"
         '(*TOP*
           (li "(4 7 3 0 6 1 5 2)")
           (li "(3 7 0 4 6 1 5 2)")
