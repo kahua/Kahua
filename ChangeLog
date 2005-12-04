@@ -1,3 +1,8 @@
+2005-12-04  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua-server.scm:
+	Use sys-exit instead of exit in signal handler.
+
 2005-11-06  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* test/spvr-httpd.scm.in, src/kahua/test/worker.scm:
