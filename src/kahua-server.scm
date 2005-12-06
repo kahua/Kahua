@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.6.2.4 2005/12/04 05:17:56 shibata Exp $
+;; $Id: kahua-server.scm,v 1.6.2.5 2005/12/06 15:51:05 shibata Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -107,7 +107,7 @@
       (load mod :environment kahua-app-server))))
 
 (define (run-server worker-id sockaddr)
-  (define (accept-handler client input output)
+  (define (accept-handler client input output transaction-id)
     (thread-start!
      (make-thread
       (lambda ()
@@ -127,9 +127,11 @@
 			     (write r-body output)   (newline output)
 			     (flush output)))
 		    (socket-close client))
-		  )))))))
+		  ))))
+      transaction-id)))
 
-  (let loop ((sock (make-server-socket sockaddr :reuse-addr? #t)))
+  (let loop ((sock (make-server-socket sockaddr :reuse-addr? #t))
+             (transaction-id 0))
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
       (sys-chmod (sockaddr-name sockaddr) #o770))
@@ -137,8 +139,8 @@
     (let* ((client (socket-accept sock))
 	   (input  (socket-input-port client :buffered? #t))
 	   (output (socket-output-port client)))
-      (accept-handler client input output))
-    (loop sock))
+      (accept-handler client input output transaction-id))
+    (loop sock (+ transaction-id)))
   )
 
 (define *kahua-top-module* #f)
