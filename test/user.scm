@@ -1,5 +1,5 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
-;; $Id: user.scm,v 1.3 2005/08/22 09:27:12 yasuyuki Exp $
+;; $Id: user.scm,v 1.4 2005/12/13 17:33:35 cut-sea Exp $
 
 ;; test kahua.user
 
@@ -75,4 +75,74 @@
 		      (and-let* ((u (kahua-check-user "shiro" "urashima")))
 				(ref u 'login-name)))))
 		      
+;;
+;; app subclass of <kahua-user>.
+;;
+(define-class <test-user> (<kahua-user>)
+  ((fname  :allocation :persistent :init-keyword :fname
+	   :init-value "" :accessor fname-of)
+   (lname  :allocation :persistent :init-keyword :lname
+	   :init-value "" :accessor lname-of)))
+
+
+(test* "check-user (in the empty db)" #f
+       (with-db (db *dbname*)
+         (check-user <test-user> "cut-sea" "cutsea")))
+
+(test* "add-user" #t
+       (with-db (db *dbname*)
+         (every (cut is-a? <> <test-user>)
+                (list (add-user <test-user> "shiro"  "manapua")
+                      (add-user <test-user> "nobsun" "punahou")
+                      (add-user <test-user> "cut-sea"  "kamosimakuri-bu")))))
+
+(test* "find-user" "cut-sea"
+       (with-db (db *dbname*)
+         (and-let* ((u (find-user <test-user> "cut-sea")))
+           (ref u 'login-name))))
+
+(test* "find-user" #f
+       (with-db (db *dbname*)
+         (and-let* ((u (find-user <test-user> "shirok")))
+           (ref u 'login-name))))
+
+(test* "add-user (dup)" #f
+       (with-db (db *dbname*)
+         (add-user <test-user> "nobsun" "makapuu")))
+
+(test* "add-user (non-dup)" #t
+       (with-db (db *dbname*)
+         (not (not (add-user <test-user> "guest" "molokai")))))
+         
+(test* "check-user" "cut-sea"
+       (with-db (db *dbname*)
+         (and-let* ((u (check-user <test-user> "cut-sea" "kamosimakuri-bu")))
+           (ref u 'login-name))))
+
+(test* "check-user" #f
+       (with-db (db *dbname*)
+         (and-let* ((u (check-user <test-user> "shiro" "makapuu")))
+           (ref u 'login-name))))
+
+(test* "check-user" #f
+       (with-db (db *dbname*)
+         (and-let* ((u (check-user <test-user> "shirok" "makapuu")))
+           (ref u 'login-name))))
+
+(test* "user-password-change" "cut-sea"
+       (with-db (db *dbname*)
+		(let1 user (find-kahua-instance <test-user> "cut-sea")
+		      (user-password-change user "kamosimakuri-bu" "kamosiJapan")
+		      (and-let* ((u (check-user <test-user> "cut-sea" "kamosiJapan")))
+				(ref u 'login-name)))))
+		      
+(test* "user-password-change-force" "cut-sea"
+       (with-db (db *dbname*)
+		(let1 user (find-kahua-instance <test-user> "cut-sea")
+		      (user-password-change-force user "kamosuzo!")
+		      (and-let* ((u (check-user <test-user> "cut-sea" "kamosuzo!")))
+				(ref u 'login-name)))))
+		      
+		      
+
 (test-end)
