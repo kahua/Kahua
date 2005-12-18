@@ -4,6 +4,7 @@
 	Added x-kahua-path-full-info to worker context.
 	Now, worker can get worker name and entry name by
 	(kahua-context-ref "x-kahua-path-full-info").
+	Added kahua-current-entry-name.
 
 2005-12-18  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 

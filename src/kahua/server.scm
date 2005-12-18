@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.37 2005/12/18 16:17:12 shibata Exp $
+;; $Id: server.scm,v 1.38 2005/12/18 16:37:33 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -42,6 +42,7 @@
           kahua-context-ref
           kahua-meta-ref
           kahua-context-ref*
+          kahua-current-entry-name
           kahua-current-user
           kahua-current-user-name
           kahua-worker-type
@@ -300,6 +301,13 @@
 (define (kahua-context-ref* key . maybe-default)
   (or (apply assoc-ref (kahua-current-context) key maybe-default)
       '()))
+
+;; KAHUA-CURRENT-ENTRY-NAME
+;;
+;; Gets current entry name.
+(define (kahua-current-entry-name)
+  (ref (kahua-context-ref "x-kahua-path-full-info" '()) 1 ""))
+
 
 ;; KAHUA-CURRENT-USER
 ;; (setter KAHUA-CURRENT-USER) user

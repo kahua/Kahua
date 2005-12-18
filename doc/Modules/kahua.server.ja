@@ -52,9 +52,14 @@ kahua-self-uri-fullはサーバ名を含めた絶対uriを返します。
 
 pathが複数与えられた場合、それらはbuild-pathで接続されます。
 
-[procedure] kahua-current-user context
+[procedure] kahua-current-entry-name
 
-[procedure] (setter kahua-current-user) context user
+現在のエントリ名を返します。
+エントリが存在しない場合は空文字列を返します。
+
+[procedure] kahua-current-user
+
+[procedure] (setter kahua-current-user) user
 
 session-stateに保持されている、「現在のユーザ」情報をget/setします。
 session-stateは一般的にはクライアントのクッキーに結びつけられた情報を保
@@ -63,7 +68,7 @@ session-stateは一般的にはクライアントのクッキーに結びつけられた情報を保
 kahua-current-userは、「現在のユーザ」が設定されていれば <kahua-user>オ
 ブジェクト(kahua.user参照)を、設定されていなければ#fを返します。
 
-(set! (kahua-current-user context) user) のように用いると、現在のユーザ
+(set! (kahua-current-user) user) のように用いると、現在のユーザ
 を設定することができます。userには<kahua-user>オブジェクトか #fを渡しま
 す。
 
@@ -73,7 +78,7 @@ kahua-current-userは、「現在のユーザ」が設定されていれば <kahua-user>オ
 内部では、Kahuaは<session-state>オブジェクトのuserスロットに、現在のユー
 ザのログイン名を保持することで、現在のユーザを管理しています。
 
-[procedure] kahua-context-ref context key
+[procedure] kahua-context-ref key
 
 アプリケーションサーバのハンドラに渡されるコンテキスト情報contextにアク
 セスするための関数です。keyは文字列またはシンボルです。
