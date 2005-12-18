@@ -1,3 +1,10 @@
+2005-12-19  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added x-kahua-path-full-info to worker context.
+	Now, worker can get worker name and entry name by
+	(kahua-context-ref "x-kahua-path-full-info").
+
 2005-12-18  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
 	* emacs/kahua-shell.el.in (run-kahua-shell): add -t option with ssh.

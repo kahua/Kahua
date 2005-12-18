@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.36 2005/12/18 11:48:36 cut-sea Exp $
+;; $Id: server.scm,v 1.37 2005/12/18 16:17:12 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -221,6 +221,9 @@
                              ,(drop* (assoc-ref-car header "x-kahua-path-info"
                                                     '())
                                      2))
+                           `("x-kahua-path-full-info"
+                             ,(assoc-ref-car header "x-kahua-path-info"
+                                             '()))
                            `("x-kahua-metavariables"
                              ,(assoc-ref-car header "x-kahua-metavariables"
                                              '()))
