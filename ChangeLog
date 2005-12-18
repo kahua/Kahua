@@ -1,3 +1,11 @@
+2005-12-18  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* entry-lambda's keyword can get multiple values from context.
+	  So, we can remove kahua-context-ref* from *.kahua.
+	  kahua framework bind keyword single value or list of values.
+	  When multiple values posted, keyword is binded by values of list.
+	  and another case, single value posted, keyword is binded by a value.
+
 2005-11-26  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/persistence.scm:

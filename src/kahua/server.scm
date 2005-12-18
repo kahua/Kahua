@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.34 2005/10/03 15:48:49 shibata Exp $
+;; $Id: server.scm,v 1.35 2005/12/18 00:38:43 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -434,7 +434,11 @@
                (append (map-with-index (lambda (ind parg)
                                          (list-ref path-info ind #f))
                                        pargs)
-                       (map kahua-context-ref kargs-str)
+                       (map (lambda (key)
+			      (let1 vals (kahua-context-ref* key)
+				(if (> (length vals) 1)
+				    vals (kahua-context-ref key))))
+			      kargs-str)
                        (if rarg
                          (drop* path-info (length pargs))
                          '())))))
