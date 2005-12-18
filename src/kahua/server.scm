@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.35 2005/12/18 00:38:43 cut-sea Exp $
+;; $Id: server.scm,v 1.36 2005/12/18 11:48:36 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -381,64 +381,104 @@
 ;;   restarg can be used to receive remaining positional arguments.
 ;;   (NB: it doesn't include keyword args).
 
-(define-syntax entry-lambda
-  (syntax-rules ()
-    ;; finishing expansion
-    ((entry-lambda "finish" args pargs kargs #f body)
-     (make-parameterized-entry-closure 'pargs 'kargs #f
-                                       (lambda args . body)))
-    ((entry-lambda "finish" () pargs kargs rarg body)
-     (make-parameterized-entry-closure 'pargs 'kargs 'rarg
-                                       (lambda rarg . body)))
-    ((entry-lambda "finish" (args ...) pargs kargs rarg body)
-     (make-parameterized-entry-closure 'pargs 'kargs 'rarg
-                                       (lambda (args ... . rarg) . body)))
-    ;; collecting positional args
-    ((entry-lambda "pargs" () pargs body)
-     (entry-lambda "finish" pargs pargs () #f body))
-    ((entry-lambda "pargs" (:rest rarg) pargs body)
-     (entry-lambda "finish" pargs pargs () rarg body))
-    ((entry-lambda "pargs" (:rest rarg :keyword . syms) pargs body)
-     (entry-lambda "kargs" syms pargs pargs () rarg body))
-    ((entry-lambda "pargs" (:rest . _) pargs body)
-     (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
-    ((entry-lambda "pargs" (:keyword . syms) pargs body)
-     (entry-lambda "kargs" syms pargs pargs () #f body))
-    ((entry-lambda "pargs" (sym . syms) (parg ...) body)
-     (entry-lambda "pargs" syms (parg ... sym) body))
-    ;; collecting keyword args
-    ((entry-lambda "kargs" () args pargs kargs rarg body)
-     (entry-lambda "finish" args pargs kargs rarg body))
-    ((entry-lambda "kargs" (:rest rarg) args pargs kargs #f body)
-     (entry-lambda "finish" args pargs kargs rarg body))
-    ((entry-lambda "kargs" (:rest rarg) args pargs kargs rarg1 body)
-     (syntax-error "duplicate :rest args in entry-lambda:" (:rest rarg)))
-    ((entry-lambda "kargs" (:rest . _) args pargs kargs rarg1 body)
-     (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
-    ((entry-lambda "kargs" (sym . syms) (arg ...) pargs (karg ...) rarg body)
-     (entry-lambda "kargs" syms (arg ... sym) pargs (karg ... sym) rarg body))
-    ;; initial entry
-    ((entry-lambda args body1 . bodies)
-     (entry-lambda "pargs" args () (body1 . bodies)))
-    ;; error handling
-    ((entry-lambda . _)
-     (syntax-error "malformed entry-lambda:" (entry-lambda . _)))
-    ))
+; (define-syntax entry-lambda
+;   (syntax-rules ()
+;     ;; finishing expansion
+;     ((entry-lambda "finish" args pargs kargs #f body)
+;      '(make-parameterized-entry-closure 'pargs 'kargs #f
+;                                        (lambda args . body)))
+;     ((entry-lambda "finish" () pargs kargs rarg body)
+;      '(make-parameterized-entry-closure 'pargs 'kargs 'rarg
+;                                        (lambda rarg . body)))
+;     ((entry-lambda "finish" (args ...) pargs kargs rarg body)
+;      '(make-parameterized-entry-closure 'pargs 'kargs 'rarg
+;                                        (lambda (args ... . rarg) . body)))
+;     ;; collecting positional args
+;     ((entry-lambda "pargs" () pargs body)
+;      (entry-lambda "finish" pargs pargs () #f body))
+;     ((entry-lambda "pargs" (:rest rarg) pargs body)
+;      (entry-lambda "finish" pargs pargs () rarg body))
+;     ((entry-lambda "pargs" (:rest rarg :keyword . syms) pargs body)
+;      (entry-lambda "kargs" syms pargs pargs () rarg body))
+;     ((entry-lambda "pargs" (:rest . _) pargs body)
+;      (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
+;     ((entry-lambda "pargs" (:keyword . syms) pargs body)
+;      (entry-lambda "kargs" syms pargs pargs () #f body))
+;     ((entry-lambda "pargs" (sym . syms) (parg ...) body)
+;      (entry-lambda "pargs" syms (parg ... sym) body))
+;     ;; collecting keyword args
+;     ((entry-lambda "kargs" () args pargs kargs rarg body)
+;      (entry-lambda "finish" args pargs kargs rarg body))
+;     ((entry-lambda "kargs" (:rest rarg) args pargs kargs #f body)
+;      (entry-lambda "finish" args pargs kargs rarg body))
+;     ((entry-lambda "kargs" (:rest rarg) args pargs kargs rarg1 body)
+;      (syntax-error "duplicate :rest args in entry-lambda:" (:rest rarg)))
+;     ((entry-lambda "kargs" (:rest . _) args pargs kargs rarg1 body)
+;      (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
+;     ((entry-lambda "kargs" (sym . syms) (arg ...) pargs (karg ...) rarg body)
+;      (entry-lambda "kargs" syms (arg ... sym) pargs (karg ... sym) rarg body))
+;     ;; initial entry
+;     ((entry-lambda args body1 . bodies)
+;      (entry-lambda "pargs" args () (body1 . bodies)))
+;     ;; error handling
+;     ((entry-lambda . _)
+;      (syntax-error "malformed entry-lambda:" (entry-lambda . _)))
+;     ))
+
+;
+; entry-lambda
+;
+(define-macro (entry-lambda args body1 . bodys)
+  ;; helper
+  (define (parse-args args)
+    (define (dispatch proc args ps ks ms rs)
+      (if (null? args)
+	  (values (reverse ps)
+		  (reverse ks)
+		  (reverse ms)
+		  rs)
+	  (case (car args)
+	    ((:keyword)
+	     (dispatch parse-key (cdr args) ps ks ms rs))
+	    ((:multi-value-keyword :mvkeyword)
+	     (dispatch parse-mvkey (cdr args) ps ks ms rs))
+	    ((:rest)
+	     (if (or rs (keyword? (cadr args)) (null? (cdr args)))
+		 (error "malformed entry-lambda :rest form:" (cdr args))
+		 (dispatch parse-rest (cdr args) ps ks ms rs)))
+	    (else
+	     (proc args ps ks ms rs)))))
+
+    (define (parse-path args ps ks ms rs)
+      (dispatch parse-path (cdr args) (cons (car args) ps) ks ms rs))
+    (define (parse-key args ps ks ms rs)
+      (dispatch parse-key (cdr args) ps (cons (car args) ks) ms rs))
+    (define (parse-mvkey args ps ks ms rs)
+      (dispatch parse-mvkey (cdr args) ps ks (cons (car args) ms) rs))
+    (define (parse-rest args ps ks ms rs)
+      (if rs
+	  (error "malformed entry-lambda :rest form:" `(:rest ,args))
+	  (dispatch parse-rest (cdr args) ps ks ms (car args))))
+
+    (dispatch parse-path args () () () #f))
+
+  (receive (ps ks ms rs) (parse-args args)
+    `(,make-parameterized-entry-closure
+      ',ps ',ks ',ms ',rs (lambda (,@ps ,@ks ,@ms . ,rs) ,body1 ,@bodys))))
+
 
 ;; helper procedure
-(define (make-parameterized-entry-closure pargs kargs rarg proc)
-  (let ((kargs-str (map x->string kargs)))
+(define (make-parameterized-entry-closure pargs kargs mvkargs rarg proc)
+  (let ((kargs-str (map x->string kargs))
+	(mvkargs-str (map x->string mvkargs)))
     (lambda ()
       (let1 path-info (kahua-context-ref "x-kahua-path-info" '())
         (apply proc
                (append (map-with-index (lambda (ind parg)
                                          (list-ref path-info ind #f))
                                        pargs)
-                       (map (lambda (key)
-			      (let1 vals (kahua-context-ref* key)
-				(if (> (length vals) 1)
-				    vals (kahua-context-ref key))))
-			      kargs-str)
+                       (map kahua-context-ref kargs-str)
+		       (map kahua-context-ref* mvkargs-str)
                        (if rarg
                          (drop* path-info (length pargs))
                          '())))))

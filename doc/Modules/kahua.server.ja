@@ -105,12 +105,17 @@ entryと呼ばれることもあります。
 entry-formals は次のような形式の引数リストです。 ([...]は...が省略可能で
 あることを示します)
 
-  ([arg ... ][:keyword karg ... ][:rest restarg])
+  ([arg ... ][:keyword karg ... ][:multi-value-keyword mvarg ... ][:rest restarg])
 
 arg ... には、uriのentry-name 以下に渡されるパス名表記のパラメータが束縛
-され、karg ... にはhttpリクエストのqueryの部分が束縛されます。パス名表記
-のコンポーネントの数がarg ... より多く、restargが指定されている場合は、
-restargに残りがリストで束縛されます。
+され、karg ... にはhttpリクエストのqueryの部分が束縛されます。
+あるパラメータに対する値が query 中に複数含まれる可能性がある場合には、
+:keyword ではなく、 :multi-value-keyword あるいは短縮形の :mvkeyword を使
+うことが出来ます。 :multi-value-keyword に続くパラメータには、 query に含
+まれる全ての値をリストにしたものが束縛されます。パス名表記のコンポーネント
+の数がarg ... より多く、restargが指定されている場合は、restargに残りがリス
+トで束縛されます。
+
 
 例えば、次のようなエントリ定義があるとします。
 

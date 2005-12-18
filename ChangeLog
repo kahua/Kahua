@@ -4,6 +4,11 @@
 
 2005-12-18  Katsutoshi Itoh  <cut-sea@kahua.org>
 
+	* add keywords :multi-value-keyword and :mvkeyword.
+	  These are used for keyword which get many values from context.
+
+2005-12-18  Katsutoshi Itoh  <cut-sea@kahua.org>
+
 	* entry-lambda's keyword can get multiple values from context.
 	  So, we can remove kahua-context-ref* from *.kahua.
 	  kahua framework bind keyword single value or list of values.
