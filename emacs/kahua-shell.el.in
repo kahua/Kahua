@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-shell.el.in,v 1.4 2005/12/18 10:08:07 yasuyuki Exp $
+;; $Id: kahua-shell.el.in,v 1.5 2005/12/18 12:59:45 cut-sea Exp $
 ;;
 
 (require 'comint)
@@ -22,17 +22,27 @@
 
 
 (defun run-kahua-shell (host user)
-  (interactive (list (read-string "hostname: " kahua-default-server)
-		     (read-string "username: " kahua-default-user)))
+  (interactive
+   (let* ((host (if kahua-ssh-mode
+                    (read-string "hostname: " kahua-default-server) ""))
+          (user (if (and kahua-ssh-mode (not (string= host "")))
+                    (read-string "username: " kahua-default-user) "")))
+     (list host user)))
 
   (if (not (comint-check-proc "*scheme*"))
-      (let* ((program (if kahua-user-mode
-			  '("kahua-shell" "-user" "tahara")
-			  '("kahua-shell")))
-
-	     (args `("-t" ,(concat user "@" host) ,@program)))
-	(set-buffer (apply 'make-comint "scheme" "ssh" nil args))
-	(inferior-scheme-mode)))
+      (let* ((use-ssh          (and kahua-ssh-mode (not (string= host ""))))
+             (program          (if use-ssh "ssh" "kahua-shell"))
+             (kahua-shell-args (if (string= kahua-user-mode "")
+                                   '() (list "-user" kahua-user-mode)))
+             (args             (if use-ssh
+                                   `(,@kahua-ssh-opts
+                                     ,(if (string= user "")
+										  host (concat user "@" host))
+                                     ,"kahua-shell"
+                                     ,@kahua-shell-args)
+                                 kahua-shell-args)))
+        (set-buffer (apply 'make-comint "scheme" program nil args))
+        (inferior-scheme-mode)))
   (setq scheme-program-name "kahua-shell")
   (setq scheme-buffer "*scheme*")
   (pop-to-buffer "*scheme*")
