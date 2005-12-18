@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: server.scm,v 1.4 2005/12/18 12:16:00 cut-sea Exp $
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.
@@ -139,6 +139,28 @@
                         ("y" "yyy")
                         ("z" "zzz")))
           (call-entry 'foo '())
+          )))
+
+(test* "define-entry (multi-value bind parameter)"
+       '(("usr" "var" "www" ("xxX" "Xxx" "xXx") () ("Zzzz"))
+         (#f #f #f ("xxx") ("yyy") ("zzz"))
+         (#f #f #f () () ()))
+       (let ()
+         (eval
+          '(define-entry (bar a b c :multi-value-keyword x y z)
+             (list a b c x y z))
+          (current-module))
+         (list
+          (call-entry 'bar
+                      '(("x-kahua-path-info" ("usr" "var" "www" "zzz"))
+                        ("z" "Zzzz")
+                        ("x" "xxX" "Xxx" "xXx")))
+          (call-entry 'bar
+                      '(("x-kahua-path-info" ())
+                        ("x" "xxx")
+                        ("y" "yyy")
+                        ("z" "zzz")))
+          (call-entry 'bar '())
           )))
 
 ;; make sure 'foo' is registered globally.
