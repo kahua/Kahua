@@ -1,3 +1,7 @@
+2005-12-18  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* emacs/kahua-shell.el.in (run-kahua-shell): add -t option with ssh.
+
 2005-12-18  Katsutoshi Itoh  <cut-sea@kahua.org>
 
 	* entry-lambda's keyword can get multiple values from context.
