@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.38 2005/12/18 16:37:33 shibata Exp $
+;; $Id: server.scm,v 1.39 2005/12/19 04:38:56 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -22,6 +22,7 @@
   (use gauche.charconv)
   (use rfc.uri)
   (use util.list)
+  (use util.match)
   (use sxml.tools)
   (use file.util)
   (use kahua.gsid)
@@ -443,22 +444,23 @@
   ;; helper
   (define (parse-args args)
     (define (dispatch proc args ps ks ms rs)
-      (if (null? args)
-	  (values (reverse ps)
-		  (reverse ks)
-		  (reverse ms)
-		  rs)
-	  (case (car args)
-	    ((:keyword)
-	     (dispatch parse-key (cdr args) ps ks ms rs))
-	    ((:multi-value-keyword :mvkeyword)
-	     (dispatch parse-mvkey (cdr args) ps ks ms rs))
-	    ((:rest)
-	     (if (or rs (keyword? (cadr args)) (null? (cdr args)))
-		 (error "malformed entry-lambda :rest form:" (cdr args))
-		 (dispatch parse-rest (cdr args) ps ks ms rs)))
-	    (else
-	     (proc args ps ks ms rs)))))
+      (match args
+	     ;; illegal case reject
+	     ((:rest (? keyword? bad) . more)
+	      (error "malformed entry-lambda :rest form:" (list key bad)))
+	     (((? keyword? tail))
+	      (error "malformed entry-lambda keyword tail form:" tail))
+	     ;; legal case
+	     (() (values (reverse ps) (reverse ks) (reverse ms) rs))
+	     ((:keyword var . more)
+	      (dispatch parse-key (cdr args) ps ks ms rs))
+	     (((or :multi-value-keyword :mvkeyword) var . more)
+	      (dispatch parse-mvkey (cdr args) ps ks ms rs))
+	     ((:rest . vars)
+	      (dispatch parse-rest (cdr args) ps ks ms rs))
+	     (((? symbol? var) .  more)
+	      (proc args ps ks ms rs))
+	     (else (error "malformed entry-lambda form:" (cdr args)))))
 
     (define (parse-path args ps ks ms rs)
       (dispatch parse-path (cdr args) (cons (car args) ps) ks ms rs))

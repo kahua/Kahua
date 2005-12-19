@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.4 2005/12/18 12:16:00 cut-sea Exp $
+;; $Id: server.scm,v 1.5 2005/12/19 04:38:56 cut-sea Exp $
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.
@@ -255,6 +255,34 @@
   (test* "define-entry (bad :rest arg - 8)"
          *test-error*
          (eval '(define-entry (foo a b :keyword x y :rest z q) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad :rest arg - 9)"
+         *test-error*
+         (eval '(define-entry (foo a b :rest :mvkeyword z) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad :rest arg - 10)"
+         *test-error*
+         (eval '(define-entry (foo a b :rest :multi-value-keyword z) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad keyword tail - 11)"
+         *test-error*
+         (eval '(define-entry (foo a b :rest :bad-keyword z) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad unknown keyword - 1)"
+         *test-error*
+         (eval '(define-entry (foo a b :bad-keyword z) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad keyword tail - 1)"
+         *test-error*
+         (eval '(define-entry (foo a b :keyword) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad keyword tail - 2)"
+         *test-error*
+         (eval '(define-entry (foo a b :mvkeyword) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad keyword tail - 3)"
+         *test-error*
+         (eval '(define-entry (foo a b :multi-value-keyword) #f)
                (interaction-environment)))
   )
 
