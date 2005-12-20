@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.5 2005/11/03 08:32:19 shibata Exp $
+;; $Id: persistence.scm,v 1.6 2005/12/20 16:27:33 shibata Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -906,5 +906,31 @@
 ; ;; にて読み出せることを確認する。
 ; (test* "read in other transaction (auto synched: 2)" 1
 ;        (with-db (db *dbname*) (ref object 'a)))
+
+;;----------------------------------------------------------
+;; unboundなスロットのテスト
+(test-section "unbound slot")
+
+(define-class <unbound-slot-class> (<kahua-persistent-base>)
+  ((normal :allocation :persistent :init-value 'val)
+   (unbound :allocation :persistent)))
+
+(define-method key-of ((self <unbound-slot-class>))
+  (x->string (ref self 'normal)))
+
+(test* "make unbound slot instance" '(val #f)
+       (with-clean-db (db *dbname*)
+         (let1 obj (make <unbound-slot-class>)
+           (list (ref obj 'normal)
+                 (slot-bound? obj 'unbound)
+                 ))))
+
+
+(test* "check unbound slot" '(val #f)
+       (with-clean-db (db *dbname*)
+         (let1 obj (find-kahua-instance <unbound-slot-class> "val")
+           (list (ref obj 'normal)
+                 (slot-bound? obj 'unbound)
+                 ))))
 
 (test-end)

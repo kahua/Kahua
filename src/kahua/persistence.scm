@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.29 2005/11/26 10:15:41 shibata Exp $
+;; $Id: persistence.scm,v 1.30 2005/12/20 16:27:34 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -702,6 +702,7 @@
   (define (default-slot-values)
     (filter-map (lambda (s)
                   (and (eq? (slot-definition-allocation s) :persistent)
+                       (slot-bound? obj (slot-definition-name s))
                        (cons (slot-definition-name s)
                              (slot-ref obj (slot-definition-name s)))))
                 (class-slots (class-of obj))))
