@@ -43,8 +43,7 @@
       (page "foldlist sample"
 	    (div:
 	     (ul:
-	      (node-list-to-node-set
-	       (open-tree fl)))
+              (open-tree fl))
 	     ; (pre: (format "~A" fl))
 	     (a: (@: (href "./")) "goto start")
 	     )))
