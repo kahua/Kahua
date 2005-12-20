@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.39 2005/12/19 04:38:56 cut-sea Exp $
+;; $Id: server.scm,v 1.40 2005/12/20 15:19:24 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -304,11 +304,9 @@
       '()))
 
 ;; KAHUA-CURRENT-ENTRY-NAME
-;;
-;; Gets current entry name.
-(define (kahua-current-entry-name)
-  (ref (kahua-context-ref "x-kahua-path-full-info" '()) 1 ""))
+;;  A parameter that holds the name of entry.
 
+(define kahua-current-entry-name (make-parameter ""))
 
 ;; KAHUA-CURRENT-USER
 ;; (setter KAHUA-CURRENT-USER) user
@@ -506,7 +504,10 @@
      (define-entry name (entry-lambda args . body)))
     ((define-entry name expr)
      (define name
-       (let ((x expr))
+       (let ((x (lambda ()
+                  (parameterize
+                      ((kahua-current-entry-name (symbol->string 'name)))
+                    (expr)))))
          (add-entry! 'name x)
          x)))
     ))

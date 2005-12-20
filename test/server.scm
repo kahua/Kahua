@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.5 2005/12/19 04:38:56 cut-sea Exp $
+;; $Id: server.scm,v 1.6 2005/12/20 15:19:24 shibata Exp $
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.
@@ -312,6 +312,22 @@
              (body
               (p
                (extra-header (@ (name "voo") (value "doo"))))))))))
+
+
+;;---------------------------------------------------------------
+(test-section "kahua-current-entry-name")
+
+(test* "check entry name"
+       "my-entry"
+       (let ()
+         (eval
+          '(define-entry (my-entry)
+             (kahua-current-entry-name))
+          (current-module))
+         (call-entry 'my-entry
+                     '()
+                     )))
+
 
 (test-end)
 

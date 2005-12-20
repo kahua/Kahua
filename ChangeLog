@@ -3,6 +3,11 @@
 	* src/kahua/elem.scm
 	fixed node-list-to-node-set and node-set: bug.
 
+	* src/server.scm
+	* test/server.scm.in
+	improved kahua-current-entry-name.
+	added kahua-current-entry-name test.
+
 2005-12-19  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/server.scm:
