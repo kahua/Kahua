@@ -1,3 +1,11 @@
+2005-12-22  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* emacs/kahua-shell.el.in:
+	Added kahua-mode.
+	Changed kahua-shell buffer name to *kahua-shell*. (Patch from KOGURO, Naoki)
+
+	* src/kahua-shell.scm: fixed newline bug. (Patch from Osamu TOGAWA)
+
 2005-12-21  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/persistent.scm
