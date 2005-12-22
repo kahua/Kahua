@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-shell.scm,v 1.3 2005/12/22 11:22:33 cut-sea Exp $
+;; $Id: kahua-shell.scm,v 1.4 2005/12/22 11:26:54 shibata Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -85,6 +85,7 @@
          (the-worker (find (lambda (w)
                              (eqv? (get-keyword :worker-count w) wno))
                            workers)))
+    (newline)
     (if the-worker
       (make-worker-command-processor
        (get-keyword :worker-type the-worker)
@@ -149,13 +150,14 @@
     ;; Turn off echo during reading.
     (dynamic-wind
         (lambda ()
-          (slot-set! attr 'lflag (logand lflag (lognot ECHO)))
+          (slot-set! attr 'lflag (logand lflag (lognot (logior ECHO ECHOE ECHOK ECHONL))))
           (sys-tcsetattr port TCSAFLUSH attr))
         (lambda ()
           (read-line port))
         (lambda ()
           (slot-set! attr 'lflag lflag)
-          (sys-tcsetattr port TCSANOW attr)))))
+          (sys-tcsetattr port TCSANOW attr)
+          (display "\n")))))
 
 ;; Entry -------------------------------------------------------
 (define (main args)
