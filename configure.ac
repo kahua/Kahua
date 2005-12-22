@@ -2,7 +2,7 @@ dnl
 dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
-dnl $Id: configure.ac,v 1.23 2005/10/12 05:34:27 yasuyuki Exp $
+dnl $Id: configure.ac,v 1.24 2005/12/22 16:29:19 shibata Exp $
 AC_PREREQ(2.54)
 AC_INIT(kahua, 0.3.4, shiro@acm.org)
 AC_GAUCHE_INIT_EXT
@@ -56,6 +56,19 @@ AC_ARG_WITH(fastcgi,
     esac
   ])
 AC_SUBST(FASTCGI_SCRIPT)
+
+KAHUA_STATICDIR=/var/www/kahua
+AC_ARG_WITH(staticdir,
+  AC_HELP_STRING([--with-staticdir=PATH],
+                 [Specifies the directory where Kahua static documents should be
+installed.  Default: $KAHUA_STATICDIR]),
+  [
+    case "$with_staticdir" in
+      yes|no) KAHUA_STATICDIR= ;;
+      *)      KAHUA_STATICDIR=$with_staticdir ;;
+    esac
+  ])
+AC_SUBST(KAHUA_STATICDIR)
 
 dnl Add more test
 
