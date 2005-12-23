@@ -1,0 +1,37 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
+
+(define-class <ooo> (<kahua-persistent-base>)
+  ((a :allocation :persistent
+      :init-keyword :a)))
+
+
+(define-class <k> (<kahua-persistent-base>)
+  ((k :allocation :persistent
+      :init-keyword :k)))
+
+(define-method key-of ((self <k>))
+  (ref self 'k))
+
+(define *key* #f)
+
+(define-entry (hoge)
+  (html/))
+
+(define-entry (make-obj)
+  (let1 obj (make <ooo> :a "hoge")
+    (set! *key* (key-of obj)))
+  (make <ooo> :a "hoge2")
+  (html/ "aaaa"))
+
+
+(define-entry (raise-error)
+  (let1 obj (find-kahua-instance <ooo> *key*)
+    (slot-set! obj 'a "hogehoge")
+    (error "hoge")
+    (html/ (ref obj 'a))))
+
+(define-entry (read-obj)
+  (let1 obj (find-kahua-instance <ooo> *key*)
+    (html/ (ref obj 'a))))
+
+(initialize-main-proc make)
