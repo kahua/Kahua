@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.31 2005/12/23 16:33:18 shibata Exp $
+;; $Id: persistence.scm,v 1.32 2005/12/23 16:57:35 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1161,8 +1161,9 @@
   (set! (ref db 'active) #f))
 
 (define-method kahua-db-close ((db <kahua-db-dbi>) commit)
-  (when commit
-    (kahua-db-sync db))
+  (if commit
+      (kahua-db-sync db)
+    (kahua-db-rollback db))
   (dbi-close (ref db 'query))
   (dbi-close (ref db 'connection))
   (set! (ref db 'query) #f)
