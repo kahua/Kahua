@@ -1,3 +1,14 @@
+2005-12-23  author  <author@shibata-note>
+
+	* src/kahua/persistence.scm, src/kahua/server.scm:
+	Supported transaction rollback.
+	Added <with-db-error> and raise-with-db-error.
+	Changed persistent class read-syncer to :auto
+	Added kahua-db-write-id-counter method.
+
+	* test/Makefile.in, test/rollback.kahua, test/rollback.scm.in:
+	Added rollback test.
+
 2005-12-22  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* emacs/kahua-shell.el.in:

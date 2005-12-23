@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.40 2005/12/20 15:19:24 shibata Exp $
+;; $Id: server.scm,v 1.41 2005/12/23 16:33:18 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -162,6 +162,7 @@
               ;; This is the last resort to capture an error.
               ;; App server should provide more appropriate error page
               ;; within its handler.
+              (raise-with-db-error e)
               (values
                (html:html
                 (html:head (html:title "Kahua error"))
@@ -173,6 +174,7 @@
             (lambda ()
               (with-error-handler
                   (lambda (e)
+                    (raise-with-db-error e)
                     (render-proc (error-proc e) context))
                 (lambda ()
                   (render-proc (reset/pc (handler)) context))))
@@ -247,6 +249,7 @@
 (define (kahua-eval-proc body env)
   (with-error-handler
       (lambda (e)
+        (raise-with-db-error e)
         (values #f (kahua-error-string e #t)))
     (lambda ()
       (receive r (eval body env)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.30 2005/12/20 16:27:34 shibata Exp $
+;; $Id: persistence.scm,v 1.31 2005/12/23 16:33:18 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -27,9 +27,11 @@
           kahua-persistent-class-generation
           kahua-persistent-class-definition
           <kahua-db> <kahua-db-fs> <kahua-db-dbi>
+          <with-db-error>
           current-db with-db kahua-db-sync kahua-db-purge-objs
           id->kahua-instance class&key->kahua-instance
           <kahua-collection> make-kahua-collection
+          raise-with-db-error
           )
   )
 (select-module kahua.persistence)
@@ -66,7 +68,7 @@
    (persistent-generation :init-value #f) ;; generation in persistent db
    (write-syncer  :init-value :ignore
                   :init-keyword :write-syncer)
-   (read-syncer   :init-value :ignore
+   (read-syncer   :init-value :auto
                   :init-keyword :read-syncer)
    ))
 
@@ -589,7 +591,6 @@
                  :signature signature
                  :source-id-map `((,(ref class 'source-id) 0))
                  :signature-alist `())
-      (kahua-db-sync)
       (set-generation! 0 0 info)
       info))
 
@@ -962,6 +963,17 @@
   (begin0 (ref (current-db) 'id-counter)
           (inc! (ref (current-db) 'id-counter))))
 
+(define-condition-type <with-db-error> <error>
+  with-db-error?
+  (continuation  kahua-error-with-db))
+
+(define (raise-with-db-error e)
+  (call/cc
+   (lambda (cnt)
+     (raise (make-compound-condition
+             e
+             (make-condition <with-db-error> 'continuation cnt))))))
+
 (define-syntax with-db
   (syntax-rules ()
     ((with-db (db dbpath) . body)
@@ -972,11 +984,16 @@
        (let ((db (kahua-db-open dbpath)))
          (parameterize ((current-db db))
            (with-error-handler
-               (lambda (e) (kahua-db-close db #f) (raise e))
+               (lambda (e) (kahua-db-close db #f)
+                       (if (with-db-error? e)
+                           ((kahua-error-with-db e) #f)
+                         (raise e)))
              (lambda ()
                (inc! (ref db 'current-transaction-id))
                ;(kahua-meta-write-syncer)
-               (begin0 (begin . body) (kahua-db-close db #t))))))))))
+               (begin0 (begin . body)
+                 (when (ref (current-db) 'active)
+                   (kahua-db-close db #t)))))))))))
 
 (define (kahua-db-purge-objs)
   (let ((db (current-db)))
@@ -1105,22 +1122,47 @@
   (let1 db (get-optional maybe-db (current-db))
     (for-each (cut write-kahua-instance db <>)
               (ref db 'modified-instances))
-    (set! (ref db 'modified-instances) '())))
+    (set! (ref db 'modified-instances) '())
+    (kahua-db-write-id-counter db)))
+
+(define-method kahua-db-write-id-counter ((db <kahua-db-fs>))
+  (with-output-to-file (id-counter-path (ref db 'path))
+    (cut write (ref db 'id-counter))))
+
+(define-method kahua-db-write-id-counter ((db <kahua-db-dbi>))
+  (let ((q (ref db 'query)))
+    (dbi-query q #`"update kahua_db_idcount set value = ,(ref db 'id-counter)")))
+
+(define (kahua-db-rollback . maybe-db)
+  (let1 db (get-optional maybe-db (current-db))
+    (define (rollback-object obj)
+      (when (ref obj '%floating-instance)
+        (begin
+          (hash-table-delete! (ref db 'instance-by-id) (ref obj 'id))
+          (hash-table-delete! (ref db 'instance-by-key)
+                              (cons
+                               (class-name (class-of obj))
+                               (key-of obj)))
+          (let1 klass (current-class-of obj)
+            (when (eq? klass
+                       <kahua-persistent-metainfo>)
+              (let1 klass (find-kahua-class (ref obj 'name))
+                (set! (ref klass 'metainfo) #f)))))))
+
+    (for-each rollback-object
+              (ref db 'modified-instances))))
 
 (define-method kahua-db-close ((db <kahua-db-fs>) commit)
-  (when commit
-    (with-output-to-file (id-counter-path (ref db 'path))
-      (cut write (ref db 'id-counter)))
-    (kahua-db-sync db))
+  (if commit
+      (kahua-db-sync db)
+    (kahua-db-rollback db))
   (unlock-db db)
   (set! (ref db 'modified-instances) '())
   (set! (ref db 'active) #f))
 
 (define-method kahua-db-close ((db <kahua-db-dbi>) commit)
   (when commit
-    (let ((q (ref db 'query)))
-      (dbi-query q #`"update kahua_db_idcount set value = ,(ref db 'id-counter)")
-      (kahua-db-sync db)))
+    (kahua-db-sync db))
   (dbi-close (ref db 'query))
   (dbi-close (ref db 'connection))
   (set! (ref db 'query) #f)
