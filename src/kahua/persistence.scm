@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.32 2005/12/23 16:57:35 shibata Exp $
+;; $Id: persistence.scm,v 1.33 2005/12/24 10:14:59 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -984,16 +984,23 @@
        (let ((db (kahua-db-open dbpath)))
          (parameterize ((current-db db))
            (with-error-handler
-               (lambda (e) (kahua-db-close db #f)
-                       (if (with-db-error? e)
-                           ((kahua-error-with-db e) #f)
-                         (raise e)))
-             (lambda ()
-               (inc! (ref db 'current-transaction-id))
-               ;(kahua-meta-write-syncer)
-               (begin0 (begin . body)
-                 (when (ref (current-db) 'active)
-                   (kahua-db-close db #t)))))))))))
+            (lambda (e)
+              (with-error-handler
+               (lambda (e2)
+                 (if (with-db-error? e)
+                     ((kahua-error-with-db e) #f)
+                   (raise e2)))
+               (lambda ()
+                 (kahua-db-close db #f)
+                 (if (with-db-error? e)
+                     ((kahua-error-with-db e) #f)
+                   (raise e)))))
+            (lambda ()
+              (inc! (ref db 'current-transaction-id))
+              ;;(kahua-meta-write-syncer)
+              (begin0 (begin . body)
+                (when (ref (current-db) 'active)
+                  (kahua-db-close db #t)))))))))))
 
 (define (kahua-db-purge-objs)
   (let ((db (current-db)))
