@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.4 2004/02/09 06:48:56 shiro Exp $
+;; $Id: worker.scm,v 1.5 2005/12/24 10:15:51 shibata Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -26,7 +26,7 @@
   (export run-worker worker-running?
           call-worker call-worker/gsid call-worker/gsid->sxml
           reset-gsid shutdown-worker with-worker
-          make-match&pick make-match&pick)
+          make-match&pick)
   )
 (select-module kahua.test.worker)
 
