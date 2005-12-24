@@ -1,0 +1,63 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
+(define-class <folder> (<kahua-persistent-base>)
+  ((obj-id :allocation :persistent
+           :init-keyword :obj-id
+           :accessor key-of)
+   (contents :allocation :persistent
+             :init-keyword :contents)))
+
+(define-class <file> (<kahua-persistent-base>)
+  ((obj-id :allocation :persistent
+           :init-keyword :obj-id
+           :accessor key-of)
+   (body :allocation :persistent
+         :init-keyword :body)))
+
+(define-entry (make-objects)
+  (let1 obj (make <folder>
+              :obj-id "Kahua"
+              :contents (list (make <file> :obj-id "VERSION" :body "0.3.4")
+                              (make <file> :obj-id "README" :body "see INSTALL")))
+    (html/
+     (body/
+      (span/ (key-of obj))))))
+
+
+(define-entry-method show (:keyword k)
+  (html/
+   (body/
+    (h1/ "TOP")
+    (if k
+        (h2/ k)
+      ""))))
+
+(define-entry-method show (p1)
+  (html/
+   (body/
+    (span/ p1))))
+
+(define-entry-method show (p1 p2)
+  (html/
+   (body/
+    (h1/ p1)
+    (h2/ p2))))
+
+(define-entry-method show ((folder <folder>))
+  (html/
+   (body/
+    (h1/ #`"here is ,(key-of folder)")
+    (ul/
+     (map/ (lambda (c)
+             (li/
+              (a/cont/ (@@/
+                        (cont show c))
+                       (key-of c))))
+           (ref folder 'contents))))))
+
+(define-entry-method show ((file <file>))
+  (html/
+   (body/
+    (h1/ (key-of file))
+    (pre/ (ref file 'body)))))
+
+(initialize-main-proc make-objects)
