@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.41 2005/12/23 16:33:18 shibata Exp $
+;; $Id: server.scm,v 1.42 2005/12/24 10:19:34 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -52,6 +52,8 @@
           add-element!
           define-element
           define-entry
+          define-entry-method
+          path->objects
           entry-lambda
           interp-html
 	  interp-html-rec)
@@ -515,6 +517,34 @@
          x)))
     ))
 
+(define-macro (define-entry-method name args expr)
+  (let ((%name% (string->symbol (format "%~s%" name)))
+        (method-args (take-while (compose not keyword?) args))
+        (entry-args (or (find-tail keyword? args) ())))
+    `(begin (define-method ,%name% ,method-args
+              ((entry-lambda ,entry-args
+                 ,expr)))
+            (define-method ,name ()
+              (let1 path (kahua-context-ref "x-kahua-path-info")
+                (apply ,%name% (path->objects path))))
+            (session-cont-register ,name (symbol->string ',name)))))
+
+(define (path->objects paths)
+  (let loop ((paths paths)
+             (ls '()))
+    (if (null? paths)
+        (reverse ls)
+      (let1 path (string-split (car paths) #\*)
+        (if (= 1 (length path))
+            (loop (cdr paths) (cons (car path) ls))
+          (loop (cdr paths)
+                (cons (find-kahua-instance
+                       (find-kahua-class
+                        (string->symbol
+                         (format "<~a>" (car path))))
+                       (string-join (cdr path) "*"))
+                      ls)))))))
+
 (define (add-entry! name proc)
   (session-cont-register proc (symbol->string name)))
 
@@ -645,6 +675,11 @@
 (define (extract-cont-args args form)
   (define (val v)
     (cond ((not v) #f) ;; giving value #f makes keyword arg omitted
+          ((is-a? v <kahua-persistent-base>)
+           (format "~a*~a"
+                   (let1 c-name (symbol->string (class-name (class-of v)))
+                     (string-delete c-name #[<>]))
+                   (key-of v)))
           ((or (string? v) (symbol? v) (number? v))
            (x->string v))
           (else
