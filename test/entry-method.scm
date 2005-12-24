@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: entry-method.scm,v 1.1 2005/12/24 10:18:14 shibata Exp $
+;; $Id: entry-method.scm,v 1.2 2005/12/24 12:32:47 shibata Exp $
 
 (use srfi-2)
 (use gauche.test)
@@ -123,7 +123,8 @@
            (body
             (h1 "here is Kahua")
             (ul (li (a ?@ "VERSION"))
-                (li (a (@ (href ?&) ?*) "README"))))))
+                (li (a (@ (href ?&) ?*) "README"))
+                (li (a ?@ "Kahua2"))))))
         (call-worker/gsid->sxml
          w
          '(("x-kahua-cgsid" "show")

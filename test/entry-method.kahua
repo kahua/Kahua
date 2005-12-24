@@ -4,7 +4,8 @@
            :init-keyword :obj-id
            :accessor key-of)
    (contents :allocation :persistent
-             :init-keyword :contents)))
+             :init-keyword :contents
+             :init-value '())))
 
 (define-class <file> (<kahua-persistent-base>)
   ((obj-id :allocation :persistent
@@ -17,7 +18,8 @@
   (let1 obj (make <folder>
               :obj-id "Kahua"
               :contents (list (make <file> :obj-id "VERSION" :body "0.3.4")
-                              (make <file> :obj-id "README" :body "see INSTALL")))
+                              (make <file> :obj-id "README" :body "see INSTALL")
+                              (make <folder> :obj-id "Kahua2")))
     (html/
      (body/
       (span/ (key-of obj))))))
