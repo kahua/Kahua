@@ -28,7 +28,7 @@
 (define-entry-method show (:keyword k)
   (html/
    (body/
-    (h1/ "TOP")
+    (h1/ (kahua-current-entry-name))
     (if k
         (h2/ k)
       ""))))
