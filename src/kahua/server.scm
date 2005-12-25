@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.42 2005/12/24 10:19:34 shibata Exp $
+;; $Id: server.scm,v 1.43 2005/12/25 09:58:59 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -517,24 +517,60 @@
          x)))
     ))
 
-(define-macro (define-entry-method name args expr)
-  (let ((%name% (string->symbol (format "%~s%" name)))
-        (method-args (take-while (compose not keyword?) args))
-        (entry-args (or (find-tail keyword? args) ())))
-    `(begin (define-method ,%name% ,method-args
-              ((entry-lambda ,entry-args
-                 ,expr)))
-            (define-method ,name ()
-              (let1 path (kahua-context-ref "x-kahua-path-info")
-                (apply ,%name% (path->objects path))))
-            (session-cont-register ,name (symbol->string ',name)))))
+;; helper syntax
+(define-syntax regist-entry-method
+  (syntax-rules ()
+    ((_ name)
+     (unless (session-cont-get (symbol->string 'name))
+       (let1 %name% (symbol->string 'name)
+         (define-method name ()
+           (parameterize ((kahua-current-entry-name %name%))
+             (let1 path (kahua-context-ref "x-kahua-path-info")
+               (apply name (cons #t (path->objects path))))))
+         (session-cont-register name %name%))))))
+
+;;  [syntax] define-entry name (arg ... :keyword karg ...) body ...
+
+(define-syntax define-entry-method
+  (syntax-rules ()
+    ((_ "finish" name pargs kargs body)
+     (begin
+       (define-method name pargs
+         ((entry-lambda kargs
+            . body)))
+       (regist-entry-method name)))
+    ;; add entry specializer
+    ((_ "specilize" name pargs kargs body)
+     (define-entry-method "finish" name ((_ <boolean>) . pargs) kargs body))
+    ;; collecting positional args
+    ((_ "pargs" name () pargs body)
+     (define-entry-method "specilize" name pargs () body))
+    ((_ "pargs" name (:rest . syms) pargs body)
+     (define-entry-method "specilize" name pargs (:rest . syms) body))
+    ((_ "pargs" name (:keyword . syms) pargs body)
+     (define-entry-method "specilize" name pargs (:keyword . syms) body))
+    ((_ "pargs" name (:multi-value-keyword . syms) pargs body)
+     (define-entry-method "specilize" name pargs (:multi-value-keyword . syms) body))
+    ((_ "pargs" name (:mvkeyword . syms) pargs body)
+     (define-entry-method "specilize" name pargs (:mvkeyword . syms) body))
+    ((_ "pargs" name (sym . syms) (parg ...) body)
+     (define-entry-method "pargs" name syms (parg ... sym) body))
+    ;; initial entry
+    ((_ name args body1 . bodies)
+     (define-entry-method "pargs" name args () (body1 . bodies)))
+    ;; error handling
+    ((_ . _)
+     (syntax-error "malformed define-entry-method:" (define-entry-method . _)))
+    ))
+
+(define *class&id-delim* "*")
 
 (define (path->objects paths)
   (let loop ((paths paths)
              (ls '()))
     (if (null? paths)
         (reverse ls)
-      (let1 path (string-split (car paths) #\*)
+      (let1 path (string-split (car paths) *class&id-delim*)
         (if (= 1 (length path))
             (loop (cdr paths) (cons (car path) ls))
           (loop (cdr paths)
@@ -542,7 +578,7 @@
                        (find-kahua-class
                         (string->symbol
                          (format "<~a>" (car path))))
-                       (string-join (cdr path) "*"))
+                       (string-join (cdr path) *class&id-delim*))
                       ls)))))))
 
 (define (add-entry! name proc)
@@ -676,9 +712,10 @@
   (define (val v)
     (cond ((not v) #f) ;; giving value #f makes keyword arg omitted
           ((is-a? v <kahua-persistent-base>)
-           (format "~a*~a"
+           (format "~a~a~a"
                    (let1 c-name (symbol->string (class-name (class-of v)))
                      (string-delete c-name #[<>]))
+                   *class&id-delim*
                    (key-of v)))
           ((or (string? v) (symbol? v) (number? v))
            (x->string v))
