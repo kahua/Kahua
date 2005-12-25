@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.43 2005/12/25 09:58:59 shibata Exp $
+;; $Id: server.scm,v 1.44 2005/12/25 11:05:55 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -517,17 +517,20 @@
          x)))
     ))
 
+;; entry-method specializer
+(define-class <entry-method> ()())
+(define entry-specializer (make <entry-method>))
+
 ;; helper syntax
 (define-syntax regist-entry-method
   (syntax-rules ()
     ((_ name)
      (unless (session-cont-get (symbol->string 'name))
-       (let1 %name% (symbol->string 'name)
-         (define-method name ()
-           (parameterize ((kahua-current-entry-name %name%))
-             (let1 path (kahua-context-ref "x-kahua-path-info")
-               (apply name (cons #t (path->objects path))))))
-         (session-cont-register name %name%))))))
+       (define-method name ()
+         (parameterize ((kahua-current-entry-name (symbol->string 'name)))
+           (let1 path (kahua-context-ref "x-kahua-path-info")
+             (apply name entry-specializer (path->objects path)))))
+       (add-entry! 'name name)))))
 
 ;;  [syntax] define-entry name (arg ... :keyword karg ...) body ...
 
@@ -541,7 +544,7 @@
        (regist-entry-method name)))
     ;; add entry specializer
     ((_ "specilize" name pargs kargs body)
-     (define-entry-method "finish" name ((_ <boolean>) . pargs) kargs body))
+     (define-entry-method "finish" name ((_ <entry-method>) . pargs) kargs body))
     ;; collecting positional args
     ((_ "pargs" name () pargs body)
      (define-entry-method "specilize" name pargs () body))
