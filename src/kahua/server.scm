@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.44 2005/12/25 11:05:55 shibata Exp $
+;; $Id: server.scm,v 1.45 2005/12/26 14:32:03 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -56,7 +56,8 @@
           path->objects
           entry-lambda
           interp-html
-	  interp-html-rec)
+	  interp-html-rec
+          redirect/cont)
   )
 (select-module kahua.server)
 
@@ -779,43 +780,44 @@
 ;;  return continuations, so that the remote server can choose the return
 ;;  point depending on its operation.  Future extension.
 
-(define-element a/cont (attrs auxs contents context cont)
-
-  (define (build-argstr pargs kargs)
-    (string-concatenate
-     `(,(string-join (map uri-encode-string pargs) "/" 'prefix)
-       ,@(if (null? kargs)
+;; utils
+(define (build-argstr pargs kargs)
+  (string-concatenate
+   `(,(string-join (map uri-encode-string pargs) "/" 'prefix)
+     ,@(if (null? kargs)
            '()
-           `("?"
-             ,(string-join
-               (map (lambda (karg)
-                      (if (null? (cdr karg))
+         `("?"
+           ,(string-join
+             (map (lambda (karg)
+                    (if (null? (cdr karg))
                         (uri-encode-string (car karg))
-                        (format "~a=~a"
-                                (uri-encode-string (car karg))
-                                (uri-encode-string (cdr karg)))))
-                    kargs)
-               "&"))))))
+                      (format "~a=~a"
+                              (uri-encode-string (car karg))
+                              (uri-encode-string (cdr karg)))))
+                  kargs)
+             "&"))))))
 
-  (define (fragment auxs)
-    (cond ((assq-ref auxs 'fragment)
-           => (lambda (p) #`"#,(uri-encode-string (car p))"))
-          (else "")))
+(define (fragment auxs)
+  (cond ((assq-ref auxs 'fragment)
+         => (lambda (p) #`"#,(uri-encode-string (car p))"))
+        (else "")))
 
-  (define (local-cont clause)
+(define (local-cont auxs)
+  (lambda (clause)
     (let ((id     (session-cont-register (car clause)))
           (argstr ((compose build-argstr extract-cont-args)
                    (cdr clause) 'a/cont)))
-      (nodes (kahua-self-uri #`",|id|,|argstr|,(fragment auxs)"))))
+      (kahua-self-uri #`",|id|,|argstr|,(fragment auxs)"))))
 
-  (define (return-cont-uri)
-    (and-let* ((clause (assq-ref auxs 'return-cont))
-               (id     (session-cont-register (car clause)))
-               (argstr ((compose build-argstr extract-cont-args)
-                        (cdr clause) 'a/cont)))
-      (format "~a/~a~a" (kahua-worker-type) id argstr)))
+(define (remote-cont auxs)
+  (lambda (clause)
+    (define (return-cont-uri)
+      (and-let* ((clause (assq-ref auxs 'return-cont))
+                 (id     (session-cont-register (car clause)))
+                 (argstr ((compose build-argstr extract-cont-args)
+                          (cdr clause) 'a/cont)))
+        (format "~a/~a~a" (kahua-worker-type) id argstr)))
 
-  (define (remote-cont clause)
     (let* ((server-type (car clause))
            (cont-id (cadr clause))
            (return  (return-cont-uri))
@@ -823,10 +825,12 @@
                         (extract-cont-args (cddr clause) 'a/cont)
                       (build-argstr pargs
                                     (if return
-                                      `(("return-cont" . ,return) ,@kargs)
+                                        `(("return-cont" . ,return) ,@kargs)
                                       kargs)))))
-      (nodes (format "~a/~a/~a~a"
-                     (kahua-bridge-name) server-type cont-id argstr))))
+      (format "~a/~a/~a~a~a"
+              (kahua-bridge-name) server-type cont-id argstr (fragment auxs)))))
+
+(define-element a/cont (attrs auxs contents context cont)
 
   (define (nodes path)
     (cont `((a (@ ,@(cons `(href ,path)
@@ -834,8 +838,8 @@
                                     (eq? 'href (car x))) attrs)))
                ,@contents)) context))
 
-  (cond ((assq-ref auxs 'cont) => local-cont)
-        ((assq-ref auxs 'remote-cont) => remote-cont)
+  (cond ((assq-ref auxs 'cont) => (compose nodes (local-cont auxs)))
+        ((assq-ref auxs 'remote-cont) => (compose nodes (remote-cont auxs)))
         (else (nodes (kahua-self-uri (fragment auxs)))))
   )
 
@@ -859,7 +863,7 @@
                           `(input (@ (type "hidden") (name ,(car karg))
                                      (value ,(cdr karg))))))
                    kargs))))
-  
+
   (let* ((clause (assq-ref auxs 'cont))
          (id     (if clause (session-cont-register (car clause)) ""))
          (argstr (if clause (build-argstr&hiddens (cdr clause)) '(""))))
@@ -884,6 +888,31 @@
   (let* ((clause (assq-ref auxs 'cont))
          (id     (if clause (session-cont-register (car clause)) "")))
     (cont `((frame (@ ,@attrs (src ,(kahua-self-uri id))))) context)))
+
+;;
+;; redirect/cont
+;;
+;; (redirect/cont (cont closure [arg ...]) ...
+;;
+(define-syntax redirect/cont
+  (syntax-rules ()
+    ((_ (name var ...) ...)
+     (%redirect/cont% (list (list 'name var ...) ...)))))
+
+(define (%redirect/cont% auxs)
+
+  (define (nodes path)
+    (let/pc pc
+      `((html (extra-header
+               (@ (name "Status") (value "302 Moved")))
+              (extra-header
+               (@ (name "Location")
+                  (value ,path)))))))
+
+  (cond ((assq-ref auxs 'cont) => (compose nodes (local-cont auxs)))
+        ((assq-ref auxs 'remote-cont) => (compose nodes (remote-cont auxs)))
+        (else (nodes (kahua-self-uri (fragment auxs))))))
+
 
 ;;
 ;; extra-header - inserts protocol header to the reply message
