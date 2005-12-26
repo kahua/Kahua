@@ -28,7 +28,7 @@ SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
 	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
 	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
 	spvr.scm spvr-httpd.scm test-xml.scm user.scm wiki-iki.scm \
-	worker.scm query.scm rollback.scm entry-method.scm
+	worker.scm query.scm rollback.scm entry-method.scm redirectcont.scm
 
 SCMFILES2 = shell.scm usermode.scm
 
@@ -46,7 +46,7 @@ KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
 
 TESTS = test-xml persistence rollback entry-method \
         user config gsid session partcont \
-        server kahua-dbm worker \
+        server kahua-dbm worker redirectcont \
 	lambdabooks wiki-iki nqueen foldlist \
 	spvr spvr-httpd admin developer shell usermode sandbox plugin pdf query
 
@@ -108,6 +108,9 @@ server :
 
 worker :
 	@gosh -I../src ./worker.scm >> test.log
+
+redirectcont :
+	@gosh -I../src ./redirectcont.scm >> test.log
 
 lambdabooks :
 	@gosh -I../src -I../examples ./lambdabooks.scm >> test.log
