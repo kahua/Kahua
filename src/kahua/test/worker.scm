@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.5 2005/12/24 10:15:51 shibata Exp $
+;; $Id: worker.scm,v 1.6 2005/12/26 14:33:56 shibata Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -17,6 +17,7 @@
   (use gauche.net)
   (use text.tree)
   (use rfc.uri)
+  (use www.cgi)
   (use sxml.ssax)
   (use sxml.sxpath)
   (use util.list)
@@ -26,7 +27,7 @@
   (export run-worker worker-running?
           call-worker call-worker/gsid call-worker/gsid->sxml
           reset-gsid shutdown-worker with-worker
-          make-match&pick)
+          make-match&pick header->sxml test/send&pick)
   )
 (select-module kahua.test.worker)
 
@@ -36,6 +37,7 @@
    (state-sid      :init-value #f)
    (cont-sid       :init-value #f)
    (path-info      :init-value #f)
+   (query          :init-value '())
    ))
 
 (define (run-worker command)
@@ -68,7 +70,7 @@
                                     header)
                                    (ref worker 'state-sid)
                                    (ref worker 'cont-sid))
-               body
+               (append body (ref worker 'query))
                (lambda (header body)
                  (set!-values ((ref worker 'state-sid)
                                (ref worker 'cont-sid))
@@ -111,24 +113,71 @@
 
 (define-method make-match&pick ((worker <worker-subprocess>))
   (define (pick matches)
-    (and-let* ((p (assoc-ref matches '?&)))
-      ;; cut parameter from url
-      (cond ((#/\?x-kahua-cgsid=([^#&]*)/ p)
-             => (lambda (m) (uri-decode-string (m 1))))
-            ((#/kahua.cgi\/(.+?)\/(.+)/ p)
-             => (lambda (m) (uri-decode-string (m 2)))) ;; path_info
-            ((#/kahua.cgi\/(.+?)/ p) #f)                    ;; to top
-            (else p))))
-  (define (save p)
+    (or (and-let* ((p (assoc-ref matches '?&)))
+          ;; cut parameter from url
+          (cond ((#/\?x-kahua-cgsid=([^#&]*)/ p)
+                 => (lambda (m) (values (uri-decode-string (m 1)) "")))
+                ((#/kahua.cgi\/(.+?)\/([^\?]+)\??(.*)/ p)
+                 => (lambda (m) (values (uri-decode-string (m 2)) (m 3)))) ;; path_info
+                ((#/kahua.cgi\/(.+?)/ p) (values #f ""))                    ;; to top
+                (else (values p ""))))
+        (values #f "")))
+  (define (save p query)
     (receive (cgsid xtra-path) (string-scan (or p "") "/" 'both)
       (set! (ref worker 'cont-sid) (or cgsid p))
       (set! (ref worker 'path-info)
             (and xtra-path
-                 (list* "dummy" "dummy" (string-split xtra-path "/"))))))
+                 (list* "dummy" "dummy" (string-split xtra-path "/"))))
+      (set! (ref worker 'query)
+          (cgi-parse-parameters :query-string query))))
   (lambda (pattern input)
     (if (and (pair? input)
              (symbol? (car input)))
       (test-sxml-match? pattern input (compose save pick))
       (test-xml-match? pattern input (compose save pick)))))
+
+;; check 'http header' and save 'continuation session id' to worker.
+;;
+;; (test* "redirect header test"
+;;        (header '((!contain ("Status" "302 Moved")
+;;                            ("Location" ?&))))
+;;        (call-worker/gsid
+;;         w
+;;         '()
+;;         '(("login-name" "shibata") ("passwd" "hogehoge"))
+;;         header->sxml)
+;;        (make-match&pick w))
+;;
+;; == (test/send&pick "redirect header test" w
+;;                 '(("login-name" "shibata") ("passwd" "hogehoge")))
+
+
+;; '(("Status" "302 Moved") ("Location" "http://localho..")) (html..)
+;; => '(*TOP* (Status "302 Moved") (Location "http://localho.."))
+(define (header->sxml h b)
+  (define (url-fragment-cutoff pair)
+    (cond ((and (eq? (car pair) 'Location)
+	     (string-scan (cadr pair) #\# 'before))
+	   => (lambda (url)
+		(list (car pair) url)))
+	  (else pair)))
+  (cons '*TOP*
+        (map (lambda (item)
+               (url-fragment-cutoff
+		(cons (string->symbol (car item))
+		      (cdr item))))
+             h)))
+
+(define (test/send&pick label w send-data)
+  (test* label
+         '(*TOP* (!contain (Status "302 Moved")
+                           (Location ?&)))
+         (call-worker/gsid
+          w
+          '()
+          send-data
+          header->sxml)
+         (make-match&pick w)))
+
 
 (provide "kahua/test/worker")
