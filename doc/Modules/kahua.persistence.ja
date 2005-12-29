@@ -22,7 +22,7 @@ Persistent Object
 
 今のところ、永続化されるのは以下のオブジェクトです。
 
- ・ boolean, number, string, symbol, keyword
+ ・ boolean, number, string, symbol, keyword, null
  ・ 永続化可能オブジェクトを要素に持つlist, vector
  ・ 他の永続オブジェクトへの参照
 
@@ -47,6 +47,16 @@ Persistent Object
 
 この永続オブジェクトを格納しているデータベース(<kahua-db>のイ
 ンスタンス) を参照しています。
+
+[method] persistent-initialize (obj <kahua-persistent-base>) initargs
+
+永続オブジェクトの初期化メソッドです．
+initializeメソッドが永続オブジェクトの実体化の度に呼ばれるのに対して，
+persistent-initializeメソッドは永続オブジェクトを作成する時に一度だけ
+呼ばれます．
+ユーザは `persistent-initialize' メソッドを特定化してオブジェクトの初期化
+の方法をカスタマイズできます．
+
 
 [method] key-of (obj <kahua-persistent-base>)
 
