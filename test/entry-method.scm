@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: entry-method.scm,v 1.3 2005/12/25 09:59:37 shibata Exp $
+;; $Id: entry-method.scm,v 1.4 2005/12/29 08:39:23 shibata Exp $
 
 (use srfi-2)
 (use gauche.test)
@@ -124,12 +124,13 @@
             (h1 "here is Kahua")
             (ul (li (a ?@ "VERSION"))
                 (li (a (@ (href ?&) ?*) "README"))
-                (li (a ?@ "Kahua2"))))))
+                (li (a ?@ "Kahua2"))
+                (li (a ?@ "tmp*link"))))))
         (call-worker/gsid->sxml
          w
          '(("x-kahua-cgsid" "show")
            ("x-kahua-path-info"
-            ("entry-method" "show" "folder*Kahua"))
+            ("entry-method" "show" "*folder*Kahua"))
            )
          '())
         (make-match&pick w)
@@ -144,6 +145,21 @@
         (call-worker/gsid->sxml
          w
          '()
+         '())
+        (make-match&pick w)
+        )
+
+ (test* "dispatch shwo entry(<link>)"
+        '(*TOP*
+          (html
+           (body
+            (h1 "tmp*link")
+            (pre "tmp link"))))
+        (call-worker/gsid->sxml
+         w
+         '(("x-kahua-cgsid" "show")
+           ("x-kahua-path-info"
+            ("entry-method" "show" "*(lin%2ak)*tmp%2alink")))
          '())
         (make-match&pick w)
         )

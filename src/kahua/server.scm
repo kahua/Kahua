@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.45 2005/12/26 14:32:03 shibata Exp $
+;; $Id: server.scm,v 1.46 2005/12/29 08:39:23 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -570,19 +570,34 @@
 (define *class&id-delim* "*")
 
 (define (path->objects paths)
+
+  (define (restore-delim str)
+    (regexp-replace #/%2a/ str *class&id-delim*))
+
+  (define extract-class-name
+    (let1 pred (every-pred (cut string-prefix? "(" <>)
+                           (cut string-suffix? ")" <>)
+                           (cut string-trim-both <> #[()]))
+      (lambda (str)
+        (restore-delim
+         (or (pred str)
+             (format "<~a>" str))))))
+
+  (define (uri->class str)
+    (find-kahua-class (string->symbol (extract-class-name str))))
+
   (let loop ((paths paths)
              (ls '()))
     (if (null? paths)
         (reverse ls)
       (let1 path (string-split (car paths) *class&id-delim*)
-        (if (= 1 (length path))
+        (if (or (= 1 (length path))
+                (not (equal? "" (car path))))
             (loop (cdr paths) (cons (car path) ls))
           (loop (cdr paths)
                 (cons (find-kahua-instance
-                       (find-kahua-class
-                        (string->symbol
-                         (format "<~a>" (car path))))
-                       (string-join (cdr path) *class&id-delim*))
+                       (uri->class (cadr path))
+                       (restore-delim (caddr path)))
                       ls)))))))
 
 (define (add-entry! name proc)
@@ -713,14 +728,31 @@
 ;; Comb out arguments to pass to continuation procedure.
 ;; [Args] -> [PositionalArgs], [KeywordArgs]
 (define (extract-cont-args args form)
+
+  (define *obj->uri-unreserved-char-set* #[-_.!~'0-9A-Za-z])
+  (define trim
+    (every-pred (cut string-prefix? "<" <>)
+                (cut string-suffix? ">" <>)
+                (cut string-trim-both <> #[<>])))
+
+  (define (encode str)
+    (uri-encode-string str :noescape *obj->uri-unreserved-char-set*))
+
+  (define (obj->uri obj)
+    (format "*~a~a~a"
+            (let* ((c-name (symbol->string (class-name (class-of obj))))
+                   (trim-name (trim c-name))
+                   (encoded-name (encode (or trim-name c-name))))
+              (if trim-name
+                  encoded-name
+                (format "(~a)" encoded-name)))
+            *class&id-delim*
+            (encode (key-of obj))))
+
   (define (val v)
     (cond ((not v) #f) ;; giving value #f makes keyword arg omitted
           ((is-a? v <kahua-persistent-base>)
-           (format "~a~a~a"
-                   (let1 c-name (symbol->string (class-name (class-of v)))
-                     (string-delete c-name #[<>]))
-                   *class&id-delim*
-                   (key-of v)))
+           (obj->uri v))
           ((or (string? v) (symbol? v) (number? v))
            (x->string v))
           (else
@@ -733,6 +765,8 @@
                                           (val (cadr p)))))
                             (cons (x->string (car p)) v)))
                         kargs))))
+
+
 
 ;;-----------------------------------------------------------
 ;; Pre-defined element handlers

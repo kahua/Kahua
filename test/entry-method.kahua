@@ -14,12 +14,20 @@
    (body :allocation :persistent
          :init-keyword :body)))
 
+(define-class lin*k (<kahua-persistent-base>)
+  ((obj-id :allocation :persistent
+           :init-keyword :obj-id
+           :accessor key-of)
+   (body :allocation :persistent
+         :init-keyword :body)))
+
 (define-entry (make-objects)
   (let1 obj (make <folder>
               :obj-id "Kahua"
               :contents (list (make <file> :obj-id "VERSION" :body "0.3.4")
                               (make <file> :obj-id "README" :body "see INSTALL")
-                              (make <folder> :obj-id "Kahua2")))
+                              (make <folder> :obj-id "Kahua2")
+                              (make lin*k :obj-id "tmp*link" :body "tmp link")))
     (html/
      (body/
       (span/ (key-of obj))))))
@@ -61,5 +69,11 @@
    (body/
     (h1/ (key-of file))
     (pre/ (ref file 'body)))))
+
+(define-entry-method show ((link lin*k))
+  (html/
+   (body/
+    (h1/ (key-of link))
+    (pre/ (ref link 'body)))))
 
 (initialize-main-proc make-objects)
