@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.33 2005/12/24 10:14:59 shibata Exp $
+;; $Id: persistence.scm,v 1.34 2005/12/29 05:42:52 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -32,6 +32,7 @@
           id->kahua-instance class&key->kahua-instance
           <kahua-collection> make-kahua-collection
           raise-with-db-error
+          persistent-initialize
           )
   )
 (select-module kahua.persistence)
@@ -241,6 +242,11 @@
 ;;   be different from in-db persistent class.  The persistent object
 ;;   deserializer translates the in-db slot values to in-memory slot
 ;;   values before passing it to :%realization-slot-values argument.
+;; *  When new persistent object is created, call persistent-initialize
+;;   method to initialize object.
+
+(define-method persistent-initialize ((obj <kahua-persistent-base>) initargs)
+  #f)
 
 (define-method initialize ((obj <kahua-persistent-base>) initargs)
   (next-method)
@@ -253,16 +259,19 @@
     
     (update-transaction! obj)
     
-    (when rsv
-      ;; we are realizing an instance from the saved one
-      (dolist (p rsv)
-        (when (assq (car p) (class-slots (class-of obj)))
-          ;; loop!
-          (slot-set! obj (car p) (make <kahua-wrapper> :value (cdr p)))))
-      ;; obj is marked dirty because of the above setup.
-      ;; we revert it to clean.  it is ugly, but it's the easiest
-      ;; way to prevent obj from being marked dirty inadvertently.
-      (update! (ref db 'modified-instances) (cut delete obj <>)))
+    (if rsv
+        (begin
+          ;; we are realizing an instance from the saved one
+          (dolist (p rsv)
+            (when (assq (car p) (class-slots (class-of obj)))
+              ;; loop!
+              (slot-set! obj (car p) (make <kahua-wrapper> :value (cdr p)))))
+          ;; obj is marked dirty because of the above setup.
+          ;; we revert it to clean.  it is ugly, but it's the easiest
+          ;; way to prevent obj from being marked dirty inadvertently.
+          (update! (ref db 'modified-instances) (cut delete obj <>)))
+      ;; initialize persistent object for the first time.
+      (persistent-initialize obj initargs))
 
     (hash-table-put! (ref db 'instance-by-id) id obj)
     (hash-table-put! (ref db 'instance-by-key)
