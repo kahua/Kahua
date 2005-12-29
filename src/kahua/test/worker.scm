@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.6 2005/12/26 14:33:56 shibata Exp $
+;; $Id: worker.scm,v 1.7 2005/12/29 05:42:14 shibata Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -139,8 +139,8 @@
 ;; check 'http header' and save 'continuation session id' to worker.
 ;;
 ;; (test* "redirect header test"
-;;        (header '((!contain ("Status" "302 Moved")
-;;                            ("Location" ?&))))
+;;        (header '((!contain (Status "302 Moved")
+;;                            (Location ?&))))
 ;;        (call-worker/gsid
 ;;         w
 ;;         '()
