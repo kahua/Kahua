@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.6 2005/12/20 16:27:33 shibata Exp $
+;; $Id: persistence.scm,v 1.7 2005/12/29 05:41:49 shibata Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -932,5 +932,34 @@
            (list (ref obj 'normal)
                  (slot-bound? obj 'unbound)
                  ))))
+
+;;----------------------------------------------------------
+;; 初期化メソッドinitializeとpersistent-initialize methodのチェック
+(test-section "initialize and persistent-initialize method")
+
+(define-class <init-A> (<kahua-persistent-base>)
+  ((base1 :allocation :persistent :init-value 0)
+   (base2 :allocation :persistent :init-value 0)
+   (key :init-value "a" :accessor key-of)))
+
+(define-method persistent-initialize ((obj <init-A>) initargs)
+  (update! (ref obj 'base1) (cut + <> 1)))
+
+(define-method initialize ((obj <init-A>) initargs)
+  (next-method)
+  (update! (ref obj 'base2) (cut + <> 1)))
+
+
+(test* "make first instance" '(1 1)
+       (with-clean-db (db *dbname*)
+         (let1 obj (make <init-A>)
+           (list (ref obj 'base1)
+                 (ref obj 'base2)))))
+
+(test* "find instance" '(1 2)
+       (with-clean-db (db *dbname*)
+         (let1 obj (find-kahua-instance <init-A> "a")
+           (list (ref obj 'base1)
+                 (ref obj 'base2)))))
 
 (test-end)
