@@ -1,4 +1,48 @@
-2005-12-23  author  <author@shibata-note>
+2005-12-29  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* doc/Modules/kahua.persistence.ja:
+	Added persistent-initialize method document.
+
+	* src/kahua/persistence.scm:
+	Added persistent-initialize method to <kahua-persistent-base>.
+
+	* test/persistence.scm.in:
+	Added initialize and persistent-initialize method test.
+
+2005-12-26  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/test/worker.scm:
+	added header->sxml and test/send&pick.
+	Changed make-match&pick to save query.
+
+	* src/kahua/server.scm:
+	Added redirect/cont.
+	Fixed remote-cont fragment.
+
+	* test/Makefile.in, test/redirectcont.kahua, test/redirectcont.scm.in:
+	Added redirect/cont test.
+
+2005-12-25  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added <entry-method> and entry-specializer.
+
+	* src/kahua/server.scm:
+	changed define-entry-method macro to syntax.
+	made define-entry-method kahua-current-entry-name safe.
+
+2005-12-24  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added define-entry-method.
+
+	* test/Makefile.in, test/entry-method.kahua, test/entry-method.scm.in:
+	Added entry-method test.
+
+	* src/kahua/persistence.scm:
+	Fixed error loop.
+
+2005-12-23  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/persistence.scm, src/kahua/server.scm:
 	Supported transaction rollback.
@@ -7,7 +51,7 @@
 	Added kahua-db-write-id-counter method.
 
 	* test/Makefile.in, test/rollback.kahua, test/rollback.scm.in:
-	Added rollback test.
+	Added rollback test(need rewrite).
 
 2005-12-22  SHIBATA Tomohisa  <shibata@kahua.org>
 
