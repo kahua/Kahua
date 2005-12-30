@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.7 2005/12/29 05:41:49 shibata Exp $
+;; $Id: persistence.scm,v 1.8 2005/12/30 09:23:10 shibata Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -960,6 +960,64 @@
        (with-clean-db (db *dbname*)
          (let1 obj (find-kahua-instance <init-A> "a")
            (list (ref obj 'base1)
+                 (ref obj 'base2)))))
+
+;;----------------------------------------------------------
+;; 永続クラス再定義のチェック
+(test-section "persistent class redefine")
+
+(define-class <redefine-A> (<kahua-persistent-base>)
+  ((base :allocation :persistent :init-value 0)
+   (key :init-value "a" :accessor key-of)))
+
+(define-class <redefine-B> (<kahua-persistent-base>)
+  ((base :allocation :persistent :init-value 1)
+   (key :init-value "b" :accessor key-of)))
+
+(define *id* #f)
+(define *id2* #f)
+
+(test* "make first instance(1)" 0
+       (with-db (db *dbname*)
+         (let1 obj (make <redefine-A>)
+           (set! *id* (ref obj 'id))
+           (ref obj 'base))))
+
+(redefine-class! <redefine-A> <redefine-B>)
+
+(test* "redefine instance(1)" '(#f 0)
+       (with-db (db *dbname*)
+                (let1 obj (find-kahua-instance <redefine-A> "a")
+                  (set! *id2* (ref obj 'id))
+                  (list (eq? *id* (ref obj 'id))
+                        (ref obj 'base)))))
+
+(test* "find redefined instance(1)" '(#t 0)
+       (with-clean-db (db *dbname*)
+                (let1 obj (find-kahua-instance <redefine-B> "a")
+           (list (eq? *id2* (ref obj 'id))
+                 (ref obj 'base)))))
+
+(define-class <redefine-C> (<kahua-persistent-base>)
+  ((base :allocation :persistent :init-value 0)
+   (key :init-value "c" :accessor key-of)))
+
+(test* "make first instance(2)" 0
+       (with-db (db *dbname*)
+         (let1 obj (make <redefine-C>)
+           (set! *id* (ref obj 'id))
+           (ref obj 'base))))
+
+(define-class <redefine-C> (<kahua-persistent-base>)
+  ((base :allocation :persistent :init-value 1)
+   (base2 :allocation :persistent :init-value 10)
+   (key :init-value "c" :accessor key-of)))
+
+(test* "find redefined instance(2)" '(#t 0 10)
+       (with-clean-db (db *dbname*)
+                (let1 obj (find-kahua-instance <redefine-C> "c")
+           (list (eq? *id* (ref obj 'id))
+                 (ref obj 'base)
                  (ref obj 'base2)))))
 
 (test-end)

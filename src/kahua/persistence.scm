@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.34 2005/12/29 05:42:52 shibata Exp $
+;; $Id: persistence.scm,v 1.35 2005/12/30 09:23:10 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1428,14 +1428,10 @@
     (next-method)
     (unless (eq? (class-name old-class)
                  (class-name new-class))
-      (let1 tmp (ref (current-db) 'modified-instances)
-        (set! (ref (current-db) 'modified-instances) '())
-        (ensure-metainfo new-class)
-        (set! (ref (current-db) 'modified-instances) tmp))
+      (ensure-metainfo new-class)
       (slot-set-using-class! new-class obj 'id (kahua-db-unique-id))
       (slot-set-using-class! new-class obj '%persistent-generation 0)
-      (slot-set-using-class! new-class obj '%floating-instance #t)
-      )
+      (slot-set-using-class! new-class obj '%floating-instance #t))
     ;; restore persistent slots value.
     (unless (memq obj (ref (current-db) 'modified-instances))
       (push! (ref (current-db) 'modified-instances) obj))
