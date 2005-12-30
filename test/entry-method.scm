@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: entry-method.scm,v 1.4 2005/12/29 08:39:23 shibata Exp $
+;; $Id: entry-method.scm,v 1.5 2005/12/30 08:07:00 shibata Exp $
 
 (use srfi-2)
 (use gauche.test)
@@ -55,7 +55,7 @@
          w
          '(("x-kahua-cgsid" "make-objects")
            ("x-kahua-path-info"
-            ("rollback" "make-objects")))
+            ("entry-method" "make-objects")))
          '())
         (make-match&pick w))
 
@@ -124,8 +124,8 @@
             (h1 "here is Kahua")
             (ul (li (a ?@ "VERSION"))
                 (li (a (@ (href ?&) ?*) "README"))
-                (li (a ?@ "Kahua2"))
-                (li (a ?@ "tmp*link"))))))
+                (li (a (@ (href ?&folder) ?*) "Kahua2"))
+                (li (a (@ (href ?&link) ?*) "tmp*link"))))))
         (call-worker/gsid->sxml
          w
          '(("x-kahua-cgsid" "show")
@@ -142,12 +142,10 @@
            (body
             (h1 "README")
             (pre "see INSTALL"))))
-        (call-worker/gsid->sxml
-         w
-         '()
-         '())
-        (make-match&pick w)
-        )
+        (call-worker/gsid->sxml w '() '())
+        (make-match&pick w))
+
+ (set-gsid w "link")
 
  (test* "dispatch shwo entry(<link>)"
         '(*TOP*
@@ -155,15 +153,19 @@
            (body
             (h1 "tmp*link")
             (pre "tmp link"))))
-        (call-worker/gsid->sxml
-         w
-         '(("x-kahua-cgsid" "show")
-           ("x-kahua-path-info"
-            ("entry-method" "show" "*(lin%2ak)*tmp%2alink")))
-         '())
-        (make-match&pick w)
-        )
- )
+        (call-worker/gsid->sxml w '() '())
+        (make-match&pick w))
+
+ (set-gsid w "folder")
+
+ (test* "dispatch shwo entry(<folder>)"
+        '(*TOP*
+          (html
+           (body
+            (h1 "here is Kahua2")
+            (ul))))
+        (call-worker/gsid->sxml w '() '())
+        (make-match&pick w)))
 
 
 (test-end)
