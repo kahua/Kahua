@@ -56,14 +56,6 @@ CONFIG_GENERATED = Makefile
 
 all: $(SCMFILES) $(SCMFILES2) $(KAHUAFILES) pdf-01.sxml
 
-# .SUFFIXES: .scm.in .scm .kahua.in .kahua
-.SUFFIXES: .scm.in .scm
-
-.scm.in.scm:
-	test ! -f $@ || chmod +w $@
-	sed -e "s@###GOSH###@$(GOSH)@" $@.in > $@
-	chmod -w $@
-
 pdf-01.sxml: pdf-01.sxml.in
 	test ! -f $@ || chmod +w $@
 	$(GOSH) cesconv -o $@ -f euc-jp $@.in

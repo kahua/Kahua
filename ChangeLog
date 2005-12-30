@@ -3,6 +3,9 @@
 	* src/kahua/test/worker.scm, test/entry-method.scm.in:
 	Added set-gsid proc which restore worker's global session by matching id.
 
+	* test/Makefile.in
+	Renamed *.scm.in file to *.scm
+	
 2005-12-29  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* doc/Modules/kahua.persistence.ja:
