@@ -85,6 +85,10 @@ sxpathを適用した場合に、その結果を *TOP* というノードに入れて返します。具
 
 workerに保存されているgsidを消去します。
 
+[procedure] set-gsid worker [id]
+
+workerのgsidを ?&`id' パターンで抽出した永続セッションに切り替えます。
+
 [procedure] make-match&pick worker
 
 サブプロセスからのリプライを解析するための手続きを作成する手続きです。
