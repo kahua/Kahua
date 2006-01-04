@@ -151,7 +151,7 @@ query:
 
 
 clean:
-	rm -rf test.log app/test.log *~ _* user.conf *.scm *.sxml
+	rm -rf test.log app/test.log *~ _* user.conf *.sxml
 
 distclean: clean
 	rm -rf $(CONFIG_GENERATED)
