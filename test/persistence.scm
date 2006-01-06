@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.8 2005/12/30 09:23:10 shibata Exp $
+;; $Id: persistence.scm,v 1.9 2006/01/06 14:35:23 shibata Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -1019,5 +1019,49 @@
            (list (eq? *id* (ref obj 'id))
                  (ref obj 'base)
                  (ref obj 'base2)))))
+
+;;----------------------------------------------------------
+;; 永続クラスと他のメタクラスを同時に使うチェック
+;; 継承順序もチェック
+
+(test-section "useing other metaclass")
+
+(use gauche.mop.validator)
+
+(define-class <valid-A> (<kahua-persistent-base> <validator-mixin>)
+  ((number :allocation :persistent :init-value "0"
+           :validator (lambda (obj value)
+                        (if (not (string? value))
+                            value
+                          (string->number value))))))
+
+(define-class <valid-B> (<validator-mixin> <kahua-persistent-base>)
+  ((string :allocation :persistent :init-value "0"
+           :validator (lambda (obj value)
+                        (if (kahua-wrapper? value)
+                            value
+                          (x->string value))))))
+
+(define-method key-of ((obj <valid-A>))
+  "valid-a")
+
+(define-method key-of ((obj <valid-B>))
+  "valid-b")
+
+(test* "make mixin instance" '(10 "(a b c)")
+       (with-clean-db (db *dbname*)
+         (let ((a-obj (make <valid-A>))
+               (b-obj (make <valid-B>)))
+           (slot-set! a-obj 'number "10")
+           (slot-set! b-obj 'string '(a b c))
+           (list (ref a-obj 'number)
+                 (ref b-obj 'string)))))
+
+(test* "find mixin instance" '(10 "(a b c)")
+       (with-clean-db (db *dbname*)
+         (let ((a-obj (find-kahua-instance <valid-A> "valid-a"))
+               (b-obj (find-kahua-instance <valid-B> "valid-b")))
+           (list (ref a-obj 'number)
+                 (ref b-obj 'string)))))
 
 (test-end)
