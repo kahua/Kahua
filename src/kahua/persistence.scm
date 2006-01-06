@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.35 2005/12/30 09:23:10 shibata Exp $
+;; $Id: persistence.scm,v 1.36 2006/01/06 14:34:56 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -33,6 +33,7 @@
           <kahua-collection> make-kahua-collection
           raise-with-db-error
           persistent-initialize
+          kahua-wrapper?
           )
   )
 (select-module kahua.persistence)
@@ -139,13 +140,16 @@
 
 ;; Support of persistent slot
 (define-method compute-get-n-set ((class <kahua-persistent-meta>) slot)
+  (define (delete-slot-definition-allocation slot)
+    (cons (car slot)
+          (delete-keyword :allocation (cdr slot))))
+
   (let ((alloc (slot-definition-allocation slot)))
     (case alloc
       ((:persistent)
        (let* ((slot-num (slot-ref class 'num-instance-slots))
-              (acc (make <slot-accessor>
-                     :class class :name (slot-definition-name slot)
-                     :slot-number slot-num :initializable #t)))
+              (acc (let1 slot (delete-slot-definition-allocation slot)
+                     (compute-slot-accessor class slot (next-method class slot)))))
          (inc! (slot-ref class 'num-instance-slots))
          (list (make-kahua-getter acc class slot)
                (make-kahua-setter acc slot)
@@ -310,6 +314,9 @@
            (map-to <vector> realize-proxy val))
           (else val)))
   (realize-proxy (ref wrapper 'value)))
+
+(define (kahua-wrapper? val)
+  (is-a? val <kahua-wrapper>))
 
 (define-class <kahua-proxy> ()
   ((class :init-keyword :class)

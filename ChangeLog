@@ -1,3 +1,13 @@
+2006-01-06  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* test/persistence.scm:
+	Added multi mixin-metaclass test.
+
+	* src/kahua/persistence.scm:
+	Changed to call next-method in compute-get-n-set of <kahua-persistent-meta>.
+	Added kahua-wrapper? proc.
+
+
 2005-12-30  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/test/worker.scm, test/entry-method.scm.in:
