@@ -1,3 +1,7 @@
+2006-01-07  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* Release 0.3.5
+
 2006-01-06  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* test/persistence.scm:

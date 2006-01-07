@@ -24,7 +24,7 @@ DESTDIR           =
 GOSH              = @GOSH@
 
 SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
-	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm pdf.scm \
+	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm \
 	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
 	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
 	spvr.scm spvr-httpd.scm test-xml.scm user.scm wiki-iki.scm \
@@ -48,18 +48,13 @@ TESTS = test-xml persistence rollback entry-method \
         user config gsid session partcont \
         server kahua-dbm worker redirectcont \
 	lambdabooks wiki-iki nqueen foldlist \
-	spvr spvr-httpd admin developer shell usermode sandbox plugin pdf query
+	spvr spvr-httpd admin developer shell usermode sandbox plugin query
 
 CONFIG_GENERATED = Makefile
 
 .PHONY: all check clean distclean maintainer-clean $(TESTS)
 
-all: $(SCMFILES) $(SCMFILES2) $(KAHUAFILES) pdf-01.sxml
-
-pdf-01.sxml: pdf-01.sxml.in
-	test ! -f $@ || chmod +w $@
-	$(GOSH) cesconv -o $@ -f euc-jp $@.in
-	chmod -w $@
+all: $(SCMFILES) $(SCMFILES2) $(KAHUAFILES)
 
 check: all
 	rm -f test.log
@@ -142,9 +137,6 @@ sandbox:
 
 plugin:
 	@gosh -I../src ./plugin.scm >> test.log
-
-pdf:
-	@gosh -I../src ./pdf.scm >> test.log
 
 query:
 	@gosh -I../src ./query.scm >> test.log
