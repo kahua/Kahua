@@ -1,3 +1,8 @@
+2006-01-08  TAHARA Yusei  <yusei@domen.cx>
+
+	* src/kahua/serialize.scm:
+	Added kahua.serialize module.
+
 2006-01-08  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/server.scm:
