@@ -2,7 +2,7 @@
 ;;
 ;; Don't use this module:-)  Experimental!
 ;;
-;; $Id: serialize.scm,v 1.1 2006/01/08 06:48:48 tahara Exp $
+;; $Id: serialize.scm,v 1.2 2006/01/08 06:55:53 tahara Exp $
 
 (define-module kahua.serialize
   (export serialize-string deserialize-string)
@@ -16,8 +16,6 @@
 ;;bytecode
 ;;cycle reference
 ;;vector
-
-(define-module 
 
 ;; code
 (define INST #\i)
