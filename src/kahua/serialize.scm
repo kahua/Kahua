@@ -2,7 +2,7 @@
 ;;
 ;; Don't use this module:-)  Experimental!
 ;;
-;; $Id: serialize.scm,v 1.3 2006/01/08 09:47:30 tahara Exp $
+;; $Id: serialize.scm,v 1.4 2006/01/08 10:43:15 tahara Exp $
 
 (define-module kahua.serialize
   (export serialize-string deserialize-string extension-register)
@@ -27,6 +27,7 @@
 (define DEFROST #\d)
 (define INST #\i)
 (define PUT  #\p)
+(define GET  #\g)
 (define SETSLOT #\s)
 
 (define BOOL #\B)
@@ -38,6 +39,23 @@
 (define VECTOR #\V)
 (define SYMBOL #\Y)
 
+
+;;memorization
+(define *memo* (make-hash-table))
+(define (memo-initialize) (set! *memo* (make-hash-table)))
+(define (memo-append object)
+  (let ((length (hash-table-num-entries *memo*)))
+    (hash-table-put! *memo* object length)
+    length))
+(define (memo-exists? object)
+  (hash-table-exists? *memo* object))
+(define (memo-index object)
+  (hash-table-get *memo* object))
+(define (memo-put index object)
+  (hash-table-put! *memo* index object))
+(define (memo-get index)
+  (hash-table-get *memo* index))
+  
 
 ;;extention dispatcher
 (define *extension-table* (make-hash-table))
@@ -56,6 +74,7 @@
 
 ;; serializer
 (define (serialize port object)
+  (memo-initialize)
   (with-output-to-port port
     (lambda ()
       (%serialize object)
@@ -99,16 +118,21 @@
 
 
 (define (save-inst o)
-  (let ((class (class-of o)))
-    (print MARK)
-    (print INST (binding-name class))
-    (for-each (lambda (name)
-		(if (slot-bound? o name)
-		    (begin (%serialize name)
-			   (%serialize (ref o name)))))
-	      (map car (class-slots class)))
-    (print SETSLOT)
-    ))
+  (if (memo-exists? o)
+      (print GET (memo-index o))
+      (begin
+	(let ((class (class-of o)))
+	  (print MARK)
+	  (print INST (binding-name class))
+	  (print PUT (memo-append o))
+	  (for-each (lambda (name)
+		      (if (slot-bound? o name)
+			  (begin (%serialize name)
+				 (%serialize (ref o name)))))
+		    (map car (class-slots class)))
+	  (print SETSLOT)
+	  ))
+      ))
 
 (define (save-number o)
   (print NUMBER (number->string o)))
@@ -129,22 +153,31 @@
   (print NIL))
 
 (define (save-pair o)
-  (print MARK)
-  (%serialize (car o))
-  (%serialize (cdr o))
-  (print CONS))
+  (if (memo-exists? o)
+      (print GET (memo-index o))
+      (begin
+	(print MARK)
+	(%serialize (car o))
+	(%serialize (cdr o))
+	(print CONS)
+	(print PUT (memo-append o)))))
 
 (define (save-vector o)
-  (let ((length (vector-length o)))
-    (define (iter n)
-      (if (< n length)
-	  (begin
-	    (%serialize (vector-ref o n))
-	    (iter (+ n 1)))))
-    (print MARK)
-    (iter 0)
-    (print VECTOR)
-    ))
+  (if (memo-exists? o)
+      (print GET (memo-index o))
+      (begin
+	(let ((length (vector-length o)))
+	  (define (iter n)
+	    (if (< n length)
+		(begin
+		  (%serialize (vector-ref o n))
+		  (iter (+ n 1)))))
+	  (print MARK)
+	  (iter 0)
+	  (print VECTOR)
+	  (print PUT (memo-append o))
+	  ))
+	))
 
 (define (save-extension o)
   (let* ((class (class-of o))
@@ -156,6 +189,7 @@
 
 ;; deserializer
 (define (deserialize port)
+  (memo-initialize)
   (let ((stack (make <stack>)))
     (define (iter)
       (let ((i (read-char port)))
@@ -176,6 +210,8 @@
 		     ((eq? i MARK) load-mark)
 		     ((eq? i DEFROST) load-defrost)
 		     ((eq? i APPLY) load-apply)
+		     ((eq? i PUT) load-put)
+		     ((eq? i GET) load-get)
 		     (else (error "Unknown code" i)))
 	       (read-line port) stack)
 	      (iter)))))
@@ -248,6 +284,12 @@
 	(proc (pop stack)))
     (push stack (apply proc args))))
 
+(define (load-put data stack)
+  (memo-put (string->number data) (frame-value (last stack))))
+
+(define (load-get data stack)
+  (push stack (memo-get (string->number data))))
+
 
 ;;frame&mark
 (define-class <mark> () ())
@@ -296,6 +338,8 @@
 		(frame-value f))
 	      (iter rest)))))
   (iter (ref self 'frames)))
+(define-method last ((self <stack>))
+  (car (ref self 'frames)))
 
 ;;string
 (define (quote-string string)
