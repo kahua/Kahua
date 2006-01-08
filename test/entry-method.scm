@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: entry-method.scm,v 1.5 2005/12/30 08:07:00 shibata Exp $
+;; $Id: entry-method.scm,v 1.6 2006/01/08 09:03:02 shibata Exp $
 
 (use srfi-2)
 (use gauche.test)
@@ -50,7 +50,11 @@
         '(*TOP*
           (html
            (body
-            (span "Kahua"))))
+            (h1 "here is Kahua")
+            (ul (li (a ?@ "VERSION"))
+                (li (a ?@ "README"))
+                (li (a ?@ "Kahua2"))
+                (li (a ?@ "tmp*link"))))))
         (call-worker/gsid->sxml
          w
          '(("x-kahua-cgsid" "make-objects")
@@ -130,7 +134,7 @@
          w
          '(("x-kahua-cgsid" "show")
            ("x-kahua-path-info"
-            ("entry-method" "show" "*folder*Kahua"))
+            ("entry-method" "show" "<folder>\0Kahua"))
            )
          '())
         (make-match&pick w)
@@ -165,7 +169,70 @@
             (h1 "here is Kahua2")
             (ul))))
         (call-worker/gsid->sxml w '() '())
-        (make-match&pick w)))
+        (make-match&pick w))
 
+ (test-section "check entry method rules")
+
+ (test* "check rule ((file <file>) \"size\")"
+        '(*TOP*
+          (html
+           (body
+            (h1 "size of README")
+            (pre "11"))))
+        (call-worker/gsid->sxml
+         w
+         '(("x-kahua-cgsid" "show")
+           ("x-kahua-path-info"
+            ("entry-method" "show" "<file>\0README" "size"))
+           )
+         '())
+        (make-match&pick w))
+
+ (test* "check rule ((file <file>) \"desc\")"
+        '(*TOP*
+          (html
+           (body
+            (h1 "description of README")
+            (pre "class : <file>"))))
+        (call-worker/gsid->sxml
+         w
+         '(("x-kahua-cgsid" "show")
+           ("x-kahua-path-info"
+            ("entry-method" "show" "<file>\0README" "desc"))
+           )
+         '())
+        (make-match&pick w))
+
+ (test* "check rule ((file <file>) unknown)"
+        '(*TOP*
+          (html
+           (body
+            (h1 "unknown info for README : hogehoge"))))
+        (call-worker/gsid->sxml
+         w
+         '(("x-kahua-cgsid" "show")
+           ("x-kahua-path-info"
+            ("entry-method" "show" "<file>\0README" "hogehoge"))
+           )
+         '())
+        (make-match&pick w))
+
+ (test* "check rule (\"flat\" (folder <folder>))"
+        '(*TOP*
+          (html
+           (body
+            (span "VERSION")
+            (span "README")
+            (span "Kahua2")
+            (span "tmp*link"))))
+        (call-worker/gsid->sxml
+         w
+         '(("x-kahua-cgsid" "show")
+           ("x-kahua-path-info"
+            ("entry-method" "show" "flat" "<folder>\0Kahua"))
+           )
+         '())
+        (make-match&pick w))
+ )
 
 (test-end)

@@ -1,4 +1,5 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
+
 (define-class <folder> (<kahua-persistent-base>)
   ((obj-id :allocation :persistent
            :init-keyword :obj-id
@@ -28,9 +29,7 @@
                               (make <file> :obj-id "README" :body "see INSTALL")
                               (make <folder> :obj-id "Kahua2")
                               (make lin*k :obj-id "tmp*link" :body "tmp link")))
-    (html/
-     (body/
-      (span/ (key-of obj))))))
+    (apply-entry-method show obj)))
 
 
 (define-entry-method show (:keyword k)
@@ -69,6 +68,29 @@
    (body/
     (h1/ (key-of file))
     (pre/ (ref file 'body)))))
+
+(define-entry-method show ((file <file>) "size")
+  (html/
+   (body/
+    (h1/ "size of " (key-of file))
+    (pre/ (x->string (string-length (ref file 'body)))))))
+
+(define-entry-method show ((file <file>) "desc")
+  (html/
+   (body/
+    (h1/ "description of " (key-of file))
+    (pre/ (format "class : ~a" (class-name (class-of file)))))))
+
+(define-entry-method show ((file <file>) unknown)
+  (html/
+   (body/
+    (h1/ (format "unknown info for ~a : ~a" (key-of file) unknown)))))
+
+(define-entry-method show ("flat" (folder <folder>))
+  (html/
+   (body/
+    (map/ (compose span/ key-of)
+          (ref folder 'contents)))))
 
 (define-entry-method show ((link lin*k))
   (html/
