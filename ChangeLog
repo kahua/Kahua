@@ -1,3 +1,14 @@
+2006-01-08  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Changed kahua-current-user to use kahua-find-user.
+
+	* src/kahua/user.scm:
+	Removed add-user check-user find-user user-password-change \
+	        user-password-change-force user-has-role?.
+	Added <kahua-user-meta>.
+	Changed <kahua-user> to use <kahua-user-meta> meta class.
+
 2006-01-08  TAHARA Yusei  <yusei@domen.cx>
 
 	* src/kahua/serialize.scm:
