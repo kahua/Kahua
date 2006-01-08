@@ -1,3 +1,11 @@
+2006-01-08  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added and Exported apply-entry-method.
+	Added define-method-rule.
+	Changed define-entry-method to use define-method-rule instead of define-method.
+	Changed serialized object's delimiter to "\0".
+
 2006-01-07  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* Release 0.3.5

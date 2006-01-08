@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.46 2005/12/29 08:39:23 shibata Exp $
+;; $Id: server.scm,v 1.47 2006/01/08 09:01:32 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -53,6 +53,7 @@
           define-element
           define-entry
           define-entry-method
+          apply-entry-method
           path->objects
           entry-lambda
           interp-html
@@ -523,6 +524,94 @@
 (define entry-specializer (make <entry-method>))
 
 ;; helper syntax
+
+(define-class <rule-generic> (<generic>)
+  ((rules :init-value (make-hash-table 'equal?))))
+
+(define-method write-object ((obj <rule-generic>) port)
+  (format port "#<rule-generic ~a>" (ref obj 'name)))
+
+;; ((arg1 <class1>) arg2 ...)
+;; => (<class1> <top> ...)
+(define (gen-specializers specs)
+  (map (lambda (spec)
+         (cond ((pair? spec)
+                (cadr spec))
+               (else
+                '<top>))) specs))
+
+;; ((arg1 <class1>) "str1" arg3 ...)
+;; => ((arg1 <class1>) G93 arg3 ...)
+(define (gen-method-args specs)
+  (map (lambda (spec)
+         (cond ((string? spec) (gensym))
+               (else spec)))
+       specs))
+
+;; ((arg1 <class1> G93 arg3) ...)
+;; => (arg1 G93 arg3 ...)
+(define (gen-lambda-args specs)
+  (map (lambda (spec)
+         (cond ((pair? spec) (car spec))
+               (else spec)))
+       specs))
+
+;; ((arg1 <class1>) "str1" "str2" ...)
+;; => ((1 . "str1") (2 . "str2") ...)
+(define (gen-rules specs)
+  (reverse (fold-with-index
+            (lambda (idx a b)
+              (if (string? a)
+                  (acons idx a b)
+                b)) '() specs)))
+
+(define (apply-rule rules . args)
+  (let loop ((rules rules))
+    (if (null? rules)
+        (error "no applicable rule")
+      (let ((rule (caar rules))
+            (proc (cdar rules)))
+        (let loop2 ((rule rule))
+          (if (null? rule)
+              (apply proc args)
+            (let ((pos (caar rule))
+                  (val (cdar rule)))
+              (if (equal? val
+                          (list-ref args pos))
+                  (loop2 (cdr rule))
+                (loop (cdr rules))))))))))
+
+(define (sort-applicable-rules rules)
+  (sort rules (lambda (x y) (> (length (car x))
+                                  (length (car y))))))
+
+(define-values (add-rule! rule-exist?)
+  (let1 rule-list '()
+    (values
+     (lambda (rule)
+       (push! rule-list rule))
+     (lambda (rule)
+       (memq rule rule-list)))))
+
+(define-macro (define-method-rule name args . body)
+  (let* ((specs (gen-specializers args))
+         (rules (gen-rules args))
+         (method-args (gen-method-args args))
+         (lambda-args (gen-lambda-args method-args)))
+    `(begin
+       ,(unless (rule-exist? name)
+                (add-rule! name)
+                `(define-generic ,name :class ,<rule-generic>))
+       (hash-table-update! (ref ,name 'rules) ',specs
+                           (lambda (val)
+                             (,sort-applicable-rules
+                              (acons ',rules (lambda ,lambda-args ,@body)
+                                     val)))
+                           '())
+       (define-method ,name ,method-args
+         (let1 rules (hash-table-get (ref ,name 'rules) ',specs)
+           (,apply-rule rules ,@lambda-args))))))
+
 (define-syntax regist-entry-method
   (syntax-rules ()
     ((_ name)
@@ -533,13 +622,16 @@
              (apply name entry-specializer (path->objects path)))))
        (add-entry! 'name name)))))
 
+(define (apply-entry-method gf . args)
+  (apply gf entry-specializer args))
+
 ;;  [syntax] define-entry name (arg ... :keyword karg ...) body ...
 
 (define-syntax define-entry-method
   (syntax-rules ()
     ((_ "finish" name pargs kargs body)
      (begin
-       (define-method name pargs
+       (define-method-rule name pargs
          ((entry-lambda kargs
             . body)))
        (regist-entry-method name)))
@@ -567,38 +659,20 @@
      (syntax-error "malformed define-entry-method:" (define-entry-method . _)))
     ))
 
-(define *class&id-delim* "*")
+(define *class&id-delim* "\0")
 
 (define (path->objects paths)
+  (define (uri->object uri)
+    (let1 class&id (string-split uri *class&id-delim*)
+      (find-kahua-instance
+       (find-kahua-class (string->symbol (car class&id)))
+       (cadr class&id))))
 
-  (define (restore-delim str)
-    (regexp-replace #/%2a/ str *class&id-delim*))
-
-  (define extract-class-name
-    (let1 pred (every-pred (cut string-prefix? "(" <>)
-                           (cut string-suffix? ")" <>)
-                           (cut string-trim-both <> #[()]))
-      (lambda (str)
-        (restore-delim
-         (or (pred str)
-             (format "<~a>" str))))))
-
-  (define (uri->class str)
-    (find-kahua-class (string->symbol (extract-class-name str))))
-
-  (let loop ((paths paths)
-             (ls '()))
-    (if (null? paths)
-        (reverse ls)
-      (let1 path (string-split (car paths) *class&id-delim*)
-        (if (or (= 1 (length path))
-                (not (equal? "" (car path))))
-            (loop (cdr paths) (cons (car path) ls))
-          (loop (cdr paths)
-                (cons (find-kahua-instance
-                       (uri->class (cadr path))
-                       (restore-delim (caddr path)))
-                      ls)))))))
+  (map (lambda (uri)
+         (if (string-scan uri *class&id-delim*)
+             (uri->object uri)
+           uri))
+       paths))
 
 (define (add-entry! name proc)
   (session-cont-register proc (symbol->string name)))
@@ -729,25 +803,11 @@
 ;; [Args] -> [PositionalArgs], [KeywordArgs]
 (define (extract-cont-args args form)
 
-  (define *obj->uri-unreserved-char-set* #[-_.!~'0-9A-Za-z])
-  (define trim
-    (every-pred (cut string-prefix? "<" <>)
-                (cut string-suffix? ">" <>)
-                (cut string-trim-both <> #[<>])))
-
-  (define (encode str)
-    (uri-encode-string str :noescape *obj->uri-unreserved-char-set*))
-
   (define (obj->uri obj)
-    (format "*~a~a~a"
-            (let* ((c-name (symbol->string (class-name (class-of obj))))
-                   (trim-name (trim c-name))
-                   (encoded-name (encode (or trim-name c-name))))
-              (if trim-name
-                  encoded-name
-                (format "(~a)" encoded-name)))
+    (format "~a~a~a"
+            (class-name (class-of obj))
             *class&id-delim*
-            (encode (key-of obj))))
+            (key-of obj)))
 
   (define (val v)
     (cond ((not v) #f) ;; giving value #f makes keyword arg omitted
