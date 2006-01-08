@@ -2,10 +2,10 @@
 ;;
 ;; Don't use this module:-)  Experimental!
 ;;
-;; $Id: serialize.scm,v 1.2 2006/01/08 06:55:53 tahara Exp $
+;; $Id: serialize.scm,v 1.3 2006/01/08 09:47:30 tahara Exp $
 
 (define-module kahua.serialize
-  (export serialize-string deserialize-string)
+  (export serialize-string deserialize-string extension-register)
   )
 
 (select-module kahua.serialize)
@@ -15,33 +15,53 @@
 ;;stack
 ;;bytecode
 ;;cycle reference
-;;vector
+;;special slot accessor
+;;dispatcher
 
 ;; code
-(define INST #\i)
-(define SETSLOT #\s)
-(define CONS #\c)
-(define PUT  #\p)
-(define APPLY #\a)
 (define MARK #\#)
 (define STOP #\.)
 
+(define APPLY #\a)
+(define CONS #\c)
+(define DEFROST #\d)
+(define INST #\i)
+(define PUT  #\p)
+(define SETSLOT #\s)
+
 (define BOOL #\B)
-(define PAIR #\P)
-(define NIL  #\N)
-(define SYMBOL #\Y)
-(define STRING #\S)
-(define NUMBER #\I)
 (define CHAR #\C)
+(define NUMBER #\I)
+(define NIL  #\N)
+(define PAIR #\P)
+(define STRING #\S)
+(define VECTOR #\V)
+(define SYMBOL #\Y)
+
+
+;;extention dispatcher
+(define *extension-table* (make-hash-table))
+(define (extension-register class serialize deserialize)
+  (hash-table-put! *extension-table* class (cons serialize deserialize)))
+(define (extension-get class) (hash-table-get *extension-table* class))
+(define (extension-serializer ext) (car ext))
+(define (extension-deserializer ext) (cdr ext))
+(define (serializable? obj)
+  (call/cc (lambda (c)
+	     (for-each (lambda (class)
+			 (if (is-a? obj class)
+			     (c #t)))
+		       (hash-table-keys *extension-table*))
+	     #f)))
 
 ;; serializer
-(define (serializer port object)
+(define (serialize port object)
   (with-output-to-port port
     (lambda ()
-      (%serializer object)
+      (%serialize object)
       (display "."))))
 
-(define (%serializer o)
+(define (%serialize o)
     (cond ((pair? o) (save-pair o))
 	  ((number? o) (save-number o))
 	  ((symbol? o) (save-symbol o))
@@ -49,24 +69,45 @@
 	  ((char? o) (save-char o))
 	  ((null? o) (save-nil o))
 	  ((boolean? o) (save-bool o))
+	  ((vector? o) (save-vector o))
 	  ((equal? (ref (class-of o) 'category) 'scheme) (save-inst o))
+	  ((serializable? o) (save-extension o))
 	  (else (error "Can't serialize object:" o))))
+
+(define (binding-name class)
+  (let* ((defined-modules (ref class 'defined-modules))
+	 (modname (if (pair? defined-modules)
+		      (module-name (car defined-modules))
+		      (find-binding-module-name class))))
+    (string-join (list (symbol->string modname)  " "
+		       (symbol->string (class-name class)))
+		 "")))
+
+(define gauche.internal (find-module 'gauche.internal))
+(define find-binding (eval 'find-binding gauche.internal))
+(define gloc-ref (eval 'gloc-ref gauche.internal))
+(define (find-binding-module-name class)
+  (let ((name (class-name class)))
+    (call/cc
+     (lambda (c)
+       (for-each (lambda (module)
+                   (let ((gloc (find-binding module name #f)))
+                     (if (and gloc (eq? (gloc-ref gloc) class))
+                         (c (module-name module)))))
+                 (all-modules))
+       #f))))
+
 
 (define (save-inst o)
   (let ((class (class-of o)))
     (print MARK)
-    (print INST
-	   (string-join (map x->string
-			     (list (module-name (car (ref class 'defined-modules)))
-				   " " (class-name class)))
-			"")
-     )
+    (print INST (binding-name class))
     (for-each (lambda (name)
 		(if (slot-bound? o name)
-		    (begin (%serializer name)
-			   (%serializer (ref o name))
-			   (print SETSLOT))))
+		    (begin (%serialize name)
+			   (%serialize (ref o name)))))
 	      (map car (class-slots class)))
+    (print SETSLOT)
     ))
 
 (define (save-number o)
@@ -89,13 +130,32 @@
 
 (define (save-pair o)
   (print MARK)
-  (%serializer (car o))
-  (%serializer (cdr o))
+  (%serialize (car o))
+  (%serialize (cdr o))
   (print CONS))
+
+(define (save-vector o)
+  (let ((length (vector-length o)))
+    (define (iter n)
+      (if (< n length)
+	  (begin
+	    (%serialize (vector-ref o n))
+	    (iter (+ n 1)))))
+    (print MARK)
+    (iter 0)
+    (print VECTOR)
+    ))
+
+(define (save-extension o)
+  (let* ((class (class-of o))
+	 (ext (extension-get class)))
+    (print DEFROST (binding-name class))
+    (save-pair ((extension-serializer ext) o))
+    (print APPLY)))
 
 
 ;; deserializer
-(define (deserializer port)
+(define (deserialize port)
   (let ((stack (make <stack>)))
     (define (iter)
       (let ((i (read-char port)))
@@ -112,16 +172,23 @@
 		     ((eq? i NIL) load-nil)
 		     ((eq? i SETSLOT) load-setslot)
 		     ((eq? i CONS) load-cons)
-		     ((eq? i MARK) load-mark))
+		     ((eq? i VECTOR) load-vector)
+		     ((eq? i MARK) load-mark)
+		     ((eq? i DEFROST) load-defrost)
+		     ((eq? i APPLY) load-apply)
+		     (else (error "Unknown code" i)))
 	       (read-line port) stack)
 	      (iter)))))
     (iter)))
 
-(define (load-inst data stack)
+(define (binding-name-object data)
   (let* ((tmp (string-split data " "))
 	 (module (string->symbol (car tmp)))
 	 (class (string->symbol (cadr tmp))))
-    (push stack (allocate-instance (eval class (find-module module)) ()))))
+    (eval class (find-module module))))
+
+(define (load-inst data stack)
+    (push stack (allocate-instance (binding-name-object data) ())))
 
 (define (load-symbol data stack)
   (push stack (string->symbol data)))
@@ -145,10 +212,9 @@
   (let ((top (topobject stack)))
     (define (iter)
       (let ((value (pop stack))
-	    (name (pop stack))
-	    (n (next stack)))
+	    (name (pop stack)))
 	(slot-set! top name value)
-	(if (not (eq? n top))
+	(if (not (next-mark? stack))
 	    (iter))))
     (iter)))
 
@@ -157,8 +223,30 @@
 	(car-obj (pop stack)))
     (push stack (cons car-obj cdr-obj))))
 
+(define (load-vector data stack)
+  (let ((top (topobject stack))
+	(item '()))
+    (define (iter)
+      (let ((bool (next-mark? stack))
+	    (object (pop stack)))
+	(set! item (cons object item))
+	(if bool
+	    (push stack (list->vector item))
+	    (iter))))
+    (iter)))
+
 (define (load-mark data stack)
   (set! mark *mark*))
+
+(define (load-defrost data stack)
+  (let* ((class (binding-name-object data))
+	 (ext (extension-get class)))
+    (push stack (extension-deserializer ext))))
+
+(define (load-apply data stack)
+  (let ((args (pop stack))
+	(proc (pop stack)))
+    (push stack (apply proc args))))
 
 
 ;;frame&mark
@@ -191,11 +279,11 @@
     (print "*pop* " value)
     value
     ))
-(define-method next ((self <stack>))
+(define-method next-mark? ((self <stack>))
   (let ((frames (ref self 'frames)))
     (if (null? frames)
 	#f
-	(frame-value (car frames)))))
+	(eq? *mark* (frame-mark (car frames))))))
 (define-method topobject ((self <stack>))
   (define (iter frames)
     (if (null? frames)
@@ -218,34 +306,18 @@
 ;; public api
 (define (serialize-string object)
   (let ((port (open-output-string)))
-    (serializer port object)
+    (serialize port object)
     (get-output-string port)
     ))
 (define (deserialize-string string)
   (let ((port (open-input-string string)))
-    (deserializer port)))
+    (deserialize port)))
+
+;;extension regexp
+(define (regexp-dump regexp)
+  (list (regexp->string regexp) (regexp-case-fold? regexp)))
+(define (regexp-load string case-fold)
+  (string->regexp string :case-fold case-fold))
+(extension-register <regexp> regexp-dump regexp-load)
 
 (provide "kahua/serialize")
-
-;; sample code
-; (define-class <container> ()
-;   ((name :init-keyword :name)
-;    (items :init-value ())
-;    ))
-; (define-method items ((self <container>))
-;   (map (lambda (o) (list (ref o 'name) o))
-;        (ref self 'items)))
-; (define-method add ((self <container>) object)
-;   (let ((items (ref self 'items)))
-;     (slot-set! self 'items (cons object items))))
-; (define-class <page> ()
-;   ((name :init-keyword :name)
-;    (source :init-value "" :init-keyword :source)
-;    ))
-; (define folder (make <container> :name "root"))
-; (add folder (make <page> :name "index.html" :source "<html>INDEX.HTML</html>"))
-; (add folder (make <page> :name "main.html" :source "<html>MAIN.HTML</html>"))
-; (items folder)
-; (serialize-string folder)
-; (define folder (deserialize-string "#\niuser <container>\nYname\nSroot\ns\nYitems\n#\n#\niuser <page>\nYname\nSmain.html\ns\nYsource\nS<html>MAIN.HTML</html>\ns\n#\n#\niuser <page>\nYname\nSindex.html\ns\nYsource\nS<html>INDEX.HTML</html>\ns\nN\nc\nc\ns\n."))
-; (items folder)
