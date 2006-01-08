@@ -87,6 +87,9 @@ rollback :
 entry-method :
 	@gosh -I../src ./entry-method.scm >> test.log
 
+define-method-rule  :
+	@gosh -I../src ./define-method-rule.scm
+
 user :
 	@gosh -I../src ./user.scm >> test.log
 
