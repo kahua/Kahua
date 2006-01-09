@@ -1,3 +1,8 @@
+2006-01-09  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/many-as.kahua, test/dead-lock.scm, test/Makefile.in
+	Added.  This test reproduced dead-lock in the moment.
+
 2006-01-08  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/server.scm:

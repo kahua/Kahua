@@ -144,6 +144,8 @@ plugin:
 query:
 	@gosh -I../src ./query.scm >> test.log
 
+dead-lock:
+	@gosh -I../src ./dead-lock.scm >> test.log
 
 clean:
 	rm -rf test.log app/test.log *~ _* user.conf *.sxml
