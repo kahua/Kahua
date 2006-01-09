@@ -147,6 +147,9 @@ query:
 dead-lock:
 	@gosh -I../src ./dead-lock.scm >> test.log
 
+serialize:
+	@gosh -I../src ./serialize.scm >> test.log
+
 clean:
 	rm -rf test.log app/test.log *~ _* user.conf *.sxml
 
