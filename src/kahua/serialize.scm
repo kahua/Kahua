@@ -1,8 +1,9 @@
 ;; Serialize module
 ;;
-;; Don't use this module:-)  Experimental!
+;; Please don't use this module for production:-)
+;; Bytecode will change in future version.
 ;;
-;; $Id: serialize.scm,v 1.5 2006/01/09 12:59:20 tahara Exp $
+;; $Id: serialize.scm,v 1.6 2006/01/09 13:10:40 tahara Exp $
 
 (define-module kahua.serialize
   (export serialize-string deserialize-string extension-register)
@@ -11,12 +12,7 @@
 (select-module kahua.serialize)
 
 ;;TODO
-;;defined module
-;;stack
-;;bytecode
-;;cyclic reference
 ;;special slot accessor
-;;dispatcher
 
 ;; code
 (define MARK #\#)
