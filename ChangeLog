@@ -1,3 +1,10 @@
+2006-01-09  TAHARA Yusei  <yusei@domen.cx>
+
+	* kahua/serialize.scm:
+	Bug fixed.
+	* test/serialize.scm, test/Makefile.in:
+	Added test code.
+
 2006-01-09  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/server.scm:
