@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.6 2005/08/05 16:40:18 nel Exp $
+;; $Id: kahua-server.scm,v 1.7 2006/01/09 12:07:00 shibata Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -37,6 +37,7 @@
           kahua-server-main
           kahua-add-hook!
           kahua-delete-hook!
+          kahua-write-static-file
           )
   )
 (select-module kahua-server)
@@ -64,18 +65,29 @@
 (define (initialize-main-proc proc)
   (main-proc proc))
 
+(define kahua-hook-initial  (make-parameter (make-hook)))
 (define kahua-hook-before (make-parameter (make-hook)))
 (define kahua-hook-after  (make-parameter (make-hook)))
 
-(define (kahua-add-hook! place thunk)
-  (case place
-    ((before) (add-hook! (kahua-hook-before) thunk))
-    ((after)  (add-hook! (kahua-hook-after)  thunk))
-    (else     (error "illigal place is specified: ~S" place))
-    ))
+(define-values (kahua-add-hook! kahua-delete-hook!)
+  (let1 make-hook-action
+      (lambda (action place thunk)
+        (case place
+          ((initial)  (action (kahua-hook-initial)  thunk))
+          ((before) (action (kahua-hook-before) thunk))
+          ((after)  (action (kahua-hook-after)  thunk))
+          (else     (error "illigal place is specified: ~S" place))
+          ))
+    (values (lambda (place thunk)
+              (make-hook-action add-hook! place thunk))
+            (lambda (place thunk)
+              (make-hook-action delete-hook! place thunk)))))
 
-(define (kahua-delete-hook! place thunk)
-  #f)
+(define (run-kahua-hook-initial)
+  (let1 dbname (or (primary-database-name)
+                   (build-path (ref (kahua-config) 'working-directory) "db"))
+    (with-db (db dbname)
+             (run-hook (kahua-hook-initial)))))
 
 (define (ping-request? header)
   (assoc "x-kahua-ping" header))
@@ -134,6 +146,7 @@
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
       (sys-chmod (sockaddr-name sockaddr) #o770))
+    (run-kahua-hook-initial)
     (format #t "~a\n" worker-id)
     (selector-add! selector (socket-fd sock) accept-handler '(r))
     (do () (#f) (selector-select selector))
@@ -200,6 +213,13 @@
           (log-format "[~a] start" worker-name)
           (run-server worker-id sockaddr))))
     ))
+
+(define (kahua-write-static-file path nodes context)
+  (when (string-scan path "../")
+    (error "can't use 'up' component in kahua-write-static-file" path))
+  (with-output-to-file (kahua-static-document-path path)
+    (lambda ()
+      (display (kahua-render nodes context)))))
 
 ;; Main -----------------------------------------------------
 
