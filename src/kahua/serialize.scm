@@ -2,7 +2,7 @@
 ;;
 ;; Don't use this module:-)  Experimental!
 ;;
-;; $Id: serialize.scm,v 1.4 2006/01/08 10:43:15 tahara Exp $
+;; $Id: serialize.scm,v 1.5 2006/01/09 12:59:20 tahara Exp $
 
 (define-module kahua.serialize
   (export serialize-string deserialize-string extension-register)
@@ -14,7 +14,7 @@
 ;;defined module
 ;;stack
 ;;bytecode
-;;cycle reference
+;;cyclic reference
 ;;special slot accessor
 ;;dispatcher
 
@@ -28,7 +28,9 @@
 (define INST #\i)
 (define PUT  #\p)
 (define GET  #\g)
-(define SETSLOT #\s)
+(define SETCDR #\r)
+(define SLOTSET #\s)
+(define VECTORSET #\v)
 
 (define BOOL #\B)
 (define CHAR #\C)
@@ -59,11 +61,14 @@
 
 ;;extention dispatcher
 (define *extension-table* (make-hash-table))
-(define (extension-register class serialize deserialize)
-  (hash-table-put! *extension-table* class (cons serialize deserialize)))
+(define (extension-register class dumper loader . args)
+  (let-optionals* args ((builder #f))
+		  (hash-table-put! *extension-table*
+				   class (list dumper builder loader))))
 (define (extension-get class) (hash-table-get *extension-table* class))
-(define (extension-serializer ext) (car ext))
-(define (extension-deserializer ext) (cdr ext))
+(define (extension-dumper ext) (car ext))
+(define (extension-builder ext) (cadr ext))
+(define (extension-loader ext) (caddr ext))
 (define (serializable? obj)
   (call/cc (lambda (c)
 	     (for-each (lambda (class)
@@ -128,9 +133,9 @@
 	  (for-each (lambda (name)
 		      (if (slot-bound? o name)
 			  (begin (%serialize name)
-				 (%serialize (ref o name)))))
+				 (%serialize (ref o name))
+				 (print SLOTSET))))
 		    (map car (class-slots class)))
-	  (print SETSLOT)
 	  ))
       ))
 
@@ -155,12 +160,17 @@
 (define (save-pair o)
   (if (memo-exists? o)
       (print GET (memo-index o))
-      (begin
+      (let ((cdr-obj (cdr o)))
+	(set-cdr! o ())
 	(print MARK)
 	(%serialize (car o))
-	(%serialize (cdr o))
+	(print NIL)
 	(print CONS)
-	(print PUT (memo-append o)))))
+	(print PUT (memo-append o))
+	(%serialize cdr-obj)
+	(print SETCDR)
+	(set-cdr! o cdr-obj)
+	)))
 
 (define (save-vector o)
   (if (memo-exists? o)
@@ -171,20 +181,30 @@
 	    (if (< n length)
 		(begin
 		  (%serialize (vector-ref o n))
+		  (print VECTORSET n)
 		  (iter (+ n 1)))))
 	  (print MARK)
-	  (iter 0)
-	  (print VECTOR)
+	  (print VECTOR length)
 	  (print PUT (memo-append o))
+	  (iter 0)
 	  ))
 	))
 
 (define (save-extension o)
-  (let* ((class (class-of o))
-	 (ext (extension-get class)))
-    (print DEFROST (binding-name class))
-    (save-pair ((extension-serializer ext) o))
-    (print APPLY)))
+  (if (memo-exists? o)
+      (print GET (memo-index o))
+      (begin
+	(let* ((class (class-of o))
+	       (ext (extension-get class))
+	       (name (binding-name class)))
+	  (print DEFROST name)
+	  (print PUT (memo-append o))
+	  (save-pair ((extension-dumper ext) o))
+	  (if (extension-builder ext)
+	      (print CONS))
+	  (print APPLY)
+	))
+      ))
 
 
 ;; deserializer
@@ -196,7 +216,6 @@
 	(if (equal? i STOP)
 	    (pop stack)
 	    (begin
-	      (print i)
 	      ((cond ((eq? i INST) load-inst)
 		     ((eq? i SYMBOL) load-symbol)
 		     ((eq? i STRING) load-string)
@@ -204,9 +223,11 @@
 		     ((eq? i CHAR) load-char)
 		     ((eq? i BOOL) load-bool)
 		     ((eq? i NIL) load-nil)
-		     ((eq? i SETSLOT) load-setslot)
+		     ((eq? i SLOTSET) load-slotset)
 		     ((eq? i CONS) load-cons)
+		     ((eq? i SETCDR) load-setcdr)
 		     ((eq? i VECTOR) load-vector)
+		     ((eq? i VECTORSET) load-vectorset)
 		     ((eq? i MARK) load-mark)
 		     ((eq? i DEFROST) load-defrost)
 		     ((eq? i APPLY) load-apply)
@@ -244,40 +265,43 @@
 (define (load-nil data stack)
   (push stack ()))
 
-(define (load-setslot data stack)
-  (let ((top (topobject stack)))
-    (define (iter)
-      (let ((value (pop stack))
-	    (name (pop stack)))
-	(slot-set! top name value)
-	(if (not (next-mark? stack))
-	    (iter))))
-    (iter)))
+(define (load-slotset data stack)
+  (let ((value (pop stack))
+	(name (pop stack))
+	(top (topobject stack)))
+      (slot-set! top name value)))
 
 (define (load-cons data stack)
   (let ((cdr-obj (pop stack))
 	(car-obj (pop stack)))
     (push stack (cons car-obj cdr-obj))))
 
+(define (load-setcdr data stack)
+  (let ((cdr-obj (pop stack))
+	(c (pop stack)))
+    (set-cdr! c cdr-obj)
+    (push stack c)))
+
 (define (load-vector data stack)
-  (let ((top (topobject stack))
-	(item '()))
-    (define (iter)
-      (let ((bool (next-mark? stack))
-	    (object (pop stack)))
-	(set! item (cons object item))
-	(if bool
-	    (push stack (list->vector item))
-	    (iter))))
-    (iter)))
+  (push stack (make-vector (string->number data))))
+
+(define (load-vectorset data stack)
+  (let ((index (string->number data))
+	(value (pop stack))
+	(top (topobject stack)))
+    (vector-set! top index value)))
 
 (define (load-mark data stack)
   (set! mark *mark*))
 
 (define (load-defrost data stack)
   (let* ((class (binding-name-object data))
-	 (ext (extension-get class)))
-    (push stack (extension-deserializer ext))))
+	 (ext (extension-get class))
+	 (loader (extension-loader ext))
+	 (builder (extension-builder ext)))
+    (push stack loader)
+    (if builder
+	(push stack (builder)))))
 
 (define (load-apply data stack)
   (let ((args (pop stack))
@@ -311,14 +335,12 @@
 (define-method push ((self <stack>) value)
   (let ((frames (ref self 'frames)))
     (slot-set! self 'frames (cons (make-frame value) frames))
-    (print "*push* " value)
     ))
 (define-method pop ((self <stack>))
   (let* ((frames (ref self 'frames))
 	 (f (car frames))
 	 (value (frame-value f)))
     (slot-set! self 'frames (cdr frames))
-    (print "*pop* " value)
     value
     ))
 (define-method next-mark? ((self <stack>))
@@ -334,7 +356,6 @@
 	      (rest (cdr frames)))
 	  (if (or (eq? (frame-mark f) *mark*) (null? rest))
 	      (begin
-		(print "*top* " (cdr f))
 		(frame-value f))
 	      (iter rest)))))
   (iter (ref self 'frames)))
@@ -363,5 +384,16 @@
 (define (regexp-load string case-fold)
   (string->regexp string :case-fold case-fold))
 (extension-register <regexp> regexp-dump regexp-load)
+
+;;extension hash-table
+(define (hash-table-dump ht)
+  (list (hash-table-type ht)
+	(hash-table-map ht (lambda (k v) (cons k v)))))
+(define (hash-table-load self type items)
+  (for-each (lambda (item)
+	      (hash-table-put! self (car item) (cdr item)))
+	    items)
+  self)
+(extension-register <hash-table> hash-table-dump hash-table-load make-hash-table)
 
 (provide "kahua/serialize")
