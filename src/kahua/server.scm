@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.49 2006/01/08 12:49:59 shibata Exp $
+;; $Id: server.scm,v 1.50 2006/01/09 12:11:39 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -17,6 +17,7 @@
   (use srfi-13)
   (use srfi-27)
   (use text.html-lite)
+  (use text.tree)
   (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.charconv)
@@ -59,7 +60,9 @@
           entry-lambda
           interp-html
 	  interp-html-rec
-          redirect/cont)
+          redirect/cont
+          kahua-render
+          )
   )
 (select-module kahua.server)
 
@@ -284,6 +287,8 @@
      (lambda (nodes)
        (hash-table-get table (car nodes) default-interp)))))
 
+(define (kahua-render nodes context)
+  (tree->string (kahua-render-proc nodes context)))
 
 ;; KAHUA-CONTEXT-REF key [default]
 ;;
@@ -1114,5 +1119,69 @@
                               context))))))))
 
 (add-interp! 'xml interp-xml)
+
+;;===========================================================
+;; CSS tree interpreter - for generates CSS
+;;
+;; (define-entry (test.css)
+;;   `((css
+;;      (:class status-completed
+;;       (background-color "rgb(231,231,231)"))
+;;
+;;      (:class status-open
+;;       (background-color "rgb(255, 225, 225)")))))
+;;
+;; (head/ (link/ (@/ (rel "stylesheet") (type "text/css")
+;; 		     (href (kahua-self-uri-full "test.css")))))
+
+(define (interp-css nodes context cont)
+
+  (define (format-selector selector keyword name)
+    (list selector
+          (if (eq? :id keyword) "#" ".")
+          name))
+
+  (define (format-style style)
+    (receive (selector declarations)
+        (let loop ((style style)
+                   (selector '("")))
+          (if (null? style)
+              (values selector style)
+            (let1 item (car style)
+              (cond ((pair? item)
+                     (values selector style))
+                    ((keyword? item)
+                     (loop (cddr style)
+                           (cons
+                            (format-selector (car selector)
+                                             item
+                                             (cadr style))
+                            (cdr selector))))
+                    (else
+                     (loop (cdr style)
+                           (cons item selector)))))))
+      (list (intersperse " " (reverse selector))
+            "{\n"
+            (format-declarations declarations)
+            "}\n\n")))
+
+  (define (format-declarations decs)
+    (map (lambda (dec)
+           (list (car dec) ":" (intersperse " " (cdr dec))";\n"))
+         decs))
+
+  (let1 headers (assoc-ref-car context "extra-headers" '())
+    (cont
+     (map (lambda (style)
+            (format-style style))
+          (cdr nodes))
+     (if (assoc "content-type" headers)
+         context
+       (cons `("extra-headers"
+               ,(kahua-merge-headers
+                 headers '(("Content-Type" "text/css"))))
+             context)))))
+
+(add-interp! 'css interp-css)
 
 (provide "kahua/server")
