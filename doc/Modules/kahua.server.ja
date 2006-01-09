@@ -159,6 +159,40 @@ entry-formals の形式はdefine-entryの項で述べたものです。
 entry-formals内の変数をクライアントから渡されたcontextに従って束縛し、
 bodyを評価します。
 
+[macro] redirect/cont (cont closure [arg ...]) ..
+
+closureで指定した継続手続きと結びついたページへリダイレクトします．
+cont以降の形式はa/contやform/contと同じです．
+(redirect/cont …)を評価した時点でリダイレクトが実行されます．
+
+[procedure] kahua-render nodes context
+
+nodesをcontextに従ってレンダリングした結果の文字列を返します．
+(kahua-render '((html (body "a"))) '())
+=> "<html><body>a</body\n></html\n>"
+
+[procedure] kahua-write-static-file path nodes context
+
+nodesをcontextに従ってレンダリングした結果をpathへ書き出します．
+実際に書き出されるpathは(kahua-static-document-path path)になります．
+
+[procedure] kahua-add-hook! place thunk
+
+placeで指定したHOOKにthunkを追加します．
+placeで指定できるHOOKは以下の3種類のシンボルです．
+
+'initial : ワーカが起動した直後に一度だけ呼ばれます．
+'before  : リクエスト処理前に呼ばれます．
+'after   : リクエスト処理後に呼ばれます．
+
+これらのHOOKはwith-db内で呼ばれるので，各HOOKはDBへアクセスする事が
+できます．
+
+[procedure] kahua-delete-hook! place thunk
+
+placeで指定したHOOKからthunkを削除します．
+引数の意味はkahua-add-hook!と同じです．
+
 API for Scripts
 
 [procedure] kahua-init-server worker-type [session-server-id]
