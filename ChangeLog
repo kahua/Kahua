@@ -1,3 +1,14 @@
+2006-01-09  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added kahua-render proc.
+	Added interp-css.
+
+	* src/kahua-server.scm:
+	Added kahua-write-static-file.
+	Added kahua-hook-initial.
+	Improved kahua-delete-hook!.
+
 2006-01-09  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* test/many-as.kahua, test/dead-lock.scm, test/Makefile.in
