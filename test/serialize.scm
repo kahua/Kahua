@@ -1,5 +1,5 @@
 ;; Test kahua.serialize module
-;; $Id: serialize.scm,v 1.1 2006/01/09 12:59:20 tahara Exp $
+;; $Id: serialize.scm,v 1.2 2006/01/10 13:07:42 tahara Exp $
 
 (use gauche.test)
 
@@ -184,5 +184,14 @@
 (test* "value check" <person>
        (let ((object (deserialize-string (serialize-string ht))))
 	 (class-of (hash-table-get object 4))))
+
+;;---------------------------------------------------------------
+(test-section "keyword")
+
+(test* "<keyword>" <keyword>
+       (class-of (deserialize-string (serialize-string :kahua))))
+
+(test* "value" :keyword
+       (deserialize-string (serialize-string :keyword)))
 
 (test-end)

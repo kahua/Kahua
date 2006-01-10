@@ -3,7 +3,7 @@
 ;; Please don't use this module for production:-)
 ;; Bytecode will change in future version.
 ;;
-;; $Id: serialize.scm,v 1.6 2006/01/09 13:10:40 tahara Exp $
+;; $Id: serialize.scm,v 1.7 2006/01/10 13:07:43 tahara Exp $
 
 (define-module kahua.serialize
   (export serialize-string deserialize-string extension-register)
@@ -391,5 +391,10 @@
 	    items)
   self)
 (extension-register <hash-table> hash-table-dump hash-table-load make-hash-table)
+
+;;extension keyword
+(define (keyword-dump k) (list (keyword->string k)))
+(define (keyword-load k) (make-keyword k))
+(extension-register <keyword> keyword-dump keyword-load)
 
 (provide "kahua/serialize")
