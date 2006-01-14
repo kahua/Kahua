@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.6 2005/12/20 15:19:24 shibata Exp $
+;; $Id: server.scm,v 1.7 2006/01/14 17:00:26 shibata Exp $
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.
@@ -328,6 +328,50 @@
                      '()
                      )))
 
+
+;;---------------------------------------------------------------
+(test-section "JSON")
+
+(test* "check json string"
+       "(\"str\")"
+       (kahua-render '((json "str")) ()))
+
+(test* "check json number"
+       "(1)"
+       (kahua-render '((json 1)) ()))
+
+(test* "check json object"
+       "({a: 1})"
+       (kahua-render '((json #((a . 1)))) ()))
+
+(test* "check json array"
+       "([\"str\",1,{a: 1}])"
+       (kahua-render '((json ("str"
+                              1
+                              #((a . 1))))) ()))
+
+(test* "check json true"
+       "(true)"
+       (kahua-render '((json #t)) ()))
+
+(test* "check json false"
+       "(false)"
+       (kahua-render '((json #f)) ()))
+
+
+(define-class <jsonable> (<json-base>)
+  ((a :json #t
+      :init-keyword :a)
+   (b :init-keyword :b)
+   (c :json #t
+      :init-keyword :c)))
+
+(test* "check json <json-base>"
+       "({a: 1,c: \"str\"})"
+       (kahua-render `((json ,(make <jsonable>
+                                :a 1
+                                :b 2
+                                :c "str"))) ()))
 
 (test-end)
 
