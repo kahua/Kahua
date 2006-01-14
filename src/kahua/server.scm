@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.50 2006/01/09 12:11:39 shibata Exp $
+;; $Id: server.scm,v 1.51 2006/01/14 16:40:19 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -62,6 +62,8 @@
 	  interp-html-rec
           redirect/cont
           kahua-render
+          <json-base>
+          x->json
           )
   )
 (select-module kahua.server)
@@ -1183,5 +1185,72 @@
              context)))))
 
 (add-interp! 'css interp-css)
+
+(define-class <json-base> () ())
+(define-method x->json ((self <json-base>))
+  (let* ((class (class-of self))
+         (slots (class-slots class)))
+    (x->json
+     (list->vector
+      (filter-map
+       (lambda (slot)
+         (and (slot-definition-option slot :json #f)
+              (let1 slot-name (slot-definition-name slot)
+                (cons slot-name
+                      (ref self slot-name)))))
+       slots)))))
+
+(define (interp-json nodes context cont)
+
+  (define (write-str str)
+    (format "~s" str))
+
+  (define (write-ht vec)
+    (list "{"
+          (intersperse
+           ","
+           (map (lambda (entry)
+                  (let ((k (car entry))
+                        (v (cdr entry)))
+                    (list (cond
+                           ((symbol? k) k )
+                           ((string? k) (write-str k))
+                           (else (error "Invalid JSON table key in interp-json" k)))
+                          ": "
+                          (x->json v))))
+                vec))
+          "}"))
+
+  (define (write-array a)
+    (list "["
+          (intersperse
+           ","
+           (map (lambda (v)
+                  (x->json v))
+                a))
+          "]"))
+
+  (define-method x->json (x)
+    (cond
+     ((hash-table? x) ((compose write-ht list->vector hash-table->alist)
+                       x))
+     ((vector? x) (write-ht x))
+     ((pair? x) (write-array x))
+     ((symbol? x) (write-str (symbol->string x))) ;; for convenience
+     ((number? x) x)
+     ((string? x) (write-str x))
+     ((boolean? x) (if x "true" "false"))
+     ((is-a? x <collection>) (write-array x))
+     ;; ((eq? x (void)) (display "null" p))
+     (else (error "Invalid JSON object in interp-json" x))))
+
+  (let1 headers (assoc-ref-car context "extra-headers" '())
+    (cont (list "(" (x->json (cadr nodes)) ")")
+          (cons `("extra-headers"
+                  ,(kahua-merge-headers
+                    headers '(("Content-Type" "text/javascript"))))
+                context))))
+
+(add-interp! 'json interp-json)
 
 (provide "kahua/server")

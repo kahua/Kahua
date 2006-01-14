@@ -1,3 +1,7 @@
+2006-01-14  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm: Added interp-json, <json-base>, x->json.
+
 2006-01-10  TAHARA Yusei  <yusei@domen.cx>
 
 	* src/kahua/serialize.scm, test/serialize.scm:
