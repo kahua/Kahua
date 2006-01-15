@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.12 2005/08/06 06:33:18 cut-sea Exp $
+;; $Id: elem.scm,v 1.12.2.1 2006/01/15 00:21:07 nobsun Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -301,7 +301,7 @@
 		(else (iter (cons hd acc) tl))))))
   (iter '() ls))
 
-(define (node-list-to-node-set ls) (cons 'node-set ls))
+(define (node-list-to-node-set ls) (cons 'node-set (flatten ls)))
 (define (node-set: . arg) `(node-set ,@(flatten arg)))
   
 (define (font: . arg) `(font ,@(flatten arg)))

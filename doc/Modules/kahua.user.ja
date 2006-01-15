@@ -27,6 +27,7 @@ kahua.user
 によって行われます。
 
 [procedure] kahua-add-user login-name password
+[method] add-user <kahua-user> login-name password
 
 このメソッドはデータベースがアクティブな時に呼ばれなければな
 りません。
@@ -40,7 +41,11 @@ kahua.user
 login-nameを持つユーザがいた場合は、新たなユーザは登録され
 ず、 #fが返ります。
 
+add-userは<kahua-user>および<kahua-user>を継承したサブクラス
+に適用可能なメソッドです。
+
 [procedure] kahua-check-user login-name password
+[method] check-user <kahua-user> login-name password
 
 このメソッドはデータベースがアクティブな時に呼ばれなければな
 りません。
@@ -48,7 +53,11 @@ login-nameを持つユーザがいた場合は、新たなユーザは登録され
 与えられたlogin-nameとpasswordを持つユーザが見つかればその
 <kahua-user>オブジェクトを、見つからなければ#fを返します。
 
+check-userは<kahua-user>および<kahua-user>を継承したサブクラス
+に適用可能なメソッドです。
+
 [procedure] kahua-find-user login-name
+[method] find-user <kahua-user> login-name
 
 このメソッドはデータベースがアクティブな時に呼ばれなければな
 りません。
@@ -56,7 +65,11 @@ login-nameを持つユーザがいた場合は、新たなユーザは登録され
 与えられたlogin-nameを持つユーザが見つかればその<kahua-user>
 オブジェクトを、見つからなければ#fを返します。
 
+find-userは<kahua-user>および<kahua-user>を継承したサブクラス
+に適用可能なメソッドです。
+
 [procedure] kahua-user-has-role? user roles
+[method] user-has-role? user roles
 
 このメソッドはデータベースがアクティブな時に呼ばれなければな
 りません。
@@ -70,3 +83,6 @@ kahua.session 参照) の戻り値をそのまま渡すのに便利です。
 
 rolesはroleを表すシンボルのリストです。将来は、より複雑な条件
 を指定できるように拡張されるかもしれません。
+
+user-has-role?は<kahua-user>および<kahua-user>を継承したサブ
+クラスに適用可能なメソッドです。

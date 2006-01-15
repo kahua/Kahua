@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.34 2005/10/03 15:48:49 shibata Exp $
+;; $Id: server.scm,v 1.34.2.1 2006/01/15 00:21:07 nobsun Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -17,11 +17,13 @@
   (use srfi-13)
   (use srfi-27)
   (use text.html-lite)
+  (use text.tree)
   (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.charconv)
   (use rfc.uri)
   (use util.list)
+  (use util.match)
   (use sxml.tools)
   (use file.util)
   (use kahua.gsid)
@@ -42,6 +44,7 @@
           kahua-context-ref
           kahua-meta-ref
           kahua-context-ref*
+          kahua-current-entry-name
           kahua-current-user
           kahua-current-user-name
           kahua-worker-type
@@ -50,9 +53,18 @@
           add-element!
           define-element
           define-entry
+          define-entry-method
+          apply-entry-method
+          define-method-rule
+          path->objects
           entry-lambda
           interp-html
-	  interp-html-rec)
+	  interp-html-rec
+          redirect/cont
+          kahua-render
+          <json-base>
+          x->json
+          )
   )
 (select-module kahua.server)
 
@@ -160,6 +172,7 @@
               ;; This is the last resort to capture an error.
               ;; App server should provide more appropriate error page
               ;; within its handler.
+              (raise-with-db-error e)
               (values
                (html:html
                 (html:head (html:title "Kahua error"))
@@ -171,6 +184,7 @@
             (lambda ()
               (with-error-handler
                   (lambda (e)
+                    (raise-with-db-error e)
                     (render-proc (error-proc e) context))
                 (lambda ()
                   (render-proc (reset/pc (handler)) context))))
@@ -221,6 +235,9 @@
                              ,(drop* (assoc-ref-car header "x-kahua-path-info"
                                                     '())
                                      2))
+                           `("x-kahua-path-full-info"
+                             ,(assoc-ref-car header "x-kahua-path-info"
+                                             '()))
                            `("x-kahua-metavariables"
                              ,(assoc-ref-car header "x-kahua-metavariables"
                                              '()))
@@ -242,6 +259,7 @@
 (define (kahua-eval-proc body env)
   (with-error-handler
       (lambda (e)
+        (raise-with-db-error e)
         (values #f (kahua-error-string e #t)))
     (lambda ()
       (receive r (eval body env)
@@ -271,6 +289,8 @@
      (lambda (nodes)
        (hash-table-get table (car nodes) default-interp)))))
 
+(define (kahua-render nodes context)
+  (tree->string (kahua-render-proc nodes context)))
 
 ;; KAHUA-CONTEXT-REF key [default]
 ;;
@@ -298,6 +318,11 @@
   (or (apply assoc-ref (kahua-current-context) key maybe-default)
       '()))
 
+;; KAHUA-CURRENT-ENTRY-NAME
+;;  A parameter that holds the name of entry.
+
+(define kahua-current-entry-name (make-parameter ""))
+
 ;; KAHUA-CURRENT-USER
 ;; (setter KAHUA-CURRENT-USER) user
 ;;
@@ -309,7 +334,7 @@
   (getter-with-setter
    (lambda ()
      (and-let* ((logname (ref (kahua-context-ref "session-state") 'user)))
-       (find-kahua-instance <kahua-user> logname)))
+       (kahua-find-user logname)))
    (lambda (logname)
      (set! (ref (kahua-context-ref "session-state") 'user) logname))))
 
@@ -381,53 +406,97 @@
 ;;   restarg can be used to receive remaining positional arguments.
 ;;   (NB: it doesn't include keyword args).
 
-(define-syntax entry-lambda
-  (syntax-rules ()
-    ;; finishing expansion
-    ((entry-lambda "finish" args pargs kargs #f body)
-     (make-parameterized-entry-closure 'pargs 'kargs #f
-                                       (lambda args . body)))
-    ((entry-lambda "finish" () pargs kargs rarg body)
-     (make-parameterized-entry-closure 'pargs 'kargs 'rarg
-                                       (lambda rarg . body)))
-    ((entry-lambda "finish" (args ...) pargs kargs rarg body)
-     (make-parameterized-entry-closure 'pargs 'kargs 'rarg
-                                       (lambda (args ... . rarg) . body)))
-    ;; collecting positional args
-    ((entry-lambda "pargs" () pargs body)
-     (entry-lambda "finish" pargs pargs () #f body))
-    ((entry-lambda "pargs" (:rest rarg) pargs body)
-     (entry-lambda "finish" pargs pargs () rarg body))
-    ((entry-lambda "pargs" (:rest rarg :keyword . syms) pargs body)
-     (entry-lambda "kargs" syms pargs pargs () rarg body))
-    ((entry-lambda "pargs" (:rest . _) pargs body)
-     (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
-    ((entry-lambda "pargs" (:keyword . syms) pargs body)
-     (entry-lambda "kargs" syms pargs pargs () #f body))
-    ((entry-lambda "pargs" (sym . syms) (parg ...) body)
-     (entry-lambda "pargs" syms (parg ... sym) body))
-    ;; collecting keyword args
-    ((entry-lambda "kargs" () args pargs kargs rarg body)
-     (entry-lambda "finish" args pargs kargs rarg body))
-    ((entry-lambda "kargs" (:rest rarg) args pargs kargs #f body)
-     (entry-lambda "finish" args pargs kargs rarg body))
-    ((entry-lambda "kargs" (:rest rarg) args pargs kargs rarg1 body)
-     (syntax-error "duplicate :rest args in entry-lambda:" (:rest rarg)))
-    ((entry-lambda "kargs" (:rest . _) args pargs kargs rarg1 body)
-     (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
-    ((entry-lambda "kargs" (sym . syms) (arg ...) pargs (karg ...) rarg body)
-     (entry-lambda "kargs" syms (arg ... sym) pargs (karg ... sym) rarg body))
-    ;; initial entry
-    ((entry-lambda args body1 . bodies)
-     (entry-lambda "pargs" args () (body1 . bodies)))
-    ;; error handling
-    ((entry-lambda . _)
-     (syntax-error "malformed entry-lambda:" (entry-lambda . _)))
-    ))
+; (define-syntax entry-lambda
+;   (syntax-rules ()
+;     ;; finishing expansion
+;     ((entry-lambda "finish" args pargs kargs #f body)
+;      '(make-parameterized-entry-closure 'pargs 'kargs #f
+;                                        (lambda args . body)))
+;     ((entry-lambda "finish" () pargs kargs rarg body)
+;      '(make-parameterized-entry-closure 'pargs 'kargs 'rarg
+;                                        (lambda rarg . body)))
+;     ((entry-lambda "finish" (args ...) pargs kargs rarg body)
+;      '(make-parameterized-entry-closure 'pargs 'kargs 'rarg
+;                                        (lambda (args ... . rarg) . body)))
+;     ;; collecting positional args
+;     ((entry-lambda "pargs" () pargs body)
+;      (entry-lambda "finish" pargs pargs () #f body))
+;     ((entry-lambda "pargs" (:rest rarg) pargs body)
+;      (entry-lambda "finish" pargs pargs () rarg body))
+;     ((entry-lambda "pargs" (:rest rarg :keyword . syms) pargs body)
+;      (entry-lambda "kargs" syms pargs pargs () rarg body))
+;     ((entry-lambda "pargs" (:rest . _) pargs body)
+;      (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
+;     ((entry-lambda "pargs" (:keyword . syms) pargs body)
+;      (entry-lambda "kargs" syms pargs pargs () #f body))
+;     ((entry-lambda "pargs" (sym . syms) (parg ...) body)
+;      (entry-lambda "pargs" syms (parg ... sym) body))
+;     ;; collecting keyword args
+;     ((entry-lambda "kargs" () args pargs kargs rarg body)
+;      (entry-lambda "finish" args pargs kargs rarg body))
+;     ((entry-lambda "kargs" (:rest rarg) args pargs kargs #f body)
+;      (entry-lambda "finish" args pargs kargs rarg body))
+;     ((entry-lambda "kargs" (:rest rarg) args pargs kargs rarg1 body)
+;      (syntax-error "duplicate :rest args in entry-lambda:" (:rest rarg)))
+;     ((entry-lambda "kargs" (:rest . _) args pargs kargs rarg1 body)
+;      (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
+;     ((entry-lambda "kargs" (sym . syms) (arg ...) pargs (karg ...) rarg body)
+;      (entry-lambda "kargs" syms (arg ... sym) pargs (karg ... sym) rarg body))
+;     ;; initial entry
+;     ((entry-lambda args body1 . bodies)
+;      (entry-lambda "pargs" args () (body1 . bodies)))
+;     ;; error handling
+;     ((entry-lambda . _)
+;      (syntax-error "malformed entry-lambda:" (entry-lambda . _)))
+;     ))
+
+;
+; entry-lambda
+;
+(define-macro (entry-lambda args body1 . bodys)
+  ;; helper
+  (define (parse-args args)
+    (define (dispatch proc args ps ks ms rs)
+      (match args
+	     ;; illegal case reject
+	     ((:rest (? keyword? bad) . more)
+	      (error "malformed entry-lambda :rest form:" (list key bad)))
+	     (((? keyword? tail))
+	      (error "malformed entry-lambda keyword tail form:" tail))
+	     ;; legal case
+	     (() (values (reverse ps) (reverse ks) (reverse ms) rs))
+	     ((:keyword var . more)
+	      (dispatch parse-key (cdr args) ps ks ms rs))
+	     (((or :multi-value-keyword :mvkeyword) var . more)
+	      (dispatch parse-mvkey (cdr args) ps ks ms rs))
+	     ((:rest . vars)
+	      (dispatch parse-rest (cdr args) ps ks ms rs))
+	     (((? symbol? var) .  more)
+	      (proc args ps ks ms rs))
+	     (else (error "malformed entry-lambda form:" (cdr args)))))
+
+    (define (parse-path args ps ks ms rs)
+      (dispatch parse-path (cdr args) (cons (car args) ps) ks ms rs))
+    (define (parse-key args ps ks ms rs)
+      (dispatch parse-key (cdr args) ps (cons (car args) ks) ms rs))
+    (define (parse-mvkey args ps ks ms rs)
+      (dispatch parse-mvkey (cdr args) ps ks (cons (car args) ms) rs))
+    (define (parse-rest args ps ks ms rs)
+      (if rs
+	  (error "malformed entry-lambda :rest form:" `(:rest ,args))
+	  (dispatch parse-rest (cdr args) ps ks ms (car args))))
+
+    (dispatch parse-path args () () () #f))
+
+  (receive (ps ks ms rs) (parse-args args)
+    `(,make-parameterized-entry-closure
+      ',ps ',ks ',ms ',rs (lambda (,@ps ,@ks ,@ms . ,rs) ,body1 ,@bodys))))
+
 
 ;; helper procedure
-(define (make-parameterized-entry-closure pargs kargs rarg proc)
-  (let ((kargs-str (map x->string kargs)))
+(define (make-parameterized-entry-closure pargs kargs mvkargs rarg proc)
+  (let ((kargs-str (map x->string kargs))
+	(mvkargs-str (map x->string mvkargs)))
     (lambda ()
       (let1 path-info (kahua-context-ref "x-kahua-path-info" '())
         (apply proc
@@ -435,6 +504,7 @@
                                          (list-ref path-info ind #f))
                                        pargs)
                        (map kahua-context-ref kargs-str)
+		       (map kahua-context-ref* mvkargs-str)
                        (if rarg
                          (drop* path-info (length pargs))
                          '())))))
@@ -449,10 +519,168 @@
      (define-entry name (entry-lambda args . body)))
     ((define-entry name expr)
      (define name
-       (let ((x expr))
+       (let ((x (lambda ()
+                  (parameterize
+                      ((kahua-current-entry-name (symbol->string 'name)))
+                    (expr)))))
          (add-entry! 'name x)
          x)))
     ))
+
+;; entry-method specializer
+(define-class <entry-method> ()())
+(define entry-specializer (make <entry-method>))
+
+;; helper syntax
+
+(define-class <rule-generic> (<generic>)
+  ((rules :init-value (make-hash-table 'equal?))))
+
+(define-method write-object ((obj <rule-generic>) port)
+  (format port "#<rule-generic ~a>" (ref obj 'name)))
+
+;; ((arg1 <class1>) arg2 ...)
+;; => (<class1> <top> ...)
+(define (gen-specializers specs)
+  (map (lambda (spec)
+         (cond ((pair? spec)
+                (cadr spec))
+               (else
+                '<top>))) specs))
+
+;; ((arg1 <class1>) "str1" arg3 ...)
+;; => ((arg1 <class1>) G93 arg3 ...)
+(define (gen-method-args specs)
+  (map (lambda (spec)
+         (cond ((string? spec) (gensym))
+               (else spec)))
+       specs))
+
+;; ((arg1 <class1> G93 arg3) ...)
+;; => (arg1 G93 arg3 ...)
+(define (gen-lambda-args specs)
+  (map (lambda (spec)
+         (cond ((pair? spec) (car spec))
+               (else spec)))
+       specs))
+
+;; ((arg1 <class1>) "str1" "str2" ...)
+;; => ((1 . "str1") (2 . "str2") ...)
+(define (gen-rules specs)
+  (reverse (fold-with-index
+            (lambda (idx a b)
+              (if (string? a)
+                  (acons idx a b)
+                b)) '() specs)))
+
+(define (apply-rule rules . args)
+  (let loop ((rules rules))
+    (if (null? rules)
+        (error "no applicable rule")
+      (let ((rule (caar rules))
+            (proc (cdar rules)))
+        (let loop2 ((rule rule))
+          (if (null? rule)
+              (apply proc args)
+            (let ((pos (caar rule))
+                  (val (cdar rule)))
+              (if (equal? val
+                          (list-ref args pos))
+                  (loop2 (cdr rule))
+                (loop (cdr rules))))))))))
+
+(define (sort-applicable-rules rules)
+  (sort rules (lambda (x y) (> (length (car x))
+                                  (length (car y))))))
+
+(define-values (add-rule! rule-exist?)
+  (let1 rule-list '()
+    (values
+     (lambda (rule)
+       (push! rule-list rule))
+     (lambda (rule)
+       (memq rule rule-list)))))
+
+(define-macro (define-method-rule name args . body)
+  (let* ((specs (gen-specializers args))
+         (rules (gen-rules args))
+         (method-args (gen-method-args args))
+         (lambda-args (gen-lambda-args method-args)))
+    `(begin
+       ,(unless (rule-exist? name)
+                (add-rule! name)
+                `(define-generic ,name :class ,<rule-generic>))
+       (hash-table-update! (ref ,name 'rules) ',specs
+                           (lambda (val)
+                             (,sort-applicable-rules
+                              (acons ',rules (lambda ,lambda-args ,@body)
+                                     val)))
+                           '())
+       (define-method ,name ,method-args
+         (let1 rules (hash-table-get (ref ,name 'rules) ',specs)
+           (,apply-rule rules ,@lambda-args))))))
+
+(define-syntax regist-entry-method
+  (syntax-rules ()
+    ((_ name)
+     (unless (session-cont-get (symbol->string 'name))
+       (define-method name ()
+         (parameterize ((kahua-current-entry-name (symbol->string 'name)))
+           (let1 path (kahua-context-ref "x-kahua-path-info")
+             (apply name entry-specializer (path->objects path)))))
+       (add-entry! 'name name)))))
+
+(define (apply-entry-method gf . args)
+  (apply gf entry-specializer args))
+
+;;  [syntax] define-entry name (arg ... :keyword karg ...) body ...
+
+(define-syntax define-entry-method
+  (syntax-rules ()
+    ((_ "finish" name pargs kargs body)
+     (begin
+       (define-method-rule name pargs
+         ((entry-lambda kargs
+            . body)))
+       (regist-entry-method name)))
+    ;; add entry specializer
+    ((_ "specilize" name pargs kargs body)
+     (define-entry-method "finish" name ((_ <entry-method>) . pargs) kargs body))
+    ;; collecting positional args
+    ((_ "pargs" name () pargs body)
+     (define-entry-method "specilize" name pargs () body))
+    ((_ "pargs" name (:rest . syms) pargs body)
+     (define-entry-method "specilize" name pargs (:rest . syms) body))
+    ((_ "pargs" name (:keyword . syms) pargs body)
+     (define-entry-method "specilize" name pargs (:keyword . syms) body))
+    ((_ "pargs" name (:multi-value-keyword . syms) pargs body)
+     (define-entry-method "specilize" name pargs (:multi-value-keyword . syms) body))
+    ((_ "pargs" name (:mvkeyword . syms) pargs body)
+     (define-entry-method "specilize" name pargs (:mvkeyword . syms) body))
+    ((_ "pargs" name (sym . syms) (parg ...) body)
+     (define-entry-method "pargs" name syms (parg ... sym) body))
+    ;; initial entry
+    ((_ name args body1 . bodies)
+     (define-entry-method "pargs" name args () (body1 . bodies)))
+    ;; error handling
+    ((_ . _)
+     (syntax-error "malformed define-entry-method:" (define-entry-method . _)))
+    ))
+
+(define *class&id-delim* "\0")
+
+(define (path->objects paths)
+  (define (uri->object uri)
+    (let1 class&id (string-split uri *class&id-delim*)
+      (find-kahua-instance
+       (find-kahua-class (string->symbol (car class&id)))
+       (cadr class&id))))
+
+  (map (lambda (uri)
+         (if (string-scan uri *class&id-delim*)
+             (uri->object uri)
+           uri))
+       paths))
 
 (define (add-entry! name proc)
   (session-cont-register proc (symbol->string name)))
@@ -582,8 +810,17 @@
 ;; Comb out arguments to pass to continuation procedure.
 ;; [Args] -> [PositionalArgs], [KeywordArgs]
 (define (extract-cont-args args form)
+
+  (define (obj->uri obj)
+    (format "~a~a~a"
+            (class-name (class-of obj))
+            *class&id-delim*
+            (key-of obj)))
+
   (define (val v)
     (cond ((not v) #f) ;; giving value #f makes keyword arg omitted
+          ((is-a? v <kahua-persistent-base>)
+           (obj->uri v))
           ((or (string? v) (symbol? v) (number? v))
            (x->string v))
           (else
@@ -596,6 +833,8 @@
                                           (val (cadr p)))))
                             (cons (x->string (car p)) v)))
                         kargs))))
+
+
 
 ;;-----------------------------------------------------------
 ;; Pre-defined element handlers
@@ -643,43 +882,44 @@
 ;;  return continuations, so that the remote server can choose the return
 ;;  point depending on its operation.  Future extension.
 
-(define-element a/cont (attrs auxs contents context cont)
-
-  (define (build-argstr pargs kargs)
-    (string-concatenate
-     `(,(string-join (map uri-encode-string pargs) "/" 'prefix)
-       ,@(if (null? kargs)
+;; utils
+(define (build-argstr pargs kargs)
+  (string-concatenate
+   `(,(string-join (map uri-encode-string pargs) "/" 'prefix)
+     ,@(if (null? kargs)
            '()
-           `("?"
-             ,(string-join
-               (map (lambda (karg)
-                      (if (null? (cdr karg))
+         `("?"
+           ,(string-join
+             (map (lambda (karg)
+                    (if (null? (cdr karg))
                         (uri-encode-string (car karg))
-                        (format "~a=~a"
-                                (uri-encode-string (car karg))
-                                (uri-encode-string (cdr karg)))))
-                    kargs)
-               "&"))))))
+                      (format "~a=~a"
+                              (uri-encode-string (car karg))
+                              (uri-encode-string (cdr karg)))))
+                  kargs)
+             "&"))))))
 
-  (define (fragment auxs)
-    (cond ((assq-ref auxs 'fragment)
-           => (lambda (p) #`"#,(uri-encode-string (car p))"))
-          (else "")))
+(define (fragment auxs)
+  (cond ((assq-ref auxs 'fragment)
+         => (lambda (p) #`"#,(uri-encode-string (car p))"))
+        (else "")))
 
-  (define (local-cont clause)
+(define (local-cont auxs)
+  (lambda (clause)
     (let ((id     (session-cont-register (car clause)))
           (argstr ((compose build-argstr extract-cont-args)
                    (cdr clause) 'a/cont)))
-      (nodes (kahua-self-uri #`",|id|,|argstr|,(fragment auxs)"))))
+      (kahua-self-uri #`",|id|,|argstr|,(fragment auxs)"))))
 
-  (define (return-cont-uri)
-    (and-let* ((clause (assq-ref auxs 'return-cont))
-               (id     (session-cont-register (car clause)))
-               (argstr ((compose build-argstr extract-cont-args)
-                        (cdr clause) 'a/cont)))
-      (format "~a/~a~a" (kahua-worker-type) id argstr)))
+(define (remote-cont auxs)
+  (lambda (clause)
+    (define (return-cont-uri)
+      (and-let* ((clause (assq-ref auxs 'return-cont))
+                 (id     (session-cont-register (car clause)))
+                 (argstr ((compose build-argstr extract-cont-args)
+                          (cdr clause) 'a/cont)))
+        (format "~a/~a~a" (kahua-worker-type) id argstr)))
 
-  (define (remote-cont clause)
     (let* ((server-type (car clause))
            (cont-id (cadr clause))
            (return  (return-cont-uri))
@@ -687,10 +927,12 @@
                         (extract-cont-args (cddr clause) 'a/cont)
                       (build-argstr pargs
                                     (if return
-                                      `(("return-cont" . ,return) ,@kargs)
+                                        `(("return-cont" . ,return) ,@kargs)
                                       kargs)))))
-      (nodes (format "~a/~a/~a~a"
-                     (kahua-bridge-name) server-type cont-id argstr))))
+      (format "~a/~a/~a~a~a"
+              (kahua-bridge-name) server-type cont-id argstr (fragment auxs)))))
+
+(define-element a/cont (attrs auxs contents context cont)
 
   (define (nodes path)
     (cont `((a (@ ,@(cons `(href ,path)
@@ -698,8 +940,8 @@
                                     (eq? 'href (car x))) attrs)))
                ,@contents)) context))
 
-  (cond ((assq-ref auxs 'cont) => local-cont)
-        ((assq-ref auxs 'remote-cont) => remote-cont)
+  (cond ((assq-ref auxs 'cont) => (compose nodes (local-cont auxs)))
+        ((assq-ref auxs 'remote-cont) => (compose nodes (remote-cont auxs)))
         (else (nodes (kahua-self-uri (fragment auxs)))))
   )
 
@@ -723,7 +965,7 @@
                           `(input (@ (type "hidden") (name ,(car karg))
                                      (value ,(cdr karg))))))
                    kargs))))
-  
+
   (let* ((clause (assq-ref auxs 'cont))
          (id     (if clause (session-cont-register (car clause)) ""))
          (argstr (if clause (build-argstr&hiddens (cdr clause)) '(""))))
@@ -748,6 +990,31 @@
   (let* ((clause (assq-ref auxs 'cont))
          (id     (if clause (session-cont-register (car clause)) "")))
     (cont `((frame (@ ,@attrs (src ,(kahua-self-uri id))))) context)))
+
+;;
+;; redirect/cont
+;;
+;; (redirect/cont (cont closure [arg ...]) ...
+;;
+(define-syntax redirect/cont
+  (syntax-rules ()
+    ((_ (name var ...) ...)
+     (%redirect/cont% (list (list 'name var ...) ...)))))
+
+(define (%redirect/cont% auxs)
+
+  (define (nodes path)
+    (let/pc pc
+      `((html (extra-header
+               (@ (name "Status") (value "302 Moved")))
+              (extra-header
+               (@ (name "Location")
+                  (value ,path)))))))
+
+  (cond ((assq-ref auxs 'cont) => (compose nodes (local-cont auxs)))
+        ((assq-ref auxs 'remote-cont) => (compose nodes (remote-cont auxs)))
+        (else (nodes (kahua-self-uri (fragment auxs))))))
+
 
 ;;
 ;; extra-header - inserts protocol header to the reply message
@@ -854,5 +1121,136 @@
                               context))))))))
 
 (add-interp! 'xml interp-xml)
+
+;;===========================================================
+;; CSS tree interpreter - for generates CSS
+;;
+;; (define-entry (test.css)
+;;   `((css
+;;      (:class status-completed
+;;       (background-color "rgb(231,231,231)"))
+;;
+;;      (:class status-open
+;;       (background-color "rgb(255, 225, 225)")))))
+;;
+;; (head/ (link/ (@/ (rel "stylesheet") (type "text/css")
+;; 		     (href (kahua-self-uri-full "test.css")))))
+
+(define (interp-css nodes context cont)
+
+  (define (format-selector selector keyword name)
+    (list selector
+          (if (eq? :id keyword) "#" ".")
+          name))
+
+  (define (format-style style)
+    (receive (selector declarations)
+        (let loop ((style style)
+                   (selector '("")))
+          (if (null? style)
+              (values selector style)
+            (let1 item (car style)
+              (cond ((pair? item)
+                     (values selector style))
+                    ((keyword? item)
+                     (loop (cddr style)
+                           (cons
+                            (format-selector (car selector)
+                                             item
+                                             (cadr style))
+                            (cdr selector))))
+                    (else
+                     (loop (cdr style)
+                           (cons item selector)))))))
+      (list (intersperse " " (reverse selector))
+            "{\n"
+            (format-declarations declarations)
+            "}\n\n")))
+
+  (define (format-declarations decs)
+    (map (lambda (dec)
+           (list (car dec) ":" (intersperse " " (cdr dec))";\n"))
+         decs))
+
+  (let1 headers (assoc-ref-car context "extra-headers" '())
+    (cont
+     (map (lambda (style)
+            (format-style style))
+          (cdr nodes))
+     (if (assoc "content-type" headers)
+         context
+       (cons `("extra-headers"
+               ,(kahua-merge-headers
+                 headers '(("Content-Type" "text/css"))))
+             context)))))
+
+(add-interp! 'css interp-css)
+
+(define-class <json-base> () ())
+(define-method x->json ((self <json-base>))
+  (let* ((class (class-of self))
+         (slots (class-slots class)))
+    (x->json
+     (list->vector
+      (filter-map
+       (lambda (slot)
+         (and (slot-definition-option slot :json #f)
+              (let1 slot-name (slot-definition-name slot)
+                (cons slot-name
+                      (ref self slot-name)))))
+       slots)))))
+
+(define (interp-json nodes context cont)
+
+  (define (write-str str)
+    (format "~s" str))
+
+  (define (write-ht vec)
+    (list "{"
+          (intersperse
+           ","
+           (map (lambda (entry)
+                  (let ((k (car entry))
+                        (v (cdr entry)))
+                    (list (cond
+                           ((symbol? k) k )
+                           ((string? k) (write-str k))
+                           (else (error "Invalid JSON table key in interp-json" k)))
+                          ": "
+                          (x->json v))))
+                vec))
+          "}"))
+
+  (define (write-array a)
+    (list "["
+          (intersperse
+           ","
+           (map (lambda (v)
+                  (x->json v))
+                a))
+          "]"))
+
+  (define-method x->json (x)
+    (cond
+     ((hash-table? x) ((compose write-ht list->vector hash-table->alist)
+                       x))
+     ((vector? x) (write-ht x))
+     ((pair? x) (write-array x))
+     ((symbol? x) (write-str (symbol->string x))) ;; for convenience
+     ((number? x) x)
+     ((string? x) (write-str x))
+     ((boolean? x) (if x "true" "false"))
+     ((is-a? x <collection>) (write-array x))
+     ;; ((eq? x (void)) (display "null" p))
+     (else (error "Invalid JSON object in interp-json" x))))
+
+  (let1 headers (assoc-ref-car context "extra-headers" '())
+    (cont (list "(" (x->json (cadr nodes)) ")")
+          (cons `("extra-headers"
+                  ,(kahua-merge-headers
+                    headers '(("Content-Type" "text/javascript"))))
+                context))))
+
+(add-interp! 'json interp-json)
 
 (provide "kahua/server")

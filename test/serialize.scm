@@ -1,5 +1,5 @@
 ;; Test kahua.serialize module
-;; $Id: serialize.scm,v 1.2 2006/01/10 13:07:42 tahara Exp $
+;; $Id: serialize.scm,v 1.2.4.1 2006/01/15 00:21:07 nobsun Exp $
 
 (use gauche.test)
 

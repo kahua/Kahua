@@ -24,11 +24,11 @@ DESTDIR           =
 GOSH              = @GOSH@
 
 SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
-	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm pdf.scm \
+	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm \
 	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
 	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
 	spvr.scm spvr-httpd.scm test-xml.scm user.scm wiki-iki.scm \
-	worker.scm query.scm 
+	worker.scm query.scm rollback.scm entry-method.scm redirectcont.scm
 
 SCMFILES2 = shell.scm usermode.scm
 
@@ -44,30 +44,17 @@ KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
 #  certain database settings.  See persistence-dbi.scm for the details.
 
 
-TESTS = test-xml persistence \
+TESTS = test-xml persistence rollback entry-method \
         user config gsid session partcont \
-        server kahua-dbm worker \
+        server kahua-dbm worker redirectcont \
 	lambdabooks wiki-iki nqueen foldlist \
-	spvr spvr-httpd admin developer shell usermode sandbox plugin pdf query
+	spvr spvr-httpd admin developer shell usermode sandbox plugin query
 
 CONFIG_GENERATED = Makefile
 
 .PHONY: all check clean distclean maintainer-clean $(TESTS)
 
-all: $(SCMFILES) $(SCMFILES2) $(KAHUAFILES) pdf-01.sxml
-
-# .SUFFIXES: .scm.in .scm .kahua.in .kahua
-.SUFFIXES: .scm.in .scm
-
-.scm.in.scm:
-	test ! -f $@ || chmod +w $@
-	sed -e "s@###GOSH###@$(GOSH)@" $@.in > $@
-	chmod -w $@
-
-pdf-01.sxml: pdf-01.sxml.in
-	test ! -f $@ || chmod +w $@
-	$(GOSH) cesconv -o $@ -f euc-jp $@.in
-	chmod -w $@
+all: $(SCMFILES) $(SCMFILES2) $(KAHUAFILES)
 
 check: all
 	rm -f test.log
@@ -94,6 +81,15 @@ persistence :
 persistence-dbi :
 	@gosh -I../src ./persistence-dbi.scm >> test.log
 
+rollback :
+	@gosh -I../src ./rollback.scm >> test.log
+
+entry-method :
+	@gosh -I../src ./entry-method.scm >> test.log
+
+define-method-rule  :
+	@gosh -I../src ./define-method-rule.scm
+
 user :
 	@gosh -I../src ./user.scm >> test.log
 
@@ -102,6 +98,9 @@ server :
 
 worker :
 	@gosh -I../src ./worker.scm >> test.log
+
+redirectcont :
+	@gosh -I../src ./redirectcont.scm >> test.log
 
 lambdabooks :
 	@gosh -I../src -I../examples ./lambdabooks.scm >> test.log
@@ -142,15 +141,17 @@ sandbox:
 plugin:
 	@gosh -I../src ./plugin.scm >> test.log
 
-pdf:
-	@gosh -I../src ./pdf.scm >> test.log
-
 query:
 	@gosh -I../src ./query.scm >> test.log
 
+dead-lock:
+	@gosh -I../src ./dead-lock.scm >> test.log
+
+serialize:
+	@gosh -I../src ./serialize.scm >> test.log
 
 clean:
-	rm -rf test.log app/test.log *~ _* user.conf *.scm *.sxml
+	rm -rf test.log app/test.log *~ _* user.conf *.sxml
 
 distclean: clean
 	rm -rf $(CONFIG_GENERATED)

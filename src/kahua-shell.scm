@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-shell.scm,v 1.2 2004/10/19 02:37:34 shiro Exp $
+;; $Id: kahua-shell.scm,v 1.2.2.1 2006/01/15 00:21:07 nobsun Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -85,6 +85,7 @@
          (the-worker (find (lambda (w)
                              (eqv? (get-keyword :worker-count w) wno))
                            workers)))
+    (newline)
     (if the-worker
       (make-worker-command-processor
        (get-keyword :worker-type the-worker)
@@ -105,7 +106,7 @@
         (let1 expr (read)
           (cond
            ((eof-object? expr) (exit 0))
-           ((memq expr '(disconnect bye)) select-worker-processor)
+           ((memq expr '(disconnect bye)) (read-line) select-worker-processor)
            (else
             ;; NB: the first two elts of reply is error-output and std-output
             (let1 reply (send-command wid `(eval ',expr kahua-app-server))
@@ -149,13 +150,14 @@
     ;; Turn off echo during reading.
     (dynamic-wind
         (lambda ()
-          (slot-set! attr 'lflag (logand lflag (lognot ECHO)))
+          (slot-set! attr 'lflag (logand lflag (lognot (logior ECHO ECHOE ECHOK ECHONL))))
           (sys-tcsetattr port TCSAFLUSH attr))
         (lambda ()
           (read-line port))
         (lambda ()
           (slot-set! attr 'lflag lflag)
-          (sys-tcsetattr port TCSANOW attr)))))
+          (sys-tcsetattr port TCSANOW attr)
+          (display "\n")))))
 
 ;; Entry -------------------------------------------------------
 (define (main args)

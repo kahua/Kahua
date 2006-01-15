@@ -27,6 +27,7 @@ INSTALL                = @GAUCHE_INSTALL@
 INSTALL_TYPE           = @INSTALL_TYPE@
 SCM_INSTALL_DIR        = $(libdir)
 SCRIPT_INSTALL_DIR     = $(bindir)
+KAHUA_STATICDIR        = @KAHUA_STATICDIR@
 SOCKET_BASE_DIR        = $(prefix)/tmp/$(package)
 TMP_BASE_DIR           = $(localstatedir)/tmp
 KAHUA_VERSION          = $(shell cat $(top_srcdir)/VERSION)
@@ -103,7 +104,10 @@ kahua/config.scm: kahua/config.scm.in
 
 kahua.conf: kahua.conf.sample
 	test ! -f $@ || chmod +w $@
-	sed -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" -e "s@##localstatedir##@$(localstatedir)@" kahua.conf.sample > $@
+	sed -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" \
+            -e "s@##localstatedir##@$(localstatedir)@" \
+            -e "s@##KAHUA_STATICDIR##@$(KAHUA_STATICDIR)@" \
+            kahua.conf.sample > $@
 	chmod -w $@
 
 test.conf : make-testconf.scm

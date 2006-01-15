@@ -52,9 +52,14 @@ kahua-self-uri-fullはサーバ名を含めた絶対uriを返します。
 
 pathが複数与えられた場合、それらはbuild-pathで接続されます。
 
-[procedure] kahua-current-user context
+[procedure] kahua-current-entry-name
 
-[procedure] (setter kahua-current-user) context user
+現在のエントリ名を返します。
+エントリが存在しない場合は空文字列を返します。
+
+[procedure] kahua-current-user
+
+[procedure] (setter kahua-current-user) user
 
 session-stateに保持されている、「現在のユーザ」情報をget/setします。
 session-stateは一般的にはクライアントのクッキーに結びつけられた情報を保
@@ -63,7 +68,7 @@ session-stateは一般的にはクライアントのクッキーに結びつけられた情報を保
 kahua-current-userは、「現在のユーザ」が設定されていれば <kahua-user>オ
 ブジェクト(kahua.user参照)を、設定されていなければ#fを返します。
 
-(set! (kahua-current-user context) user) のように用いると、現在のユーザ
+(set! (kahua-current-user) user) のように用いると、現在のユーザ
 を設定することができます。userには<kahua-user>オブジェクトか #fを渡しま
 す。
 
@@ -73,7 +78,7 @@ kahua-current-userは、「現在のユーザ」が設定されていれば <kahua-user>オ
 内部では、Kahuaは<session-state>オブジェクトのuserスロットに、現在のユー
 ザのログイン名を保持することで、現在のユーザを管理しています。
 
-[procedure] kahua-context-ref context key
+[procedure] kahua-context-ref key
 
 アプリケーションサーバのハンドラに渡されるコンテキスト情報contextにアク
 セスするための関数です。keyは文字列またはシンボルです。
@@ -105,12 +110,17 @@ entryと呼ばれることもあります。
 entry-formals は次のような形式の引数リストです。 ([...]は...が省略可能で
 あることを示します)
 
-  ([arg ... ][:keyword karg ... ][:rest restarg])
+  ([arg ... ][:keyword karg ... ][:multi-value-keyword mvarg ... ][:rest restarg])
 
 arg ... には、uriのentry-name 以下に渡されるパス名表記のパラメータが束縛
-され、karg ... にはhttpリクエストのqueryの部分が束縛されます。パス名表記
-のコンポーネントの数がarg ... より多く、restargが指定されている場合は、
-restargに残りがリストで束縛されます。
+され、karg ... にはhttpリクエストのqueryの部分が束縛されます。
+あるパラメータに対する値が query 中に複数含まれる可能性がある場合には、
+:keyword ではなく、 :multi-value-keyword あるいは短縮形の :mvkeyword を使
+うことが出来ます。 :multi-value-keyword に続くパラメータには、 query に含
+まれる全ての値をリストにしたものが束縛されます。パス名表記のコンポーネント
+の数がarg ... より多く、restargが指定されている場合は、restargに残りがリス
+トで束縛されます。
+
 
 例えば、次のようなエントリ定義があるとします。
 
@@ -148,6 +158,40 @@ entry-formals の形式はdefine-entryの項で述べたものです。
 このマクロは、引数を取らない手続きを返します。呼び出されると、
 entry-formals内の変数をクライアントから渡されたcontextに従って束縛し、
 bodyを評価します。
+
+[macro] redirect/cont (cont closure [arg ...]) ..
+
+closureで指定した継続手続きと結びついたページへリダイレクトします．
+cont以降の形式はa/contやform/contと同じです．
+(redirect/cont …)を評価した時点でリダイレクトが実行されます．
+
+[procedure] kahua-render nodes context
+
+nodesをcontextに従ってレンダリングした結果の文字列を返します．
+(kahua-render '((html (body "a"))) '())
+=> "<html><body>a</body\n></html\n>"
+
+[procedure] kahua-write-static-file path nodes context
+
+nodesをcontextに従ってレンダリングした結果をpathへ書き出します．
+実際に書き出されるpathは(kahua-static-document-path path)になります．
+
+[procedure] kahua-add-hook! place thunk
+
+placeで指定したHOOKにthunkを追加します．
+placeで指定できるHOOKは以下の3種類のシンボルです．
+
+'initial : ワーカが起動した直後に一度だけ呼ばれます．
+'before  : リクエスト処理前に呼ばれます．
+'after   : リクエスト処理後に呼ばれます．
+
+これらのHOOKはwith-db内で呼ばれるので，各HOOKはDBへアクセスする事が
+できます．
+
+[procedure] kahua-delete-hook! place thunk
+
+placeで指定したHOOKからthunkを削除します．
+引数の意味はkahua-add-hook!と同じです．
 
 API for Scripts
 

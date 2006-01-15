@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.6.2.5 2005/12/06 15:51:05 shibata Exp $
+;; $Id: kahua-server.scm,v 1.6.2.6 2006/01/15 00:21:07 nobsun Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -26,7 +26,6 @@
   (use gauche.collection)
   (use gauche.parseopt)
   (use gauche.hook)
-  (use gauche.threads)
   (use file.util)
   (use srfi-1)
   (use kahua)
@@ -38,6 +37,7 @@
           kahua-server-main
           kahua-add-hook!
           kahua-delete-hook!
+          kahua-write-static-file
           )
   )
 (select-module kahua-server)
@@ -65,23 +65,34 @@
 (define (initialize-main-proc proc)
   (main-proc proc))
 
+(define kahua-hook-initial  (make-parameter (make-hook)))
 (define kahua-hook-before (make-parameter (make-hook)))
 (define kahua-hook-after  (make-parameter (make-hook)))
 
-(define (kahua-add-hook! place thunk)
-  (case place
-    ((before) (add-hook! (kahua-hook-before) thunk))
-    ((after)  (add-hook! (kahua-hook-after)  thunk))
-    (else     (error "illigal place is specified: ~S" place))
-    ))
+(define-values (kahua-add-hook! kahua-delete-hook!)
+  (let1 make-hook-action
+      (lambda (action place thunk)
+        (case place
+          ((initial)  (action (kahua-hook-initial)  thunk))
+          ((before) (action (kahua-hook-before) thunk))
+          ((after)  (action (kahua-hook-after)  thunk))
+          (else     (error "illigal place is specified: ~S" place))
+          ))
+    (values (lambda (place thunk)
+              (make-hook-action add-hook! place thunk))
+            (lambda (place thunk)
+              (make-hook-action delete-hook! place thunk)))))
 
-(define (kahua-delete-hook! place thunk)
-  #f)
+(define (run-kahua-hook-initial)
+  (let1 dbname (or (primary-database-name)
+                   (build-path (ref (kahua-config) 'working-directory) "db"))
+    (with-db (db dbname)
+             (run-hook (kahua-hook-initial)))))
 
 (define (ping-request? header)
   (assoc "x-kahua-ping" header))
 
-(define (handle-request header body reply-cont)
+(define (handle-request header body reply-cont selector)
   (if (ping-request? header)
     (reply-cont #t #t)
     (let1 dbname (or (primary-database-name)
@@ -107,41 +118,39 @@
       (load mod :environment kahua-app-server))))
 
 (define (run-server worker-id sockaddr)
-  (define (accept-handler client input output transaction-id)
-    (thread-start!
-     (make-thread
-      (lambda ()
-	(guard (e
-		(#t (log-format
-		     "[server]: Read error occured in accept-handler")))
-	       (let ((header (read input))
-		     (body   (read input)))
-		 (handle-request
-		  header body
-		  (lambda (r-header r-body)
-		    (guard (e
-			    (#t (log-format
-				 "[server]: client closed connection")))
-			   (begin
-			     (write r-header output) (newline output)
-			     (write r-body output)   (newline output)
-			     (flush output)))
-		    (socket-close client))
-		  ))))
-      transaction-id)))
+  (let ((sock (make-server-socket sockaddr :reuse-addr? #t))
+        (selector (make <selector>)))
+    (define (accept-handler fd flag)
+      (let* ((client (socket-accept sock))
+             (input  (socket-input-port client :buffered? #f))
+             (output (socket-output-port client)))
+        (guard (e
+                (#t (log-format
+                     "[server]: Read error occured in accept-handler")))
+               (let ((header (read input))
+                     (body   (read input)))
+                 (handle-request
+                  header body
+                  (lambda (r-header r-body)
+                    (guard (e
+                            (#t (log-format
+                                 "[server]: client closed connection")))
+                           (begin
+                             (write r-header output) (newline output)
+                             (write r-body output)   (newline output)
+                             (flush output)))
+                    (socket-close client))
+                  selector)))
+        ))
 
-  (let loop ((sock (make-server-socket sockaddr :reuse-addr? #t))
-             (transaction-id 0))
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
       (sys-chmod (sockaddr-name sockaddr) #o770))
+    (run-kahua-hook-initial)
     (format #t "~a\n" worker-id)
-    (let* ((client (socket-accept sock))
-	   (input  (socket-input-port client :buffered? #t))
-	   (output (socket-output-port client)))
-      (accept-handler client input output transaction-id))
-    (loop sock (+ transaction-id)))
-  )
+    (selector-add! selector (socket-fd sock) accept-handler '(r))
+    (do () (#f) (selector-select selector))
+    ))
 
 (define *kahua-top-module* #f)
 
@@ -184,17 +193,15 @@
       (set-signal-handler! SIGINT  (lambda _
                                      (log-format "[~a] SIGINT" worker-name)
                                      (cleanup)
-                                     (sys-exit 0)))
+                                     (exit 0)))
       (set-signal-handler! SIGHUP  (lambda _
                                      (log-format "[~a] SIGHUP" worker-name)
                                      (cleanup)
-                                     (sys-exit 0)))
+                                     (exit 0)))
       (set-signal-handler! SIGTERM (lambda _
                                      (log-format "[~a] SIGTERM" worker-name)
                                      (cleanup)
-                                     (sys-exit 0)))
-;;      (set-signal-handler! SIGPIPE #f) ; ignore SIGPIPE
-
+                                     (exit 0)))
       (with-error-handler
           (lambda (e)
             (log-format "[server] error in main:\n~a"
@@ -206,6 +213,13 @@
           (log-format "[~a] start" worker-name)
           (run-server worker-id sockaddr))))
     ))
+
+(define (kahua-write-static-file path nodes context)
+  (when (string-scan path "../")
+    (error "can't use 'up' component in kahua-write-static-file" path))
+  (with-output-to-file (kahua-static-document-path path)
+    (lambda ()
+      (display (kahua-render nodes context)))))
 
 ;; Main -----------------------------------------------------
 

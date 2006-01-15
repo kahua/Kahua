@@ -5,18 +5,21 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.4.4.1 2005/11/06 15:29:18 shibata Exp $
+;; $Id: worker.scm,v 1.4.4.2 2006/01/15 00:21:07 nobsun Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
 
 (define-module kahua.test.worker
+  (use srfi-1)
   (use srfi-2)
+  (use srfi-13)
   (use gauche.test)
   (use gauche.process)
   (use gauche.net)
   (use text.tree)
   (use rfc.uri)
+  (use www.cgi)
   (use sxml.ssax)
   (use sxml.sxpath)
   (use util.list)
@@ -25,18 +28,27 @@
   (use kahua.test.xml)
   (export run-worker worker-running?
           call-worker call-worker/gsid call-worker/gsid->sxml
-          reset-gsid shutdown-worker with-worker
-          make-match&pick make-match&pick)
+          reset-gsid shutdown-worker with-worker set-gsid
+          make-match&pick header->sxml test/send&pick)
   )
 (select-module kahua.test.worker)
 
 (define-class <worker-subprocess> ()
   ((worker-id      :init-keyword :worker-id)
    (worker-process :init-keyword :worker-process)
+   (sessions       :init-value (make-hash-table 'string=?))
    (state-sid      :init-value #f)
    (cont-sid       :init-value #f)
    (path-info      :init-value #f)
+   (query          :init-value '())
    ))
+
+(define-class <session> ()
+  ((state-sid      :init-value #f)
+   (cont-sid       :init-value #f)
+   (path-info      :init-value #f)
+   (query          :init-value '())))
+
 
 (define (run-worker command)
   (let* ((p  (apply run-process (append command '(:output :pipe))))
@@ -68,7 +80,7 @@
                                     header)
                                    (ref worker 'state-sid)
                                    (ref worker 'cont-sid))
-               body
+               (append body (ref worker 'query))
                (lambda (header body)
                  (set!-values ((ref worker 'state-sid)
                                (ref worker 'cont-sid))
@@ -90,11 +102,16 @@
   (set! (ref worker 'state-sid) #f)
   (set! (ref worker 'cont-sid) #f))
 
+(define-method set-gsid ((worker <worker-subprocess>) . id)
+  (let1 session (ref (ref worker 'sessions) (get-optional id ""))
+    (for-each (lambda (slot)
+                (slot-set! worker slot (ref session slot)))
+              (map slot-definition-name (class-slots <session>)))))
+
 (define-method shutdown-worker ((worker <worker-subprocess>))
   (and-let* ((p (ref worker 'worker-process)))
     (set! (ref worker 'worker-process) #f)
     (set! (ref worker 'worker-id) #f)
-    (sys-sleep 1)
     (process-send-signal p SIGINT)
     (process-wait p)))
 
@@ -111,25 +128,95 @@
 ;; matched to a pattern variable ?&.
 
 (define-method make-match&pick ((worker <worker-subprocess>))
+  ;; matches -> ((name . (path . param)) ...)
   (define (pick matches)
-    (and-let* ((p (assoc-ref matches '?&)))
+    ;; match -> (path . param)
+    (define (get-path&param p)
       ;; cut parameter from url
       (cond ((#/\?x-kahua-cgsid=([^#&]*)/ p)
-             => (lambda (m) (uri-decode-string (m 1))))
-            ((#/kahua.cgi\/(.+?)\/(.+)/ p)
-             => (lambda (m) (uri-decode-string (m 2)))) ;; path_info
-            ((#/kahua.cgi\/(.+?)/ p) #f)                    ;; to top
-            (else p))))
-  (define (save p)
-    (receive (cgsid xtra-path) (string-scan (or p "") "/" 'both)
-      (set! (ref worker 'cont-sid) (or cgsid p))
-      (set! (ref worker 'path-info)
-            (and xtra-path
-                 (list* "dummy" "dummy" (string-split xtra-path "/"))))))
+             => (lambda (m) (cons (uri-decode-string (m 1)) "")))
+            ((#/kahua.cgi\/(.+?)\/([^\?]+)\??(.*)/ p)
+             => (lambda (m) (cons (uri-decode-string (m 2)) (m 3)))) ;; path_info
+            ((#/kahua.cgi\/(.+?)/ p) (cons #f ""))                    ;; to top
+            (else (cons p ""))))
+
+    (filter-map (lambda (match-pair)
+                  (let1 key (x->string (car match-pair))
+                    (and (string-prefix? "?&" key)
+                         (cons (string-drop key 2)
+                               (get-path&param (cdr match-pair))))))
+                matches))
+
+  (define (save ps)
+    (define (save-session path&query session)
+      (let ((p (car path&query))
+            (query (cdr path&query)))
+        (receive (cgsid xtra-path) (string-scan (or p "") "/" 'both)
+          (set! (ref session 'cont-sid) (or cgsid p))
+          (set! (ref session 'path-info)
+              (and xtra-path
+                   (list* "dummy" "dummy" (string-split xtra-path "/"))))
+          (set! (ref session 'query)
+              (cgi-parse-parameters :query-string query)))
+        session))
+
+    (save-session (or (assoc-ref ps "") '(#f . "")) worker)
+    (for-each (lambda (p)
+                (let1 key (car p)
+                  (unless (equal? key "")
+                    (hash-table-put! (ref worker 'sessions)
+                                     key
+                                     (save-session (cdr p) (make <session>))))))
+              ps))
+
   (lambda (pattern input)
     (if (and (pair? input)
              (symbol? (car input)))
       (test-sxml-match? pattern input (compose save pick))
       (test-xml-match? pattern input (compose save pick)))))
+
+;; check 'http header' and save 'continuation session id' to worker.
+;;
+;; (test* "redirect header test"
+;;        (header '((!contain (Status "302 Moved")
+;;                            (Location ?&))))
+;;        (call-worker/gsid
+;;         w
+;;         '()
+;;         '(("login-name" "shibata") ("passwd" "hogehoge"))
+;;         header->sxml)
+;;        (make-match&pick w))
+;;
+;; == (test/send&pick "redirect header test" w
+;;                 '(("login-name" "shibata") ("passwd" "hogehoge")))
+
+
+;; '(("Status" "302 Moved") ("Location" "http://localho..")) (html..)
+;; => '(*TOP* (Status "302 Moved") (Location "http://localho.."))
+(define (header->sxml h b)
+  (define (url-fragment-cutoff pair)
+    (cond ((and (eq? (car pair) 'Location)
+	     (string-scan (cadr pair) #\# 'before))
+	   => (lambda (url)
+		(list (car pair) url)))
+	  (else pair)))
+  (cons '*TOP*
+        (map (lambda (item)
+               (url-fragment-cutoff
+		(cons (string->symbol (car item))
+		      (cdr item))))
+             h)))
+
+(define (test/send&pick label w send-data)
+  (test* label
+         '(*TOP* (!contain (Status "302 Moved")
+                           (Location ?&)))
+         (call-worker/gsid
+          w
+          '()
+          send-data
+          header->sxml)
+         (make-match&pick w)))
+
 
 (provide "kahua/test/worker")

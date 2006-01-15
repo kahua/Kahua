@@ -22,7 +22,7 @@ Persistent Object
 
 今のところ、永続化されるのは以下のオブジェクトです。
 
- ・ boolean, number, string, symbol, keyword
+ ・ boolean, number, string, symbol, keyword, null
  ・ 永続化可能オブジェクトを要素に持つlist, vector
  ・ 他の永続オブジェクトへの参照
 
@@ -48,6 +48,16 @@ Persistent Object
 この永続オブジェクトを格納しているデータベース(<kahua-db>のイ
 ンスタンス) を参照しています。
 
+[method] persistent-initialize (obj <kahua-persistent-base>) initargs
+
+永続オブジェクトの初期化メソッドです．
+initializeメソッドが永続オブジェクトの実体化の度に呼ばれるのに対して，
+persistent-initializeメソッドは永続オブジェクトを作成する時に一度だけ
+呼ばれます．
+ユーザは `persistent-initialize' メソッドを特定化してオブジェクトの初期化
+の方法をカスタマイズできます．
+
+
 [method] key-of (obj <kahua-persistent-base>)
 
 データベースのキーに使う文字列を返します。デフォルトメソッド
@@ -66,6 +76,20 @@ Persistent Object
 
 永続クラスの世代が上がった時に、永続インスタンスの世代もまと
 めて合わせたい時などに使えます。
+
+[procedure] kahua-wrapper? val
+
+valが<kahua-wrapper>オブジェクトであるかどうかを返す述語です。
+
+DBから読み込まれた永続オブジェクトの永続スロットは初期値として
+<kahua-wrapper>オブジェクトを値に持ちます．
+そして，ユーザがスロットにアクセスした時点でスロットの値が実体化
+されます．
+
+通常，ユーザは<kahua-wrapper>オブジェクトを意識する必要はありませ
+んが，compute-get-n-setメソッドを使ってスロットアクセスをカスタマイズ
+する場合に，対象が<kahua-wrapper>オブジェクトかどうかを判定するのに
+使えます．
 
 [procedure] kahua-serializable-object? obj
 

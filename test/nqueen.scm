@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test nqueen script.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: nqueen.scm,v 1.2.2.1 2005/12/04 02:19:48 nobsun Exp $
+;; $Id: nqueen.scm,v 1.2.2.2 2006/01/15 00:21:07 nobsun Exp $
 
 (use srfi-2)
 (use srfi-11)

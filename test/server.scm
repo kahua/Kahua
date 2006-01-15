@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: server.scm,v 1.3.2.1 2006/01/15 00:21:07 nobsun Exp $
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.
@@ -141,6 +141,28 @@
           (call-entry 'foo '())
           )))
 
+(test* "define-entry (multi-value bind parameter)"
+       '(("usr" "var" "www" ("xxX" "Xxx" "xXx") () ("Zzzz"))
+         (#f #f #f ("xxx") ("yyy") ("zzz"))
+         (#f #f #f () () ()))
+       (let ()
+         (eval
+          '(define-entry (bar a b c :multi-value-keyword x y z)
+             (list a b c x y z))
+          (current-module))
+         (list
+          (call-entry 'bar
+                      '(("x-kahua-path-info" ("usr" "var" "www" "zzz"))
+                        ("z" "Zzzz")
+                        ("x" "xxX" "Xxx" "xXx")))
+          (call-entry 'bar
+                      '(("x-kahua-path-info" ())
+                        ("x" "xxx")
+                        ("y" "yyy")
+                        ("z" "zzz")))
+          (call-entry 'bar '())
+          )))
+
 ;; make sure 'foo' is registered globally.
 (test* "define-entry & session"
        '("usr" "var" "www" "xxX" #f "Zzzz")
@@ -234,6 +256,34 @@
          *test-error*
          (eval '(define-entry (foo a b :keyword x y :rest z q) #f)
                (interaction-environment)))
+  (test* "define-entry (bad :rest arg - 9)"
+         *test-error*
+         (eval '(define-entry (foo a b :rest :mvkeyword z) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad :rest arg - 10)"
+         *test-error*
+         (eval '(define-entry (foo a b :rest :multi-value-keyword z) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad keyword tail - 11)"
+         *test-error*
+         (eval '(define-entry (foo a b :rest :bad-keyword z) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad unknown keyword - 1)"
+         *test-error*
+         (eval '(define-entry (foo a b :bad-keyword z) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad keyword tail - 1)"
+         *test-error*
+         (eval '(define-entry (foo a b :keyword) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad keyword tail - 2)"
+         *test-error*
+         (eval '(define-entry (foo a b :mvkeyword) #f)
+               (interaction-environment)))
+  (test* "define-entry (bad keyword tail - 3)"
+         *test-error*
+         (eval '(define-entry (foo a b :multi-value-keyword) #f)
+               (interaction-environment)))
   )
 
 ;;---------------------------------------------------------------
@@ -262,6 +312,66 @@
              (body
               (p
                (extra-header (@ (name "voo") (value "doo"))))))))))
+
+
+;;---------------------------------------------------------------
+(test-section "kahua-current-entry-name")
+
+(test* "check entry name"
+       "my-entry"
+       (let ()
+         (eval
+          '(define-entry (my-entry)
+             (kahua-current-entry-name))
+          (current-module))
+         (call-entry 'my-entry
+                     '()
+                     )))
+
+
+;;---------------------------------------------------------------
+(test-section "JSON")
+
+(test* "check json string"
+       "(\"str\")"
+       (kahua-render '((json "str")) ()))
+
+(test* "check json number"
+       "(1)"
+       (kahua-render '((json 1)) ()))
+
+(test* "check json object"
+       "({a: 1})"
+       (kahua-render '((json #((a . 1)))) ()))
+
+(test* "check json array"
+       "([\"str\",1,{a: 1}])"
+       (kahua-render '((json ("str"
+                              1
+                              #((a . 1))))) ()))
+
+(test* "check json true"
+       "(true)"
+       (kahua-render '((json #t)) ()))
+
+(test* "check json false"
+       "(false)"
+       (kahua-render '((json #f)) ()))
+
+
+(define-class <jsonable> (<json-base>)
+  ((a :json #t
+      :init-keyword :a)
+   (b :init-keyword :b)
+   (c :json #t
+      :init-keyword :c)))
+
+(test* "check json <json-base>"
+       "({a: 1,c: \"str\"})"
+       (kahua-render `((json ,(make <jsonable>
+                                :a 1
+                                :b 2
+                                :c "str"))) ()))
 
 (test-end)
 

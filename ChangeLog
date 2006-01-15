@@ -1,32 +1,195 @@
-2005-12-04  SHIBATA Tomohisa  <shibata@kahua.org>
+2006-01-14  SHIBATA Tomohisa  <shibata@kahua.org>
 
-	* src/kahua/persistence.scm:
-	fixed unlock db timing.
-	added with-fsdb-lock syntax.
-	changed to use mutex.
+	* src/kahua/server.scm: Added interp-json, <json-base>, x->json.
 
-2005-12-04  Nobuo Yamashita  <nobsun@sampou.org>
+2006-01-10  TAHARA Yusei  <yusei@domen.cx>
+
+	* src/kahua/serialize.scm, test/serialize.scm:
+	Added keyword support.
+
+2006-01-09  TAHARA Yusei  <yusei@domen.cx>
+
+	* src/kahua/serialize.scm:
+	Bug fixed.
+	* test/serialize.scm, test/Makefile.in:
+	Added test code.
+
+2006-01-09  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added kahua-render proc.
+	Added interp-css.
 
 	* src/kahua-server.scm:
-	Use sys-exit instead of exit in signal handler.
+	Added kahua-write-static-file.
+	Added kahua-hook-initial.
+	Improved kahua-delete-hook!.
 
-2005-11-06  SHIBATA Tomohisa  <shibata@kahua.org>
+2006-01-09  Nobuo Yamashita  <nobsun@sampou.org>
 
-	* test/spvr-httpd.scm.in, src/kahua/test/worker.scm:
-	added sleep before sending SIGINT signal to worker.
+	* test/many-as.kahua, test/dead-lock.scm, test/Makefile.in
+	Added.  This test reproduced dead-lock in the moment.
 
-	* src/kahua/util.scm: add-hoc patch to kahua-error-string.
-	fix me!
+2006-01-08  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Changed kahua-current-user to use kahua-find-user.
+
+	* src/kahua/user.scm:
+	Removed add-user check-user find-user user-password-change \
+	        user-password-change-force user-has-role?.
+	Added <kahua-user-meta>.
+	Changed <kahua-user> to use <kahua-user-meta> meta class.
+
+2006-01-08  TAHARA Yusei  <yusei@domen.cx>
+
+	* src/kahua/serialize.scm:
+	Added kahua.serialize module.
+
+2006-01-08  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added and Exported apply-entry-method.
+	Added define-method-rule.
+	Changed define-entry-method to use define-method-rule instead of define-method.
+	Changed serialized object's delimiter to "\0".
+
+2006-01-07  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* Release 0.3.5
+
+2006-01-06  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* test/persistence.scm:
+	Added multi mixin-metaclass test.
 
 	* src/kahua/persistence.scm:
-	changed timing of db-lock to kahua-db-close step from kahua-db-open step.
+	Changed to call next-method in compute-get-n-set of <kahua-persistent-meta>.
+	Added kahua-wrapper? proc.
 
-	* src/kahua-server.scm:
-	added a signal handler which catches SIGPIPE and ignores it.
-	changed accept-handler makes threads.
 
-	* ChangeLog, src/kahua/persistence.scm, test/persistence.scm.in:
-	marged for HEAD.
+2005-12-30  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/test/worker.scm, test/entry-method.scm.in:
+	Added set-gsid proc which restore worker's global session by matching id.
+
+	* test/Makefile.in
+	Renamed *.scm.in file to *.scm
+	
+2005-12-29  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* doc/Modules/kahua.persistence.ja:
+	Added persistent-initialize method document.
+
+	* src/kahua/persistence.scm:
+	Added persistent-initialize method to <kahua-persistent-base>.
+
+	* test/persistence.scm.in:
+	Added initialize and persistent-initialize method test.
+
+2005-12-26  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/test/worker.scm:
+	added header->sxml and test/send&pick.
+	Changed make-match&pick to save query.
+
+	* src/kahua/server.scm:
+	Added redirect/cont.
+	Fixed remote-cont fragment.
+
+	* test/Makefile.in, test/redirectcont.kahua, test/redirectcont.scm.in:
+	Added redirect/cont test.
+
+2005-12-25  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added <entry-method> and entry-specializer.
+
+	* src/kahua/server.scm:
+	changed define-entry-method macro to syntax.
+	made define-entry-method kahua-current-entry-name safe.
+
+2005-12-24  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added define-entry-method.
+
+	* test/Makefile.in, test/entry-method.kahua, test/entry-method.scm.in:
+	Added entry-method test.
+
+	* src/kahua/persistence.scm:
+	Fixed error loop.
+
+2005-12-23  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm, src/kahua/server.scm:
+	Supported transaction rollback.
+	Added <with-db-error> and raise-with-db-error.
+	Changed persistent class read-syncer to :auto
+	Added kahua-db-write-id-counter method.
+
+	* test/Makefile.in, test/rollback.kahua, test/rollback.scm.in:
+	Added rollback test(need rewrite).
+
+2005-12-22  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* emacs/kahua-shell.el.in:
+	Added kahua-mode.
+	Changed kahua-shell buffer name to *kahua-shell*. (Patch from KOGURO, Naoki)
+
+	* src/kahua-shell.scm: fixed newline bug. (Patch from Osamu TOGAWA)
+
+	* INSTALL, configure.ac, src/Makefile.in, src/kahua.conf.sample:
+	Added --kahua-staticdir option to configure.
+
+2005-12-21  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistent.scm
+	Fixed unbound persistent slot bug.
+	Added unbound persistent slot test.
+
+	* src/kahua/elem.scm
+	fixed node-list-to-node-set and node-set: bug.
+
+	* src/server.scm
+	* test/server.scm.in
+	improved kahua-current-entry-name.
+	added kahua-current-entry-name test.
+
+2005-12-19  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added x-kahua-path-full-info to worker context.
+	Now, worker can get worker name and entry name by
+	(kahua-context-ref "x-kahua-path-full-info").
+	Added kahua-current-entry-name.
+
+2005-12-18  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* emacs/kahua-shell.el.in (run-kahua-shell): add -t option with ssh.
+
+2005-12-18  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* add keywords :multi-value-keyword and :mvkeyword.
+	  These are used for keyword which get many values from context.
+
+2005-12-18  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* entry-lambda's keyword can get multiple values from context.
+	  So, we can remove kahua-context-ref* from *.kahua.
+	  kahua framework bind keyword single value or list of values.
+	  When multiple values posted, keyword is binded by values of list.
+	  and another case, single value posted, keyword is binded by a value.
+
+2005-11-26  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Changed kahua-serializable-object? to return #t for null list.
+
+2005-11-12  ENDO Yasuyuki
+
+	* src/kahua/persistence.scm:
+	  check Gauche-dbi 0.2 and later in read-kahua-instance and write-kahua-instance.
 
 2005-11-03  SHIBATA Tomohisa  <shibata@kahua.org>
 

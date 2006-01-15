@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.3 2005/08/22 09:27:12 yasuyuki Exp $
+;; $Id: user.scm,v 1.3.2.1 2006/01/15 00:21:07 nobsun Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -14,10 +14,20 @@
   (use gauche.collection)
   (export <kahua-user> kahua-add-user kahua-check-user kahua-find-user
           kahua-user-password-change kahua-user-password-change-force
-	  kahua-user-has-role?))
+	  kahua-user-has-role?
+	  ))
 (select-module kahua.user)
 
-(define-class <kahua-user> (<kahua-persistent-base>)
+(define-class <kahua-user-meta> (<class>)
+  ((%user-class :allocation :class)))
+
+(define-class <kaua-user-mixin> () () :metaclass <kahua-user-meta>)
+
+(define-method initialize ((class <kahua-user-meta>) initargs)
+  (next-method)
+  (slot-set! class '%user-class class))
+
+(define-class <kahua-user> (<kahua-persistent-base> <kaua-user-mixin>)
   ((login-name    :allocation :persistent
                   :init-keyword :login-name :init-value #f)
    (password-hash :allocation :persistent
@@ -31,13 +41,16 @@
 (define-method key-of ((self <kahua-user>))
   (ref self 'login-name))
 
+(define (kahua-current-user-class)
+  (ref <kahua-user> '%user-class))
+
 (define (kahua-find-user login-name)
-  (find-kahua-instance <kahua-user> login-name))
+  (find-kahua-instance (kahua-current-user-class) login-name))
 
 (define (kahua-add-user login-name password)
   (if (kahua-find-user login-name)
     #f
-    (make <kahua-user>
+    (make (kahua-current-user-class)
       :login-name login-name
       :password-hash (crypt-passwd password))))
 
@@ -46,30 +59,32 @@
           (and (equal? (ref user 'login-name) login-name)
                (not (ref user 'inactive))
                (match-passwd password (ref user 'password-hash))))
-        (make-kahua-collection <kahua-user>)))
+        (make-kahua-collection (kahua-current-user-class))))
 
 ;; user must be <kahua-user>.  caller must sync db.
 (define (kahua-user-password-change user old-password new-password)
-  (and (is-a? user <kahua-user>)
+  (and (is-a? user (kahua-current-user-class))
        (kahua-check-user (ref user 'login-name) old-password)
        (kahua-user-password-change-force user new-password)
        #t))
 
 ;; user must be <kahua-user>.  caller must sync db.
 (define (kahua-user-password-change-force user new-password)
-  (and (is-a? user <kahua-user>)
+  (and (is-a? user (kahua-current-user-class))
        (set! (ref user 'password-hash) (crypt-passwd new-password))
        #t))
+
 
 ;; user may be <kahua-user> object or #f
 ;; role-alist's spec isn't fixed yet.  for now, we assume it's a list of
 ;; symbols.
 ;; ROLES arg is also a list of symbols.  Later we might add move syntax.
 (define (kahua-user-has-role? user roles)
-  (and (is-a? user <kahua-user>)
+  (and (is-a? user (kahua-current-user-class))
        (list? roles)
        (find (lambda (urole) (find (cut eq? <> urole) roles))
              (ref user 'role-alist))))
+
 
 ;; internal utility
 (define (crypt-passwd passwd)

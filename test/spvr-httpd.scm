@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test supervisor scripts in http mode.
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: spvr-httpd.scm,v 1.3.2.1 2005/11/06 15:29:26 shibata Exp $
+;; $Id: spvr-httpd.scm,v 1.3.2.2 2006/01/15 00:21:07 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -50,7 +50,6 @@
                (string-size body))))
 
 ;; Shutdown
-(sys-sleep 1)
 (process-send-signal *spvr* SIGTERM)
 
 (test-end)

@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.4.2.1 2005/11/06 08:58:09 shibata Exp $
+;; $Id: persistence.scm,v 1.4.2.2 2006/01/15 00:21:07 nobsun Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -906,5 +906,162 @@
 ; ;; にて読み出せることを確認する。
 ; (test* "read in other transaction (auto synched: 2)" 1
 ;        (with-db (db *dbname*) (ref object 'a)))
+
+;;----------------------------------------------------------
+;; unboundなスロットのテスト
+(test-section "unbound slot")
+
+(define-class <unbound-slot-class> (<kahua-persistent-base>)
+  ((normal :allocation :persistent :init-value 'val)
+   (unbound :allocation :persistent)))
+
+(define-method key-of ((self <unbound-slot-class>))
+  (x->string (ref self 'normal)))
+
+(test* "make unbound slot instance" '(val #f)
+       (with-clean-db (db *dbname*)
+         (let1 obj (make <unbound-slot-class>)
+           (list (ref obj 'normal)
+                 (slot-bound? obj 'unbound)
+                 ))))
+
+
+(test* "check unbound slot" '(val #f)
+       (with-clean-db (db *dbname*)
+         (let1 obj (find-kahua-instance <unbound-slot-class> "val")
+           (list (ref obj 'normal)
+                 (slot-bound? obj 'unbound)
+                 ))))
+
+;;----------------------------------------------------------
+;; 初期化メソッドinitializeとpersistent-initialize methodのチェック
+(test-section "initialize and persistent-initialize method")
+
+(define-class <init-A> (<kahua-persistent-base>)
+  ((base1 :allocation :persistent :init-value 0)
+   (base2 :allocation :persistent :init-value 0)
+   (key :init-value "a" :accessor key-of)))
+
+(define-method persistent-initialize ((obj <init-A>) initargs)
+  (update! (ref obj 'base1) (cut + <> 1)))
+
+(define-method initialize ((obj <init-A>) initargs)
+  (next-method)
+  (update! (ref obj 'base2) (cut + <> 1)))
+
+
+(test* "make first instance" '(1 1)
+       (with-clean-db (db *dbname*)
+         (let1 obj (make <init-A>)
+           (list (ref obj 'base1)
+                 (ref obj 'base2)))))
+
+(test* "find instance" '(1 2)
+       (with-clean-db (db *dbname*)
+         (let1 obj (find-kahua-instance <init-A> "a")
+           (list (ref obj 'base1)
+                 (ref obj 'base2)))))
+
+;;----------------------------------------------------------
+;; 永続クラス再定義のチェック
+(test-section "persistent class redefine")
+
+(define-class <redefine-A> (<kahua-persistent-base>)
+  ((base :allocation :persistent :init-value 0)
+   (key :init-value "a" :accessor key-of)))
+
+(define-class <redefine-B> (<kahua-persistent-base>)
+  ((base :allocation :persistent :init-value 1)
+   (key :init-value "b" :accessor key-of)))
+
+(define *id* #f)
+(define *id2* #f)
+
+(test* "make first instance(1)" 0
+       (with-db (db *dbname*)
+         (let1 obj (make <redefine-A>)
+           (set! *id* (ref obj 'id))
+           (ref obj 'base))))
+
+(redefine-class! <redefine-A> <redefine-B>)
+
+(test* "redefine instance(1)" '(#f 0)
+       (with-db (db *dbname*)
+                (let1 obj (find-kahua-instance <redefine-A> "a")
+                  (set! *id2* (ref obj 'id))
+                  (list (eq? *id* (ref obj 'id))
+                        (ref obj 'base)))))
+
+(test* "find redefined instance(1)" '(#t 0)
+       (with-clean-db (db *dbname*)
+                (let1 obj (find-kahua-instance <redefine-B> "a")
+           (list (eq? *id2* (ref obj 'id))
+                 (ref obj 'base)))))
+
+(define-class <redefine-C> (<kahua-persistent-base>)
+  ((base :allocation :persistent :init-value 0)
+   (key :init-value "c" :accessor key-of)))
+
+(test* "make first instance(2)" 0
+       (with-db (db *dbname*)
+         (let1 obj (make <redefine-C>)
+           (set! *id* (ref obj 'id))
+           (ref obj 'base))))
+
+(define-class <redefine-C> (<kahua-persistent-base>)
+  ((base :allocation :persistent :init-value 1)
+   (base2 :allocation :persistent :init-value 10)
+   (key :init-value "c" :accessor key-of)))
+
+(test* "find redefined instance(2)" '(#t 0 10)
+       (with-clean-db (db *dbname*)
+                (let1 obj (find-kahua-instance <redefine-C> "c")
+           (list (eq? *id* (ref obj 'id))
+                 (ref obj 'base)
+                 (ref obj 'base2)))))
+
+;;----------------------------------------------------------
+;; 永続クラスと他のメタクラスを同時に使うチェック
+;; 継承順序もチェック
+
+(test-section "useing other metaclass")
+
+(use gauche.mop.validator)
+
+(define-class <valid-A> (<kahua-persistent-base> <validator-mixin>)
+  ((number :allocation :persistent :init-value "0"
+           :validator (lambda (obj value)
+                        (if (not (string? value))
+                            value
+                          (string->number value))))))
+
+(define-class <valid-B> (<validator-mixin> <kahua-persistent-base>)
+  ((string :allocation :persistent :init-value "0"
+           :validator (lambda (obj value)
+                        (if (kahua-wrapper? value)
+                            value
+                          (x->string value))))))
+
+(define-method key-of ((obj <valid-A>))
+  "valid-a")
+
+(define-method key-of ((obj <valid-B>))
+  "valid-b")
+
+(test* "make mixin instance" '(10 "(a b c)")
+       (with-clean-db (db *dbname*)
+         (let ((a-obj (make <valid-A>))
+               (b-obj (make <valid-B>)))
+           (slot-set! a-obj 'number "10")
+           (slot-set! b-obj 'string '(a b c))
+           (list (ref a-obj 'number)
+                 (ref b-obj 'string)))))
+
+(test* "find mixin instance" '(10 "(a b c)")
+       (with-clean-db (db *dbname*)
+         (let ((a-obj (find-kahua-instance <valid-A> "valid-a"))
+               (b-obj (find-kahua-instance <valid-B> "valid-b")))
+           (list (ref a-obj 'number)
+                 (ref b-obj 'string)))))
 
 (test-end)
