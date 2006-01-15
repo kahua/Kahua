@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.6.2.6 2006/01/15 00:21:07 nobsun Exp $
+;; $Id: kahua-server.scm,v 1.6.2.7 2006/01/15 01:03:44 nobsun Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -26,6 +26,7 @@
   (use gauche.collection)
   (use gauche.parseopt)
   (use gauche.hook)
+  (use gauche.threads)
   (use file.util)
   (use srfi-1)
   (use kahua)
@@ -92,7 +93,7 @@
 (define (ping-request? header)
   (assoc "x-kahua-ping" header))
 
-(define (handle-request header body reply-cont selector)
+(define (handle-request header body reply-cont)
   (if (ping-request? header)
     (reply-cont #t #t)
     (let1 dbname (or (primary-database-name)
@@ -118,39 +119,41 @@
       (load mod :environment kahua-app-server))))
 
 (define (run-server worker-id sockaddr)
-  (let ((sock (make-server-socket sockaddr :reuse-addr? #t))
-        (selector (make <selector>)))
-    (define (accept-handler fd flag)
-      (let* ((client (socket-accept sock))
-             (input  (socket-input-port client :buffered? #f))
-             (output (socket-output-port client)))
-        (guard (e
-                (#t (log-format
-                     "[server]: Read error occured in accept-handler")))
-               (let ((header (read input))
-                     (body   (read input)))
-                 (handle-request
-                  header body
-                  (lambda (r-header r-body)
-                    (guard (e
-                            (#t (log-format
-                                 "[server]: client closed connection")))
-                           (begin
-                             (write r-header output) (newline output)
-                             (write r-body output)   (newline output)
-                             (flush output)))
-                    (socket-close client))
-                  selector)))
-        ))
+  (define (accept-handler client input output transaction-id)
+    (thread-start!
+     (make-thread
+      (lambda ()
+	(guard (e
+		(#t (log-format
+		     "[server]: Read error occured in accept-handler")))
+	       (let ((header (read input))
+		     (body   (read input)))
+		 (handle-request
+		  header body
+		  (lambda (r-header r-body)
+		    (guard (e
+			    (#t (log-format
+				 "[server]: client closed connection")))
+			   (begin
+			     (write r-header output) (newline output)
+			     (write r-body output)   (newline output)
+			     (flush output)))
+		    (socket-close client))
+		  ))))
+      transaction-id)))
 
+  (let loop ((sock (make-server-socket sockaddr :reuse-addr? #t))
+             (transaction-id 0))
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
       (sys-chmod (sockaddr-name sockaddr) #o770))
-    (run-kahua-hook-initial)
     (format #t "~a\n" worker-id)
-    (selector-add! selector (socket-fd sock) accept-handler '(r))
-    (do () (#f) (selector-select selector))
-    ))
+    (let* ((client (socket-accept sock))
+	   (input  (socket-input-port client :buffered? #t))
+	   (output (socket-output-port client)))
+      (accept-handler client input output transaction-id))
+    (loop sock (+ transaction-id)))
+  )
 
 (define *kahua-top-module* #f)
 
@@ -193,15 +196,16 @@
       (set-signal-handler! SIGINT  (lambda _
                                      (log-format "[~a] SIGINT" worker-name)
                                      (cleanup)
-                                     (exit 0)))
+                                     (sys-exit 0)))
       (set-signal-handler! SIGHUP  (lambda _
                                      (log-format "[~a] SIGHUP" worker-name)
                                      (cleanup)
-                                     (exit 0)))
+                                     (sys-exit 0)))
       (set-signal-handler! SIGTERM (lambda _
                                      (log-format "[~a] SIGTERM" worker-name)
                                      (cleanup)
-                                     (exit 0)))
+                                     (sys-exit 0)))
+      (set-signal-handler! SIGPIPE #f) ; ignore SIGPIPE
       (with-error-handler
           (lambda (e)
             (log-format "[server] error in main:\n~a"
