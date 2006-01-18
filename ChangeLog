@@ -1,3 +1,9 @@
+2006-01-18  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-spvr.scm:
+	make multi-threaded. 
+	Attention several tests cannot return at the moment.
+	
 2006-01-18  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* branch dev_spvr_mt_branch:
