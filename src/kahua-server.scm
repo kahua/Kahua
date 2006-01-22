@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.7 2006/01/09 12:07:00 shibata Exp $
+;; $Id: kahua-server.scm,v 1.8 2006/01/22 07:46:57 shibata Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -44,6 +44,7 @@
 
 (define primary-database-name (make-parameter #f))
 (define kahua-app-args (make-parameter #f))
+(define-constant *SIGNAL-LIST* (list SIGTERM SIGINT SIGHUP))
 
 (define (kahua-application-environment)
   (let ((sandbox (make-sandbox-module))
@@ -119,14 +120,17 @@
 
 (define (run-server worker-id sockaddr)
   (let ((sock (make-server-socket sockaddr :reuse-addr? #t))
-        (selector (make <selector>)))
+        (selector (make <selector>))
+        (new_sigset (apply sys-sigset-add! (make <sys-sigset>)
+                           *SIGNAL-LIST*)))
     (define (accept-handler fd flag)
       (let* ((client (socket-accept sock))
              (input  (socket-input-port client :buffered? #f))
-             (output (socket-output-port client)))
+             (output (socket-output-port client))
+             (old_sigset (sys-sigmask SIG_BLOCK new_sigset)))
         (guard (e
                 (#t (log-format
-                     "[server]: Read error occured in accept-handler")))
+                     "[server]: Read error occured in accept-handler: ~a" (ref e 'message))))
                (let ((header (read input))
                      (body   (read input)))
                  (handle-request
@@ -141,7 +145,7 @@
                              (flush output)))
                     (socket-close client))
                   selector)))
-        ))
+        (sys-sigmask SIG_SETMASK old_sigset)))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
@@ -189,19 +193,12 @@
                         (log-format "[~a] exit" worker-name)
                         (when (is-a? sockaddr <sockaddr-un>)
                           (sys-unlink (sockaddr-name sockaddr))))))
+      (define (termination-handler sig)
+        (log-format "[~a] ~a" worker-name (sys-signal-name sig))
+        (cleanup)
+        (exit 0))
       (log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
-      (set-signal-handler! SIGINT  (lambda _
-                                     (log-format "[~a] SIGINT" worker-name)
-                                     (cleanup)
-                                     (exit 0)))
-      (set-signal-handler! SIGHUP  (lambda _
-                                     (log-format "[~a] SIGHUP" worker-name)
-                                     (cleanup)
-                                     (exit 0)))
-      (set-signal-handler! SIGTERM (lambda _
-                                     (log-format "[~a] SIGTERM" worker-name)
-                                     (cleanup)
-                                     (exit 0)))
+      (for-each (cut set-signal-handler! <> termination-handler) *SIGNAL-LIST*)
       (with-error-handler
           (lambda (e)
             (log-format "[server] error in main:\n~a"
