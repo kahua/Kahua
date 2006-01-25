@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.8 2006/01/22 07:46:57 shibata Exp $
+;; $Id: kahua-server.scm,v 1.9 2006/01/25 15:55:34 shibata Exp $
 
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -26,6 +26,7 @@
   (use gauche.collection)
   (use gauche.parseopt)
   (use gauche.hook)
+  (use gauche.charconv)
   (use file.util)
   (use srfi-1)
   (use kahua)
@@ -211,12 +212,13 @@
           (run-server worker-id sockaddr))))
     ))
 
-(define (kahua-write-static-file path nodes context)
+(define (kahua-write-static-file path nodes context . rargs)
   (when (string-scan path "../")
     (error "can't use 'up' component in kahua-write-static-file" path))
   (with-output-to-file (kahua-static-document-path path)
     (lambda ()
-      (display (kahua-render nodes context)))))
+      (display (kahua-render nodes context)))
+    :encoding (get-keyword :encoding rargs (gauche-character-encoding))))
 
 ;; Main -----------------------------------------------------
 
