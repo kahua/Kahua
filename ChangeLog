@@ -1,3 +1,17 @@
+2006-01-24  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* merge main-trunc
+
+2006-01-22  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Changed id-counter writer to use sys-mkstemp.
+	(Patch from Tatsuya BIZENN)
+
+	* src/kahua-server.scm:
+	Changed to block SIGINT, SIGHUP SIGTERM signal on accept-handler.
+	(Patch from Tatsuya BIZENN)
+
 2006-01-18  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* src/kahua-spvr.scm:

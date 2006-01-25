@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.36 2006/01/06 14:34:56 shibata Exp $
+;; $Id: persistence.scm,v 1.36.4.1 2006/01/25 03:46:36 nobsun Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1026,6 +1026,16 @@
 (define (id-counter-path path)
   (build-path path "id-counter"))
 
+;; write id-counter or kahua-instance into kahua-db-fs safely.
+(define (%call-writer-to-file-safely file tmpbase writer)
+  (receive (out tmp) (sys-mkstemp tmpbase)
+    (with-error-handler
+     (lambda (e) (sys-unlink tmp) (raise e))
+     (lambda ()
+       (writer out)
+       (close-output-port out)
+       (sys-rename tmp file)))))
+
 ;; lock mechanism - we need more robust one later, but just for now...
 (define (lock-file-path path)
   (build-path path "lock"))
@@ -1063,19 +1073,23 @@
   (let ((cntfile (id-counter-path path)))
     (if (file-is-directory? path)
       (if (file-is-regular? cntfile)
-        (let1 db (make class :path path)
-          (set! (ref db 'active) #t)
-          (set! (ref db 'id-counter) (with-input-from-file cntfile read))
-          (unless (lock-db db)
-            (error "kahua-db-open: couldn't obtain database lock: " path))
-          db)
+          (let ((db (make class :path path))
+                (cnt (with-input-from-file cntfile read)))
+            (unless (number? cnt)
+              (error "kahua-db-open: number required but got as id-counter: " cnt))
+            (set! (ref db 'active) #t)
+            (set! (ref db 'id-counter) cnt)
+            (unless (lock-db db)
+              (error "kahua-db-open: couldn't obtain database lock: " path))
+            db)
         (error "kahua-db-open: path is not a db: " path))
       (begin
         ;; There could be a race condition here, but it would be very
         ;; low prob., so for now it should be OK.
         (make-directory* path)
-        (make-directory* (build-path path "tmp"))
-        (with-output-to-file cntfile (cut write 0))
+        (let1 tmp-path (build-path path "tmp/")
+          (make-directory* tmp-path)
+          (%call-writer-to-file-safely cntfile tmp-path (pa$ write 0)))
         (let1 db (make class :path path)
           (set! (ref db 'active) #t)
           (unless (lock-db db)
@@ -1149,8 +1163,11 @@
     (kahua-db-write-id-counter db)))
 
 (define-method kahua-db-write-id-counter ((db <kahua-db-fs>))
-  (with-output-to-file (id-counter-path (ref db 'path))
-    (cut write (ref db 'id-counter))))
+  (let1 db-path (ref db 'path)
+    (%call-writer-to-file-safely (id-counter-path db-path)
+                                 (build-path db-path "tmp/")
+                                 (pa$ write (ref db 'id-counter)))))
+
 
 (define-method kahua-db-write-id-counter ((db <kahua-db-dbi>))
   (let ((q (ref db 'query)))
@@ -1298,14 +1315,10 @@
                                      (obj <kahua-persistent-base>))
   (let* ((path  (data-path db (class-of obj) (key-of obj))))
     (make-directory* (sys-dirname path))
-    (receive (p tmp) (sys-mkstemp (build-path (ref db 'path) "tmp"))
-      (with-error-handler
-          (lambda (e) (sys-unlink tmp) (raise e))
-        (lambda ()
-          (kahua-write obj p)
-          (close-output-port p)
-          (sys-rename tmp path)
-          (set! (ref obj '%floating-instance) #f))))))
+    (%call-writer-to-file-safely path (build-path (ref db 'path) "tmp/")
+                                 (pa$ kahua-write obj))
+    (set! (ref obj '%floating-instance) #f)))
+
 
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
                                      (obj <kahua-persistent-base>))
@@ -1315,7 +1328,7 @@
 		       (dbi-escape-sql (ref db 'connection) str)
 		       "'")
 	(dbi-escape-sql (ref db 'connection) str)))
-  
+
   (define (table-name)
     (let1 cname (class-name (class-of obj))
       (or (assq-ref (ref db 'table-map) cname)
