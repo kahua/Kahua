@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.37 2006/01/22 07:50:26 shibata Exp $
+;; $Id: persistence.scm,v 1.38 2006/01/26 14:50:56 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -582,8 +582,8 @@
         ((assv-ref (ref metainfo 'signature-alist) generation)
          => signature->slot-definitions)
         (else
-         (error "persistent-class-slots: class ~a doesn't have generation ~a"
-                (ref metainfo 'name) generation))))
+         (errorf "persistent-class-slots: class ~a doesn't have generation ~a"
+                 (ref metainfo 'name) generation))))
 
 ;; When an instance of a persistent class is realized for the first
 ;; time within the process, the in-memory class and the in-DB class
@@ -949,7 +949,7 @@
   (next-method)
   (unless (ref db 'driver)
     (let1 m (#/(.*?):(?:([^:]+)(?::([^:]*)(?::(.*))?)?)?/ (ref db 'path))
-      (unless m (error "unsupported database driver path: ~a" (ref db 'path)))
+      (unless m (errorf "unsupported database driver path: ~a" (ref db 'path)))
       (set! (ref db 'driver)   (dbi-make-driver (m 1)))
       (set! (ref db 'user)     (m 2))
       (set! (ref db 'password) (m 3))
@@ -964,7 +964,7 @@
               (let1 dbtype (m 1)
                 (cond ((equal? dbtype "mysql") <kahua-db-mysql>)
                       ((equal? dbtype "pg")    <kahua-db-postgresql>)
-                      (else (error "unknown external database driver: ~s"
+                      (else (errorf "unknown external database driver: ~s"
                                    dbtype))))))
         (else <kahua-db-fs>)))
 
@@ -1150,7 +1150,7 @@
   (with-error-handler
       (lambda (e)
         (if (is-a? e <dbi-exception>)
-          (error "DBI error: ~a" (ref e 'message))
+          (errorf "DBI error: ~a" (ref e 'message))
           (raise e)))
     (lambda ()
       (dbi-execute-query q sql))))
