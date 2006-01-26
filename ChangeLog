@@ -1,3 +1,10 @@
+2006-01-27  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* src/kahua/persistence.scm:
+	modify with-db macro.
+	We can use with-db macro whiout knowledge for
+	current-db's path name.
+	
 2006-01-22  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/persistence.scm:

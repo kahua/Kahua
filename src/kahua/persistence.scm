@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.38 2006/01/26 14:50:56 shibata Exp $
+;; $Id: persistence.scm,v 1.39 2006/01/26 17:48:22 cut-sea Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -995,7 +995,8 @@
     ((with-db (db dbpath) . body)
      (if (and (current-db)
               (ref (current-db) 'active)
-              (equal? (ref (current-db) 'path) dbpath))
+              (or (boolean? dbpath)
+		  (equal? (ref (current-db) 'path) dbpath)))
        (begin . body)
        (let ((db (kahua-db-open dbpath)))
          (parameterize ((current-db db))
