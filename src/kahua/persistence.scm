@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.39 2006/01/26 17:48:22 cut-sea Exp $
+;; $Id: persistence.scm,v 1.40 2006/01/28 02:52:02 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -939,6 +939,12 @@
 (define-class <kahua-db-mysql> (<kahua-db-dbi>) ())
 (define-class <kahua-db-postgresql> (<kahua-db-dbi>) ())
 
+(define-method dataval-type ((self <kahua-db-dbi>))
+  "text")
+
+(define-method dataval-type ((self <kahua-db-mysql>))
+  "longtext")
+
 (when (library-exists? 'dbi :strict? #f)
   (autoload dbi
             <dbi-exception>
@@ -1339,7 +1345,8 @@
              #`"insert into kahua_db_classes values (',|cname|',, ',|newtab|')")
             (dbi-query
              (ref db 'query)
-             #`"create table ,|newtab| (keyval varchar(255),, dataval text,, primary key (keyval))")
+             #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))"
+             )
             (push! (ref db 'table-map) (cons cname newtab))
             newtab))))
 
