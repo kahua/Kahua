@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.40 2006/01/28 02:52:02 shibata Exp $
+;; $Id: persistence.scm,v 1.41 2006/01/31 16:14:31 cut-sea Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -218,6 +218,8 @@
    ;; a transaction indicated by %trancation-id.
    ;; it to be used to check in-db / in-memory consistency.
    (%in-transaction-cache :init-value '())
+   ;; persistent key
+   (%persistent-key :init-value #f)
    )
   :metaclass <kahua-persistent-meta>)
 
@@ -1288,6 +1290,7 @@
     (or (class&key->kahua-instance class key)
         (and-let* ((i (read-kahua-instance db class key)))
           (set! (ref i '%floating-instance) #f)
+	  (set! (ref i '%persistent-key) key)
           i))))
 
 (define-method read-kahua-instance ((object <kahua-persistent-base>))
