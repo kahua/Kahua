@@ -1,3 +1,25 @@
+2006-02-01  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-spvr:
+	Use global variable *worker-types* instead of parameter worker-types.
+	
+2006-02-01  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* merge main-trunc
+	
+2006-01-28  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Added dataval-type method to <kahua-db-dbi>.
+	dataval-type return type of dataval field.
+
+2006-01-27  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* src/kahua/persistence.scm:
+	modify with-db macro.
+	We can use with-db macro whiout knowledge for
+	current-db's path name.
+
 2006-01-24  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* merge main-trunc

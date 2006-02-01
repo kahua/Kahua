@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.11.6.2 2006/01/25 03:46:01 nobsun Exp $
+;; $Id: kahua-spvr.scm,v 1.11.6.3 2006/02/01 08:23:56 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -49,6 +49,8 @@
 (define *default-worker-type* 'dummy)
 
 (define *spvr* #f) ;; bound to supervisor object for convenience
+
+(define *worker-types* '()) ;; for multi-thread version
 
 ;; Supervisor protocol
 ;;
@@ -146,10 +148,10 @@
    ))
 
 ;; worker type entry - will be overridden by configuration file
-(define worker-types
-  (make-parameter
-   '()
-   ))
+; (define worker-types
+;   (make-parameter
+;    '()
+;    ))
 
 ;;;=================================================================
 ;;; Error handling
@@ -274,7 +276,7 @@
 ;;;
 
 (define (worker-script worker-type spvr)
-  (cond ((assq worker-type (worker-types))
+  (cond ((assq worker-type *worker-types*)
          => (lambda (p)
               (let ((args (get-keyword :arguments (cdr p) '()))
                     (user (ref (kahua-config) 'user-mode)))
@@ -310,7 +312,7 @@
         (let1 lis (call-with-input-file app-map read)
           (cond ((check-entries lis)
                  (log-format "[spvr] loaded ~a" app-map)
-                 (worker-types lis)
+                 (set! *worker-types* lis)
                  #t)
                 (else
                  (log-format "[spvr] malformed app-servers file: ~a" app-map)
@@ -327,7 +329,7 @@
                            (length (find-workers spvr wtype))))
              (run-worker spvr wtype))
            wtype))
-       (worker-types)))
+       *worker-types*))
 
 ;; start worker specified by worker-class
 (define-method run-worker ((self <kahua-spvr>) worker-type)
@@ -586,7 +588,7 @@
       (cdr body))
      (map worker-info (list-workers *spvr*)))
     ((types)  ;; returns list of known worker types
-     (map car (worker-types)))
+     (map car *worker-types*))
     ((reload) ;; reload app-servers file
      (begin
        (if (load-app-servers-file)
@@ -637,7 +639,7 @@
       ;; this is a session-initiating request.  wtype must be symbol.
       (let ((w (find-worker self wtype)))
         (unless w
-          (if (assq wtype (worker-types))
+          (if (assq wtype *worker-types*)
             (spvr-errorf <spvr-worker-not-running>
                          "Application server for ~a is not running currently."
                          wtype)
