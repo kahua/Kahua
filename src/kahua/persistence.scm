@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.36.4.1 2006/01/25 03:46:36 nobsun Exp $
+;; $Id: persistence.scm,v 1.36.4.2 2006/02/01 08:19:59 nobsun Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -218,6 +218,8 @@
    ;; a transaction indicated by %trancation-id.
    ;; it to be used to check in-db / in-memory consistency.
    (%in-transaction-cache :init-value '())
+   ;; persistent key
+   (%persistent-key :init-value #f)
    )
   :metaclass <kahua-persistent-meta>)
 
@@ -582,8 +584,8 @@
         ((assv-ref (ref metainfo 'signature-alist) generation)
          => signature->slot-definitions)
         (else
-         (error "persistent-class-slots: class ~a doesn't have generation ~a"
-                (ref metainfo 'name) generation))))
+         (errorf "persistent-class-slots: class ~a doesn't have generation ~a"
+                 (ref metainfo 'name) generation))))
 
 ;; When an instance of a persistent class is realized for the first
 ;; time within the process, the in-memory class and the in-DB class
@@ -939,6 +941,12 @@
 (define-class <kahua-db-mysql> (<kahua-db-dbi>) ())
 (define-class <kahua-db-postgresql> (<kahua-db-dbi>) ())
 
+(define-method dataval-type ((self <kahua-db-dbi>))
+  "text")
+
+(define-method dataval-type ((self <kahua-db-mysql>))
+  "longtext")
+
 (when (library-exists? 'dbi :strict? #f)
   (autoload dbi
             <dbi-exception>
@@ -949,7 +957,7 @@
   (next-method)
   (unless (ref db 'driver)
     (let1 m (#/(.*?):(?:([^:]+)(?::([^:]*)(?::(.*))?)?)?/ (ref db 'path))
-      (unless m (error "unsupported database driver path: ~a" (ref db 'path)))
+      (unless m (errorf "unsupported database driver path: ~a" (ref db 'path)))
       (set! (ref db 'driver)   (dbi-make-driver (m 1)))
       (set! (ref db 'user)     (m 2))
       (set! (ref db 'password) (m 3))
@@ -964,7 +972,7 @@
               (let1 dbtype (m 1)
                 (cond ((equal? dbtype "mysql") <kahua-db-mysql>)
                       ((equal? dbtype "pg")    <kahua-db-postgresql>)
-                      (else (error "unknown external database driver: ~s"
+                      (else (errorf "unknown external database driver: ~s"
                                    dbtype))))))
         (else <kahua-db-fs>)))
 
@@ -995,7 +1003,8 @@
     ((with-db (db dbpath) . body)
      (if (and (current-db)
               (ref (current-db) 'active)
-              (equal? (ref (current-db) 'path) dbpath))
+              (or (boolean? dbpath)
+		  (equal? (ref (current-db) 'path) dbpath)))
        (begin . body)
        (let ((db (kahua-db-open dbpath)))
          (parameterize ((current-db db))
@@ -1150,7 +1159,7 @@
   (with-error-handler
       (lambda (e)
         (if (is-a? e <dbi-exception>)
-          (error "DBI error: ~a" (ref e 'message))
+          (errorf "DBI error: ~a" (ref e 'message))
           (raise e)))
     (lambda ()
       (dbi-execute-query q sql))))
@@ -1281,6 +1290,7 @@
     (or (class&key->kahua-instance class key)
         (and-let* ((i (read-kahua-instance db class key)))
           (set! (ref i '%floating-instance) #f)
+	  (set! (ref i '%persistent-key) key)
           i))))
 
 (define-method read-kahua-instance ((object <kahua-persistent-base>))
@@ -1338,7 +1348,8 @@
              #`"insert into kahua_db_classes values (',|cname|',, ',|newtab|')")
             (dbi-query
              (ref db 'query)
-             #`"create table ,|newtab| (keyval varchar(255),, dataval text,, primary key (keyval))")
+             #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))"
+             )
             (push! (ref db 'table-map) (cons cname newtab))
             newtab))))
 
