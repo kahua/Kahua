@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.41 2006/01/31 16:14:31 cut-sea Exp $
+;; $Id: persistence.scm,v 1.42 2006/02/01 14:53:32 cut-sea Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -252,7 +252,7 @@
 ;;   method to initialize object.
 
 (define-method persistent-initialize ((obj <kahua-persistent-base>) initargs)
-  #f)
+  (slot-set! obj '%persistent-key (key-of obj)))
 
 (define-method initialize ((obj <kahua-persistent-base>) initargs)
   (next-method)
