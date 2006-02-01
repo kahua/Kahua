@@ -1,3 +1,12 @@
+2006-02-01  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added kahua-header-set!.
+	Added "x-kahua-headers" to kahua context.
+
+	* src/kahua/sandbox.scm:
+	Changed disable-bindings syntax to use `define' instead of `define-macro'.
+
 2006-01-28  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/persistence.scm:

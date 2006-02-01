@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.51 2006/01/14 16:40:19 shibata Exp $
+;; $Id: server.scm,v 1.52 2006/02/01 17:06:24 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -49,6 +49,7 @@
           kahua-current-user-name
           kahua-worker-type
           kahua-merge-headers
+          kahua-header-set!
           not-accessible?
           add-element!
           define-element
@@ -241,11 +242,16 @@
                            `("x-kahua-metavariables"
                              ,(assoc-ref-car header "x-kahua-metavariables"
                                              '()))
+                           `("x-kahua-headers" ,(make-hash-table 'string=?))
                            body))
               (let1 extra-headers
                   (assoc-ref-car context "extra-headers" '())
-                (reply-cont (kahua-merge-headers header extra-headers)
-                            stree)))))
+                (reply-cont
+                 (kahua-merge-headers header extra-headers
+                                      (hash-table-map
+                                       (assoc-ref-car context "x-kahua-headers" '())
+                                       list))
+                 stree)))))
         )))
   )
 
@@ -308,6 +314,11 @@
 (define (kahua-meta-ref key . maybe-default)
   (apply assoc-ref
          (kahua-context-ref "x-kahua-metavariables" '()) key maybe-default))
+
+
+(define (kahua-header-set! key val)
+  (hash-table-put! (kahua-context-ref "x-kahua-headers")
+                   key val))
 
 ;; KAHUA-CONTEXT-REF* key [default]
 ;;
