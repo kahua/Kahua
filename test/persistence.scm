@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.9 2006/01/06 14:35:23 shibata Exp $
+;; $Id: persistence.scm,v 1.9.4.1 2006/02/03 10:14:02 nobsun Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -1063,5 +1063,24 @@
                (b-obj (find-kahua-instance <valid-B> "valid-b")))
            (list (ref a-obj 'number)
                  (ref b-obj 'string)))))
+
+(test-section "big date")
+
+(define-class <big> (<kahua-persistent-base>)
+  ((a :allocation :persistent)))
+
+(define-method key-of ((obj <big>))
+  "big")
+
+(test* "make big instance" 100000
+       (with-clean-db (db *dbname*)
+         (let ((obj (make <big>)))
+           (slot-set! obj 'a (make-string 100000 #\a))
+           (string-length (ref obj 'a)))))
+
+(test* "make big instance" 100000
+       (with-clean-db (db *dbname*)
+         (let ((obj (find-kahua-instance <big> "big")))
+           (string-length (ref obj 'a)))))
 
 (test-end)

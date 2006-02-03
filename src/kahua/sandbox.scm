@@ -5,7 +5,7 @@
 ;;
 ;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.10 2005/08/19 01:37:22 cut-sea Exp $
+;; $Id: sandbox.scm,v 1.10.6.1 2006/02/03 10:14:02 nobsun Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)
@@ -57,7 +57,7 @@
     ((_) #f)
     ((_ name . names)
      (begin
-       (define-macro (name . args)
+       (define (name . args)
          (errorf "~a can't be used within sandbox module"
                  (unwrap-syntax 'name)))
        (disable-bindings . names)))

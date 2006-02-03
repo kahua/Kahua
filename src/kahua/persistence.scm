@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.36.4.2 2006/02/01 08:19:59 nobsun Exp $
+;; $Id: persistence.scm,v 1.36.4.3 2006/02/03 10:14:02 nobsun Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -34,6 +34,7 @@
           raise-with-db-error
           persistent-initialize
           kahua-wrapper?
+          key-of-using-instance
           )
   )
 (select-module kahua.persistence)
@@ -219,7 +220,8 @@
    ;; it to be used to check in-db / in-memory consistency.
    (%in-transaction-cache :init-value '())
    ;; persistent key
-   (%persistent-key :init-value #f)
+   (%persistent-key ;; :allocation :persistent
+                    :init-value #f)
    )
   :metaclass <kahua-persistent-meta>)
 
@@ -252,7 +254,7 @@
 ;;   method to initialize object.
 
 (define-method persistent-initialize ((obj <kahua-persistent-base>) initargs)
-  #f)
+  (slot-set! obj '%persistent-key (key-of obj)))
 
 (define-method initialize ((obj <kahua-persistent-base>) initargs)
   (next-method)
@@ -326,16 +328,7 @@
    ))
 
 (define-method realize-kahua-proxy ((proxy <kahua-proxy>))
-  (let1 db (current-db)
-    (unless db (error "database not active"))
-    (or (hash-table-get (ref db 'instance-by-key)
-                        (cons (class-name (ref proxy 'class))
-                              (ref proxy 'key))
-                        #f)
-        (and-let* ((i (read-kahua-instance db (ref proxy 'class) (ref proxy 'key))))
-          (set! (ref i '%floating-instance) #f)
-          i)
-        )))
+  (find-kahua-instance (ref proxy 'class) (ref proxy 'key)))
 
 ;; The bottom-level writer ----------------------------------------
 ;;   write-kahua-instance calls kahua-write.
@@ -1292,6 +1285,9 @@
           (set! (ref i '%floating-instance) #f)
 	  (set! (ref i '%persistent-key) key)
           i))))
+
+(define (key-of-using-instance obj)
+  (ref obj '%floating-instance))
 
 (define-method read-kahua-instance ((object <kahua-persistent-base>))
   (read-kahua-instance (current-db) (current-class-of object) (key-of object)))
