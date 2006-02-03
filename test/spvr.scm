@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test supervisor scripts.
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: spvr.scm,v 1.4.6.1 2006/02/03 10:14:02 nobsun Exp $
+;; $Id: spvr.scm,v 1.4.6.2 2006/02/03 23:53:44 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -93,7 +93,7 @@
               (in  (process-output *spvr*))
               )
          (read in) ;; prompt
-         (write '(begin (run-worker 'greeting) #t) out)
+         (write '(begin (run-worker *spvr* 'greeting) #t) out)
          (newline out)
          (flush out)
          (read in))) ;; result
@@ -143,7 +143,6 @@
         '(("x-kahua-worker" "spvr")) '(types)
         (lambda (header body) body)))
 
-
 (with-output-to-file "_work/app-servers"
   (lambda ()
     (write '(a b))))
@@ -187,8 +186,8 @@
         '(("x-kahua-worker" "spvr")) '(ls)
         (lambda (header body) 
           (map (cut get-keyword :worker-type <> #f) body))))
-;;-----------------------------------------------------------
 
+;;-----------------------------------------------------------
 (test-section "sharing state")
 
 (with-output-to-file "_work/app-servers"
@@ -198,9 +197,9 @@
 
 (test* "start ss1&ss2" '(ss1 ss2)
        (begin
-	 (send&receive '(("x-kahua-worker" "spvr")) '(kill *) (lambda _ #f))
-	 (send&receive '(("x-kahua-worker" "spvr")) '(reload) (lambda _ #f))
-	 (send&receive '(("x-kahua-worker" "spvr")) '(ls)
+         (send&receive '(("x-kahua-worker" "spvr")) '(kill *) (lambda _ #f))
+         (send&receive '(("x-kahua-worker" "spvr")) '(reload) (lambda _ #f))
+         (send&receive '(("x-kahua-worker" "spvr")) '(ls)
                        (lambda (header body) 
                          (map (cut get-keyword :worker-type <> #f) body)))))
 
