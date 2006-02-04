@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.11.6.3 2006/02/01 08:23:56 nobsun Exp $
+;; $Id: kahua-spvr.scm,v 1.11.6.4 2006/02/04 06:11:31 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -355,13 +355,14 @@
   ;; collect finish processes
   (and-let* ((wq (workers-of self))
              ((not (null? wq)))
-             (p (process-wait-any #t))
+	     (p (process-wait-any #t))
              (w (find (lambda (w) (eq? (worker-process-of w) p))
                       (queue->list wq))))
     ;; avoid a bug in Gauche 0.7.2
     (if (eq? (queue-front wq) w)
       (dequeue! wq)
       (remove-from-queue! (cut eq? w <>) wq))
+      (queue-length wq)
     (if (and (kahua-auto-restart)
 	     (not (zombee? w))
 	     (> (- (sys-time) (start-time-of w)) 60))
@@ -381,8 +382,7 @@
   (for-each (cut terminate <>) (list-workers self))
   (do ()
       ((queue-empty? (workers-of self)))
-    (let ((w (queue-front (workers-of self))))
-      (check-workers self))))
+    (check-workers self)))
 
 ;; terminates given workers, and starts the same number of
 ;; the same type workers.  Returns terminated worker id.
@@ -418,7 +418,7 @@
 
 (define-method ping-activate ((spvr <kahua-spvr>) (worker <kahua-worker>))
   (let*
-      (;(selector (selector-of spvr))
+      (
        (sock #f)
        (in   #f)
        (out  #f)	
@@ -432,13 +432,12 @@
 
        (reset-sock
 	(lambda ()
-	  (worker-type-of worker)
+	  ;(worker-type-of worker)
 	  (set! sock (make-client-socket
 		      (worker-id->sockaddr (worker-id-of worker)
 					   (ref spvr 'sockbase))))
 	  (set! in   (socket-input-port sock))
 	  (set! out  (socket-output-port sock))
-;	  (selector-add!  (selector-of spvr) in proc '(r))
 	  )))
 
     (set! (ref worker 'pinger)
@@ -454,7 +453,6 @@
 	  )
     (set! (ref worker 'ping-deactivator)
 	  (lambda () 
-;	    (and in (selector-delete! selector in proc #f))
 	    (and sock (socket-close sock))))
     (ping-to-worker worker)
     ))
@@ -936,6 +934,7 @@
 		       (thread-start!
 			(make-thread
 			 (lambda ()
+			   (sys-sigmask SIG_SETMASK (make <sys-sigset>))
 			   (handle-kahua spvr (socket-accept kahua-sock))))))
                      '(r)))
     (when http-socks
