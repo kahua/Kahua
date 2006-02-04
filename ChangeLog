@@ -1,3 +1,8 @@
+2006-02-04  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Changed to use dbi-do instead of dbi-execute-query.
+
 2006-02-01  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/server.scm:

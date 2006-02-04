@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; PostgreSQLバックエンドのテスト
-;; $Id: persistence-dbi-pg.scm,v 1.2 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: persistence-dbi-pg.scm,v 1.3 2006/02/04 07:39:40 shibata Exp $
 
 ;; Notes:
 ;;  * テストケース自体はpersistence.scmのものを使う。
@@ -15,14 +15,13 @@
 ;; 前回のテストで作られたテーブルが残っていればそれをクリアしておく
 (let* ((d (dbi-make-driver "pg"))
        (c (dbi-make-connection d *user* "" ""))
-       (q (dbi-make-query c))
-       (r (dbi-execute-query q "select table_name from kahua_db_classes"))
+       ;; (q (dbi-make-query c))
+       (r (dbi-do c "select table_name from kahua_db_classes"))
        (tables (and r (map (cut dbi-get-value <> 0) r))))
   (dolist (table tables)
-    (dbi-execute-query q #`"drop table ,|table|"))
-  (dbi-execute-query q "drop table kahua_db_idcount")
-  (dbi-execute-query q "drop table kahua_db_classes")
-  (dbi-close q)
+    (dbi-do c #`"drop table ,|table|"))
+  (dbi-do c "drop table kahua_db_idcount")
+  (dbi-do c "drop table kahua_db_classes")
   (dbi-close c)
   )
 

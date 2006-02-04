@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.43 2006/02/01 17:22:15 shibata Exp $
+;; $Id: persistence.scm,v 1.44 2006/02/04 07:43:02 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -927,7 +927,6 @@
    (password   :allocation :each-subclass :init-value #f)
    (options    :allocation :each-subclass :init-value #f)
    (connection :init-value #f)
-   (query      :init-value #f)
    (table-map  :init-value '())  ;; class-name -> table map
    ))
 
@@ -943,8 +942,8 @@
 (when (library-exists? 'dbi :strict? #f)
   (autoload dbi
             <dbi-exception>
-            dbi-make-driver dbi-make-connection dbi-make-query
-            dbi-execute-query dbi-close dbi-get-value dbi-escape-sql))
+            dbi-do
+            dbi-make-driver dbi-make-connection dbi-close dbi-get-value dbi-escape-sql))
 
 (define-method initialize ((db <kahua-db-dbi>) initargs)
   (next-method)
@@ -1105,14 +1104,13 @@
          (conn (dbi-make-connection (ref db 'driver)
                                     (ref db 'user)
                                     (ref db 'password)
-                                    (ref db 'options)))
-         (q    (dbi-make-query conn)))
+                                    (ref db 'options))))
 
     (define (safe-query query)
       (with-error-handler
-          (lambda (e)
-            (if (is-a? e <dbi-exception>) #f (raise e)))
-        (lambda () (dbi-execute-query q query))))
+       (lambda (e)
+         (if (is-a? e <dbi-exception>) #f (raise e)))
+       (lambda () (dbi-do conn query '(:pass-through #t)))))
 
     (define (query-idcount)
       (and-let* ((r (safe-query "select value from kahua_db_idcount"))
@@ -1128,14 +1126,13 @@
              r)))
     
     (set! (ref db 'connection) conn)
-    (set! (ref db 'query) q)
     ;; check table existence
     (let1 z (query-idcount)
       (unless z
         ;; this is the first time we use db.
         ;; TODO: error check
         (for-each
-         (cut dbi-query q <>)
+         (cut dbi-do conn <> '(:pass-through #t))
          '("create table kahua_db_classes (class_name varchar(255), table_name varchar(255), primary key (class_name))"
            "create table kahua_db_idcount (value integer)"
            "insert into kahua_db_idcount values (0)"))
@@ -1146,16 +1143,6 @@
       (set! (ref db 'id-counter) z)
       (set! (ref db 'table-map) (query-classtable))
       db)))
-
-;; dbi util for comperhensive error message (Temporary)
-(define (dbi-query q sql)
-  (with-error-handler
-      (lambda (e)
-        (if (is-a? e <dbi-exception>)
-          (errorf "DBI error: ~a" (ref e 'message))
-          (raise e)))
-    (lambda ()
-      (dbi-execute-query q sql))))
 
 (define (kahua-db-sync . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
@@ -1172,8 +1159,8 @@
 
 
 (define-method kahua-db-write-id-counter ((db <kahua-db-dbi>))
-  (let ((q (ref db 'query)))
-    (dbi-query q #`"update kahua_db_idcount set value = ,(ref db 'id-counter)")))
+  (dbi-do (ref db 'connection)
+          "update kahua_db_idcount set value = ?" '() (ref db 'id-counter)))
 
 (define (kahua-db-rollback . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
@@ -1206,9 +1193,7 @@
   (if commit
       (kahua-db-sync db)
     (kahua-db-rollback db))
-  (dbi-close (ref db 'query))
   (dbi-close (ref db 'connection))
-  (set! (ref db 'query) #f)
   (set! (ref db 'connection) #f)
   (set! (ref db 'modified-instances) '())
   (set! (ref db 'active) #f))
@@ -1301,17 +1286,11 @@
 (define-method read-kahua-instance ((db <kahua-db-dbi>)
                                     (class <kahua-persistent-meta>)
                                     (key <string>))
-  (define (escape-string str)
-    (if (memq 'dbi-do (module-exports (find-module 'dbi))) ;; Gauche-dbi 0.2 and later.
-	(string-append "'"
-		       (dbi-escape-sql (ref db 'connection) str)
-		       "'")
-	(dbi-escape-sql (ref db 'connection) str)))
 
   (and-let* ((tab (assq-ref (ref db 'table-map) (class-name class)))
-             (r   (dbi-query
-                   (ref db 'query)
-                   #`"select dataval from ,|tab| where keyval = ,(escape-string key)"))
+             (r (dbi-do
+                 (ref db 'connection)
+                 #`"select dataval from ,|tab| where keyval = ?" '() key))
              (rv  (map (cut dbi-get-value <> 0) r))
              ((not (null? rv))))
     (call-with-input-string (car rv) read)))
@@ -1327,24 +1306,18 @@
 
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
                                      (obj <kahua-persistent-base>))
-  (define (escape-string str)
-    (if (memq 'dbi-do (module-exports (find-module 'dbi))) ;; Gauche-dbi 0.2 and later.
-	(string-append "'"
-		       (dbi-escape-sql (ref db 'connection) str)
-		       "'")
-	(dbi-escape-sql (ref db 'connection) str)))
 
   (define (table-name)
     (let1 cname (class-name (class-of obj))
       (or (assq-ref (ref db 'table-map) cname)
           (let1 newtab (format "kahua_~a" (length (ref db 'table-map)))
-            (dbi-query
-             (ref db 'query)
-             #`"insert into kahua_db_classes values (',|cname|',, ',|newtab|')")
-            (dbi-query
-             (ref db 'query)
+            (dbi-do
+             (ref db 'connection)
+             "insert into kahua_db_classes values (? , ?)" '() cname newtab)
+            (dbi-do
+             (ref db 'connection)
              #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))"
-             )
+             '(:pass-through #t))
             (push! (ref db 'table-map) (cons cname newtab))
             newtab))))
 
@@ -1352,12 +1325,12 @@
          (key  (key-of obj))
          (tab  (table-name)))
     (if (ref obj '%floating-instance)
-      (dbi-query
-       (ref db 'query)
-       #`"insert into ,|tab| values (,(escape-string key),, ,(escape-string data))")
-      (dbi-query
-       (ref db 'query)
-       #`"update ,|tab| set dataval = ,(escape-string data) where keyval = ,(escape-string key)"))
+        (dbi-do
+         (ref db 'connection)
+         #`"insert into ,|tab| values (?,, ?)" '() key data)
+      (dbi-do
+       (ref db 'connection)
+       #`"update ,|tab| set dataval = ? where keyval = ?" '() data key))
     (set! (ref obj '%floating-instance) #f)
     ))
 
@@ -1403,8 +1376,8 @@
   (let1 tab (assq-ref (ref db 'table-map) (class-name class))
     (if (not tab)
       (make <kahua-collection> :instances '())
-      (let* ((r (dbi-query (ref db 'query)
-                           #`"select keyval from ,|tab|"))
+      (let* ((r (dbi-do (ref db 'connection)
+                        #`"select keyval from ,|tab|" '(:pass-through #t)))
              (keys (if r (map (cut dbi-get-value <> 0) r) '())))
         (make <kahua-collection>
           :instances (map (cut find-kahua-instance class <>) keys))))))
