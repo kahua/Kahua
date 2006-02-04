@@ -2,6 +2,9 @@
 
 	* src/kahua-spvr.scm:
 	signal mask set not to block any signals in new threads.
+
+	* src/kahua-spvr.scm:
+	made handle-httpd to run in new threads.
 	
 2006-02-03  Nobuo Yamashita  <nobsun@sampou.org>
 

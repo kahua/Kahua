@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.11.6.4 2006/02/04 06:11:31 nobsun Exp $
+;; $Id: kahua-spvr.scm,v 1.11.6.5 2006/02/04 06:40:25 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -942,14 +942,19 @@
         (selector-add! (selector-of spvr)
                        (socket-fd http-sock)
                        (lambda (fd flags)
-                         (handle-http spvr (socket-accept http-sock)))
-                       '(r))))
+			 (thread-start!
+			  (make-thread
+			   (lambda ()
+			     (sys-sigmask SIG_SETMASK (make <sys-sigset>))
+			     (handle-http spvr (socket-accept http-sock))))))
+		       '(r))))
     (when listener
       (let1 listener-handler (listener-read-handler listener)
         (set! (port-buffering (current-input-port)) :none)
         (selector-add! (selector-of spvr)
                        (current-input-port)
-                       (lambda _ (listener-handler))
+                       (lambda _ 
+			 (listener-handler))
                        '(r)))
       (listener-show-prompt listener))
 
