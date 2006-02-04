@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.10 2006/01/28 02:52:31 shibata Exp $
+;; $Id: persistence.scm,v 1.11 2006/02/04 07:41:30 shibata Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -45,8 +45,12 @@
                   (file-is-directory? *dbname*)
                   (file-exists? (build-path *dbname* "id-counter")))
                  (list
-                  (is-a? (ref db 'connection) <dbi-connection>)
-                  (is-a? (ref db 'query) <dbi-query>))))))
+                  (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
+                  (and (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_idcount"))
+                                  (p (map (cut dbi-get-value <> 0) r)))
+                         (and (not (null? p))
+                              (integer? (x->integer (car p))))))
+                  )))))
 
 ;;  データベースがwith-dbの動的スコープ中で有効であり、
 ;;  その外で無効になることを確認する。
