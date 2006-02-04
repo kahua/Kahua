@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test supervisor's dead-lock
-;; $Id: dead-lock.scm,v 1.1 2006/01/09 09:53:44 nobsun Exp $
+;; $Id: dead-lock.scm,v 1.1.6.1 2006/02/04 06:08:26 nobsun Exp $
 
 (use srfi-1)
 (use gauche.test)
@@ -129,7 +129,7 @@
 (test* "shutdown" '()
        (begin
          (process-send-signal *spvr* SIGTERM)
-         (sys-sleep 3) ;; give the spvr time to shutdown ...
+         (sys-sleep 5) ;; give the spvr time to shutdown ...
          (directory-list "_tmp" :children? #t)))
 
 (test-end)
