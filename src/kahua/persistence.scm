@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.44 2006/02/04 07:43:02 shibata Exp $
+;; $Id: persistence.scm,v 1.45 2006/02/11 07:04:12 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -35,9 +35,12 @@
           persistent-initialize
           kahua-wrapper?
           key-of-using-instance
+          kahua-check-transaction!
           )
   )
 (select-module kahua.persistence)
+
+(define kahua-check-transaction! (make-parameter #t))
 
 ;;=========================================================
 ;; Persistent metaclass
@@ -1165,18 +1168,19 @@
 (define (kahua-db-rollback . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
     (define (rollback-object obj)
-      (when (ref obj '%floating-instance)
-        (begin
-          (hash-table-delete! (ref db 'instance-by-id) (ref obj 'id))
-          (hash-table-delete! (ref db 'instance-by-key)
-                              (cons
-                               (class-name (class-of obj))
-                               (key-of obj)))
-          (let1 klass (current-class-of obj)
-            (when (eq? klass
-                       <kahua-persistent-metainfo>)
-              (let1 klass (find-kahua-class (ref obj 'name))
-                (set! (ref klass 'metainfo) #f)))))))
+      (if (ref obj '%floating-instance)
+          (begin
+            (hash-table-delete! (ref db 'instance-by-id) (ref obj 'id))
+            (hash-table-delete! (ref db 'instance-by-key)
+                                (cons
+                                 (class-name (class-of obj))
+                                 (key-of obj)))
+            (let1 klass (current-class-of obj)
+              (when (eq? klass
+                         <kahua-persistent-metainfo>)
+                (let1 klass (find-kahua-class (ref obj 'name))
+                  (set! (ref klass 'metainfo) #f)))))
+        (read-kahua-instance obj)))
 
     (for-each rollback-object
               (ref db 'modified-instances))))
@@ -1219,14 +1223,16 @@
                          (current-transaction-id)))
 
 (define (ensure-transaction o)
-  (let1 klass (current-class-of o)
-    (unless (or (eq? klass <kahua-persistent-metainfo>)
-                (not (slot-bound-using-class? klass o '%transaction-id))
-                (current-transaction? o))
-      ;; First, we update %transaction-id slot to avoid infinit loop.
-      (update-transaction! o)
-      ;; read-kahua-instance syncs in-db and in-memory object.
-      (read-kahua-instance o))))
+  (when (kahua-check-transaction!)
+    (let1 klass (current-class-of o)
+      (unless (or (eq? klass <kahua-persistent-metainfo>)
+                  (not (slot-bound-using-class? klass o '%transaction-id))
+                  (current-transaction? o))
+        ;; First, we update %transaction-id slot to avoid infinit loop.
+        (update-transaction! o)
+        ;; read-kahua-instance syncs in-db and in-memory object.
+        (read-kahua-instance o)
+        ))))
 
 (define (persistent-slot-syms class)
   (map car (filter (lambda (slot)
