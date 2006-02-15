@@ -1,3 +1,9 @@
+2006-02-15  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/elem.scm, src/kahua/server.scm, test/server.scm:
+	Added `with-ie' element.
+	Supported `Conditional Comments for Internet Explorer'.
+
 2006-02-04  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/persistence.scm:
