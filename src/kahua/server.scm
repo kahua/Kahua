@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.52 2006/02/01 17:06:24 shibata Exp $
+;; $Id: server.scm,v 1.53 2006/02/15 11:23:52 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -710,9 +710,11 @@
   (lambda (node context cont)
     (let ((name (sxml:element-name node)))
       (if (not name)
-          (cont (if (string? node) 
-                    (sxml:string->html node)
-                    "")
+          (cont (cond ((string? node)
+                       (sxml:string->html node))
+                      ((is-a? node <no-escape>)
+                       (ref node 'src))
+                      (else ""))
                 context)
           (let ((attrs (sxml:attr-list-u node))
                 (auxs  (sxml:aux-list-u node))
@@ -1042,6 +1044,29 @@
                (cons `("extra-headers"
                        ,(kahua-merge-headers headers `((,name ,value))))
                      context)))))
+
+
+;;
+;; unescape elements
+;;
+
+(define-class <no-escape> ()
+  ((src :init-keyword :src)))
+
+;; Conditional Comments for Internet Explorer
+;; <!--[if gte IE 5]> IE 5.0 - 6.x
+;; <!--[if IE 5]> IE 5.0
+;; <!--[if IE 5.5000]> IE 5.5
+;; <!--[if IE 6]> IE 6.0
+;; <!--[if gte IE 5.5000]> IE 5.5 - 6.x
+;; <!--[if lt IE 6]>IE 5.0 - 5.5
+
+(define-element with-ie (attrs auxs contents context cont)
+  (let1 condition (assq-ref-car attrs 'condition "IE")
+    (cont `(,(make <no-escape> :src (format "<!--[if ~a]>" condition))
+            ,@contents
+            ,(make <no-escape> :src "<![endif]-->"))
+          context)))
 
 
 ;;==========================================================

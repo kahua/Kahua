@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.13 2005/12/20 15:04:06 shibata Exp $
+;; $Id: elem.scm,v 1.14 2006/02/15 11:23:52 shibata Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -34,6 +34,7 @@
           frame/cont/
           extra-header/
 	  map/
+          with-ie/
 
 	  node-list-to-node-set
 	  node-set:
@@ -103,6 +104,9 @@
 
 (define (map/ proc arg1 . args)
   (node-set (apply map proc arg1 args)))
+
+(define (with-ie/ . args)
+  (update (cut cons `(with-ie ,@(exec '() (node-set args))) <>)))
 
 ;; SXML tag
 

@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.7 2006/01/14 17:00:26 shibata Exp $
+;; $Id: server.scm,v 1.8 2006/02/15 11:23:52 shibata Exp $
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.
@@ -372,6 +372,17 @@
                                 :a 1
                                 :b 2
                                 :c "str"))) ()))
+
+;;---------------------------------------------------------------
+(test-section "Conditional Comments for Internet Explorer")
+
+(test* "with-ie element"
+       "<html><!--[if IE]><span>IE</span\n><![endif]--></html\n>"
+       (kahua-render `((html (with-ie (span "IE")))) '()))
+
+(test* "with-ie element with condition"
+       "<html><!--[if gte IE 5]>hello<![endif]--></html\n>"
+       (kahua-render `((html (with-ie (@ (condition "gte IE 5")) "hello"))) '()))
 
 (test-end)
 
