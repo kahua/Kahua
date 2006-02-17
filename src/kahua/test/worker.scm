@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.9 2006/02/15 13:59:30 shibata Exp $
+;; $Id: worker.scm,v 1.10 2006/02/17 13:30:28 cut-sea Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -155,6 +155,7 @@
       (let ((p (car path&query))
             (query (cdr path&query)))
         (receive (cgsid xtra-path) (string-scan (or p "") "/" 'both)
+	  (set! (ref session 'state-sid) (ref worker 'state-sid))
           (set! (ref session 'cont-sid) (or cgsid p))
           (set! (ref session 'path-info)
               (and xtra-path
