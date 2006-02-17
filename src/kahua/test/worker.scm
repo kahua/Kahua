@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.10 2006/02/17 13:30:28 cut-sea Exp $
+;; $Id: worker.scm,v 1.11 2006/02/17 15:45:09 shibata Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -103,10 +103,12 @@
   (set! (ref worker 'cont-sid) #f))
 
 (define-method set-gsid ((worker <worker-subprocess>) (id <string>))
-  (let1 session (ref (ref worker 'sessions) id)
-    (for-each (lambda (slot)
-                (slot-set! worker slot (ref session slot)))
-              (map slot-definition-name (class-slots <session>)))))
+  (test* (format "set-gsid to: ~s" id) #t
+         (let1 session (ref (ref worker 'sessions) id)
+           (for-each (lambda (slot)
+                       (slot-set! worker slot (ref session slot)))
+                     (map slot-definition-name (class-slots <session>)))
+           #t)))
 
 (define-method set-gsid ((worker <worker-subprocess>) (id <symbol>))
   (set-gsid worker (symbol->string id)))
