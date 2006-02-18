@@ -1,8 +1,15 @@
+2006-02-18  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/test/worker.scm: Improved path-info picking.
+	"hoge//huga/" -> '("hoge" "" "huga" "")
+	to
+	"hoge//huga/" -> '("hoge" "huga")
+
 2006-02-17  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/test/worker.scm:
 	Chnaged `set-gsid' to test session setting.
-p
+
 
 2006-02-15  SHIBATA Tomohisa  <shibata@kahua.org>
 
