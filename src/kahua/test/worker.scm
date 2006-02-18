@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.11 2006/02/17 15:45:09 shibata Exp $
+;; $Id: worker.scm,v 1.12 2006/02/18 07:20:14 shibata Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -161,7 +161,8 @@
           (set! (ref session 'cont-sid) (or cgsid p))
           (set! (ref session 'path-info)
               (and xtra-path
-                   (list* "dummy" "dummy" (string-split xtra-path "/"))))
+                   (filter (compose not string-null?)
+                           (list* "dummy" "dummy" (string-split xtra-path #[/])))))
           (set! (ref session 'query)
               (cgi-parse-parameters :query-string query)))
         session))
