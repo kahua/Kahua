@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: entry-method.scm,v 1.7 2006/01/08 12:17:30 shibata Exp $
+;; $Id: entry-method.scm,v 1.8 2006/02/18 12:41:03 shibata Exp $
 
 (use srfi-2)
 (use gauche.test)
@@ -133,7 +133,7 @@
          w
          '(("x-kahua-cgsid" "show")
            ("x-kahua-path-info"
-            ("entry-method" "show" "<folder>\0Kahua"))
+            ("entry-method" "show" "<folder>\tKahua"))
            )
          '())
         (make-match&pick w)
@@ -182,7 +182,7 @@
          w
          '(("x-kahua-cgsid" "show")
            ("x-kahua-path-info"
-            ("entry-method" "show" "<file>\0README" "size"))
+            ("entry-method" "show" "<file>\tREADME" "size"))
            )
          '())
         (make-match&pick w))
@@ -197,7 +197,7 @@
          w
          '(("x-kahua-cgsid" "show")
            ("x-kahua-path-info"
-            ("entry-method" "show" "<file>\0README" "desc"))
+            ("entry-method" "show" "<file>\tREADME" "desc"))
            )
          '())
         (make-match&pick w))
@@ -211,7 +211,7 @@
          w
          '(("x-kahua-cgsid" "show")
            ("x-kahua-path-info"
-            ("entry-method" "show" "<file>\0README" "hogehoge"))
+            ("entry-method" "show" "<file>\tREADME" "hogehoge"))
            )
          '())
         (make-match&pick w))
@@ -228,7 +228,7 @@
          w
          '(("x-kahua-cgsid" "show")
            ("x-kahua-path-info"
-            ("entry-method" "show" "flat" "<folder>\0Kahua"))
+            ("entry-method" "show" "flat" "<folder>\tKahua"))
            )
          '())
         (make-match&pick w))

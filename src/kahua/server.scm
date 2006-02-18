@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.53 2006/02/15 11:23:52 shibata Exp $
+;; $Id: server.scm,v 1.54 2006/02/18 12:41:03 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -678,7 +678,7 @@
      (syntax-error "malformed define-entry-method:" (define-entry-method . _)))
     ))
 
-(define *class&id-delim* "\0")
+(define *class&id-delim* "\t")
 
 (define (path->objects paths)
   (define (uri->object uri)
