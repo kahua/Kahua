@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.45 2006/02/11 07:04:12 shibata Exp $
+;; $Id: persistence.scm,v 1.46 2006/02/20 15:14:02 shibata Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1303,9 +1303,10 @@
 
 (define-method write-kahua-instance ((db <kahua-db-fs>)
                                      (obj <kahua-persistent-base>))
-  (let* ((path  (data-path db (class-of obj) (key-of obj))))
-    (make-directory* (sys-dirname path))
-    (%call-writer-to-file-safely path (build-path (ref db 'path) "tmp/")
+  (let* ((class-path  (data-path db (class-of obj))))
+    (make-directory* class-path)
+    (%call-writer-to-file-safely (build-path class-path (key-of obj))
+                                 (build-path (ref db 'path) "tmp/")
                                  (pa$ kahua-write obj))
     (set! (ref obj '%floating-instance) #f)))
 

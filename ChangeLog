@@ -1,3 +1,18 @@
+2006-02-20  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Fixed '\\' in key-of value bug? (FSDB)
+
+2006-02-18  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm, test/entry-method.scm:
+	Changed *class&id-delim* to "\t".
+
+2006-02-17  author  <author@shibata-note>
+
+	* ChangeLog, src/kahua/test/worker.scm:
+	Chnaged `set-gsid' to test session setting.
+
 2006-02-18  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/test/worker.scm: Improved path-info picking.
