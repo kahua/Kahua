@@ -4,7 +4,8 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.46 2006/02/20 15:14:02 shibata Exp $
+;; $Id: persistence.scm,v 1.47 2006/02/21 14:24:33 nobsun Exp $
+
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -35,7 +36,6 @@
           persistent-initialize
           kahua-wrapper?
           key-of-using-instance
-          kahua-check-transaction!
           )
   )
 (select-module kahua.persistence)
@@ -1147,6 +1147,16 @@
       (set! (ref db 'table-map) (query-classtable))
       db)))
 
+;; dbi util for comperhensive error message (Temporary)
+(define (dbi-query q sql)
+  (with-error-handler
+      (lambda (e)
+        (if (is-a? e <dbi-exception>)
+          (errorf "DBI error: ~a" (ref e 'message))
+          (raise e)))
+    (lambda ()
+      (dbi-execute-query q sql))))
+
 (define (kahua-db-sync . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
     (for-each (cut write-kahua-instance db <>)
@@ -1274,6 +1284,7 @@
     (or (class&key->kahua-instance class key)
         (and-let* ((i (read-kahua-instance db class key)))
           (set! (ref i '%floating-instance) #f)
+	  (set! (ref i '%persistent-key) key)
           i))))
 
 (define (key-of-using-instance obj)
@@ -1303,28 +1314,33 @@
 
 (define-method write-kahua-instance ((db <kahua-db-fs>)
                                      (obj <kahua-persistent-base>))
-  (let* ((class-path  (data-path db (class-of obj))))
-    (make-directory* class-path)
-    (%call-writer-to-file-safely (build-path class-path (key-of obj))
-                                 (build-path (ref db 'path) "tmp/")
+  (let* ((path  (data-path db (class-of obj) (key-of obj))))
+    (make-directory* (sys-dirname path))
+    (%call-writer-to-file-safely path (build-path (ref db 'path) "tmp/")
                                  (pa$ kahua-write obj))
     (set! (ref obj '%floating-instance) #f)))
 
 
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
                                      (obj <kahua-persistent-base>))
+  (define (escape-string str)
+    (if (memq 'dbi-do (module-exports (find-module 'dbi))) ;; Gauche-dbi 0.2 and later.
+	(string-append "'"
+		       (dbi-escape-sql (ref db 'connection) str)
+		       "'")
+	(dbi-escape-sql (ref db 'connection) str)))
 
   (define (table-name)
     (let1 cname (class-name (class-of obj))
       (or (assq-ref (ref db 'table-map) cname)
           (let1 newtab (format "kahua_~a" (length (ref db 'table-map)))
-            (dbi-do
-             (ref db 'connection)
-             "insert into kahua_db_classes values (? , ?)" '() cname newtab)
-            (dbi-do
-             (ref db 'connection)
+            (dbi-query
+             (ref db 'query)
+             #`"insert into kahua_db_classes values (',|cname|',, ',|newtab|')")
+            (dbi-query
+             (ref db 'query)
              #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))"
-             '(:pass-through #t))
+             )
             (push! (ref db 'table-map) (cons cname newtab))
             newtab))))
 

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.11 2005/10/06 05:30:03 nobsun Exp $
+;; $Id: kahua-spvr.scm,v 1.12 2006/02/21 14:24:33 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -17,6 +17,7 @@
 
 (use gauche.charconv)
 (use gauche.net)
+(use gauche.threads)
 (use gauche.process)
 (use gauche.logger)
 (use gauche.selector)
@@ -48,6 +49,8 @@
 (define *default-worker-type* 'dummy)
 
 (define *spvr* #f) ;; bound to supervisor object for convenience
+
+(define *worker-types* '()) ;; for multi-thread version
 
 ;; Supervisor protocol
 ;;
@@ -145,10 +148,10 @@
    ))
 
 ;; worker type entry - will be overridden by configuration file
-(define worker-types
-  (make-parameter
-   '()
-   ))
+; (define worker-types
+;   (make-parameter
+;    '()
+;    ))
 
 ;;;=================================================================
 ;;; Error handling
@@ -226,8 +229,11 @@
              (log-format "[spvr] running ~a failed: ~a"
                          (car cmd) (kahua-error-string e #t))
              (raise e)))
-    (let1 p (apply run-process
-                   `(,@cmd :input "/dev/null" :output :pipe))
+    (let* ((sigs-new (make <sys-sigset>))
+	   (sigs-old (sys-sigmask SIG_SETMASK sigs-new))
+	   (p (apply run-process
+                   `(,@cmd :input "/dev/null" :output :pipe))))
+      (sys-sigmask SIG_SETMASK sigs-old)
       (log-format "[spvr] running ~a: pid ~a" (car cmd) (process-pid p))
       p)))
 
@@ -273,7 +279,7 @@
 ;;;
 
 (define (worker-script worker-type spvr)
-  (cond ((assq worker-type (worker-types))
+  (cond ((assq worker-type *worker-types*)
          => (lambda (p)
               (let ((args (get-keyword :arguments (cdr p) '()))
                     (user (ref (kahua-config) 'user-mode)))
@@ -309,7 +315,7 @@
         (let1 lis (call-with-input-file app-map read)
           (cond ((check-entries lis)
                  (log-format "[spvr] loaded ~a" app-map)
-                 (worker-types lis)
+                 (set! *worker-types* lis)
                  #t)
                 (else
                  (log-format "[spvr] malformed app-servers file: ~a" app-map)
@@ -326,7 +332,7 @@
                            (length (find-workers spvr wtype))))
              (run-worker spvr wtype))
            wtype))
-       (worker-types)))
+       *worker-types*))
 
 ;; start worker specified by worker-class
 (define-method run-worker ((self <kahua-spvr>) worker-type)
@@ -352,13 +358,14 @@
   ;; collect finish processes
   (and-let* ((wq (workers-of self))
              ((not (null? wq)))
-             (p (process-wait-any #t))
+	     (p (process-wait-any #t))
              (w (find (lambda (w) (eq? (worker-process-of w) p))
                       (queue->list wq))))
     ;; avoid a bug in Gauche 0.7.2
     (if (eq? (queue-front wq) w)
       (dequeue! wq)
       (remove-from-queue! (cut eq? w <>) wq))
+      (queue-length wq)
     (if (and (kahua-auto-restart)
 	     (not (zombee? w))
 	     (> (- (sys-time) (start-time-of w)) 60))
@@ -378,8 +385,7 @@
   (for-each (cut terminate <>) (list-workers self))
   (do ()
       ((queue-empty? (workers-of self)))
-    (let ((w (queue-front (workers-of self))))
-      (check-workers self))))
+    (check-workers self)))
 
 ;; terminates given workers, and starts the same number of
 ;; the same type workers.  Returns terminated worker id.
@@ -415,7 +421,7 @@
 
 (define-method ping-activate ((spvr <kahua-spvr>) (worker <kahua-worker>))
   (let*
-      ((selector (selector-of spvr))
+      (
        (sock #f)
        (in   #f)
        (out  #f)	
@@ -424,18 +430,17 @@
 	       (set! (ref worker 'ping-last-time) (sys-time))
 	       (receive-message fd)
 	       (ping-deactivate worker)
-			   ; (log-worker-action "ping respond" worker)
+	       (log-worker-action "ping respond" worker)
 	       ))
 
        (reset-sock
 	(lambda ()
-	  (worker-type-of worker)
+	  ;(worker-type-of worker)
 	  (set! sock (make-client-socket
 		      (worker-id->sockaddr (worker-id-of worker)
 					   (ref spvr 'sockbase))))
 	  (set! in   (socket-input-port sock))
 	  (set! out  (socket-output-port sock))
-	  (selector-add!  (selector-of spvr) in proc '(r))
 	  )))
 
     (set! (ref worker 'pinger)
@@ -444,12 +449,14 @@
               (reset-sock)
               (set! (ref worker 'ping-responded) #f)
               (send-message out `(("x-kahua-ping" ,(worker-id-of worker)))
-                            '()))))
+                            '())
+	      (proc in #f)
+	      )
+	    )
+	  )
     (set! (ref worker 'ping-deactivator)
 	  (lambda () 
-	    (and in (selector-delete! selector in proc #f))
 	    (and sock (socket-close sock))))
-
     (ping-to-worker worker)
     ))
 
@@ -530,25 +537,24 @@
 
 (define-method dispatch-to-worker ((self <kahua-worker>) header body cont)
   (let* ((spvr (ref self 'spvr))
-         (selector (selector-of spvr))
          (sock (make-client-socket
                 (worker-id->sockaddr (worker-id-of self)
                                      (ref spvr 'sockbase))))
-         (out  (socket-output-port sock)))
+         (out  (socket-output-port sock))
+	 )
 
     (define (handle fd flags)
       (guard (e (else
-                 (selector-delete! selector (socket-fd sock) handle #f)
                  (socket-close sock)
                  (cont '(("x-kahua-status" "SPVR-ERROR"))
                        (list (ref e 'message) (kahua-error-string e #t)))))
         (receive (header body) (receive-message (socket-input-port sock))
-          (selector-delete! selector (socket-fd sock) handle #f)
           (socket-close sock)
           (cont header body))))
 
     (send-message out header body)
-    (selector-add! selector (socket-fd sock) handle '(r)))
+    (handle #f #f)
+    )
   )
 
 ;;;=================================================================
@@ -583,7 +589,7 @@
       (cdr body))
      (map worker-info (list-workers *spvr*)))
     ((types)  ;; returns list of known worker types
-     (map car (worker-types)))
+     (map car *worker-types*))
     ((reload) ;; reload app-servers file
      (begin
        (if (load-app-servers-file)
@@ -634,7 +640,7 @@
       ;; this is a session-initiating request.  wtype must be symbol.
       (let ((w (find-worker self wtype)))
         (unless w
-          (if (assq wtype (worker-types))
+          (if (assq wtype *worker-types*)
             (spvr-errorf <spvr-worker-not-running>
                          "Application server for ~a is not running currently."
                          wtype)
@@ -928,21 +934,28 @@
       (selector-add! (selector-of spvr)
                      (socket-fd kahua-sock)
                      (lambda (fd flags)
-                       (handle-kahua spvr (socket-accept kahua-sock)))
+		       (thread-start!
+			(make-thread
+			 (lambda ()
+			   (handle-kahua spvr (socket-accept kahua-sock))))))
                      '(r)))
     (when http-socks
       (dolist (http-sock http-socks)
         (selector-add! (selector-of spvr)
                        (socket-fd http-sock)
                        (lambda (fd flags)
-                         (handle-http spvr (socket-accept http-sock)))
-                       '(r))))
+			 (thread-start!
+			  (make-thread
+			   (lambda ()
+			     (handle-http spvr (socket-accept http-sock))))))
+		       '(r))))
     (when listener
       (let1 listener-handler (listener-read-handler listener)
         (set! (port-buffering (current-input-port)) :none)
         (selector-add! (selector-of spvr)
                        (current-input-port)
-                       (lambda _ (listener-handler))
+                       (lambda _ 
+			 (listener-handler))
                        '(r)))
       (listener-show-prompt listener))
 

@@ -4,8 +4,8 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.9 2006/01/25 15:55:34 shibata Exp $
-
+;; $Id: kahua-server.scm,v 1.10 2006/02/21 14:24:33 nobsun Exp $
+;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
 ;;

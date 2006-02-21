@@ -5,7 +5,7 @@
 ;;
 ;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.11 2006/02/01 16:26:16 shibata Exp $
+;; $Id: sandbox.scm,v 1.12 2006/02/21 14:24:33 nobsun Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)

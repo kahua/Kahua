@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.11 2006/02/04 07:41:30 shibata Exp $
+;; $Id: persistence.scm,v 1.12 2006/02/21 14:24:33 nobsun Exp $
 
 (use gauche.test)
 (use gauche.collection)

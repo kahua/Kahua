@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test supervisor scripts.
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: spvr.scm,v 1.4 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: spvr.scm,v 1.5 2006/02/21 14:24:33 nobsun Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -264,7 +264,7 @@
 (test* "shutdown" '()
        (begin
          (process-send-signal *spvr* SIGTERM)
-         (sys-sleep 2) ;; give the spvr time to shutdown ...
+         (sys-sleep 1) ;; give the spvr time to shutdown ...
          (directory-list "_tmp" :children? #t)))
 
 (test-end)
