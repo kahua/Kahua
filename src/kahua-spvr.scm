@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.11.6.5 2006/02/04 06:40:25 nobsun Exp $
+;; $Id: kahua-spvr.scm,v 1.11.6.6 2006/02/21 13:10:24 nobsun Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -229,8 +229,11 @@
              (log-format "[spvr] running ~a failed: ~a"
                          (car cmd) (kahua-error-string e #t))
              (raise e)))
-    (let1 p (apply run-process
-                   `(,@cmd :input "/dev/null" :output :pipe))
+    (let* ((sigs-new (make <sys-sigset>))
+	   (sigs-old (sys-sigmask SIG_SETMASK sigs-new))
+	   (p (apply run-process
+                   `(,@cmd :input "/dev/null" :output :pipe))))
+      (sys-sigmask SIG_SETMASK sigs-old)
       (log-format "[spvr] running ~a: pid ~a" (car cmd) (process-pid p))
       p)))
 
@@ -934,7 +937,6 @@
 		       (thread-start!
 			(make-thread
 			 (lambda ()
-			   (sys-sigmask SIG_SETMASK (make <sys-sigset>))
 			   (handle-kahua spvr (socket-accept kahua-sock))))))
                      '(r)))
     (when http-socks
@@ -945,7 +947,6 @@
 			 (thread-start!
 			  (make-thread
 			   (lambda ()
-			     (sys-sigmask SIG_SETMASK (make <sys-sigset>))
 			     (handle-http spvr (socket-accept http-sock))))))
 		       '(r))))
     (when listener
