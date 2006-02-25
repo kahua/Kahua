@@ -109,6 +109,17 @@ HTMLのフォームに継続を結びつける関数ノードを返します。
 HTTPレスポンスメッセージのヘッダーに加えたい情報を保持する関数ノードを返しま
 す。
 
+[procedure] with-ie/ args
+
+Conditional Comments for Internet Explorerを生成する関数ノードです．
+with-ie/ノードにcondition属性を付ける事で条件を指摘できます．
+(with-ie/ (@/ (condition "gte IE 5"))
+  (span "a"))
+のレンダリグ結果は
+"<!--[if gte IE 5]><span>a</span><![endif]-->"
+になります．
+
+
 [procedure] node-set sts
 
 関数ノードのリストを一つの関数ノードに変換する手続き
