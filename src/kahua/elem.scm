@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.14 2006/02/15 11:23:52 shibata Exp $
+;; $Id: elem.scm,v 1.15 2006/03/01 16:45:28 cut-sea Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -56,6 +56,7 @@
 ))
 
 (select-module kahua.elem)
+(use gauche.collection)
 
 ;; -------------------------------------------------------------------------
 ;; State thread : State -> State
