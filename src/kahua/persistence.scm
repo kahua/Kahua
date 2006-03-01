@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.48 2006/02/26 01:18:46 shibata Exp $
+;; $Id: persistence.scm,v 1.49 2006/03/01 14:11:58 cut-sea Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -404,7 +404,7 @@
              (cond ((null? v) #t)
                    ((pair? v)
                     (and (kahua-serializable-object? (car v))
-                         (loop (cdr v))))
+                         (kahua-serializable-object? (cdr v))))
                    (else
                     (kahua-serializable-object? (cdr v))))))
       (and (vector? v)
