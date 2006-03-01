@@ -1,5 +1,10 @@
 2006-02-21  Nobuo Yamashita  <nobsun@sampou.org>
 
+	* 0.4_pre2
+	Fixed mistakes in branch merging.
+	
+2006-02-21  Nobuo Yamashita  <nobsun@sampou.org>
+
 	* 0.4_pre1 
 	Kahua-spvr multi-threaded.
 
