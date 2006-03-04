@@ -4,11 +4,12 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.15 2006/03/01 16:45:28 cut-sea Exp $
+;; $Id: elem.scm,v 1.16 2006/03/04 10:48:26 shibata Exp $
 
 ;; This module implements tags of SXML as functions
 
 (define-module kahua.elem
+  (use gauche.collection)
   (export >>=
 	  >>
 	  get
@@ -53,10 +54,23 @@
           frame/cont:
           extra-header:
 	  map:
+          obj->string
+          html:element?
 ))
 
 (select-module kahua.elem)
-(use gauche.collection)
+
+(define-method obj->string ((self <integer>))
+  (number->string self))
+
+(define-method obj->string ((self <symbol>))
+  (symbol->string self))
+
+(define-method obj->string ((self <string>))
+  self)
+
+(define (html:element? obj)
+  (not (null? (compute-applicable-methods obj->string (list obj)))))
 
 ;; -------------------------------------------------------------------------
 ;; State thread : State -> State
@@ -80,7 +94,7 @@
   (if (null? sts)
       identity
       (let1 st (car sts)
-	(if (string? st)
+	(if (html:element? st)
 	    (>> (text/ st) (node-set (cdr sts)))
 	    (>> st (node-set (cdr sts)))))))
 
@@ -131,7 +145,7 @@
 
 (define (rev-nodes node-set)
   (define (rev node)
-    (cond ((string? node) node)
+    (cond ((html:element? node) (obj->string node))
 	  ((or (eq? (car node) '@) (eq? (car node) '@@)) node)
 	  (else (cons (car node) (rev-nodes (cdr node))))))
   (reverse (map rev node-set)))
@@ -299,7 +313,7 @@
 	(reverse acc)
 	(let ((hd (car ls))
 	      (tl  (cdr ls)))
-	  (cond ((string? hd) (iter (cons hd acc) tl))
+	  (cond ((html:element? hd) (iter (cons (obj->string hd) acc) tl))
 		((null? hd) (iter acc tl))
 		((eq? 'node-set (car hd)) 
 		 (iter (append (reverse (cdr hd)) acc) tl))
