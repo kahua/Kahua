@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.9 2006/03/05 05:31:05 cut-sea Exp $
+;; $Id: server.scm,v 1.10 2006/03/05 18:44:53 cut-sea Exp $
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.
@@ -386,13 +386,24 @@
 
 (test-section "No Escape strings")
 
-(test* "no-escape element"
+(test* "entity reference"
        "<h3>&nbsp;</h3\n>"
        (kahua-render `((h3 (no-escape "&nbsp;"))) '()))
 
 (test* "no-escape element with many comtents"
        "<h3>&amp;&nbsp;</h3\n>"
        (kahua-render `((h3 (no-escape "&amp;" "&nbsp;"))) '()))
+
+
+;;(test-section "No Escape strings")
+
+;;(test* "no-escape element"
+;;       "<h3>&nbsp;</h3\n>"
+;;       (kahua-render `((h3 (no-escape "&nbsp;"))) '()))
+
+;;(test* "no-escape element with many comtents"
+;;       "<h3>&amp;&nbsp;</h3\n>"
+;;       (kahua-render `((h3 (no-escape "&amp;" "&nbsp;"))) '()))
 
 
 (test-end)

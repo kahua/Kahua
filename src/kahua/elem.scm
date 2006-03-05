@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.18 2006/03/05 05:31:05 cut-sea Exp $
+;; $Id: elem.scm,v 1.19 2006/03/05 18:44:53 cut-sea Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -36,7 +36,7 @@
           extra-header/
 	  map/
           with-ie/
-	  no-escape/
+	  &/
 
 	  node-list-to-node-set
 	  node-set:
@@ -56,7 +56,7 @@
           extra-header:
 	  map:
 	  with-ie:
-	  no-escape:
+	  &:
 
           obj->string
           html:element?
@@ -144,8 +144,14 @@
 (define (with-ie/ . args)
   (update (cut cons `(with-ie ,@(exec '() (node-set args))) <>)))
 
-(define (no-escape/ . args)
-  (update (cut cons `(no-escape ,@(exec '() (node-set args))) <>)))
+;;(define (no-escape/ . args)
+;;  (update (cut cons `(no-escape ,@(exec '() (node-set args))) <>)))
+
+(define (&/ . args)
+  (define (val->string val)
+    (cond ((number? val) (format "#~x" val))
+	  (else val)))
+  (update (cut cons `(& ,@(exec '() (node-set (map val->string args)))) <>)))
 
 ;; SXML tag
 
@@ -451,6 +457,11 @@
 (define (map: proc arg1 . args)
   (node-list-to-node-set (apply map proc arg1 args)))
 (define (with-ie: . arg) `(with-ie ,@(flatten arg)))
-(define (no-escape: . arg) `(no-escape ,@(flatten arg)))
+;;(define (no-escape: . arg) `(no-escape ,@(flatten arg)))
+(define (&: . arg)
+  (define (val->string val)
+    (cond ((number? val) (format "#~x" val))
+	  (else val)))
+  `(& ,@(flatten (map val->string arg))))
 
 (provide "kahua.elem")
