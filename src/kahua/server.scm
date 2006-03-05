@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.55 2006/02/21 14:24:33 nobsun Exp $
+;; $Id: server.scm,v 1.56 2006/03/05 02:42:00 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -65,6 +65,7 @@
           kahua-render
           <json-base>
           x->json
+	  make-no-escape-text-element
           )
   )
 (select-module kahua.server)
@@ -1068,6 +1069,8 @@
             ,(make <no-escape> :src "<![endif]-->"))
           context)))
 
+(define (make-no-escape-text-element src)
+  (make <no-escape> :src src))
 
 ;;==========================================================
 ;;  SXML tree interpreter - generates PDF
