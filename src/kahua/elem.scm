@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.16 2006/03/04 10:48:26 shibata Exp $
+;; $Id: elem.scm,v 1.17 2006/03/05 04:45:21 cut-sea Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -36,6 +36,7 @@
           extra-header/
 	  map/
           with-ie/
+	  no-escape/
 
 	  node-list-to-node-set
 	  node-set:
@@ -54,8 +55,13 @@
           frame/cont:
           extra-header:
 	  map:
+	  with-ie:
+	  no-escape:
+
           obj->string
           html:element?
+	  make-no-escape-text-element
+	  no-escape?
 ))
 
 (select-module kahua.elem)
@@ -71,6 +77,19 @@
 
 (define (html:element? obj)
   (not (null? (compute-applicable-methods obj->string (list obj)))))
+
+;;
+;; unescape elements
+;;
+
+(define-class <no-escape> ()
+  ((src :init-keyword :src)))
+
+(define (make-no-escape-text-element src)
+  (make <no-escape> :src src))
+
+(define (no-escape? node)
+  (is-a? node <no-escape>))
 
 ;; -------------------------------------------------------------------------
 ;; State thread : State -> State
@@ -94,7 +113,8 @@
   (if (null? sts)
       identity
       (let1 st (car sts)
-	(if (html:element? st)
+	(if (or (html:element? st)
+		(no-escape? st))
 	    (>> (text/ st) (node-set (cdr sts)))
 	    (>> st (node-set (cdr sts)))))))
 
@@ -123,6 +143,9 @@
 (define (with-ie/ . args)
   (update (cut cons `(with-ie ,@(exec '() (node-set args))) <>)))
 
+(define (no-escape/ . args)
+  (update (cut cons `(no-escape ,@(exec '() (node-set args))) <>)))
+
 ;; SXML tag
 
 (define-syntax @/
@@ -146,6 +169,7 @@
 (define (rev-nodes node-set)
   (define (rev node)
     (cond ((html:element? node) (obj->string node))
+	  ((no-escape? node) node)
 	  ((or (eq? (car node) '@) (eq? (car node) '@@)) node)
 	  (else (cons (car node) (rev-nodes (cdr node))))))
   (reverse (map rev node-set)))
@@ -425,5 +449,7 @@
 (define (extra-header: . arg) `(extra-header ,@(flatten arg)))
 (define (map: proc arg1 . args)
   (node-list-to-node-set (apply map proc arg1 args)))
+(define (with-ie: . arg) `(with-ie ,@(flatten arg)))
+(define (no-escape: . arg) `(no-escape ,@(flatten arg)))
 
 (provide "kahua.elem")

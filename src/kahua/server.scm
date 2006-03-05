@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.56 2006/03/05 02:42:00 cut-sea Exp $
+;; $Id: server.scm,v 1.57 2006/03/05 04:45:21 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -65,7 +65,6 @@
           kahua-render
           <json-base>
           x->json
-	  make-no-escape-text-element
           )
   )
 (select-module kahua.server)
@@ -713,7 +712,7 @@
       (if (not name)
           (cont (cond ((string? node)
                        (sxml:string->html node))
-                      ((is-a? node <no-escape>)
+                      ((no-escape? node)
                        (ref node 'src))
                       (else ""))
                 context)
@@ -1047,13 +1046,6 @@
                      context)))))
 
 
-;;
-;; unescape elements
-;;
-
-(define-class <no-escape> ()
-  ((src :init-keyword :src)))
-
 ;; Conditional Comments for Internet Explorer
 ;; <!--[if gte IE 5]> IE 5.0 - 6.x
 ;; <!--[if IE 5]> IE 5.0
@@ -1064,13 +1056,15 @@
 
 (define-element with-ie (attrs auxs contents context cont)
   (let1 condition (assq-ref-car attrs 'condition "IE")
-    (cont `(,(make <no-escape> :src (format "<!--[if ~a]>" condition))
+    (cont `(,(make-no-escape-text-element (format "<!--[if ~a]>" condition))
             ,@contents
-            ,(make <no-escape> :src "<![endif]-->"))
+            ,(make-no-escape-text-element "<![endif]-->"))
           context)))
 
-(define (make-no-escape-text-element src)
-  (make <no-escape> :src src))
+(define-element no-escape (attrs auxs contents context cont)
+  (cont (list (apply make-no-escape-text-element contents))
+	context))
+
 
 ;;==========================================================
 ;;  SXML tree interpreter - generates PDF
