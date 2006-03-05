@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.57 2006/03/05 04:45:21 cut-sea Exp $
+;; $Id: server.scm,v 1.58 2006/03/05 05:31:05 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1061,6 +1061,8 @@
             ,(make-no-escape-text-element "<![endif]-->"))
           context)))
 
+;; No Escape Node
+;;
 (define-element no-escape (attrs auxs contents context cont)
   (cont (list (apply make-no-escape-text-element contents))
 	context))

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.17 2006/03/05 04:45:21 cut-sea Exp $
+;; $Id: elem.scm,v 1.18 2006/03/05 05:31:05 cut-sea Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -85,8 +85,9 @@
 (define-class <no-escape> ()
   ((src :init-keyword :src)))
 
-(define (make-no-escape-text-element src)
-  (make <no-escape> :src src))
+(define (make-no-escape-text-element . src)
+  (let1 src (apply string-append (map obj->string src))
+    (make <no-escape> :src src)))
 
 (define (no-escape? node)
   (is-a? node <no-escape>))
