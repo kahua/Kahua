@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.59 2006/03/05 18:44:53 cut-sea Exp $
+;; $Id: server.scm,v 1.60 2006/03/08 16:45:55 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1289,7 +1289,7 @@
      (else (error "Invalid JSON object in interp-json" x))))
 
   (let1 headers (assoc-ref-car context "extra-headers" '())
-    (cont (list "(" (x->json (cadr nodes)) ")")
+    (cont (list "(" (x->json (cadr nodes)) ")\n")
           (cons `("extra-headers"
                   ,(kahua-merge-headers
                     headers '(("Content-Type" "text/javascript"))))
