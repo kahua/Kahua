@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.60 2006/03/08 16:45:55 shibata Exp $
+;; $Id: server.scm,v 1.61 2006/03/09 02:59:40 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1247,7 +1247,7 @@
 (define (interp-json nodes context cont)
 
   (define (write-str str)
-    (format "~s" str))
+    (ces-convert (format "~s" str) (gauche-character-encoding) "utf-8"))
 
   (define (write-ht vec)
     (list "{"
