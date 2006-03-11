@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.5 2006/01/08 12:33:20 shibata Exp $
+;; $Id: user.scm,v 1.6 2006/03/11 08:31:04 shibata Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -47,12 +47,13 @@
 (define (kahua-find-user login-name)
   (find-kahua-instance (kahua-current-user-class) login-name))
 
-(define (kahua-add-user login-name password)
+(define (kahua-add-user login-name password . kargs)
   (if (kahua-find-user login-name)
     #f
-    (make (kahua-current-user-class)
-      :login-name login-name
-      :password-hash (crypt-passwd password))))
+    (apply make (kahua-current-user-class)
+           :login-name login-name
+           :password-hash (crypt-passwd password)
+           kargs)))
 
 (define (kahua-check-user login-name password)
   (find (lambda (user)

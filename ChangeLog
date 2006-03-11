@@ -1,3 +1,7 @@
+2006-03-11  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/user.scm: Changed kahua-add-user to get optional args.
+
 2006-03-04  Nobuo Yamashita  <nobsun@sampou.org>
 
 	* 0.4 released
