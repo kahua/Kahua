@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.61 2006/03/09 02:59:40 cut-sea Exp $
+;; $Id: server.scm,v 1.62 2006/03/12 08:02:35 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -545,7 +545,7 @@
 ;; helper syntax
 
 (define-class <rule-generic> (<generic>)
-  ((rules :init-value (make-hash-table 'equal?))))
+  ((rules :init-form (make-hash-table 'equal?))))
 
 (define-method write-object ((obj <rule-generic>) port)
   (format port "#<rule-generic ~a>" (ref obj 'name)))
@@ -567,7 +567,7 @@
                (else spec)))
        specs))
 
-;; ((arg1 <class1> G93 arg3) ...)
+;; ((arg1 <class1>) G93 arg3 ...)
 ;; => (arg1 G93 arg3 ...)
 (define (gen-lambda-args specs)
   (map (lambda (spec)
