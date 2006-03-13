@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.62 2006/03/12 08:02:35 shibata Exp $
+;; $Id: server.scm,v 1.63 2006/03/13 15:23:29 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -634,7 +634,7 @@
 (define-syntax regist-entry-method
   (syntax-rules ()
     ((_ name)
-     (unless (session-cont-get (symbol->string 'name))
+     (begin
        (define-method name ()
          (parameterize ((kahua-current-entry-name (symbol->string 'name)))
            (let1 path (kahua-context-ref "x-kahua-path-info")
