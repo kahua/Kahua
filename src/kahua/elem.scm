@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.19 2006/03/05 18:44:53 cut-sea Exp $
+;; $Id: elem.scm,v 1.20 2006/03/16 16:15:01 shibata Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -17,6 +17,7 @@
 	  update
           rev-nodes
 	  node-set
+          node-set/
 	  empty
 	  exec
 	  text/
@@ -118,6 +119,9 @@
 		(no-escape? st))
 	    (>> (text/ st) (node-set (cdr sts)))
 	    (>> st (node-set (cdr sts)))))))
+
+(define (node-set/ . args)
+  (node-set args))
 
 (define empty (lambda (s) s))
 
