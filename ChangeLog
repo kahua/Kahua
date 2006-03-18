@@ -1,3 +1,20 @@
+2006-03-18  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/test/xml.scm: Added `!exclude' pattern directive.
+
+2006-03-16  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/elem.scm: Added node-set/ tag.
+
+2006-03-13  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm: Fixed regist-entry-method side-effect bug.
+
+2006-03-11  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* ChangeLog, src/kahua/user.scm:
+	Changed kahua-add-user to get optional args.
+
 2006-03-11  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/user.scm: Changed kahua-add-user to get optional args.

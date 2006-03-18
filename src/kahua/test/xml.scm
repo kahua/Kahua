@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: xml.scm,v 1.11 2005/07/11 05:17:51 nobsun Exp $
+;; $Id: xml.scm,v 1.12 2006/03/18 11:12:03 shibata Exp $
 
 ;; This module provides the means of test the result of HTML
 ;; generating code, such as CGI programs.   The output of
@@ -330,6 +330,8 @@
        (any-permutation (cut match-contents <> ls cont r) (cdr pat)))
       ((!contain)
        (any-permutation (cut match-contain <> ls cont r) (cdr pat)))
+      ((!exclude)
+       (not (match-pattern `(!contain (!or ,@(cdr pat))) ls cont r)))
       ((!or)
        (any (cut match-pattern <> ls cont r)
             (cdr pat)))
