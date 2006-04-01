@@ -1,0 +1,24 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
+(define *counter* 0)
+
+(define (callee return)
+  (html/
+   (body/
+    (h1/ "callee")
+    (a/cont/ (@@/ (cont return))
+	     "return caller"))))
+
+(define-entry (caller)
+  (kahua-call-with-current-context
+   (lambda (self)
+     (html/
+      (body/
+       (h1/ (begin
+	      (inc! *counter*)
+	      *counter*))
+       (h2/ (or (kahua-context-ref "query") ""))
+       (a/cont/ (@@/ (cont (lambda ()
+			     (callee self))))
+		"call"))))))
+
+(initialize-main-proc (lambda _ (caller)))

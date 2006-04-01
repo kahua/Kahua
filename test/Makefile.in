@@ -47,6 +47,7 @@ KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
 TESTS = test-xml persistence rollback entry-method \
         user config gsid session partcont \
         server kahua-dbm worker redirectcont \
+	define-method-rule kahua-call-with-current-context \
 	lambdabooks wiki-iki nqueen foldlist \
 	spvr spvr-httpd admin developer shell usermode sandbox plugin query
 
@@ -88,7 +89,10 @@ entry-method :
 	@gosh -I../src ./entry-method.scm >> test.log
 
 define-method-rule  :
-	@gosh -I../src ./define-method-rule.scm
+	@gosh -I../src ./define-method-rule.scm >> test.log
+
+kahua-call-with-current-context  :
+	@gosh -I../src ./kahua-call-with-current-context.scm >> test.log
 
 user :
 	@gosh -I../src ./user.scm >> test.log
