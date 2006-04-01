@@ -1,3 +1,7 @@
+2006-04-01  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm: Added kahua-call-with-current-context.
+
 2006-03-18  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/test/xml.scm: Added `!exclude' pattern directive.

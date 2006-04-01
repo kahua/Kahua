@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.63 2006/03/13 15:23:29 shibata Exp $
+;; $Id: server.scm,v 1.64 2006/04/01 07:39:44 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -57,6 +57,7 @@
           define-entry-method
           apply-entry-method
           define-method-rule
+	  kahua-call-with-current-context
           path->objects
           entry-lambda
           interp-html
@@ -630,6 +631,39 @@
        (define-method ,name ,method-args
          (let1 rules (hash-table-get (ref ,name 'rules) ',specs)
            (,apply-rule rules ,@lambda-args))))))
+
+;;
+;; kahua-call-with-current-context
+;;
+;
+; [sample code]
+;
+; (define (callee return)
+;   (html/
+;    (body/
+;     (h1/ "callee")
+;     (a/cont/ (@@/ (cont return))
+; 	     "return caller"))))
+;
+; (define-entry (caller)
+;   (kahua-call-with-current-context
+;    (lambda (self)
+;      (html/
+;       (body/
+;        (h1/ (sys-time))
+;        (h2/ (or (kahua-context-ref "query") ""))
+;        (a/cont/ (@@/ (cont (lambda ()
+; 			     (callee self))))
+; 		"call"))))))
+;
+(define (kahua-call-with-current-context proc)
+  (letrec ((ctxt (kahua-current-context))
+	   (return (lambda ()
+		     (proc (lambda ()
+			     (parameterize
+				 ((kahua-current-context ctxt))
+			       (return)))))))
+    (return)))
 
 (define-syntax regist-entry-method
   (syntax-rules ()
