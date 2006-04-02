@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.12 2006/02/21 14:24:33 nobsun Exp $
+;; $Id: kahua-spvr.scm,v 1.13 2006/04/02 03:48:04 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -49,6 +49,8 @@
 (define *default-worker-type* 'dummy)
 
 (define *spvr* #f) ;; bound to supervisor object for convenience
+
+(define *default-sigmask* #f)
 
 (define *worker-types* '()) ;; for multi-thread version
 
@@ -226,14 +228,10 @@
 (define (run-piped-cmd cmd)
   (log-format "[spvr] running ~a" cmd)
   (guard (e (else 
-             (log-format "[spvr] running ~a failed: ~a"
-                         (car cmd) (kahua-error-string e #t))
-             (raise e)))
-    (let* ((sigs-new (make <sys-sigset>))
-	   (sigs-old (sys-sigmask SIG_SETMASK sigs-new))
-	   (p (apply run-process
-                   `(,@cmd :input "/dev/null" :output :pipe))))
-      (sys-sigmask SIG_SETMASK sigs-old)
+	     (log-format "[spvr] running ~a failed: ~a"
+			 (car cmd) (kahua-error-string e #t))
+	     (raise e)))
+    (let1 p (apply run-process `(,@cmd :input "/dev/null" :output :pipe :sigmask ,*default-sigmask*))
       (log-format "[spvr] running ~a: pid ~a" (car cmd) (process-pid p))
       p)))
 
@@ -361,11 +359,7 @@
 	     (p (process-wait-any #t))
              (w (find (lambda (w) (eq? (worker-process-of w) p))
                       (queue->list wq))))
-    ;; avoid a bug in Gauche 0.7.2
-    (if (eq? (queue-front wq) w)
-      (dequeue! wq)
-      (remove-from-queue! (cut eq? w <>) wq))
-      (queue-length wq)
+    (remove-from-queue! (cut eq? w <>) wq)
     (if (and (kahua-auto-restart)
 	     (not (zombee? w))
 	     (> (- (sys-time) (start-time-of w)) 60))
@@ -911,11 +905,11 @@
 
     ;; The body of handle-http
     (guard (e
-            ((is-a? e <spvr-unknown-worker-type>)
+            ((<spvr-unknown-worker-type> e)
              (not-found (ref e 'message)))
-            ((is-a? e <spvr-worker-not-running>)
+            ((<spvr-worker-not-running> e)
              (service-unavailable (ref e 'message)))
-            ((is-a? e <spvr-expired-session>)
+            ((<spvr-expired-session> e)
              (session-expired))
             (else
              (internal-error (kahua-error-string e #t))))
@@ -959,7 +953,12 @@
                        '(r)))
       (listener-show-prompt listener))
 
+    ;; The signal mask of "root" thread is changed unexpectedly on Mac OS X 10.4.5,
+    ;; maybe something wrong,  but I don't know what is wrong.
+    ;; So, I restore the signal mask of "root" thread periodically.
+    ;; FIXME!!
     (do () (#f)
+      (sys-sigmask SIG_SETMASK *default-sigmask*)
       (selector-select (selector-of spvr) 10.0e6)
       (check-workers spvr))
     ))
@@ -1036,13 +1035,15 @@
           (log-format "[spvr] also accepting http at ~a" http-socks))
         (call/cc
          (lambda (bye)
-           (set-signal-handler! SIGTERM (lambda _ (log-format "[spvr] SIGTERM")
-					        (cleanup) (bye 0)))
-           (set-signal-handler! SIGINT  (lambda _ (log-format "[spvr] SIGINT")
-					        (cleanup) (bye 0)))
-           (set-signal-handler! SIGHUP  (lambda _ (log-format "[spvr] SIGHUP")
-					        (cleanup) (bye 0)))
-           (set-signal-handler! SIGPIPE #f) ; ignore SIGPIPE
+	   (define (finish-server sig)
+	     (log-format "[spvr] ~a" (sys-signal-name sig))
+	     (cleanup) (bye 0))
+	   (for-each (apply$ set-signal-handler!)
+		     `((,SIGTERM ,finish-server)
+		       (,SIGINT  ,finish-server)
+		       (,SIGHUP  ,finish-server)
+		       (,SIGPIPE #f)))	; ignore SIGPIPE.
+	   (set! *default-sigmask* (sys-sigmask 0 #f))
            (guard (e (else
                       (log-format "[spvr] error in main:\n~a" 
                                   (kahua-error-string e #t))

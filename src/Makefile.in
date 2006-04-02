@@ -97,6 +97,7 @@ kahua/config.scm: kahua/config.scm.in
 	sed -e "s@##sysconfdir##@$(sysconfdir)@" \
 	    -e "s@##localstatedir##@$(localstatedir)@" \
 	    -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" \
+	    -e "s@##KAHUA_STATICDIR##@$(KAHUA_STATICDIR)@" \
 	    -e "s@##package##@$(package)@" \
 	    -e "s@##KAHUA_VERSION##@$(KAHUA_VERSION)@" \
             $@.in > $@

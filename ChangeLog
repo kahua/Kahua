@@ -1,3 +1,19 @@
+2006-04-02  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua-spvr.scm:
+	  Fixed some bugs and cleaned some code up.
+
+	* src/kahua-spvr.scm:
+	  Now the signal mask of "root" thread is restored periodically,
+	  in order to avoid that the sigmask is changed unexpectedly on
+	  Mac OS X 10.4.  This is a temporary step.
+
+	* src/kahua-server.scm:
+	  Set :backlog at SOMAXCONN.  Sorry that this change depends on
+	  Gauche 0.8.7.
+
+	* src/Makefile.in: Fix a lack of KAHUA_STATICDIR substitution.
+
 2006-04-01  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua/server.scm: Added kahua-call-with-current-context.

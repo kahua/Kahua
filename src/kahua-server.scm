@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.10 2006/02/21 14:24:33 nobsun Exp $
+;; $Id: kahua-server.scm,v 1.11 2006/04/02 03:48:04 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -120,7 +120,7 @@
       (load mod :environment kahua-app-server))))
 
 (define (run-server worker-id sockaddr)
-  (let ((sock (make-server-socket sockaddr :reuse-addr? #t))
+  (let ((sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
         (selector (make <selector>))
         (new_sigset (apply sys-sigset-add! (make <sys-sigset>)
                            *SIGNAL-LIST*)))
