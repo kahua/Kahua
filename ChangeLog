@@ -1,3 +1,10 @@
+2006-04-03  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* cgi/Makefile.in, cgi/fix-shebang.sh,
+	  cgi/kahua.cgi.in, src/kahua/config.scm.in:
+	  Fix some mistake of substitution rules.
+	  Especially use ##KAHUA_STATICDIR## instead of ##KAHUA_WWW_DIR##.
+
 2006-04-02  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* src/kahua-spvr.scm:
