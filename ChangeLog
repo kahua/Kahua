@@ -1,3 +1,7 @@
+2006-04-07  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* cgi/kahua.cgi.in (cgi-error-proc): add status "503 Service Temporary Unavailable" to cgi-header. 
+
 2006-04-03  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* cgi/Makefile.in, cgi/fix-shebang.sh,
