@@ -1,3 +1,10 @@
+2006-04-08  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua-server.scm, src/kahua-spvr.scm, src/kahua/server.scm, test/server.scm:
+	Supported :worker-uri keyword for `app-servers' file.
+	Changed kahua-bridge-name defalut value to "/kahua.cgi".
+	(SCRIPT_PATH must absolute path)
+
 2006-04-07  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
 	* cgi/kahua.cgi.in (cgi-error-proc): add status "503 Service Temporary Unavailable" to cgi-header. 

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.14 2006/04/03 05:13:54 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.15 2006/04/08 10:25:07 shibata Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -282,7 +282,8 @@
   (cond ((assq worker-type *worker-types*)
          => (lambda (p)
               (let ((args (get-keyword :arguments (cdr p) '()))
-                    (user (ref (kahua-config) 'user-mode)))
+                    (user (ref (kahua-config) 'user-mode))
+                    (worker-uri (get-keyword :worker-uri (cdr p) #f)))
                 (script-command
                  spvr
                  "kahua-server.scm"
@@ -290,6 +291,7 @@
                   ((kahua-config-file) => (cut list "-c" <>))
                   ((ref (kahua-config) 'user-mode) => (cut list "-user" <>))
                   ((ref spvr 'keyserv) => (lambda (k) `("-k" ,(ref k 'id))))
+                  (worker-uri => (cut list "--worker-uri" <>))
                   (#t (cons (let1 type (symbol->string worker-type)
                               (string-append type "/" type ".kahua"))
                             args)))))))

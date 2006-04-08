@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.64 2006/04/01 07:39:44 cut-sea Exp $
+;; $Id: server.scm,v 1.65 2006/04/08 10:25:06 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -78,6 +78,9 @@
 (define (kahua-worker-type)
         (worker-type))
 
+;; internally keep explicitly specified worker uri
+(define worker-uri (make-parameter #f))
+
 ;; utility
 (define (ref-car cmp lis item . maybe-default)
   (cond ((assoc item lis cmp) => cadr)
@@ -95,10 +98,11 @@
 ;; KAHUA-INIT-SERVER worker-type [session-server-id]
 ;;   Application server should use it within init-server procedure.
 ;;   Returns worker id.
-(define (kahua-init-server wtype . maybe-ssid)
+(define (kahua-init-server wtype wuri . maybe-ssid)
   (random-source-randomize! default-random-source)
   (let ((wid (make-worker-id wtype)))
     (apply session-manager-init wid maybe-ssid)
+    (worker-uri wuri)
     (worker-type wtype)
     (worker-id wid)
     wid))
@@ -108,7 +112,7 @@
 ;;   App server shouldn't set this value.   Cgi-bridge tells
 ;;   its name to kahua-server, and KAHUA-DEFAULT-HANDLER will
 ;;   set it to this parameter.
-(define kahua-bridge-name (make-parameter "kahua.cgi")) ;; dummy
+(define kahua-bridge-name (make-parameter "/kahua.cgi")) ;; dummy
 
 ;; KAHUA-SERVER-URI
 ;;   A parameter that holds the server URI (scheme://server:port).
@@ -121,14 +125,14 @@
 
 (define (kahua-self-uri . paths)
   (apply build-path
-         (format "~a/~a/" (kahua-bridge-name) (kahua-worker-type))
+         (if (worker-uri) (worker-uri)
+           (format "~a/~a/" (kahua-bridge-name) (kahua-worker-type)))
          paths))
 
 (define (kahua-self-uri-full . paths)
-  (apply build-path
-         (format "~a~a/~a/"
-                 (kahua-server-uri) (kahua-bridge-name) (kahua-worker-type))
-         paths))
+  (build-path
+   (kahua-server-uri)
+   (string-drop (apply kahua-self-uri paths) 1)))
 
 ;; KAHUA-DEFAULT-HANDLER header body reply-cont default-proc
 ;;                       &keyword stale-proc error-proc eval-proc
