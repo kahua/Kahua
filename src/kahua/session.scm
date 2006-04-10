@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.11 2005/09/12 09:45:40 shiro Exp $
+;; $Id: session.scm,v 1.12 2006/04/10 05:24:59 shibata Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -319,8 +319,7 @@
 ;; SESSION-FLUSH-ALL
 ;;   Discards all sessions.
 (define (session-flush-all)
-  (cont-sessions  (make-hash-table 'string=?))
-  (state-sessiosn (make-hash-table 'string=?)))
+  (state-sessions (make-hash-table 'string=?)))
 
 (provide "kahua/session")
 
