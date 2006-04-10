@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.13 2006/04/08 10:25:07 shibata Exp $
+;; $Id: kahua-server.scm,v 1.14 2006/04/10 16:54:35 shibata Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -175,7 +175,6 @@
   (let-args (cdr args) ((conf-file "c=s" #f)
                         (user "user=s" #f)
                         (keyserv "k=s" #f)
-                        (worker-uri "worker-uri=s" #f)
                         . mods)
     (unless (pair? mods)
       (error "usage: kahua-server [-c <conf>] [-user <user>] [-k <keyserv-id>] <app-server> <args> ..." mods))
@@ -186,7 +185,7 @@
     (kahua-app-args (cdr mods))
     (load-kahua-module (car mods))
     (let* ((worker-name (car (string-split (sys-basename (car mods)) #\.))) 
-           (worker-id (kahua-init-server worker-name worker-uri keyserv))
+           (worker-id (kahua-init-server worker-name keyserv))
            (sockbase  (kahua-sockbase))
            (sockaddr  (worker-id->sockaddr worker-id sockbase))
            (cleanup   (lambda ()

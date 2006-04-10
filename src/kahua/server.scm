@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.65 2006/04/08 10:25:06 shibata Exp $
+;; $Id: server.scm,v 1.66 2006/04/10 16:54:35 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -79,7 +79,8 @@
         (worker-type))
 
 ;; internally keep explicitly specified worker uri
-(define worker-uri (make-parameter #f))
+(define (worker-uri)
+  (kahua-context-ref "x-kahua-worker-uri"))
 
 ;; utility
 (define (ref-car cmp lis item . maybe-default)
@@ -98,11 +99,10 @@
 ;; KAHUA-INIT-SERVER worker-type [session-server-id]
 ;;   Application server should use it within init-server procedure.
 ;;   Returns worker id.
-(define (kahua-init-server wtype wuri . maybe-ssid)
+(define (kahua-init-server wtype . maybe-ssid)
   (random-source-randomize! default-random-source)
   (let ((wid (make-worker-id wtype)))
     (apply session-manager-init wid maybe-ssid)
-    (worker-uri wuri)
     (worker-type wtype)
     (worker-id wid)
     wid))
@@ -125,8 +125,8 @@
 
 (define (kahua-self-uri . paths)
   (apply build-path
-         (if (worker-uri) (worker-uri)
-           (format "~a/~a/" (kahua-bridge-name) (kahua-worker-type)))
+         (or (worker-uri)
+             (format "~a/~a/" (kahua-bridge-name) (kahua-worker-type)))
          paths))
 
 (define (kahua-self-uri-full . paths)
@@ -248,6 +248,9 @@
                              ,(assoc-ref-car header "x-kahua-metavariables"
                                              '()))
                            `("x-kahua-headers" ,(make-hash-table 'string=?))
+                           `("x-kahua-worker-uri"
+                             ,(assoc-ref-car header "x-kahua-worker-uri"
+                                             #f))
                            body))
               (let1 extra-headers
                   (assoc-ref-car context "extra-headers" '())

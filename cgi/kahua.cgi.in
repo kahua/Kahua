@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.35 2006/04/07 07:32:26 yasuyuki Exp $
+;; $Id: kahua.cgi.in,v 1.36 2006/04/10 16:54:35 shibata Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -117,8 +117,9 @@
  	  (set-cookie!
            (construct-cookie-string
             `(("x-kahua-sgsid" ,state
-               :path ,(sys-dirname
-                       (or (get-meta "SCRIPT_NAME") "/"))))))
+               :path ,(or (*worker-uri*)
+                       (sys-dirname
+                        (or (get-meta "SCRIPT_NAME") "/")))))))
 	  body))))
 
 ;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
@@ -138,7 +139,7 @@
       (set! l (cdr l)))
     (and (pair? l)
          (not (equal? (car l) ""))
-         (filter-map (lambda (p) (if (equal? p "") #f p)) l))))
+         (filter (compose not string-null?) l))))
 
 ;; determine dispatch destination.
 ;; returns: (worker-id worker-type cont-gsid path-info)
@@ -181,6 +182,7 @@
                         `("x-kahua-server-uri" ,(server-uri))
                         `("x-kahua-metavariables" ,(metavariable-alist))
                         (cond-list
+                         ((*worker-uri*) `("x-kahua-worker-uri" ,(*worker-uri*)))
                          (worker-type `("x-kahua-worker" ,worker-type))
                          (state-gsid `("x-kahua-sgsid" ,state-gsid))
                          (cont-gsid  `("x-kahua-cgsid" ,cont-gsid))
@@ -236,6 +238,8 @@
 
 (define response (make-parameter #f))
 
+(define *worker-uri* (make-parameter #f))
+
 (define-method set-header! (name value)
   (set-header! (response) name value))
 
@@ -248,39 +252,73 @@
 (define-method publish (body)
   (publish (response) body))
 
+(define (analize-virtual-hosting)
+  (let1 path-info (get-meta "PATH_INFO")
+    (if (not path-info)
+        (cgi-metavariables)
+
+      (let loop ((paths (cdr (string-split path-info #\/)))
+                 (path-info '())
+                 (metavariables (cgi-metavariables)))
+        (cond
+         ;; finish
+         ((null? paths) (cons (list "PATH_INFO"
+                                    (string-join (reverse path-info) "/" 'prefix))
+                              metavariables))
+
+         ;; set virtual hosting
+         ((#/--vh--(https?):([^:]*):(\d+)/ (car paths))
+          => (lambda (m)
+               (let1 idx (list-index (pa$ equal? "--") (cdr paths))
+                 (*worker-uri*
+                  (format "~a/"
+                          (string-join (take (cdr paths) idx) "/" 'prefix)))
+                 (loop (drop (cdr paths) (+ idx 1))
+                       path-info
+                       `(("HTTPS" ,(if (equal? "https" (m 1))
+                                       "on" #f))
+                         ("SERVER_NAME" ,(m 2))
+                         ("SERVER_PORT" ,(m 3))
+                         ,@metavariables)))))
+
+         (else (loop (cdr paths)
+                     (cons (car paths) path-info)
+                     metavariables)))))))
 
 ;; publish html. provide ~user authentication.
 (define (publisher params)
-  (let* ((path-info (get-meta "PATH_INFO"))
-	 (p (cadr (string-split (if (or (not path-info) 
-					(string-null? path-info)) 
-				    "/" path-info) #\/))))
-    (publish
-     ;; make a body.
-     (if (#/^~.+/ p)
-       (begin
-         ;; ~user authentication
-         (let ((name (string-drop p 1))
-               (passwd (or (cgi-get-parameter "kahua-passwd-plain"
-                                              params :default #f)
-                           (base64-decode-string
-                            (cgi-get-parameter "kahua-passwd"
-                                               params :default "")))))
-           (if (kahua-check-developer name passwd)
-             (begin
-               ;; when login successed, set passwd to cookie.
-               (set-cookie!
-                (construct-cookie-string
-                 `(("kahua-passwd" ,(base64-encode-string passwd)
-                    :path ,(sys-dirname
-                            (or (get-meta "SCRIPT_NAME") "/"))))))
-               (send-reply params))
-             (unauthorized-form)
-             ))
-         )
-       (send-reply params)
-       ))
-    ))
+  (parameterize ((cgi-metavariables (analize-virtual-hosting)))
+    (let* ((path-info (get-meta "PATH_INFO"))
+           (p (cadr (string-split (if (or (not path-info) 
+                                          (string-null? path-info)) 
+                                      "/" path-info) #\/))))
+      (publish
+       ;; make a body.
+       (if (#/^~.+/ p)
+           (begin
+             ;; ~user authentication
+             (let ((name (string-drop p 1))
+                   (passwd (or (cgi-get-parameter "kahua-passwd-plain"
+                                                  params :default #f)
+                               (base64-decode-string
+                                (cgi-get-parameter "kahua-passwd"
+                                                   params :default "")))))
+               (if (kahua-check-developer name passwd)
+                   (begin
+                     ;; when login successed, set passwd to cookie.
+                     (set-cookie!
+                      (construct-cookie-string
+                       `(("kahua-passwd" ,(base64-encode-string passwd)
+                          :path ,(or (*worker-uri*)
+                                     (sys-dirname
+                                      (or (get-meta "SCRIPT_NAME") "/")))))))
+                     (send-reply params))
+                 (unauthorized-form)
+                 ))
+             )
+         (send-reply params)
+         ))
+      )))
 
 ;; ~user login form.
 ;; when login failed, show this.

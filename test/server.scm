@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.13 2006/04/08 10:25:06 shibata Exp $
+;; $Id: server.scm,v 1.14 2006/04/10 16:54:34 shibata Exp $
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.
@@ -23,7 +23,7 @@
 (test-section "initialization")
 
 (test* "kahua-init-server" #t
-       (string? (kahua-init-server "dummy" #f)))
+       (string? (kahua-init-server "dummy")))
 
 (test* "kahua-bridge-name" "/kahua.cgi"
        (kahua-bridge-name))
