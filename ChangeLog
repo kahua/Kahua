@@ -1,3 +1,8 @@
+2006-05-09  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua-spvr.scm, src/kahua-keyserv.scm:
+	  Set backlog of server-socket to the maximum value.
+
 2006-04-08  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* src/kahua-server.scm, src/kahua-spvr.scm, src/kahua/server.scm, test/server.scm:

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.4 2005/08/24 02:29:16 nobsun Exp $
+;; $Id: kahua-keyserv.scm,v 1.5 2006/05/09 10:57:02 bizenn Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -88,7 +88,7 @@
 
 ;; server main loop - similar to kahua-server.  call for refactoring.
 (define (run-server worker-id sockaddr)
-  (let ((sock (make-server-socket sockaddr :reuse-addr? #t))
+  (let ((sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
         (selector (make <selector>)))
     (define (accept-handler fd flag)
       (handle-request (socket-accept sock)))

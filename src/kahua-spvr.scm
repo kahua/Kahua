@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.16 2006/04/10 16:54:35 shibata Exp $
+;; $Id: kahua-spvr.scm,v 1.17 2006/05/09 10:57:02 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -1013,11 +1013,12 @@
                          :gosh-path gosh
                          :lib-path lib-path
                          :httpd-name (canonicalize-httpd-option httpd)))
-             (kahua-sock (make-server-socket sockaddr :reuse-addr? #t))
+             (kahua-sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
              (http-socks (and httpd
                               (make-server-sockets "localhost"
                                                    (httpd-port spvr)
-                                                   :reuse-addr? #t)))
+                                                   :reuse-addr? #t
+						   :backlog SOMAXCONN)))
              (cleanup  (lambda ()
                          (when (is-a? sockaddr <sockaddr-un>)
                            (sys-unlink (sockaddr-name sockaddr)))
