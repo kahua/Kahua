@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.49 2006/03/01 14:11:58 cut-sea Exp $
+;; $Id: persistence.scm,v 1.50 2006/05/11 10:13:34 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1045,26 +1045,28 @@
   (build-path path "lock"))
 
 (define-method lock-db ((db <kahua-db-dbi>)) #t)
+(define-method unlock-db ((db <kahua-db-dbi>)) #t)
+
+(define-constant *lock-db-fs* (make <sys-flock> :type F_WRLCK))
+(define-constant *unlock-db-fs* (make <sys-flock> :type F_UNLCK))
 (define-method lock-db ((db <kahua-db-fs>))
   (let1 lock-file (lock-file-path (ref db 'path))
     (unless (file-exists? lock-file)
       ;; This is an old db.  This is only transitional, and may
       ;; be called very rarely, so we just leave this though unsafe.
       (with-output-to-file lock-file (lambda () (newline))))
-    (let ((record    (make <sys-flock> :type F_WRLCK))
-          (lock-port (open-output-file lock-file :if-exists? :append)))
+    (let1 lock-port (open-output-file lock-file :if-exists? :append)
       (define (try-lock retry)
         (cond ((zero? retry) #f)
-              ((sys-fcntl lock-port F_SETLK record)
-               (set! (ref db 'lock-port) lock-port) #t)
+              ((sys-fcntl lock-port F_SETLK *lock-db-fs*)
+               (slot-set! db 'lock-port lock-port) #t)
               (else (sys-sleep 1) (try-lock (- retry 1)))))
       (try-lock 10))))
-
-(define-method unlock-db ((db <kahua-db-dbi>)) #t)
 (define-method unlock-db ((db <kahua-db-fs>))
-  (and-let* ((lock-port (ref db 'lock-port))
-             (record (make <sys-flock> :type F_UNLCK)))
-    (sys-fcntl lock-port F_SETLK record)
+  (and-let* ((lock-port (ref db 'lock-port)))
+    (sys-fcntl lock-port F_SETLK *unlock-db-fs*)
+    (close-output-port lock-port)
+    (slot-set! db 'lock-port #f)
     #t))
 
 (define (kahua-db-open path)
