@@ -1,7 +1,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.12 2006/02/21 14:24:33 nobsun Exp $
+;; $Id: persistence.scm,v 1.13 2006/05/12 04:11:33 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -11,7 +11,7 @@
 ;; A hook to use this file for both stand-alone test and
 ;; DBI-backed-up test.
 (define *dbname*
-  (if (symbol-bound? '*dbname*)
+  (if (global-variable-bound? (current-module) '*dbname*)
     (begin (test-start #`"persistence/dbi (,*dbname*)")
            *dbname*)
     (begin (test-start "persistence")

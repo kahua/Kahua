@@ -7,13 +7,18 @@
 (use util.list)
 (use srfi-1)
 (use srfi-2)
-
-(test-start "query plugin")
-
 (use kahua.plugin)
 (use kahua.config)
 
-(set! (ref (kahua-config) 'working-directory) "../")
+(test-start "query plugin")
+
+(test-section "initialization")
+(sys-system "rm -rf _work")
+(sys-mkdir "_work" #o775)
+(sys-mkdir "_work/plugins" #o775)
+
+(copy-file "../plugins/query.scm" "_work/plugins/query.scm")
+(set! (ref (kahua-config) 'working-directory) "./_work")
 
 (initialize-plugins)
 (use-plugin query)

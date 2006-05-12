@@ -1,6 +1,14 @@
+2006-05-12  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* test/query.scm:
+	  Avoid influence of other plugins.  Follow the fashion of test/plugin.scm.
+
+	* test/persistence.scm, test/plugin.scm:
+	  Use global-variable-bound? instead of symbol-bound?
+
 2006-05-11  Tatsuya BIZENN  <bizenn@arthub.net>
 
-	* src/kahua/persistence.scm
+	* src/kahua/persistence.scm:
 	  Close lock file port explicitly in unlock-db for <kahua-db-fs>,
 	  in order to avoid lack of file descriptor.
 

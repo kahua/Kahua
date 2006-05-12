@@ -2,7 +2,7 @@
 ;; test plugin module.
 ;; Kahua.plugin モジュールのテスト
 
-;; $Id: plugin.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: plugin.scm,v 1.4 2006/05/12 04:11:33 bizenn Exp $
 
 (use gauche.test)
 (use file.util)
@@ -81,7 +81,7 @@
 ;; 確認する。
 (test* "load sendmail plugin" #t
        (eval '(begin (use-plugin sendmail)
-                     (symbol-bound? 'sendmail))
+                     (global-variable-bound? (current-module) 'sendmail))
              *sandbox*))
 
 (test-end)
