@@ -1,3 +1,9 @@
+2006-05-13  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* emacs/kahua.el, emacs/kahua-shell.el:
+	  Make customizable kahua-admin/kahua-shell command path
+	  and process coding system for communication with them.
+
 2006-05-12  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* test/query.scm:
