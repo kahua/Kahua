@@ -6,10 +6,11 @@
 
 *** Gauche のインストール
 
-0.8.5 以降のバージョンのGaucheがインストールされているかを確認します。
+0.8.7 以降のバージョンの、pthreadをサポートしたGaucheがインストール済み
+である必要があります。
 
     $ gosh -V
-    Gauche scheme interpreter, version 0.8.5 [euc-jp]
+    Gauche scheme interpreter, version 0.8.7 [euc-jp,pthreads]
 
 適切なバージョンの Gauche がインストールされていなければ、インストール
 してください。
@@ -26,9 +27,9 @@ Kahuaサーバ用のグループ kahua を作成します。
 - Kahuaサーバを管理するユーザ(たとえば hanako)
 - Kahua.cgi を起動するユーザ(たとえば www)
 
-    # vi /etc/group
-    # grep kahua /etc/group
-    kahua:x:1000:taro,hanako,www
+    # usermod -G kahua taro
+    # usermod -G kahua hanako
+    # usermod -G kahua www
 
 taro、hanako については、再ログインしたときから変更が有効になります。
 www については、HTTPサーバによって違う可能性がありますが、Apache の場合は

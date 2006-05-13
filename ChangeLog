@@ -1,5 +1,8 @@
 2006-05-13  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* doc/Setup.ja:
+	  Catch up recent changes.
+
 	* emacs/kahua.el, emacs/kahua-shell.el:
 	  Make customizable kahua-admin/kahua-shell command path
 	  and process coding system for communication with them.
