@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua.el.in,v 1.4 2005/12/18 12:59:45 cut-sea Exp $
+;; $Id: kahua.el.in,v 1.5 2006/05/13 01:55:35 bizenn Exp $
 ;;
 
 (require 'cmuscheme)
@@ -15,11 +15,21 @@
   "*Support for editing and running remote kahua server application."
   :group 'scheme
   :prefix "kahua-"
-  :link '(url-link "http://www.kahua.org"))
+  :link '(url-link "http://www.kahua.org/"))
 
 (defcustom kahua-ssh-mode t
   "*If non nil, run kahua-shell via ssh."
   :type 'boolean
+  :group 'kahua)
+
+(defcustom kahua-admin-command "##bindir##/kahua-admin"
+  "*Kahua-admin command file(full path or base name)."
+  :type 'string
+  :group 'kahua)
+
+(defcustom kahua-shell-command "##bindir##/kahua-shell"
+  "*Kahua-shell command file(full path or base name)."
+  :type 'string
   :group 'kahua)
 
 (defcustom kahua-ssh-opts '("-t")
@@ -44,17 +54,27 @@
   :type 'string
   :group 'kahua)
 
+(defcustom kahua-admin-coding-system 'utf-8
+  "*Kahua-admin coding system."
+  :type 'symbol
+  :group 'kahua)
+(defun get-kahua-admin-coding-system (p) nil kahua-admin-coding-system)
 
-(add-hook 'inferior-scheme-mode-hook
-          '(lambda () 
-             (set-buffer-process-coding-system 'euc-jp 'euc-jp)))
+(defcustom kahua-shell-coding-system 'utf-8
+  "*Kahua-shell coding system."
+  :type 'symbol
+  :group 'kahua)
+(defun get-kahua-shell-coding-system (p) nil kahua-shell-coding-system)
 
-(defvar *kahua-admin* "##bindir##/kahua-admin")
+(setq process-coding-system-alist
+      (append '(("kahua-admin" . get-kahua-admin-coding-system)
+		("kahua-shell" . get-kahua-shell-coding-system))
+	      process-coding-system-alist))
 
 (defun run-kahua ()
   "Run kahua Emacs interface in *scheme* buffer.  Make sure you're not running other inferior scheme."
   (interactive)
-  (run-scheme *kahua-admin*))
+  (run-scheme kahua-admin-command))
 
 (provide 'kahua)
 

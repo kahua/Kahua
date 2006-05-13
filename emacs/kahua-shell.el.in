@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-shell.el.in,v 1.6 2005/12/22 11:30:31 shibata Exp $
+;; $Id: kahua-shell.el.in,v 1.7 2006/05/13 01:55:35 bizenn Exp $
 ;;
 
 (require 'comint)
@@ -46,14 +46,14 @@ Editing commands are similar to those of 'scheme-mode'."
     )
   (if (not (comint-check-proc "*kahua-shell*"))
       (let* ((use-ssh          (and kahua-ssh-mode (not (string= host ""))))
-             (program          (if use-ssh "ssh" "kahua-shell"))
+             (program          (if use-ssh "ssh" kahua-shell-command))
              (kahua-shell-args (if (string= kahua-user-mode "")
                                    '() (list "-user" kahua-user-mode)))
              (args             (if use-ssh
                                    `(,@kahua-ssh-opts
                                      ,(if (string= user "")
                                           host (concat user "@" host))
-                                     ,"kahua-shell"
+                                     ,kahua-shell-command
                                      ,@kahua-shell-args)
                                  kahua-shell-args)))
         (set-buffer (apply 'make-comint "kahua-shell" program nil args))
