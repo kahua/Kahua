@@ -64,7 +64,7 @@ SCMFILES = $(SCM_SCRIPTS) \
            kahua/pdf/interp.scm kahua/pdf/main.scm kahua/pdf/monad.scm \
            kahua/pdf/srfi-48-draft.scm  kahua/pdf/srfi-48.scm \
            kahua/pdf/state.scm kahua/pdf/typeset.scm kahua/pdf/util.scm \
-           kahua/error-report.scm kahua/thread-pool
+           kahua/error-report.scm kahua/thread-pool.scm
 
 CONFFILE = $(sysconfdir)/kahua.conf
 USERCONFFILE = $(localstatedir)/user.conf
