@@ -29,7 +29,7 @@ INSTALL_DIR = $(localstatedir)/plugins
 CREATE_DIR = $(INSTALL_DIR)
 
 
-PLUGINS = allow-module.scm sendmail.scm
+PLUGINS = allow-module.scm sendmail.scm query.scm fileio.scm
 
 CONFIG_GENERATED = Makefile 
 .PHONY: all check clean distclean install maintainer-clean

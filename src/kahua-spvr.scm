@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17 2006/05/09 10:57:02 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.1 2006/05/17 14:04:16 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -61,7 +61,7 @@
 ;; [Session initiation]
 ;;
 ;;  A client first connect to a well known socket of the supervisor.
-;;  This first request is called session-initiaing request.
+;;  This first request is called session-initiating request.
 ;;  At this point, a client wouldn't have complete GSID.  It may have
 ;;  state ID from the last session, but it certainly doesn't have
 ;;  continuation ID.

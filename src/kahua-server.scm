@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.14 2006/04/10 16:54:35 shibata Exp $
+;; $Id: kahua-server.scm,v 1.14.2.1 2006/05/17 14:04:16 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -175,9 +175,10 @@
   (let-args (cdr args) ((conf-file "c=s" #f)
                         (user "user=s" #f)
                         (keyserv "k=s" #f)
+			(prof "profile=s" #f)
                         . mods)
     (unless (pair? mods)
-      (error "usage: kahua-server [-c <conf>] [-user <user>] [-k <keyserv-id>] <app-server> <args> ..." mods))
+      (error "usage: kahua-server [-c <conf>] [-user <user>] [-k <keyserv-id>] [-pofile <profile-out>] <app-server> <args> ..." mods))
     (set! *kahua-top-module* (car mods))
     (kahua-init conf-file :user user)
     (set! kahua-app-server (kahua-application-environment))
@@ -192,25 +193,28 @@
                         (log-format "[~a] exit" worker-name)
                         (when (is-a? sockaddr <sockaddr-un>)
                           (sys-unlink (sockaddr-name sockaddr))))))
-      (call/cc
-       (lambda (bye)
-	 (define (finish-server sig)
-	   (log-format "[~a] ~a" worker-name (sys-signal-name sig))
-	   (cleanup) (bye 0))
-	 (log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
-	 (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
-	 (with-error-handler
-	   (lambda (e)
-	     (log-format "[server] error in main:\n~a"
-			 (kahua-error-string e #t))
-	     (report-error e)
-	     (cleanup)
-	     (bye 70))
-	   (lambda ()
-	     (log-format "[~a] start" worker-name)
-	     (run-server worker-id sockaddr)
-	     (bye 0)))))
-    )))
+      (and prof (profiler-start))
+      (begin0
+	(call/cc
+	 (lambda (bye)
+	   (define (finish-server sig)
+	     (log-format "[~a] ~a" worker-name (sys-signal-name sig))
+	     (cleanup) (bye 0))
+	   (log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
+	   (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
+	   (with-error-handler
+	     (lambda (e)
+	       (log-format "[server] error in main:\n~a"
+			   (kahua-error-string e #t))
+	       (report-error e)
+	       (cleanup)
+	       (bye 70))
+	     (lambda ()
+	       (log-format "[~a] start" worker-name)
+	       (run-server worker-id sockaddr)
+	       (bye 0)))))
+	(and prof (with-output-to-file prof profiler-show :if-exists :append)))
+      )))
 
 (define (kahua-write-static-file path nodes context . rargs)
   (when (string-scan path "../")

@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.36 2006/04/10 16:54:35 shibata Exp $
+;; $Id: kahua.cgi.in,v 1.36.2.1 2006/05/17 14:04:16 bizenn Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -32,6 +32,7 @@
 (use rfc.cookie)
 (use rfc.base64)
 (use rfc.sha1)
+(use text.tree)
 (use text.html-lite)
 (use kahua.gsid)
 (use kahua.config)
@@ -42,6 +43,8 @@
 ;; Change this if you're using non-default sockbase
 (define *sockbase* "unix:##KAHUA_SOCKET_BASE##")
 (define *tmpbase* "##localstatedir##/tmp/kahua-")
+
+(define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP SIGPIPE))
 
 ;; Change this if you're using non-default log path
 ;;(log-open "/tmp/kahua-cgi.log" :prefix "~Y ~T ~P[~$]: ")
@@ -333,30 +336,45 @@
                    (html:input :type "submit" :value "login"))))))
 
 (define (main args)
-  (let1 cleanup (lambda () (for-each sys-unlink
-                                     (cgi-temporary-files)))
-    (log-format "CGI start")
-    (guard (e (else (log-format "error(ignored): ~a" e)))
-      (set-signal-handler! SIGTERM (lambda _ (log-format "SIGTERM")
-                                           (cleanup) (sys-exit 0)))
-      (set-signal-handler! SIGINT  (lambda _ (log-format "SIGINT")
-                                           (cleanup) (sys-exit 0)))
-      (set-signal-handler! SIGHUP  (lambda _ (log-format "SIGHUP")
-                                           (cleanup) (sys-exit 0)))
-      (set-signal-handler! SIGPIPE (lambda _ (log-format "SIGPIPE")
-                                           (cleanup) (sys-exit 0)))
-      ##CGIBEGIN##
-      (parameterize ((response (make <response>)))
-        (cgi-main publisher
-                  :merge-cookies #t
-                  :on-error cgi-error-proc
-                  :part-handlers `((#t file+name ,*tmpbase*))
-                  ))
-      ##CGIEND##
-      )
-    (cleanup)
-    (log-format "CGI end")
-    (sys-exit 0)))
+  (define (output-handler sexp)
+    (let1 sbody (cadr sexp)
+      (case (car sbody)
+	((file)
+	 (write-tree (car sexp))
+	 (call-with-input-file (cadr sbody)
+	   (lambda (in)
+	     (copy-port in (current-output-port))
+	     (flush))))
+	(else
+	 (if (ces-equivalent? (gauche-character-encoding)
+			      (cgi-output-character-encoding))
+	     (write-tree sexp)
+	     (with-output-conversion
+		 (current-output-port)
+	       (cut write-tree sexp)
+	       :encoding (cgi-output-character-encoding)))))))
+  (call/cc
+   (lambda (bye)
+     (define (cleanup) (for-each sys-unlink (cgi-temporary-files)))
+     (define (finish-server sig)
+       (log-format (sys-signal-name sig))
+       (cleanup) (bye 0))
+     (log-format "CGI start")
+     (guard (e (else (log-format "error(ignored): ~a" e)))
+       (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
+       ##CGIBEGIN##
+       (parameterize ((response (make <response>)))
+	 (cgi-main publisher
+		   :merge-cookies #t
+		   :on-error cgi-error-proc
+		   :output-proc output-handler
+		   :part-handlers `((#t file+name ,*tmpbase*))
+		   ))
+       ##CGIEND##
+       )
+     (cleanup)
+     (log-format "CGI end")
+     (bye 0))))
 
 (define (get-error-string e)
   (call-with-output-string
