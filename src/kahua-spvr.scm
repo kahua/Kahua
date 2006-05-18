@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17.2.1 2006/05/17 14:04:16 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.2 2006/05/18 11:21:42 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -1019,14 +1019,6 @@
                                                    (httpd-port spvr)
                                                    :reuse-addr? #t
 						   :backlog SOMAXCONN)))
-             (cleanup  (lambda ()
-                         (when (is-a? sockaddr <sockaddr-un>)
-                           (sys-unlink (sockaddr-name sockaddr)))
-                         (nuke-all-workers spvr)
-                         (stop-keyserv spvr)
-                         (when http-socks (map socket-close http-socks))
-                         (log-format "[spvr] exitting")
-                         (sys-unlink (kahua-pidpath))))
              )
         (set! *spvr* spvr)
         ;; hack
@@ -1036,26 +1028,33 @@
         (log-format "[spvr] started at ~a" sockaddr)
         (when http-socks
           (log-format "[spvr] also accepting http at ~a" http-socks))
-        (call/cc
-         (lambda (bye)
-	   (define (finish-server sig)
-	     (log-format "[spvr] ~a" (sys-signal-name sig))
-	     (cleanup) (bye 0))
-	   (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
-	   (set-signal-handler! SIGPIPE #f) ; ignore SIGPIPE
-	   (set! *default-sigmask* (sys-sigmask 0 #f))
-           (guard (e (else
-                      (log-format "[spvr] error in main:\n~a" 
-                                  (kahua-error-string e #t))
-                      (report-error e)
-                      (cleanup)
-                      (bye 70)))
-             (load-app-servers-file)
-             (run-default-workers spvr)
-             (run-server spvr kahua-sock http-socks listener)
-             (sys-unlink (kahua-pidpath))
-             (bye 0))))
-        ))))
+	(let1 ret
+	    (call/cc
+	     (lambda (bye)
+	       (define (finish-server sig)
+		 (log-format "[spvr] ~a" (sys-signal-name sig))
+		  (bye 0))
+	       (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
+	       (set-signal-handler! SIGPIPE #f) ; ignore SIGPIPE
+	       (set! *default-sigmask* (sys-sigmask 0 #f))
+	       (guard (e (else
+			  (log-format "[spvr] error in main:\n~a" 
+				      (kahua-error-string e #t))
+			  (report-error e)
+			  (bye 70)))
+		 (load-app-servers-file)
+		 (run-default-workers spvr)
+		 (run-server spvr kahua-sock http-socks listener)
+		 (bye 0))))
+	  (when (is-a? sockaddr <sockaddr-un>)
+	    (sys-unlink (sockaddr-name sockaddr)))
+	  (nuke-all-workers spvr)
+	  (stop-keyserv spvr)
+	  (when http-socks (map socket-close http-socks))
+	  (log-format "[spvr] exitting")
+	  (sys-unlink (kahua-pidpath))
+	  ret)
+	))))
 
 ;; Local variables:
 ;; mode: scheme

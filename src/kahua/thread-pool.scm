@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: thread-pool.scm,v 1.1.2.1 2006/05/17 14:04:17 bizenn Exp $
+;; $Id: thread-pool.scm,v 1.1.2.2 2006/05/18 11:21:42 bizenn Exp $
 
 (define-module kahua.thread-pool
   (use srfi-1)
@@ -26,14 +26,20 @@
 
 (define (make-thread-pool num)
   (define (do-task queue mutex cv)
-    (let1 t (current-thread)
-      (do () ((thread-specific t))
-	(mutex-lock! mutex)
-	(if (queue-empty? queue)
-	    (mutex-unlock! mutex cv)
-	    (let1 thunk (dequeue! queue)
-	      (mutex-unlock! mutex)
-	      (thunk))))))
+    (call/cc (lambda (finish)
+	       (let1 t (current-thread)
+		 (do () (#f)
+		   (mutex-lock! mutex)
+		   (cond ((thread-specific t)
+			  (mutex-unlock! mutex)
+			  (finish))
+			 ((queue-empty? queue)
+			  (mutex-unlock! mutex cv))
+			 (else
+			  (let1 thunk (dequeue! queue)
+			    (mutex-unlock! mutex)
+			    (thunk)))))))
+	     ))
   (let* ((queue (make-queue))
 	 (mutex (make-mutex))
 	 (cv    (make-condition-variable))
@@ -51,30 +57,30 @@
   (let ((queue (slot-ref tp 'queue))
 	(mutex (slot-ref tp 'mutex))
 	(cv    (slot-ref tp 'cv)))
-    (mutex-lock! mutex)
-    (enqueue! queue thunk)
-    (condition-variable-signal! cv)
-    (mutex-unlock! mutex)))
+    (with-locking-mutex mutex
+      (lambda ()
+	(enqueue! queue thunk)
+	(condition-variable-signal! cv)))))
 
 (define-method wait-all ((tp <thread-pool>) . maybe-interval)
   (let ((mutex (slot-ref tp 'mutex))
 	(queue (slot-ref tp 'queue))
 	(sleep (cute sys-nanosleep (get-optional maybe-interval 5.0e8))))
-    (let loop ()
-      (mutex-lock! mutex)
-      (unless (queue-empty? queue)
-	(mutex-unlock! mutex)
-	(sleep)
-	(loop)))
-    (mutex-unlock! mutex)))
+    (call/cc (lambda (done)
+	       (do () (#f)
+		 (with-locking-mutex mutex
+		   (lambda ()
+		     (when (queue-empty? queue) (done))
+		     (sleep))))))))
 
-(define-method finish-all ((tp <thread-pool>))
-  (let ((pool (slot-ref tp 'pool))
-	(cv   (slot-ref tp 'cv)))
-    (for-each (lambda (t) (thread-specific-set! t #t)) pool)
-    (for-each (lambda (t)
-		(condition-variable-broadcast! cv)
-		(thread-join! t))
-	      pool)))
+(define-method finish-all ((tp <thread-pool>) . maybe-timeout)
+  (let1 timeout (get-optional maybe-timeout 1.0)
+    (let ((pool (slot-ref tp 'pool))
+	  (cv   (slot-ref tp 'cv)))
+      (for-each (lambda (t) (thread-specific-set! t #t)) pool)
+      (for-each (lambda (t)
+		  (condition-variable-broadcast! cv)
+		  (thread-join! t))
+		pool))))
 
 (provide "kahua/thread-pool")

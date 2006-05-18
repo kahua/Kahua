@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.5.2.1 2006/05/17 14:04:16 bizenn Exp $
+;; $Id: kahua-keyserv.scm,v 1.5.2.2 2006/05/18 11:21:42 bizenn Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -67,27 +67,27 @@
     (random-source-randomize! default-random-source)
     (let* ((wid (make-worker-id "%keyserv"))
            (sockaddr (worker-id->sockaddr wid (kahua-sockbase)))
-	   (tpool (make-thread-pool 10))
-           (cleanup (lambda ()
-                      (when (is-a? sockaddr <sockaddr-un>)
-                        (sys-unlink (sockaddr-name sockaddr)))
-                      (sys-unlink (kahua-keyserv-pidpath)))))
-      (call/cc
-       (lambda (bye)
-	 (define (finish-server ret)
-	   (finish-all tpool)
-	   (cleanup) (bye 0))
-	 (set-signal-handler! *TERMINATION-SIGNALS* (lambda _ (finish-server 0)))
-	 (set-signal-handler! SIGPIPE #f)
-	 (set! *default-sigmask* (sys-sigmask 0 #f))
-	 (with-error-handler
-	   (lambda (e)
-	     (log-format "~a" (kahua-error-string e #t))
-	     (log-format "Exitting by error")
-	     (finish-server 70))
-	   (lambda ()
-	     (run-server wid sockaddr tpool)
-	     (finish-server 0))))))
+	   (tpool (make-thread-pool 10)))
+      (let1 ret
+	  (call/cc
+	   (lambda (bye)
+	     (set-signal-handler! *TERMINATION-SIGNALS* (lambda _ (bye 0)))
+	     (set-signal-handler! SIGPIPE #f)
+	     (set! *default-sigmask* (sys-sigmask 0 #f))
+	     (with-error-handler
+	       (lambda (e)
+		 (log-format "~a" (kahua-error-string e #t))
+		 (log-format "Exitting by error")
+		 (bye 70))
+	       (lambda ()
+		 (run-server wid sockaddr tpool)
+		 (bye 0)))))
+	(when (is-a? sockaddr <sockaddr-un>)
+	  (sys-unlink (sockaddr-name sockaddr)))
+	(wait-all tpool)
+	(finish-all tpool)
+	(sys-unlink (kahua-keyserv-pidpath))
+	ret))
     ))
 
 (define (usage)
@@ -155,7 +155,8 @@
 	      (log-format "Response: ~s" result)
 	      (socket-shutdown client 2)
 	      (socket-close client)))
-	  )))))
+	  )))
+    0))
 
 (define (handle-object-command request)
   (let loop ((obj (get-object (car request)))
