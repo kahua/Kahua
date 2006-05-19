@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17.2.2 2006/05/18 11:21:42 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.3 2006/05/19 22:44:36 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -646,19 +646,19 @@
 
 ;;; "Kahua request" handler.  Client is kahua.cgi or kahua-admin.
 (define-method handle-kahua ((self <kahua-spvr>) client-sock)
-  (guard (e
-          (#t (let ((error-log (kahua-error-string e #t)))
-                (send-message (socket-output-port client-sock)
-                              '(("x-kahua-status" "SPVR-ERROR"))
-                              (list (ref e 'message) error-log)))))
-    (receive (header body) (receive-message (socket-input-port client-sock))
-      (handle-common self header body
-                     (lambda (header body)
-                       (guard (e
-                               (#t (log-format "[spvr]: client closed connection")))
-                         (send-message (socket-output-port client-sock)
-                                       header body)))))
-    ))
+  (call-with-client-socket client-sock
+    (lambda (in out)
+      (guard (e
+	      (#t (let ((error-log (kahua-error-string e #t)))
+		    (send-message out '(("x-kahua-status" "SPVR-ERROR"))
+				  (list (ref e 'message) error-log)))))
+	(receive (header body) (receive-message in)
+	  (handle-common self header body
+			 (lambda (header body)
+			   (guard (e
+				   (#t (log-format "[spvr]: client closed connection")))
+			     (send-message out header body))))))
+      (socket-shutdown client-sock 1))))
 
 ;;; HTTP request handler.  This is provided for testing convenience,
 ;;; and not intended to turn kahua-spvr a full-featured httpd.
@@ -667,255 +667,256 @@
 ;;; Cf. ftp://ftp.isi.edu/in-notes/rfc2616.txt
 
 (define-method handle-http ((self <kahua-spvr>) client-sock)
+  (call-with-client-socket client-sock
+    (lambda (in out)
 
-  (let ((in  (socket-input-port client-sock))
-        (out (socket-output-port client-sock))
-        (static-doc-rx (string->regexp #`"^,(regexp-quote (kahua-static-document-url \"\"))/"))
-        (ignore-paths '("/favicon.ico"))
-        (mime-types '((".jpg"  . "image/jpeg")
-                      (".jpeg" . "image/jpeg")
-                      (".png"  . "image/png")
-                      (".gif"  . "image/gif")
-                      (".pdf"  . "application/pdf")
-                      (".ps"   . "application/postscript")
-                      (".eps"  . "application/postscript")
-                      (".doc"  . "application/msword")
-                      (".xls"  . "application/ms-excel")
-                      (".ppt"  . "application/ms-powerpoint")
-                      (".rtf"  . "application/rtf")
-                      (".swf"  . "application/x-shockwave-flash")
-                      (".html" . "text/html")
-                      (".htm"  . "text/html")
-                      (".xml"  . "text/xml")
-                      (".txt"  . "text/plain")))
-        )
+      (let ((static-doc-rx (string->regexp #`"^,(regexp-quote (kahua-static-document-url \"\"))/"))
+	    (ignore-paths '("/favicon.ico"))
+	    (mime-types '((".jpg"  . "image/jpeg")
+			  (".jpeg" . "image/jpeg")
+			  (".png"  . "image/png")
+			  (".gif"  . "image/gif")
+			  (".pdf"  . "application/pdf")
+			  (".ps"   . "application/postscript")
+			  (".eps"  . "application/postscript")
+			  (".doc"  . "application/msword")
+			  (".xls"  . "application/ms-excel")
+			  (".ppt"  . "application/ms-powerpoint")
+			  (".rtf"  . "application/rtf")
+			  (".swf"  . "application/x-shockwave-flash")
+			  (".html" . "text/html")
+			  (".htm"  . "text/html")
+			  (".xml"  . "text/xml")
+			  (".txt"  . "text/plain")))
+	    )
 
-    ;; HTTP request handling
-    (define (receive-http-request)
-      (let1 start-line (read-line in)
-        (if (eof-object? start-line)
-          (bad-request "bad request")
-          (begin
-            (log-format "[spvr] http> ~a" start-line)
-            (match (string-split start-line #[\s])
-              ((method request-uri (? #/HTTP\/1.[01]/ version))
-               (if (member method '("GET" "HEAD" "POST"))
-                 (process-body (rfc822-header->list in) method request-uri)
-                 (not-implemented method)))
-              (else
-               (bad-request "bad request")))))))
+	;; HTTP request handling
+	(define (receive-http-request)
+	  (let1 start-line (read-line in)
+	    (if (eof-object? start-line)
+		(bad-request "bad request")
+		(begin
+		  (log-format "[spvr] http> ~a" start-line)
+		  (match (string-split start-line #[\s])
+		    ((method request-uri (? #/HTTP\/1.[01]/ version))
+		     (if (member method '("GET" "HEAD" "POST"))
+			 (process-body (rfc822-header->list in) method request-uri)
+			 (not-implemented method)))
+		    (else
+		     (bad-request "bad request")))))))
 
-    (define (process-body headers method request-uri)
-      (if (and-let* ((expect (rfc822-header-ref headers "expect")))
-            (string-ci=? expect "100-continue"))
-        (display "HTTP/1.1 100 Continue\r\n" out)
-        (flush out))
-      (receive (path path-info query fragment) (analyze-uri request-uri)
-        (cond
-         ((member path ignore-paths)
-          (not-found path))
-         ((static-doc-rx path) => serve-static-document)
-         (else (serve-via-worker headers method query path-info)))))
+	(define (process-body headers method request-uri)
+	  (if (and-let* ((expect (rfc822-header-ref headers "expect")))
+		(string-ci=? expect "100-continue"))
+	      (display "HTTP/1.1 100 Continue\r\n" out)
+	      (flush out))
+	  (receive (path path-info query fragment) (analyze-uri request-uri)
+	    (cond
+	     ((member path ignore-paths)
+	      (not-found path))
+	     ((static-doc-rx path) => serve-static-document)
+	     (else (serve-via-worker headers method query path-info)))))
 
-    (define (serve-static-document m)
-      (let* ((relpath (uri-decode-string (m 'after)))
-             (abspath (simplify-path (kahua-static-document-path relpath))))
-        (cond
-         ;; make sure the client does not trick the server
-         ((not (string-prefix? (kahua-static-document-path "") abspath))
-          (not-found relpath))
-         ((file-is-readable? abspath)
-          (let* ((suffix (#/\.[^\.]+$/ abspath))
-                 (mime-type (if suffix
-                              (assoc-ref mime-types (suffix))
-                              "application/octet-stream"))
-                 (content-size (file-size abspath))
-                 (content (call-with-input-file abspath
-                            (cut read-block content-size <>))))
-            (reply-to-client `(("content-type" ,mime-type)) content)))
-         ((file-exists? abspath)
-          (forbidden relpath))
-         (else
-          (not-found relpath)))))
+	(define (serve-static-document m)
+	  (let* ((relpath (uri-decode-string (m 'after)))
+		 (abspath (simplify-path (kahua-static-document-path relpath))))
+	    (cond
+	     ;; make sure the client does not trick the server
+	     ((not (string-prefix? (kahua-static-document-path "") abspath))
+	      (not-found relpath))
+	     ((file-is-readable? abspath)
+	      (let* ((suffix (#/\.[^\.]+$/ abspath))
+		     (mime-type (if suffix
+				    (assoc-ref mime-types (suffix))
+				    "application/octet-stream"))
+		     (content-size (file-size abspath))
+		     (content (call-with-input-file abspath
+				(cut read-block content-size <>))))
+		(reply-to-client `(("content-type" ,mime-type)) content)))
+	     ((file-exists? abspath)
+	      (forbidden relpath))
+	     (else
+	      (not-found relpath)))))
 
-    (define (serve-via-worker headers method query path-info)
-      (let* ((params (parse-query method headers query))
-             (cont-gsid (or (cgi-get-parameter "x-kahua-cgsid" params)
-                            (if (and path-info (pair? (cdr path-info)))
-                              (cadr path-info)
-                              #f)))
-             (worker-type (and path-info (car path-info)))
-             (worker-id   (and cont-gsid (gsid->worker-id cont-gsid)))
-             (state-gsid (cgi-get-parameter "x-kahua-sgsid" params))
-             (header (list*
-                      '("x-kahua-bridge" "")
-                      `("x-kahua-server-uri" ,#`"http://,(ref self 'httpd-name)")
-                      (cond-list
-                       (worker-type `("x-kahua-worker" ,worker-type))
-                       (state-gsid  `("x-kahua-sgsid" ,state-gsid))
-                       (cont-gsid   `("x-kahua-cgsid" ,cont-gsid))
-                       (path-info   `("x-kahua-path-info" ,path-info))
-                       )))
-             )
-        (handle-common self header params reply-to-client)))
+	(define (serve-via-worker headers method query path-info)
+	  (let* ((params (parse-query method headers query))
+		 (cont-gsid (or (cgi-get-parameter "x-kahua-cgsid" params)
+				(if (and path-info (pair? (cdr path-info)))
+				    (cadr path-info)
+				    #f)))
+		 (worker-type (and path-info (car path-info)))
+		 (worker-id   (and cont-gsid (gsid->worker-id cont-gsid)))
+		 (state-gsid (cgi-get-parameter "x-kahua-sgsid" params))
+		 (header (list*
+			  '("x-kahua-bridge" "")
+			  `("x-kahua-server-uri" ,#`"http://,(ref self 'httpd-name)")
+			  (cond-list
+			   (worker-type `("x-kahua-worker" ,worker-type))
+			   (state-gsid  `("x-kahua-sgsid" ,state-gsid))
+			   (cont-gsid   `("x-kahua-cgsid" ,cont-gsid))
+			   (path-info   `("x-kahua-path-info" ,path-info))
+			   )))
+		 )
+	    (handle-common self header params reply-to-client)))
 
-    (define (analyze-uri uri)
-      ;; Returns path, path-info list, query, and fragment
-      ;; NB: for now, ignore scheme, user, host and port.
-      (receive (scheme user host port path query fragment) (uri-parse uri)
-        (values path (get-path-info path) query fragment)))
+	(define (analyze-uri uri)
+	  ;; Returns path, path-info list, query, and fragment
+	  ;; NB: for now, ignore scheme, user, host and port.
+	  (receive (scheme user host port path query fragment) (uri-parse uri)
+	    (values path (get-path-info path) query fragment)))
 
-    (define (get-path-info path)
-      (let1 l (cdr (string-split (uri-decode-string path) #[/]))
-        (and (pair? l) (not (equal? (car l) ""))
-             (filter-map (lambda (p) (if (equal? p "") #f p)) l))))
+	(define (get-path-info path)
+	  (let1 l (cdr (string-split (uri-decode-string path) #[/]))
+	    (and (pair? l) (not (equal? (car l) ""))
+		 (filter-map (lambda (p) (if (equal? p "") #f p)) l))))
 
-    ;; HTTP response sending
-    (define (reply-to-client header body)
-      (let ((status (assoc-ref header "x-kahua-status"))
-            (header (if (assoc-ref header "content-type")
-                      header
-                      `(("content-type"
-                         ,(format "text/html; charset=~a"
-                                  (gauche-character-encoding)))
-                        ,@header))))
-        (if (and status (equal? (car status) "SPVR-ERROR"))
-          (internal-error (cadr body)) ;;NB: need more comprehensive error page
-          (receive (state cont) (get-gsid-from-header header)
-            (let ((headers `(,@(map (cut list "Set-cookie" <>)
-                                    (construct-cookie-string
-                                     `(("x-kahua-sgsid" ,state :path "/"))))
-                             ,@(filter (lambda (hdr)
-                                         (not (#/^x-kahua-/ (car hdr))))
-                                       header)))
-                  (status  (find (lambda (hdr)
-                                    (string-ci=? "status" (car hdr)))
-                                  header))
-                  )
-              ;; NB: The redirection should use "303 See Other" in HTTP/1.1,
-              ;; but see the note of section 10.3.4. of RFC2616.
-              (if status
-                (http-response (cadr status) headers body)
-                (http-response "200 OK" headers body)))))))
+	;; HTTP response sending
+	(define (reply-to-client header body)
+	  (let ((status (assoc-ref header "x-kahua-status"))
+		(header (if (assoc-ref header "content-type")
+			    header
+			    `(("content-type"
+			       ,(format "text/html; charset=~a"
+					(gauche-character-encoding)))
+			      ,@header))))
+	    (if (and status (equal? (car status) "SPVR-ERROR"))
+		(internal-error (cadr body)) ;;NB: need more comprehensive error page
+		(receive (state cont) (get-gsid-from-header header)
+		  (let ((headers `(,@(map (cut list "Set-cookie" <>)
+					  (construct-cookie-string
+					   `(("x-kahua-sgsid" ,state :path "/"))))
+				   ,@(filter (lambda (hdr)
+					       (not (#/^x-kahua-/ (car hdr))))
+					     header)))
+			(status  (find (lambda (hdr)
+					 (string-ci=? "status" (car hdr)))
+				       header))
+			)
+		    ;; NB: The redirection should use "303 See Other" in HTTP/1.1,
+		    ;; but see the note of section 10.3.4. of RFC2616.
+		    (if status
+			(http-response (cadr status) headers body)
+			(http-response "200 OK" headers body)))))))
 
-    (define (parse-query method headers query)
-      (let1 cookie (rfc822-header-ref headers "cookie")
-        (parameterize ((cgi-metavariables (cond-list
-                                           (cookie `("HTTP_COOKIE" ,cookie)))))
-          (if (equal? method "POST")
-            (parse-post-query headers)
-            (cgi-parse-parameters :query-string (or query "")
-                                  :merge-cookies #t)))))
+	(define (parse-query method headers query)
+	  (let1 cookie (rfc822-header-ref headers "cookie")
+	    (parameterize ((cgi-metavariables (cond-list
+					       (cookie `("HTTP_COOKIE" ,cookie)))))
+	      (if (equal? method "POST")
+		  (parse-post-query headers)
+		  (cgi-parse-parameters :query-string (or query "")
+					:merge-cookies #t)))))
 
-    (define (parse-post-query headers)
-      (let1 nlen
-          (and-let* ((len  (rfc822-header-ref headers "content-length"))
-                     (nlen (x->integer len))
-                     ((positive? nlen)))
-            nlen)
-        (or (and-let* ((ctype (rfc822-header-ref headers "content-type"))
-                       ((equal? (take* (mime-parse-content-type ctype) 2)
-                                '("multipart" "form-data"))))
-              (cgi-parse-parameters :content-type ctype
-                                    :content-length nlen
-                                    :mime-input in
-                                    :merge-cookies #t
-                                    :part-handlers '((#t file+name))))
-            (and-let* ((nlen)
-                       (body (read-block nlen in))
-                       ((not (eof-object? body))))
-              (cgi-parse-parameters :query-string (ces-convert body "*jp")
-                                    :merge-cookies #t))
-            '())))      
+	(define (parse-post-query headers)
+	  (let1 nlen
+	      (and-let* ((len  (rfc822-header-ref headers "content-length"))
+			 (nlen (x->integer len))
+			 ((positive? nlen)))
+		nlen)
+	    (or (and-let* ((ctype (rfc822-header-ref headers "content-type"))
+			   ((equal? (take* (mime-parse-content-type ctype) 2)
+				    '("multipart" "form-data"))))
+		  (cgi-parse-parameters :content-type ctype
+					:content-length nlen
+					:mime-input in
+					:merge-cookies #t
+					:part-handlers '((#t file+name))))
+		(and-let* ((nlen)
+			   (body (read-block nlen in))
+			   ((not (eof-object? body))))
+		  (cgi-parse-parameters :query-string (ces-convert body "*jp")
+					:merge-cookies #t))
+		'())))      
 
-    (define (http-response status headers body)
-      (log-format "[spvr] http< ~a" status)
-      (let* ((body (if (pair? body) (tree->string body) body))
-             (len  (string-size body)))
-        (guard (e
-                (#t (log-format "http< [spvr] client closed connection")))
-          (with-output-to-port out
-            (lambda ()
-              (print "HTTP/1.1 " status "\r")
-              (dolist (h headers)
-                (print (car h) ": " (cadr h) "\r"))
-              (print "Server: kahua-spvr\r")
-              (print "Content-length: " len "\r")
-              (print "\r")
-              (display body)
-              (flush))))
-        (for-each sys-unlink (cgi-temporary-files)) ;remove tmpfiles for upload
-        (socket-shutdown client-sock)
-        (socket-close client-sock)))
+	(define (http-response status headers body)
+	  (log-format "[spvr] http< ~a" status)
+	  (let* ((body (if (pair? body) (tree->string body) body))
+		 (len  (string-size body)))
+	    (guard (e
+		    (#t (log-format "http< [spvr] client closed connection")))
+	      (with-output-to-port out
+		(lambda ()
+		  (print "HTTP/1.1 " status "\r")
+		  (dolist (h headers)
+		    (print (car h) ": " (cadr h) "\r"))
+		  (print "Server: kahua-spvr\r")
+		  (print "Content-length: " len "\r")
+		  (print "\r")
+		  (display body)
+		  (flush))))
+	    (for-each sys-unlink (cgi-temporary-files)) ;remove tmpfiles for upload
+	    (socket-shutdown client-sock)
+	    (socket-close client-sock)))
 
-    ;; HTTP diagnostic response
-    (define (http-diag-response status body)
-      (http-response status
-                     '(("Content-type" "text/html"))
-                     `(,(html-doctype)
-                       ,(html:html
-                         (html:head (html:title status))
-                         (html:body (html:h1 status) body
-                                    (kahua-version-footer))))))
+	;; HTTP diagnostic response
+	(define (http-diag-response status body)
+	  (http-response status
+			 '(("Content-type" "text/html"))
+			 `(,(html-doctype)
+			   ,(html:html
+			     (html:head (html:title status))
+			     (html:body (html:h1 status) body
+					(kahua-version-footer))))))
 
-    (define (kahua-version-footer)
-      (list (html:hr)
-            (html:i "Kahua-spvr Version " (kahua-version)
-                    " running at " (ref self 'httpd-name))))
+	(define (kahua-version-footer)
+	  (list (html:hr)
+		(html:i "Kahua-spvr Version " (kahua-version)
+			" running at " (ref self 'httpd-name))))
 
-    (define (bad-request msg)
-      (http-diag-response "400 Bad Request"
-                          (html:p (html-escape-string msg))))
+	(define (bad-request msg)
+	  (http-diag-response "400 Bad Request"
+			      (html:p (html-escape-string msg))))
 
-    (define (forbidden path)
-      (http-diag-response "403 Forbidden"
-                          (html:p "You don't have permission to access "
-                                  (html:tt (html-escape-string path))
-                                  ".")))
+	(define (forbidden path)
+	  (http-diag-response "403 Forbidden"
+			      (html:p "You don't have permission to access "
+				      (html:tt (html-escape-string path))
+				      ".")))
 
-    (define (not-found uri)
-      (http-diag-response "404 Not Found"
-                          (html:p "The requested URL "
-                                  (html:tt (html-escape-string uri))
-                                  " was not found on this server.")))
+	(define (not-found uri)
+	  (http-diag-response "404 Not Found"
+			      (html:p "The requested URL "
+				      (html:tt (html-escape-string uri))
+				      " was not found on this server.")))
 
-    (define (internal-error msg)
-      (http-diag-response "500 Internal Server Error"
-                          (html:pre (html-escape-string msg))))
+	(define (internal-error msg)
+	  (http-diag-response "500 Internal Server Error"
+			      (html:pre (html-escape-string msg))))
 
-    (define (not-implemented msg)
-      (http-diag-response "501 Not Implemented"
-                          (html:p "The requested method isn't supported: "
-                                  (html-escape-string msg))))
+	(define (not-implemented msg)
+	  (http-diag-response "501 Not Implemented"
+			      (html:p "The requested method isn't supported: "
+				      (html-escape-string msg))))
 
-    (define (service-unavailable msg)
-      (http-diag-response "503 Service Unavailable"
-                          (list
-                           (html:p "Service temporarily unavailable ("
-                                   (html-escape-string msg)
-                                   ")")
-                           (html:p "Please try to access later."))))
+	(define (service-unavailable msg)
+	  (http-diag-response "503 Service Unavailable"
+			      (list
+			       (html:p "Service temporarily unavailable ("
+				       (html-escape-string msg)
+				       ")")
+			       (html:p "Please try to access later."))))
 
-    (define (session-expired)
-      (http-response "200 OK"
-                     '((content-type "text/html"))
-                     `(,(html-doctype)
-                       ,(html:html
-                         (html:head (html:title "Session expired"))
-                         (html:body (html:h1 "Session expired")
-                                    (kahua-version-footer))))))
+	(define (session-expired)
+	  (http-response "200 OK"
+			 '((content-type "text/html"))
+			 `(,(html-doctype)
+			   ,(html:html
+			     (html:head (html:title "Session expired"))
+			     (html:body (html:h1 "Session expired")
+					(kahua-version-footer))))))
 
-    ;; The body of handle-http
-    (guard (e
-            ((<spvr-unknown-worker-type> e)
-             (not-found (ref e 'message)))
-            ((<spvr-worker-not-running> e)
-             (service-unavailable (ref e 'message)))
-            ((<spvr-expired-session> e)
-             (session-expired))
-            (else
-             (internal-error (kahua-error-string e #t))))
-      (receive-http-request))
+	;; The body of handle-http
+	(guard (e
+		((<spvr-unknown-worker-type> e)
+		 (not-found (ref e 'message)))
+		((<spvr-worker-not-running> e)
+		 (service-unavailable (ref e 'message)))
+		((<spvr-expired-session> e)
+		 (session-expired))
+		(else
+		 (internal-error (kahua-error-string e #t))))
+	  (receive-http-request)))
+      (socket-shutdown client-sock 1))
     ))
 
 ;;
@@ -930,20 +931,18 @@
       (selector-add! (selector-of spvr)
                      (socket-fd kahua-sock)
                      (lambda (fd flags)
-		       (thread-start!
-			(make-thread
-			 (lambda ()
-			   (handle-kahua spvr (socket-accept kahua-sock))))))
+		       (let1 client (socket-accept kahua-sock)
+			 (thread-start!
+			  (make-thread (cut handle-kahua spvr client)))))
                      '(r)))
     (when http-socks
       (dolist (http-sock http-socks)
         (selector-add! (selector-of spvr)
                        (socket-fd http-sock)
                        (lambda (fd flags)
-			 (thread-start!
-			  (make-thread
-			   (lambda ()
-			     (handle-http spvr (socket-accept http-sock))))))
+			 (let1 client (socket-accept http-sock)
+			   (thread-start!
+			    (make-thread (cut handle-http spvr client)))))
 		       '(r))))
     (when listener
       (let1 listener-handler (listener-read-handler listener)

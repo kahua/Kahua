@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: thread-pool.scm,v 1.1.2.3 2006/05/19 09:10:32 bizenn Exp $
+;; $Id: thread-pool.scm,v 1.1.2.4 2006/05/19 22:44:36 bizenn Exp $
 
 (define-module kahua.thread-pool
   (use srfi-1)
