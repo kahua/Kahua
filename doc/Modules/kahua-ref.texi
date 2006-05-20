@@ -1,0 +1,92 @@
+\input texinfo  @c -*-texinfo-*-
+@comment %**start of header
+@c EN
+@setfilename kahua-refe.info
+@settitle Kahua Module Reference
+@dircategory The Application Server Framework
+@direntry
+* Kahua: (kahua-refe.info).	        Continuation based framework.
+@end direntry
+@c JP
+@setfilename kahua-refj.info
+@settitle Kahua モジュールリファレンス
+@dircategory The Application Server Framework
+@direntry
+* Kahua (ja): (kahua-refj.info).	Continuation based framework.
+@end direntry
+@documentencoding euc-jp
+@c COMMON
+@comment %**end of header
+
+@c $Id: kahua-ref.texi,v 1.1 2006/05/20 15:53:42 shibata Exp $
+
+@c module and class index
+@defcodeindex md
+@defcodeindex cl
+
+@iftex
+@finalout
+@parskip 4pt plus 1pt
+@end iftex
+
+@titlepage
+@c EN
+@title Kahua Module Reference
+@subtitle version @VERSION@
+@author Kahua project
+@c JP
+@title Kahua モジュールリファレンス
+@subtitle version @VERSION@
+@author Kahua project
+@c COMMON
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2004-2006 Kahua project
+
+@end titlepage
+
+@node Top, kahua, (dir), (dir)
+
+@ifnottex
+@c EN
+This is a module reference manual of Kahua, a Continuation based framework.
+This manual is for version @VERSION@.
+@c JP
+本書は、継続ベースフレームワーク、Kahuaのモジュールリファレンスマニュアルです。
+Kahuaのバージョン@VERSION@に対応します。
+@c COMMON
+@end ifnottex
+
+@menu
+* kahua::
+* kahua.config::
+@c * kahua.developer::
+@c * kahua.gsid::
+@c * kahua.elem::
+@c * kahua.session::
+@c * kahua.partcont::
+@c * kahua.sandbox::
+@c * kahua.server::
+@c * kahua.persistence::
+@c * kahua.plugin::
+@c * kahua.user::
+@c * kahua.util::
+@c * kahua.test.xml::
+@c * kahua.test.worker::
+* Function and Syntax Index::
+* Module Index::
+* Class Index::
+* Variable Index::
+@end menu
+
+@include kahua.texi
+@include kahua.config.texi
+
+@include indexfn.texi
+@include indexmd.texi
+@include indexcl.texi
+@include indexvr.texi
+
+@contents
+@bye

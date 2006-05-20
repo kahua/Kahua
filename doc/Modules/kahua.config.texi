@@ -1,0 +1,232 @@
+@node kahua.config, , kahua, Top
+@chapter @code{kahua.config} - Configuration
+@c NODE コンフィグレーション, @code{kahua.config} - コンフィグレーション
+
+@deftp {Module} kahua.config
+@mdindex kahua.config
+@c JP
+Kahuaサーバ、ツール群で共通して使われるコンフィグレーションパラメータを扱うモジュールです。
+
+Kahuaサーバ、ツール群(Scripts参照)は、起動時にコンフィグレーションファイルを読み込みます。
+デフォルトは/etc/kahua.confですが、多くのツールは-cオプションで替わりのファイルを
+指定することもできます。
+
+コンフィグレーションファイルはSchemeスクリプト片で、単にloadされます。
+それは、<kahua-config>クラスのシングルトンインスタンスを生成する式を含んでいなければなりません。
+
+@c COMMON
+@example
+(make <kahua-config>
+  :sockbase ....
+  :working-directory ...)
+@end example
+
+@c JP
+src/kahua.conf.sample にサンプルのコンフィグレーションファイルがあります。
+
+@c COMMON
+@end deftp
+
+@deftp {Class} <kahua-config>
+@clindex kahua-config
+
+@c JP
+@code{gauche.mop.singleton}の@code{<singleton-mixin>}を継承しており、ただ一つだけインスタンスが作成されます。
+以下のユーザアクセス可能なスロットがあります。
+コンフィグレーションファイル内で、@code{<kahua-config>}のインスタンス作成時にこれらのスロットに初期値
+を与えることで、 Kahuaの動作に影響を与えるパラメータを設定することができます。
+
+これらのスロットの値を実行中に変更した場合の動作は未定義です。
+プログラム中では、下記にあるユーティリティ手続き等で参照するだけにとどめて下さい。
+
+@c COMMON
+
+@defivar <kahua-config> sockbase
+@c JP
+サーバソケットをオープンする際のベースとなる値を指定します。
+現在サポートされているのはunixドメインソケットのみです。次のように指定します。
+
+@c COMMON
+@example
+unix:dir
+@end example
+
+@c JP
+dirはディレクトリ名で、その下にソケットファイルが作成されます。
+dirは存在して、Kahuaサーバを起動するユーザが書き込み可能でなければなりません。
+
+デフォルトは unix:/tmp/kahua-elua です。
+
+@c COMMON
+@end defivar
+
+@defivar <kahua-config> working-directory
+@c JP
+Kahuaサーバ群が使用するワーキングディレクトリを指定します。
+このディレクトリは存在して、Kahuaサーバを起動するユーザが書き込み可能でなければなりません。
+
+Kahuaサーバ群は、この下にアプリケーションサーバスクリプトや、データベースを保持します。
+
+デフォルトは/var/lib/kahua です。
+@c COMMON
+@end defivar
+
+@defivar <kahua-config> static-document-path
+@c JP
+スタティックなコンテンツを保持するディレクトリを指定します。
+このディレクトリ以下に書き込んだものが、次に述べるstatic-document-urlで外部から
+httpd経由でアクセス可能でなければなりません。
+Kahuaサーバ群は、スタティックなコンテンツへのリンクは毎回cgiを通して送るのではなく、
+直接そのファイルを指すurlを生成します。
+
+このディレクトリは存在して、Kahuaサーバを起動するユーザが書き込み可能でなければなりません。
+
+デフォルトは/var/www/html/kahuaです。
+@c COMMON
+@end defivar
+
+@defivar <kahua-config> static-document-url
+@c JP
+スタティックなコンテンツを外部からhttpd経由でアクセスするための urlのパスを指定します。
+通常、サーバ名を除いた絶対パスが使われます。
+
+デフォルトは/kahuaです。
+@c COMMON
+@end defivar
+
+@defivar <kahua-config> ping-timeout-sec
+@c JP
+kahua-spvr は一定間隔で各 worker が動作しているかを確認し、一定時間 worker が無反応だった場合（タイムアウト）
+worker を再起動します。
+
+このスロットは、そのタイムアウトの秒数を設定します。
+@c COMMON
+@end defivar
+
+@defivar <kahua-config> ping-interval-sec
+@c JP
+このスロットは、ping を打つ間隔の秒数を設定します。
+@c COMMON
+@end defivar
+
+@defivar <kahua-config> auto-restart
+@c JP
+意図せずに終了した worker プロセスを自動的に再起動する場合には #t を設定します。
+デフォルトでは #f になっています。
+@c COMMON
+@end defivar
+
+@end deftp
+
+@defun kahua-init conf-file &optional skip-check
+@c JP
+Kahuaアプリケーションサーバは最初にこの手続きを呼ぶ必要があります。
+
+コンフィグレーションクラス<kahua-config>のシングルトンインスタンスを初期化します。
+conf-fileが与えられていればそれをloadします。
+与えられていなければデフォルトのコンフグレーションファイル (/etc/kahua.conf) のロードを試み、
+それが見つからなければ警告を出して適当な初期値を設定します。
+
+一度初期化されたら、<kahua-config>のシングルトンインスタンスは
+
+@c COMMON
+@example
+(kahua-config)
+@end example
+
+@c JP
+でアクセスすることができます。
+
+skip-check に #t が与えられた場合、working-dir などのチェックを省略します。
+kahua.conf の内容だけ知りたい場合はこれを #t にして利用してください。
+このオプションが与えられていない場合はチェックを行います。
+
+以下のアクセス手続きが提供されています。
+@c COMMON
+@end defun
+
+@defun kahua-config
+@c JP
+<kahua-config>のシングルトンインスタンスを返します。
+@c COMMON
+@end defun
+
+@defun kahua-sockbase
+@c JP
+ソケットを開く箇所の基準となるsockbaseの値を返します。
+
+今のところサポートされているのはunixドメインソケットのみで、sockbase は次の形式の文字列です。
+@c COMMON
+@example
+unix:dir
+@end example
+
+@c JP
+ここで、dirは存在するディレクトリ名で、その下にunixドメインソケットが作成されます。
+@c COMMON
+@end defun
+
+@defun kahua-logpath filename
+@c JP
+ログファイルfilenameを作成するためのフルパス名を返します。
+<kahua-config>で指定されたワーキングディレクトリ名をwdirとすると、ログファイルのフルパスは
+
+@c COMMON
+@example
+wdir/logs/filename
+@end example
+
+@c JP
+となります。
+@c COMMON
+@end defun
+
+@defun kahua-static-document-path path
+@c JP
+スタティックドキュメントを置くためのパスを返します。
+pathには相対パスを指定します。
+例えばstatic-document-pathが"/var/www/html/kahua"の場合、
+
+@c COMMON
+@example
+(kahua-static-document-path "myapp/home.html")
+  => "/var/www/html/kahua/myapp/home.html"
+@end example
+
+@c JP
+となります。
+@c COMMON
+@end defun
+
+@defun kahua-static-document-url path
+@c JP
+スタティックドキュメントを外部から参照するためのurlのパスを返します。
+@c COMMON
+@end defun
+
+@defun kahua-config-file
+@c JP
+kahua-initで指定されたコンフグレーションファイル名(無指定だった場合はデフォルトのパス) を返します。
+@c COMMON
+@end defun
+
+@defun kahua-ping-timeout-sec
+@c JP
+kahua-spvr は一定間隔で各 worker が動作しているかを確認し、一定時間 worker が無反応だった場合（タイムアウト）
+worker を再起動します。
+
+この手続きは、そのタイムアウトとして設定している秒数を返します。
+@c COMMON
+@end defun
+
+@defun kahua-ping-interval-sec
+@c JP
+ping を打つ間隔の秒数を返します。
+@c COMMON
+@end defun
+
+@defun kahua-auto-restart
+@c JP
+自動的に予期せず終了した worker プロセスを再起動させる設定の場合、#t を返します。
+@c COMMON
+@end defun
