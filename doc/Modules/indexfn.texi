@@ -1,0 +1,4 @@
+@node Function and Syntax Index, Module Index, , Top
+@appendix Function and Syntax Index
+@c NODE Index - 手続きと構文索引
+@printindex fn
