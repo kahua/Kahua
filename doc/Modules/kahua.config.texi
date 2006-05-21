@@ -1,4 +1,4 @@
-@node kahua.config, , kahua, Top
+@node kahua.config, kahua.developer, kahua, Top
 @chapter @code{kahua.config} - Configuration
 @c NODE コンフィグレーション, @code{kahua.config} - コンフィグレーション
 

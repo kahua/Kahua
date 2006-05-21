@@ -18,7 +18,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: kahua-ref.texi,v 1.1 2006/05/20 15:53:42 shibata Exp $
+@c $Id: kahua-ref.texi,v 1.2 2006/05/21 15:09:32 shibata Exp $
 
 @c module and class index
 @defcodeindex md
@@ -61,8 +61,8 @@ Kahuaのバージョン@VERSION@に対応します。
 @menu
 * kahua::
 * kahua.config::
-@c * kahua.developer::
-@c * kahua.gsid::
+* kahua.developer::
+* kahua.gsid::
 @c * kahua.elem::
 @c * kahua.session::
 @c * kahua.partcont::
@@ -82,6 +82,8 @@ Kahuaのバージョン@VERSION@に対応します。
 
 @include kahua.texi
 @include kahua.config.texi
+@include kahua.developer.texi
+@include kahua.gsid.texi
 
 @include indexfn.texi
 @include indexmd.texi

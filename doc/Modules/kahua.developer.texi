@@ -1,0 +1,54 @@
+@node kahua.developer, kahua.gsid, kahua.config, Top
+@chapter @code{kahua.developer} - Developer
+@c NODE 開発者, @code{kahua.developer} - 開発者
+
+@deftp {Module} kahua.developer
+@mdindex kahua.developer
+@c JP
+このモジュールは、Kahua の開発者アカウント機能を提供します。
+
+開発者アカウントは名前、パスワード、複数のロールを持ちます。
+
+開発者アカウントは、kahua-shell と Emacsクライアントを使うとき、
+ユーザ専用モードにアクセスするときに利用されます。
+
+アカウント情報は kahua.conf の userconf-file に設定されたファイルに保存されます。
+@c COMMON
+@end deftp
+
+@defun kahua-add-developer name password roles
+@c JP
+開発者アカウントを登録します。roles にはリストを与えてください。
+登録できれば #t を返します。
+name が既に登録されている場合、パスワードが短かい場合はエラーになります。
+nameは3文字以上、パスワードは4文字以上必要です。
+@c COMMON
+@end defun
+
+@defun kahua-delete-developer name
+@c JP
+開発者アカウントを削除します。
+削除できれば #t を返します。
+アカウントが存在しない場合はエラーになります。
+@c COMMON
+@end defun
+
+@defun kahua-check-developer
+@c JP
+開発者アカウントの認証を行います。
+成功すれば #t、失敗すれば#f を返します。
+@c COMMON
+@end defun
+
+@defun kahua-change-developer-password name new-password
+@c JP
+開発者アカウントのパスワードを変更します。
+パスワードが3文字以下の場合はエラーになります。
+@c COMMON
+@end defun
+
+@defun kahua-list-developer
+@c JP
+登録されている開発者アカウントの名前のリストを返します。
+@c COMMON
+@end defun
