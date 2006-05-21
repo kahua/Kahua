@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.12.2.1 2006/05/21 07:00:01 cut-sea Exp $
+;; $Id: session.scm,v 1.12.2.2 2006/05/21 07:47:28 cut-sea Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -316,10 +316,10 @@
 ;; SESSION-STATE-REFRESH id
 ;;   Update session timestamp.
 (define (session-state-refresh id)
-  (if (session-server-id)
-    (keyserver (list id))
-    (set! (ref (hash-table-get (state-sessions) id) '%timestamp)
-          (sys-time))))
+  (and (session-server-id)
+       (keyserver (list id)))
+  (set! (ref (hash-table-get (state-sessions) id) '%timestamp)
+	(sys-time)))
 
 (define (session-state-all-keys)
   (if (session-server-id)
