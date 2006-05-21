@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.12 2006/04/10 05:24:59 shibata Exp $
+;; $Id: session.scm,v 1.12.2.1 2006/05/21 07:00:01 cut-sea Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -37,6 +37,7 @@
   (use gauche.mop.validator)
   (use gauche.net)
   (use util.list)
+  (use srfi-1)
   (use srfi-2)
   (use srfi-27)
   (export session-manager-init
@@ -200,15 +201,17 @@
    (%timestamp  :init-keyword :timestamp)
    (%properties :init-value '())))
 
+(define-method initialize ((self <session-state>) initargs)
+  (next-method)
+  (hash-table-put! (state-sessions) (ref self '%session-id) self)
+  )
+
 ;; pseudo getter
 (define-method slot-missing ((class <class>) (obj <session-state>) slot)
   (assq-ref (ref obj '%properties) slot))
 
 ;; pseudo setter
 (define-method slot-missing ((class <class>) (obj <session-state>) slot val)
-  (unless (kahua-serializable-object? val)
-    (error "attempted to enter unserializable object to <session-state>: ~s"
-           val))
   (set! (ref obj '%properties)
         (assq-set! (ref obj '%properties) slot val))
   (update-session-state obj (cons slot val))
@@ -219,11 +222,19 @@
   (when (session-server-id)
     (synchronize-session-state
      self
-     (keyserver (cons (ref self '%session-id) attrs)))))
+     (keyserver
+      (cons (ref self '%session-id)
+	    (filter (compose kahua-serializable-object? cdr) attrs))))))
 
 (define-method synchronize-session-state ((self <session-state>) result)
-  (set! (ref self '%timestamp) (assq-ref (cdr result) '%ctime))
-  (set! (ref self '%properties) (cdr result)))
+  (let* ((old (ref self '%properties))
+	 (new-keys (map car (cdr result)))
+	 (dup (lambda (attr)
+		(memq (car attr) new-keys))))
+    (set! (ref self '%timestamp)
+	  (assq-ref (cdr result) '%ctime))
+    (set! (ref self '%properties)
+	  (append (cdr result) (remove dup old)))))
 
 ;; Local session table.  Keeps key <-> <session-state>
 (define state-sessions
@@ -270,7 +281,8 @@
         (let* ((result (keyserver (if refresh?
                                       (list id)
                                       `(ref ,id))))
-               (state (make <session-state> :session-id id)))
+               (state (or (hash-table-get (state-sessions) id #f)
+			  (make <session-state> :session-id id))))
           (synchronize-session-state state result)
           (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
           state)
@@ -295,11 +307,11 @@
 ;;   Discards sessions that are older than AGE (in seconds)
 ;;   Returns # of sessions discarded.
 (define (session-state-sweep age)
-  (if (session-server-id)
-    (keyserver (list 'flush age))
-    (let ((cutoff (- (sys-time) age)))
-      (sweep-hash-table (state-sessions)
-                        (lambda (val) (< (ref val '%timestamp) cutoff))))))
+  (and (session-server-id)
+       (keyserver (list 'flush age)))
+  (let ((cutoff (- (sys-time) age)))
+    (sweep-hash-table (state-sessions)
+		      (lambda (val) (< (ref val '%timestamp) cutoff)))))
 
 ;; SESSION-STATE-REFRESH id
 ;;   Update session timestamp.
