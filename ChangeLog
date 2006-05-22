@@ -1,3 +1,7 @@
+2006-05-22  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* rewrite kahua-local-session-ref used by getter-with-setter.
+	
 2006-05-21  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* src/kahua/session.scm, src/kahua/server.scm

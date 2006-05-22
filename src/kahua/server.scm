@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.67 2006/05/22 13:13:40 cut-sea Exp $
+;; $Id: server.scm,v 1.68 2006/05/22 13:57:25 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -343,8 +343,13 @@
 ;;
 ;; var is symbol, which is any slot name of <session-state>.
 ;;
-(define (kahua-local-session-ref var)
-  (ref (kahua-context-ref "session-state") var))
+(define kahua-local-session-ref
+  (let1 get-session
+      (lambda ()
+	(kahua-context-ref "session-state"))
+    (getter-with-setter
+     (lambda (key) (ref (get-session) key))
+     (lambda (key val) (set! (ref (get-session) key) val)))))
 
 ;; KAHUA-LOCAL-SESSION-SET! var val
 ;;
@@ -352,8 +357,8 @@
 ;; and val is permitted every value include non-persistent object.
 ;; the value object is local object in only app server.
 ;;
-(define (kahua-local-session-set! var val)
-  (set! (ref (kahua-context-ref "session-state") var) val))
+(define (kahua-local-session-set! key val)
+  (set! (kahua-local-session-ref key) val))
 
 ;; KAHUA-CURRENT-ENTRY-NAME
 ;;  A parameter that holds the name of entry.
