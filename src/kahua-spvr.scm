@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17.2.3 2006/05/19 22:44:36 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.4 2006/05/22 01:09:53 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -44,6 +44,7 @@
 (use kahua.gsid)
 (use kahua.developer)
 (use kahua.util)
+(use kahua.thread-pool)
 
 ;; Eventually this should be configurable by some conf file
 (define *default-worker-type* 'dummy)
@@ -922,7 +923,7 @@
 ;;
 ;; Actual server loop
 ;;
-(define (run-server spvr kahua-sock http-socks use-listener)
+(define (run-server spvr tpool kahua-sock http-socks use-listener)
   (let ((listener (and use-listener
                        (make <listener>
                          :prompter (lambda () (display "kahua> ")))))
@@ -932,8 +933,7 @@
                      (socket-fd kahua-sock)
                      (lambda (fd flags)
 		       (let1 client (socket-accept kahua-sock)
-			 (thread-start!
-			  (make-thread (cut handle-kahua spvr client)))))
+			 (add tpool (cut handle-kahua spvr client))))
                      '(r)))
     (when http-socks
       (dolist (http-sock http-socks)
@@ -941,8 +941,7 @@
                        (socket-fd http-sock)
                        (lambda (fd flags)
 			 (let1 client (socket-accept http-sock)
-			   (thread-start!
-			    (make-thread (cut handle-http spvr client)))))
+			   (add tpool (cut handle-http spvr client))))
 		       '(r))))
     (when listener
       (let1 listener-handler (listener-read-handler listener)
@@ -1018,6 +1017,7 @@
                                                    (httpd-port spvr)
                                                    :reuse-addr? #t
 						   :backlog SOMAXCONN)))
+	     (tpool (make-thread-pool 40)) ; Oops!! hard coding.
              )
         (set! *spvr* spvr)
         ;; hack
@@ -1043,13 +1043,15 @@
 			  (bye 70)))
 		 (load-app-servers-file)
 		 (run-default-workers spvr)
-		 (run-server spvr kahua-sock http-socks listener)
+		 (run-server spvr tpool kahua-sock http-socks listener)
 		 (bye 0))))
 	  (when (is-a? sockaddr <sockaddr-un>)
 	    (sys-unlink (sockaddr-name sockaddr)))
+	  (wait-all tpool)
+	  (finish-all tpool)
 	  (nuke-all-workers spvr)
 	  (stop-keyserv spvr)
-	  (when http-socks (map socket-close http-socks))
+	  (when http-socks (for-each socket-close http-socks))
 	  (log-format "[spvr] exitting")
 	  (sys-unlink (kahua-pidpath))
 	  ret)
