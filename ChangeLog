@@ -1,3 +1,13 @@
+2006-05-21  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* src/kahua/session.scm, src/kahua/server.scm
+	  hold app local session variable and the value.
+	  At a result, add two new low level API named as
+	  kahua-local-session-ref/kahua-local-session-set!.
+	  This aim is that we hold non persistent object
+	  and access it not only continuation link but also
+	  permanent link.
+	
 2006-05-21  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* doc/Modules
