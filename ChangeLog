@@ -1,3 +1,9 @@
+2006-05-24  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* src/kahua/server.scm
+	a bit touch for define-session-object macro.
+	delete a hole of anaphoric reference.
+
 2006-05-23  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* src/kahua/session.scm, src/kahua/server.scm
