@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.68 2006/05/22 13:57:25 cut-sea Exp $
+;; $Id: server.scm,v 1.69 2006/05/23 13:14:30 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -46,6 +46,7 @@
           kahua-context-ref*
 	  kahua-local-session-ref
 	  kahua-local-session-set!
+	  define-session-object
           kahua-current-entry-name
           kahua-current-user
           kahua-current-user-name
@@ -359,6 +360,19 @@
 ;;
 (define (kahua-local-session-set! key val)
   (set! (kahua-local-session-ref key) val))
+
+;; DEFINE-SESSION-OBJECT name create
+;;
+;; name is the object name which we use session object.
+;; and create is normally make expression.
+;; so, the create expression is called only first. 
+;;
+(define-macro (define-session-object name create)
+  `(define (,name)
+     (cond ((kahua-local-session-ref ',name) => identity)
+	   (else (set! (kahua-local-session-ref ',name) ,create)
+		 (kahua-local-session-ref ',name)))))
+
 
 ;; KAHUA-CURRENT-ENTRY-NAME
 ;;  A parameter that holds the name of entry.

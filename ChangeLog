@@ -1,3 +1,7 @@
+2006-05-23  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* define new utility macro define-session-object.
+	
 2006-05-22  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* rewrite kahua-local-session-ref used by getter-with-setter.
