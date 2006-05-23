@@ -1,6 +1,9 @@
 2006-05-23  Katsutoshi Itoh <cut-sea@kahua.org>
 
+	* src/kahua/session.scm, src/kahua/server.scm
 	* define new utility macro define-session-object.
+	* add predicate kahua-sendable-object?, it used at
+	  we can send that object to keyserver.
 	
 2006-05-22  Katsutoshi Itoh <cut-sea@kahua.org>
 

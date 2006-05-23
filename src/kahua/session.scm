@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.13 2006/05/22 13:13:40 cut-sea Exp $
+;; $Id: session.scm,v 1.14 2006/05/23 13:36:01 cut-sea Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -217,6 +217,26 @@
   (update-session-state obj (cons slot val))
   )
 
+;; strict predicate from kahua-serializable-object?
+(define (kahua-sendable-object? v)
+  (or (any (cut is-a? v <>)
+           (list <boolean> <number> <string> <symbol> <keyword> <null>))
+      (and (pair? v)
+           (let loop ((v v))
+             (cond ((null? v) #t)
+                   ((pair? v)
+                    (and (kahua-sendable-object? (car v))
+                         (kahua-sendable-object? (cdr v))))
+                   (else
+                    (kahua-sendable-object? (cdr v))))))
+      (and (vector? v)
+           (let loop ((i (- (vector-length v) 1)))
+             (if (negative? i)
+		 #t
+		 (and (kahua-sendable-object? (vector-ref v i))
+		      (loop (- i 1))))))
+      ))
+
 ;; Obtain the newest session-state.
 (define-method update-session-state ((self <session-state>) . attrs)
   (when (session-server-id)
@@ -224,7 +244,7 @@
      self
      (keyserver
       (cons (ref self '%session-id)
-	    (filter (compose kahua-serializable-object? cdr) attrs))))))
+	    (filter (compose kahua-sendable-object? cdr) attrs))))))
 
 (define-method synchronize-session-state ((self <session-state>) result)
   (let* ((old (ref self '%properties))
