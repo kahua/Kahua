@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.71 2006/05/23 16:30:57 cut-sea Exp $
+;; $Id: server.scm,v 1.72 2006/05/24 00:10:35 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -376,7 +376,7 @@
 	   (lambda ()
 	     (kahua-context-ref "session-state"))
 	 (getter-with-setter
-	  (lambda () (cond ((ref (,get-session) ',name) => identity)
+	  (lambda () (cond ((ref (,get-session) ',name))
 			   (else (set! (ref (,get-session) ',name) ,init-value)
 				 (ref (,get-session) ',name))))
 	  (lambda (val) (set! (ref (,get-session) ',name) val)))))))
