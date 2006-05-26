@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.14.2.1 2006/05/17 14:04:16 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.14.2.2 2006/05/26 15:25:20 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -98,15 +98,18 @@
   (if (ping-request? header)
     (reply-cont #t #t)
     (let1 dbname (or (primary-database-name)
-                     (build-path (ref (kahua-config) 'working-directory) "db"))
-      (with-db (db dbname)
-        (run-hook (kahua-hook-before))
-        (begin0
-          (kahua-default-handler header body reply-cont default-handler
-                                 :error-proc (kahua-error-proc)
-                                 :eval-environment (current-module))
-          (run-hook (kahua-hook-after))
-          )))))
+		     (build-path (ref (kahua-config) 'working-directory) "db"))
+      (with-sigmask SIG_BLOCK *TERMINATION-SIGNALS*
+	(lambda ()
+	  (with-db (db dbname)
+	    (run-hook (kahua-hook-before))
+	    (begin0
+	      (kahua-default-handler header body reply-cont default-handler
+				     :error-proc (kahua-error-proc)
+				     :eval-environment (current-module))
+	      (run-hook (kahua-hook-after))
+	      ))))
+      )))
 
 (define (default-handler) ((main-proc)))
 
@@ -125,8 +128,7 @@
     (define (accept-handler fd flag)
       (let* ((client (socket-accept sock))
              (input  (socket-input-port client :buffered? #f))
-             (output (socket-output-port client))
-             (old_sigset (sys-sigmask SIG_BLOCK *TERMINATION-SIGNALS*)))
+             (output (socket-output-port client)))
         (guard (e
                 (#t (log-format
                      "[server]: Read error occured in accept-handler: ~a" (ref e 'message))))
@@ -143,8 +145,7 @@
                              (write r-body output)   (newline output)
                              (flush output)))
                     (socket-close client))
-                  selector)))
-        (sys-sigmask SIG_SETMASK old_sigset)))
+                  selector)))))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
