@@ -56,4 +56,4 @@ maintainer-clean : clean
 	cd plugins; $(MAKE) maintainer-clean
 	cd test; $(MAKE) maintainer-clean
 	rm -rf configure VERSION $(CONFIG_GENERATED)
-
+	rm -f DIST_EXCLUDE_X
