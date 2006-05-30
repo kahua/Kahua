@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17.2.5 2006/05/26 15:25:20 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.6 2006/05/30 10:13:17 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -443,9 +443,9 @@
 
 ;; terminates given workers, and starts the same number of
 ;; the same type workers.  Returns terminated worker id.
-(define-method restart-workers ((self <kahua-spvr>) workers)
+(define-method restart-workers ((self <kahua-spvr>) (workers <list>))
   (let1 type&ids (map (lambda (w)
-                       (let ((type (type-of w))
+                       (let ((type (name-of (type-of w)))
 			     (wid  (wid-of w)))
 			 (log-worker-action "restart" w)
                          (terminate! w)
@@ -453,6 +453,19 @@
                       workers)
     (for-each (lambda (t&i) (run-worker self (car t&i))) type&ids)
     (map cdr type&ids)))
+
+(define-method restart-workers ((self <kahua-spvr>) (worker-type <symbol>))
+  (let* ((type (hash-table-get (wtype-table-of self) worker-type))
+	 (wlist (circular-list->list (workers-of type))))
+    (restart-workers self wlist)))
+
+(define-method restart-workers ((self <kahua-spvr>) (wid <string>))
+  (and-let* ((w (hash-table-get (wid-table-of self) wid)))
+    (restart-workers self (list w))))
+
+(define-method restart-workers ((self <kahua-spvr>) (wno <integer>))
+  (and-let* ((w (hash-table-get (wno-table-of self) wno)))
+    (restart-workers self (list w))))
 
 (define-method ping-timeout? ((worker <kahua-worker>))
   (if (zombee? worker)
@@ -687,17 +700,30 @@
 				  (cond ((eq? type-or-count '*) 
 					 (nuke-all-workers *spvr*))
 					((symbol? type-or-count)
-					 (terminate! (hash-table-get (wtype-table-of *spvr*) type-or-count #f)))
+					 (terminate! (hash-table-get (wtype-table-of *spvr*) type-or-count)))
 					((string? type-or-count)
-					 (terminate! (hash-table-get (wid-table-of *spvr*) type-or-count #f)))
+					 (terminate! (hash-table-get (wid-table-of *spvr*) type-or-count)))
 					((integer? type-or-count)
-					 (terminate! (hash-table-get (wno-table-of *spvr*) type-or-count #f)))))
+					 (terminate! (hash-table-get (wno-table-of *spvr*) type-or-count)))))
 				args)
 			       (map worker-info (list-workers *spvr*))))
 		(types    . ,(lambda _ (map car *worker-types*)))
 		(reload   . ,(lambda _ (and (load-app-servers-file)
 					    (run-default-workers *spvr*))))
-		(restart  . ,(lambda (args) #f))
+		(restart  . ,(lambda args
+			       (fold
+				(lambda (type-or-wno res)
+				  (append res
+					  (cond ((eq? type-or-wno '*)
+						 (restart-workers *spvr* (hash-table-values (wid-table-of *spvr*))))
+						((symbol? type-or-wno) ; worker type
+						 (restart-workers *spvr* type-or-wno))
+						((string? type-or-wno) ; wid
+						 (restart-workers *spvr* type-or-wno))
+						((integer? type-or-wno)	; wno
+						 (restart-workers *spvr* type-or-wno)))))
+				'()
+				args)))
 		(shutdown . ,(lambda _
 			       (log-format "[spvr] shutdown requested")
 			       (sys-kill (sys-getpid) SIGTERM)))
