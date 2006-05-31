@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50 2006/05/11 10:13:34 bizenn Exp $
+;; $Id: persistence.scm,v 1.51 2006/05/31 18:20:38 cut-sea Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -317,6 +317,9 @@
            (realize-kahua-proxy val))
           ((list? val)
            (map realize-proxy val))
+	  ((pair? val)
+	   (cons (realize-proxy (car val))
+		 (realize-proxy (cdr val))))
           ((vector? val)
            (map-to <vector> realize-proxy val))
           (else val)))
