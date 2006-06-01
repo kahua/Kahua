@@ -18,7 +18,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: kahua-ref.texi,v 1.2 2006/05/21 15:09:32 shibata Exp $
+@c $Id: kahua-ref.texi,v 1.2.2.1 2006/06/01 06:03:14 bizenn Exp $
 
 @c module and class index
 @defcodeindex md

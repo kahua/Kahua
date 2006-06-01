@@ -1,3 +1,25 @@
+2006-06-01  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* bug fix for realize of kahua-proxy.
+	  support dot pair.
+
+2006-05-24  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* src/kahua/server.scm
+	a bit touch for define-session-object macro.
+	delete a hole of anaphoric reference.
+
+2006-05-23  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* src/kahua/session.scm, src/kahua/server.scm
+	* define new utility macro define-session-object.
+	* add predicate kahua-sendable-object?, it used at
+	  we can send that object to keyserver.
+	
+2006-05-22  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* rewrite kahua-local-session-ref used by getter-with-setter.
+	
 2006-05-21  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* src/kahua/session.scm, src/kahua/server.scm
@@ -7,6 +29,11 @@
 	  This aim is that we hold non persistent object
 	  and access it not only continuation link but also
 	  permanent link.
+	
+2006-05-21  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* doc/Modules
+	start writing texinfo document.
 	
 2006-05-15  Tatsuya BIZENN  <bizenn@arthub.net>
 

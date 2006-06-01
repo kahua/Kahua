@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.66.2.1 2006/05/21 07:00:01 cut-sea Exp $
+;; $Id: server.scm,v 1.66.2.2 2006/06/01 06:03:33 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -46,6 +46,7 @@
           kahua-context-ref*
 	  kahua-local-session-ref
 	  kahua-local-session-set!
+	  define-session-object
           kahua-current-entry-name
           kahua-current-user
           kahua-current-user-name
@@ -343,8 +344,13 @@
 ;;
 ;; var is symbol, which is any slot name of <session-state>.
 ;;
-(define (kahua-local-session-ref var)
-  (ref (kahua-context-ref "session-state") var))
+(define kahua-local-session-ref
+  (let1 get-session
+      (lambda ()
+	(kahua-context-ref "session-state"))
+    (getter-with-setter
+     (lambda (key) (ref (get-session) key))
+     (lambda (key val) (set! (ref (get-session) key) val)))))
 
 ;; KAHUA-LOCAL-SESSION-SET! var val
 ;;
@@ -352,8 +358,29 @@
 ;; and val is permitted every value include non-persistent object.
 ;; the value object is local object in only app server.
 ;;
-(define (kahua-local-session-set! var val)
-  (set! (ref (kahua-context-ref "session-state") var) val))
+(define (kahua-local-session-set! key val)
+  (set! (kahua-local-session-ref key) val))
+
+;; DEFINE-SESSION-OBJECT name create
+;;
+;; name is the object name which we use session object.
+;; and init-value is normally make expression.
+;; so, the init-value expression is called only first. 
+;;
+;; it's used as like as parameter.
+;;
+(define-macro (define-session-object name init-value)
+  (let1 get-session (gensym)
+    `(define ,name
+       (let1 ,get-session
+	   (lambda ()
+	     (kahua-context-ref "session-state"))
+	 (getter-with-setter
+	  (lambda () (cond ((ref (,get-session) ',name))
+			   (else (set! (ref (,get-session) ',name) ,init-value)
+				 (ref (,get-session) ',name))))
+	  (lambda (val) (set! (ref (,get-session) ',name) val)))))))
+			 
 
 ;; KAHUA-CURRENT-ENTRY-NAME
 ;;  A parameter that holds the name of entry.

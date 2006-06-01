@@ -2,7 +2,7 @@ dnl
 dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
-dnl $Id: configure.ac,v 1.31.2.1 2006/05/17 16:02:31 bizenn Exp $
+dnl $Id: configure.ac,v 1.31.2.2 2006/06/01 06:03:14 bizenn Exp $
 AC_PREREQ(2.54)
 AC_INIT(kahua, 0.4.1+HA, shiro@acm.org)
 AC_GAUCHE_INIT_EXT
@@ -16,6 +16,8 @@ AC_GAUCHE_FLAGS
 
 dnl Check for other programs.
 AC_PROG_INSTALL
+AC_CHECK_PROGS(MAKEINFO, makeinfo)
+AC_CHECK_PROGS(GZIP_PROGRAM, gzip)
 
 dnl Sets some additional installation destination
 KAHUA_CGIDIR=$libexecdir/kahua
@@ -79,6 +81,7 @@ dnl Output
 echo $PACKAGE_VERSION > VERSION
 AC_OUTPUT(Makefile 
           src/Makefile 
+          doc/Modules/Makefile
           cgi/Makefile 
           examples/Makefile
           emacs/Makefile
