@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17.2.6 2006/05/30 10:13:17 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.7 2006/06/04 01:55:02 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -290,18 +290,23 @@
 (define (worker-script worker-type spvr)
   (cond ((assq worker-type *worker-types*)
          => (lambda (p)
-              (let ((args (get-keyword :arguments (cdr p) '()))
-                    (user (ref (kahua-config) 'user-mode)))
-                (script-command
-                 spvr
-                 "kahua-server.scm"
-                 (cond-list
-                  ((kahua-config-file) => (cut list "-c" <>))
-                  ((ref (kahua-config) 'user-mode) => (cut list "-user" <>))
-                  ((ref spvr 'keyserv) => (lambda (k) `("-k" ,(ref k 'id))))
-                  (#t (cons (let1 type (symbol->string worker-type)
-                              (string-append type "/" type ".kahua"))
-                            args)))))))
+	      (let-keywords* (cdr p)
+		  ((args :arguments '())
+		   (profile :profile #f)
+		   (dbname :default-database-name #f))
+		(let1 user (ref (kahua-config) 'user-mode)
+		  (script-command
+		   spvr
+		   "kahua-server.scm"
+		   (cond-list
+		    ((kahua-config-file) => (cut list "-c" <>))
+		    ((ref (kahua-config) 'user-mode) => (cut list "-user" <>))
+		    ((ref spvr 'keyserv) => (lambda (k) `("-k" ,(ref k 'id))))
+		    (profile => (cut list "-profile" <>))
+		    (dbname => (cut list "-default-db" <>))
+		    (#t (cons (let1 type (symbol->string worker-type)
+				(string-append type "/" type ".kahua"))
+			      args))))))))
         (else (spvr-errorf <spvr-unknown-worker-type>
                           "unknown worker type: ~a" worker-type))))
 
@@ -868,8 +873,7 @@
                          :gosh-path gosh
                          :lib-path lib-path))
              (kahua-sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
-	     (tpool (make-thread-pool 40)) ; Oops!! hard coding.
-             )
+	     (tpool (make-thread-pool (kahua-spvr-concurrency))))
         (set! *spvr* spvr)
         ;; hack
         (when (is-a? sockaddr <sockaddr-un>)

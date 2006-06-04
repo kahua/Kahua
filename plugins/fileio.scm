@@ -36,28 +36,40 @@
   `((file (,file ,fname))))
 
 (with-module kahua.server
+  (use srfi-14)
+  (use rfc.uri)
   (use rfc.base64)
   (use rfc.quoted-printable)
-  (use rfc.uri)
   (use gauche.charconv)
+  (use gauche.sequence)
 
   (define (raw-word word charset)
     (if (ces-equivalent? charset (gauche-character-encoding) #t)
 	word
 	(ces-convert word (gauche-character-encoding) charset)))
 
-  (define (mime-encode-word word . args)
-    (define (%do-encoding word charset encoding proc)
-      (with-output-to-string
-	(lambda ()
-	  (format #t "=?~a?~s?~a?=" charset encoding (proc (raw-word word charset))))))
-    (let-keywords* args
-	((charset (gauche-character-encoding))
-	 (encoding :b))
-      (case encoding
-	((:b :B) (%do-encoding word charset 'B base64-encode-string))
-	((:q :Q) (%do-encoding word charset 'Q quoted-printable-encode-string))
-	(else (errorf #`"Unsupported encoding: \"~s\"" encoding)))))
+  (define (in-char-set? str cs)
+    (call/cc (lambda (k)
+	       (for-each (lambda (c)
+			   (or (char-set-contains? cs c)
+			       (k #f)))
+			 str)
+	       #t)))
+
+(define (mime-encode-word word . args)
+  (define (%do-encoding word charset encoding proc)
+    (with-output-to-string
+      (lambda ()
+	(format #t "=?~a?~s?~a?=" charset encoding (proc (raw-word word charset))))))
+  (cond ((in-char-set? word char-set:printing) word)
+	(else
+	 (let-keywords* args
+	     ((charset (gauche-character-encoding))
+	      (encoding :b))
+	   (case encoding
+	     ((:b :B) (%do-encoding word charset 'B base64-encode-string))
+	     ((:q :Q) (%do-encoding word charset 'Q quoted-printable-encode-string))
+	     (else (errorf #`"Unsupported encoding: \"~s\"" encoding)))))))
 
   (define (rfc2231-encode-word word . args)
     (let-keywords* args

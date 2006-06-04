@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.1 2006/06/01 06:03:32 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.2 2006/06/04 01:55:03 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1115,10 +1115,9 @@
                                     (ref db 'options))))
 
     (define (safe-query query)
-      (with-error-handler
-       (lambda (e)
-         (if (is-a? e <dbi-exception>) #f (raise e)))
-       (lambda () (dbi-do conn query '(:pass-through #t)))))
+      (guard (e ((<dbi-exception> e) #f)
+		(else (raise e)))
+	(dbi-do conn query '(:pass-through #t))))
 
     (define (query-idcount)
       (and-let* ((r (safe-query "select value from kahua_db_idcount"))

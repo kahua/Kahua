@@ -9,6 +9,7 @@ all :
 	cd plugins; $(MAKE) all
 	cd examples; $(MAKE) all
 	cd test; $(MAKE) all
+	cd doc/Modules; $(MAKE) all
 
 check : all
 	cd test; $(MAKE) check
@@ -21,6 +22,7 @@ clean :
 	cd examples; $(MAKE) clean
 	cd plugins; $(MAKE) clean
 	cd test; $(MAKE) clean
+	cd doc/Modules; $(MAKE) clean
 
 distclean : clean
 	cd src; $(MAKE) distclean
@@ -29,6 +31,7 @@ distclean : clean
 	cd examples; $(MAKE) distclean
 	cd plugins; $(MAKE) distclean
 	cd test; $(MAKE) distclean
+	cd doc/Modules; $(MAKE) distclean
 	rm -rf $(CONFIG_GENERATED)
 
 install :

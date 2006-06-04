@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.14.2.2 2006/05/26 15:25:20 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.14.2.3 2006/06/04 01:55:02 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -85,9 +85,12 @@
             (lambda (place thunk)
               (make-hook-action delete-hook! place thunk)))))
 
+(define (database-name)
+  (or (primary-database-name)
+      (build-path (ref (kahua-config) 'working-directory) "db")))
+
 (define (run-kahua-hook-initial)
-  (let1 dbname (or (primary-database-name)
-                   (build-path (ref (kahua-config) 'working-directory) "db"))
+  (let1 dbname (database-name)
     (with-db (db dbname)
              (run-hook (kahua-hook-initial)))))
 
@@ -97,8 +100,7 @@
 (define (handle-request header body reply-cont selector)
   (if (ping-request? header)
     (reply-cont #t #t)
-    (let1 dbname (or (primary-database-name)
-		     (build-path (ref (kahua-config) 'working-directory) "db"))
+    (let1 dbname (database-name)
       (with-sigmask SIG_BLOCK *TERMINATION-SIGNALS*
 	(lambda ()
 	  (with-db (db dbname)
@@ -176,13 +178,15 @@
   (let-args (cdr args) ((conf-file "c=s" #f)
                         (user "user=s" #f)
                         (keyserv "k=s" #f)
+			(db "default-db=s" #f)
 			(prof "profile=s" #f)
                         . mods)
     (unless (pair? mods)
-      (error "usage: kahua-server [-c <conf>] [-user <user>] [-k <keyserv-id>] [-pofile <profile-out>] <app-server> <args> ..." mods))
+      (error "usage: kahua-server [-c <conf>] [-user <user>] [-k <keyserv-id>] [-default-db <default-db-path>] [-profile <profile-out>] <app-server> <args> ..." mods))
     (set! *kahua-top-module* (car mods))
     (kahua-init conf-file :user user)
     (set! kahua-app-server (kahua-application-environment))
+    (primary-database-name db)
     (initialize-plugins)
     (kahua-app-args (cdr mods))
     (load-kahua-module (car mods))
@@ -199,8 +203,7 @@
 	(call/cc
 	 (lambda (bye)
 	   (define (finish-server sig)
-	     (log-format "[~a] ~a" worker-name (sys-signal-name sig))
-	     (cleanup) (bye 0))
+	     (log-format "[~a] ~a" worker-name (sys-signal-name sig)) (bye 0))
 	   (log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
 	   (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
 	   (with-error-handler
@@ -208,13 +211,13 @@
 	       (log-format "[server] error in main:\n~a"
 			   (kahua-error-string e #t))
 	       (report-error e)
-	       (cleanup)
 	       (bye 70))
 	     (lambda ()
 	       (log-format "[~a] start" worker-name)
 	       (run-server worker-id sockaddr)
 	       (bye 0)))))
-	(and prof (with-output-to-file prof profiler-show :if-exists :append)))
+	(and prof (with-output-to-file prof profiler-show :if-exists :append))
+	(cleanup))
       )))
 
 (define (kahua-write-static-file path nodes context . rargs)
