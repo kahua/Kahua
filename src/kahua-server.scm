@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.14.2.3 2006/06/04 01:55:02 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.14.2.4 2006/06/05 13:36:18 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -124,9 +124,10 @@
     (lambda ()
       (load mod :environment kahua-app-server))))
 
-(define (run-server worker-id sockaddr)
+(define (run-server worker-id sockaddr profile)
   (let ((sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
-        (selector (make <selector>)))
+        (selector (make <selector>))
+	(request-count 0))
     (define (accept-handler fd flag)
       (let* ((client (socket-accept sock))
              (input  (socket-input-port client :buffered? #f))
@@ -147,7 +148,8 @@
                              (write r-body output)   (newline output)
                              (flush output)))
                     (socket-close client))
-                  selector)))))
+                  selector)))
+	(inc! request-count)))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
@@ -155,8 +157,11 @@
     (run-kahua-hook-initial)
     (format #t "~a\n" worker-id)
     (selector-add! selector (socket-fd sock) accept-handler '(r))
-    (do () (#f) (selector-select selector))
-    ))
+    (do () (#f)
+      (when (zero? (modulo request-count 100)) (kahua-profiler-start profile))
+      (selector-select selector)
+      (when (zero? (modulo request-count 100)) (kahua-profiler-flash profile))
+      )))
 
 (define *kahua-top-module* #f)
 
@@ -173,6 +178,27 @@
   (if (pair? files)
       (every (lambda (f) (load-k-module f)) files)
       (load-k-module *kahua-top-module*)))
+
+;; Profiler Facility
+
+(define (kahua-profiler-start pfile)
+  (when pfile
+    (guard (e (else (log-format "[server] fail to write profiling: ~a" (ref e 'message))))
+      (with-output-to-file pfile
+	(lambda () (format #t "==Start:  ~s\n" (sys-localtime (sys-time))))
+	:if-exists :append)
+      (profiler-start))))
+
+(define (kahua-profiler-flash pfile)
+  (when pfile
+    (guard (e (else (log-format "[server] fail to write profiling: ~a" (ref e 'message))))
+      (profiler-stop)
+      (with-output-to-file pfile
+	(lambda ()
+	  (format #t "==Finish: ~s\n" (sys-localtime (sys-time)))
+	  (profiler-show :max-rows #f))
+	:if-exists :append)
+      (profiler-reset))))
 
 (define (kahua-server-main args)
   (let-args (cdr args) ((conf-file "c=s" #f)
@@ -192,13 +218,13 @@
     (load-kahua-module (car mods))
     (let* ((worker-name (car (string-split (sys-basename (car mods)) #\.))) 
            (worker-id (kahua-init-server worker-name keyserv))
+	   (profile (and prof (string-append prof "." worker-id)))
            (sockbase  (kahua-sockbase))
            (sockaddr  (worker-id->sockaddr worker-id sockbase))
            (cleanup   (lambda ()
                         (log-format "[~a] exit" worker-name)
                         (when (is-a? sockaddr <sockaddr-un>)
                           (sys-unlink (sockaddr-name sockaddr))))))
-      (and prof (profiler-start))
       (begin0
 	(call/cc
 	 (lambda (bye)
@@ -214,9 +240,8 @@
 	       (bye 70))
 	     (lambda ()
 	       (log-format "[~a] start" worker-name)
-	       (run-server worker-id sockaddr)
+	       (run-server worker-id sockaddr profile)
 	       (bye 0)))))
-	(and prof (with-output-to-file prof profiler-show :if-exists :append))
 	(cleanup))
       )))
 
