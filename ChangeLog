@@ -1,3 +1,7 @@
+2006-06-06  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* src/kahua-server.scm (kahua-write-static-file): call make-director* before with-output-to-file.
+
 2006-06-01  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* bug fix for realize of kahua-proxy.
