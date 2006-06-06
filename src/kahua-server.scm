@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.14.2.4 2006/06/05 13:36:18 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.14.2.5 2006/06/06 02:37:42 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -126,8 +126,7 @@
 
 (define (run-server worker-id sockaddr profile)
   (let ((sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
-        (selector (make <selector>))
-	(request-count 0))
+        (selector (make <selector>)))
     (define (accept-handler fd flag)
       (let* ((client (socket-accept sock))
              (input  (socket-input-port client :buffered? #f))
@@ -148,8 +147,7 @@
                              (write r-body output)   (newline output)
                              (flush output)))
                     (socket-close client))
-                  selector)))
-	(inc! request-count)))
+                  selector)))))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
@@ -158,9 +156,10 @@
     (format #t "~a\n" worker-id)
     (selector-add! selector (socket-fd sock) accept-handler '(r))
     (do () (#f)
-      (when (zero? (modulo request-count 100)) (kahua-profiler-start profile))
-      (selector-select selector)
-      (when (zero? (modulo request-count 100)) (kahua-profiler-flash profile))
+      (kahua-profiler-start profile)
+      (dotimes (_ 100)
+	(selector-select selector))
+      (kahua-profiler-flush profile)
       )))
 
 (define *kahua-top-module* #f)
@@ -183,19 +182,16 @@
 
 (define (kahua-profiler-start pfile)
   (when pfile
-    (guard (e (else (log-format "[server] fail to write profiling: ~a" (ref e 'message))))
-      (with-output-to-file pfile
-	(lambda () (format #t "==Start:  ~s\n" (sys-localtime (sys-time))))
-	:if-exists :append)
+    (guard (e (else (log-format "[server] cannot start profiler: ~a" (ref e 'message))))
       (profiler-start))))
 
-(define (kahua-profiler-flash pfile)
+(define (kahua-profiler-flush pfile)
   (when pfile
-    (guard (e (else (log-format "[server] fail to write profiling: ~a" (ref e 'message))))
+    (guard (e (else (log-format "[server] fail to flush profiling result: ~a" (ref e 'message))))
       (profiler-stop)
       (with-output-to-file pfile
 	(lambda ()
-	  (format #t "==Finish: ~s\n" (sys-localtime (sys-time)))
+	  (format #t "====Profiler flushed: ~s\n" (sys-localtime (sys-time)))
 	  (profiler-show :max-rows #f))
 	:if-exists :append)
       (profiler-reset))))
