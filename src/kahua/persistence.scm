@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.2 2006/06/04 01:55:03 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.3 2006/06/07 12:35:41 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -965,7 +965,7 @@
 
 ;; Depending on path, select appropriate subclass of <kahua-db>.
 (define (select-db-class path)
-  (cond ((#/^(.*?):/ path)
+  (cond ((#/^(\w*?):/ path)
          => (lambda (m)
               (let1 dbtype (m 1)
                 (cond ((equal? dbtype "mysql") <kahua-db-mysql>)
@@ -980,10 +980,42 @@
           (if (ref obj 'active) "active" "inactive")))
 
 (define (kahua-db-unique-id)
-  (unless (current-db)
-    (error "kahua-db-unique-id: No db is active"))
-  (begin0 (ref (current-db) 'id-counter)
-          (inc! (ref (current-db) 'id-counter))))
+  (let1 db (current-db)
+    (unless db (error "kahua-db-unique-id: No db is active"))
+    (kahua-db-unique-id-internal db)))
+
+(define-method kahua-db-unique-id-internal ((db <kahua-db-fs>))
+  (begin0
+    (ref db 'id-counter)
+    (inc! (ref db 'id-counter))))
+
+(define-method kahua-db-unique-id-internal ((db <kahua-db-dbi>))
+  (begin0
+    (ref db 'id-counter)
+    (inc! (ref db 'id-counter))))
+
+(define (mysql-lock-table conn table directive)
+  (dbi-do conn #`"lock tables ,|table| ,|directive|" '(:pass-through #t)))
+(define (mysql-unlock-tables conn)
+  (dbi-do conn "unlock tables" '(:pass-through #t)))
+
+(define (with-mysql-table-write-lock conn table thunk)
+  (dynamic-wind
+      (cut mysql-lock-table conn table "write")
+      thunk
+      (cut mysql-unlock-tables conn)))
+
+(define-method kahua-db-unique-id-internal ((db <kahua-db-mysql>))
+  (guard (e ((else (format (current-error-port) "Error: kahua-db-unique-id-internal: ~a" (ref e 'message)))))
+    (let1 conn (ref db 'connection)
+      (with-mysql-table-write-lock conn "kahua_db_idcount"
+	(lambda ()
+	  (let* ((r (dbi-do conn "select value from kahua_db_idcount limit 1" '(:pass-through #t)))
+		 (cnt (x->integer (car (map (cut dbi-get-value <> 0) r))))
+		 (next (+ cnt 1)))
+	    (set! (ref db 'id-counter) next)
+	    (dbi-do conn "update kahua_db_idcount set value = ?" '() (x->string next))
+	    cnt))))))
 
 (define-condition-type <with-db-error> <error>
   with-db-error?
@@ -1114,42 +1146,79 @@
                                     (ref db 'password)
                                     (ref db 'options))))
 
-    (define (safe-query query)
-      (guard (e ((<dbi-exception> e) #f)
-		(else (raise e)))
-	(dbi-do conn query '(:pass-through #t))))
+    (kahua-db-dbi-open db conn)))
 
-    (define (query-idcount)
-      (and-let* ((r (safe-query "select value from kahua_db_idcount"))
-                 (p (map (cut dbi-get-value <> 0) r))
-                 ((not (null? p))))
-        (x->integer (car p))))
+(define-method kahua-db-dbi-open ((db <kahua-db-dbi>) conn)
+  (define (safe-query query)
+    (guard (e ((<dbi-exception> e) #f)
+	      (else (raise e)))
+      (dbi-do conn query '(:pass-through #t))))
 
-    (define (query-classtable)
-      (and-let* ((r (safe-query "select class_name, table_name from kahua_db_classes")))
-        (map (lambda (row)
-               (cons (string->symbol (dbi-get-value row 0))
-                     (dbi-get-value row 1)))
-             r)))
-    
-    (set! (ref db 'connection) conn)
-    ;; check table existence
-    (let1 z (query-idcount)
-      (unless z
-        ;; this is the first time we use db.
-        ;; TODO: error check
-        (for-each
-         (cut dbi-do conn <> '(:pass-through #t))
-         '("create table kahua_db_classes (class_name varchar(255), table_name varchar(255), primary key (class_name))"
-           "create table kahua_db_idcount (value integer)"
-           "insert into kahua_db_idcount values (0)"))
-        (let1 zz (query-idcount)
-          (unless zz
-            (error "couldn't initialize database"))
-          (set! z zz)))
-      (set! (ref db 'id-counter) z)
-      (set! (ref db 'table-map) (query-classtable))
-      db)))
+  (define (query-idcount)
+    (and-let* ((r (safe-query "select value from kahua_db_idcount"))
+	       (p (map (cut dbi-get-value <> 0) r))
+	       ((not (null? p))))
+      (x->integer (car p))))
+
+  (define (query-classtable)
+    (and-let* ((r (safe-query "select class_name, table_name from kahua_db_classes")))
+      (map (lambda (row)
+	     (cons (string->symbol (dbi-get-value row 0))
+		   (dbi-get-value row 1)))
+	   r)))
+
+  (set! (ref db 'connection) conn)
+  ;; check table existence
+  (let1 z (query-idcount)
+    (unless z
+      ;; this is the first time we use db.
+      ;; TODO: error check
+      (for-each
+       (cut dbi-do conn <> '(:pass-through #t))
+       '("create table kahua_db_classes (class_name varchar(255), table_name varchar(255), primary key (class_name))"
+	 "create table kahua_db_idcount (value integer)"
+	 "insert into kahua_db_idcount values (0)"))
+      (let1 zz (query-idcount)
+	(unless zz
+	  (error "couldn't initialize database"))
+	(set! z zz)))
+    (set! (ref db 'id-counter) z)
+    (set! (ref db 'table-map) (query-classtable))
+    db))
+
+(define-method kahua-db-dbi-open ((db <kahua-db-mysql>) conn)
+  (define (db-lock conn)
+    (dbi-do conn "lock tables kahua_db_idcount write, kahua_db_classes read" '(:pass-through #t)))
+  (define db-unlock mysql-unlock-tables)
+
+  (set! (ref db 'connection) conn)
+  (dynamic-wind
+      (lambda () #t)
+      (lambda ()
+	(guard (e ((<dbi-exception> e)
+		   (dbi-do conn "create table kahua_db_idcount (value integer)" '(:pass-through #t))
+		   (mysql-lock-table conn "kahua_db_idcount" "write")
+		   (dbi-do
+		    conn
+		    "create table kahua_db_classes (class_name varchar(255), table_name varchar(255), primary key (class_name))"
+		    '(:pass-through #t))
+		   (db-lock conn)
+		   (dbi-do conn "insert into kahua_db_idcount values (0)" '(:pass-through #t)))
+		  (else (raise e)))
+	  (db-lock conn))
+	(set! (ref db 'id-counter)
+	      (and-let* ((r (dbi-do conn "select value from kahua_db_idcount" '(:pass-through #t)))
+			 (p (map (cut dbi-get-value <> 0) r))
+			 ((not (null? p))))
+		(x->integer (car p))))
+	(set! (ref db 'table-map)
+	      (and-let* ((r (dbi-do conn "select class_name, table_name from kahua_db_classes" '(:pass-through #t))))
+		(map (lambda (row)
+		       (cons (string->symbol (dbi-get-value row 0))
+			     (dbi-get-value row 1)))
+		     r)))
+	db)
+      (cut db-unlock conn)))
 
 (define (kahua-db-sync . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
@@ -1168,6 +1237,9 @@
 (define-method kahua-db-write-id-counter ((db <kahua-db-dbi>))
   (dbi-do (ref db 'connection)
           "update kahua_db_idcount set value = ?" '() (ref db 'id-counter)))
+
+(define-method kahua-db-write-id-counter ((db <kahua-db-mysql>))
+  #f)					; Dummy
 
 (define (kahua-db-rollback . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
@@ -1345,6 +1417,33 @@
     (set! (ref obj '%floating-instance) #f)
     ))
 
+(define-method write-kahua-instance ((db <kahua-db-mysql>)
+                                     (obj <kahua-persistent-base>))
+
+  (let1 conn (ref db 'connection)
+    (define (table-name)
+      (let1 cname (class-name (class-of obj))
+	(or (assq-ref (ref db 'table-map) cname)
+	    (let1 newtab (format "kahua_~a" (length (ref db 'table-map)))
+	      (with-mysql-table-write-lock conn "kahua_db_classes"
+		(lambda ()
+		  (dbi-do conn "insert into kahua_db_classes values (? , ?)" '() cname newtab)))
+	      (dbi-do
+	       conn #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))"
+	       '(:pass-through #t))
+	      (push! (ref db 'table-map) (cons cname newtab))
+	      newtab))))
+
+    (let* ((data (call-with-output-string (cut kahua-write obj <>)))
+	   (key  (key-of obj))
+	   (tab  (table-name)))
+      (with-mysql-table-write-lock conn tab
+	(lambda ()
+	  (if (ref obj '%floating-instance)
+	      (dbi-do conn #`"insert into ,|tab| values (?,, ?)" '() key data)
+	      (dbi-do conn #`"update ,|tab| set dataval = ? where keyval = ?" '() data key))))
+      (set! (ref obj '%floating-instance) #f)
+      )))
 
 ;;=========================================================
 ;; "View" as a collection
