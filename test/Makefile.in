@@ -80,7 +80,8 @@ persistence :
 	@gosh -I../src ./persistence.scm >> test.log
 
 persistence-dbi :
-	@gosh -I../src ./persistence-dbi.scm >> test.log
+	@gosh -I../src ./persistence-dbi-mysql.scm >> test.log
+	@gosh -I../src ./persistence-dbi-pg.scm >> test.log
 
 rollback :
 	@gosh -I../src ./rollback.scm >> test.log

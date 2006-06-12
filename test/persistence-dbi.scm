@@ -2,7 +2,7 @@
 ;; test kahua.persistence with dbi
 ;; DBIバックエンドを用いたkahua.persistenceモジュールのテスト
 
-;; $Id: persistence-dbi.scm,v 1.3.2.1 2006/06/04 01:55:03 bizenn Exp $
+;; $Id: persistence-dbi.scm,v 1.3.2.2 2006/06/12 08:04:44 bizenn Exp $
 
 ;; Clear the data remaining from the other test
 (define (cleanup-db dbtype user pass options)
@@ -24,6 +24,3 @@
       (safe-query c "drop table kahua_db_classes")
       (dbi-close c)))
   )
-
-(load "./persistence-dbi-mysql.scm")
-(load "./persistence-dbi-pg.scm")

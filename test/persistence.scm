@@ -1,7 +1,8 @@
+;; -*- coding: euc-jp; mode: scheme -*-
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.13 2006/05/12 04:11:33 bizenn Exp $
+;; $Id: persistence.scm,v 1.13.2.1 2006/06/12 08:04:44 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
