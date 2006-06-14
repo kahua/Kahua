@@ -2,7 +2,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.13.2.1 2006/06/12 08:04:44 bizenn Exp $
+;; $Id: persistence.scm,v 1.13.2.2 2006/06/14 15:00:27 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -129,6 +129,15 @@
        (with-clean-db (db *dbname*)
          (list (ref <kahua-test> 'generation)
                (ref <kahua-test> 'persistent-generation))))
+
+;; オーバーライドを禁止したスロットをオーバーライドするクラスを定義してみる。
+;; エラーになるはず。
+(test* "Final slot overriding"
+       *test-error*
+       (eval '(define-class <kahua-violation> (<kahua-persistent-base>)
+		((id :init-value 0)
+		 (db :init-value #f)))
+	     (current-module)))
 
 ;;----------------------------------------------------------
 ;; トランザクションに関するテスト

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.3 2006/06/07 12:35:41 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.4 2006/06/14 15:00:26 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -161,6 +161,29 @@
                #t)))
       (else (next-method)))))
 
+;; Prohibit to override the slots have :final option as #t.
+(define-method compute-slots ((class <kahua-persistent-meta>))
+  (receive (slots vs)
+      (fold2 (lambda (class slots vs)
+	       (fold2 (lambda (s slots vs)
+			(if (assq (slot-definition-name s) slots)
+			    (if (slot-definition-option s :final #f)
+				(values slots (cons s vs))
+				(values slots vs))
+			    (values (cons s slots) vs)))
+		      slots
+		      vs
+		      (class-direct-slots class)))
+	     '()
+	     '()
+	     (class-precedence-list class))
+    (unless (null? vs)
+      (errorf "Final slot violation: ~s: ~a"
+	      class
+	      (string-join
+	       (reverse! (map (lambda (s) (symbol->string (slot-definition-name s))) vs)) ", ")))
+    (reverse! slots)))
+
 (define (make-kahua-getter acc class slot)
   (let ((aot (slot-definition-option slot :out-of-transaction :read-only)))
     (lambda (o)
@@ -206,9 +229,9 @@
 
 (define-class <kahua-persistent-base> ()
   (;; unique ID 
-   (id    :init-keyword :id :init-form (kahua-db-unique-id))
+   (id    :init-keyword :id :init-form (kahua-db-unique-id) :final #t)
    ;; management data
-   (db    :init-form (current-db))  ; points back to db
+   (db    :init-form (current-db) :final #t)  ; points back to db
    ;; alist of slot data which is in the DB but not in the current
    ;; in-memory class.
    (%hidden-slot-values :init-keyword :%hidden-slot-values :init-value '())
@@ -230,14 +253,7 @@
 
 ;; this method should be overriden by subclasses for convenience.
 (define-method key-of ((obj <kahua-persistent-base>))
-  (define (id->idstr num)
-    (let* ((ml  6)
-	   (str (number->string num))
-	   (pad (- ml (string-length str))))
-      (string-append
-       (make-string (if (< pad 0) 0 pad) #\0)
-       str)))
-  (id->idstr (slot-ref-using-class (current-class-of obj) obj 'id)))
+  (format "~6,'0d" (slot-ref-using-class (current-class-of obj) obj 'id)))
 
 ;; Initializing persistent instance:
 ;;  * (initialize (obj <kahua-persistent-base>)) initializes in-memory
