@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.4 2006/06/14 15:00:26 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.5 2006/06/14 21:15:01 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -178,7 +178,7 @@
 	     '()
 	     (class-precedence-list class))
     (unless (null? vs)
-      (errorf "Final slot violation: ~s: ~a"
+      (errorf "Class ~s attempted to override slot(s) ~a, which is declared as :final in its superclass."
 	      class
 	      (string-join
 	       (reverse! (map (lambda (s) (symbol->string (slot-definition-name s))) vs)) ", ")))
