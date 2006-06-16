@@ -2,7 +2,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.13.2.2 2006/06/14 15:00:27 bizenn Exp $
+;; $Id: persistence.scm,v 1.13.2.3 2006/06/16 08:13:16 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -41,7 +41,7 @@
 (test* "creating database" '(#t #t #t)
        (with-db (db *dbname*)
          (cons (is-a? db <kahua-db>)
-               (if (is-a? db <kahua-db-fs>)
+               (if (eq? '<kahua-db-fs> (class-name (class-of db)))
                  (list
                   (file-is-directory? *dbname*)
                   (file-exists? (build-path *dbname* "id-counter")))

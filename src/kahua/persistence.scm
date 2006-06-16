@@ -1,10 +1,10 @@
 ;; Persistent metaclass
 ;;
-;;  Copyright (c) 2003-2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.5 2006/06/14 21:15:01 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.6 2006/06/16 08:13:16 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -26,9 +26,10 @@
           kahua-persistent-classes-in-db
           kahua-persistent-class-generation
           kahua-persistent-class-definition
-          <kahua-db> <kahua-db-fs> <kahua-db-dbi>
+          <kahua-db>
           <with-db-error>
-          current-db with-db kahua-db-sync kahua-db-purge-objs
+          current-db with-db kahua-db-sync kahua-db-rollback
+	  kahua-db-purge-objs
           id->kahua-instance class&key->kahua-instance
           <kahua-collection> make-kahua-collection
           raise-with-db-error
@@ -36,6 +37,17 @@
           kahua-wrapper?
           key-of-using-instance
           kahua-check-transaction!
+
+	  ;; for Database Driver Module.
+	  kahua-db-unique-id-internal
+	  lock-db unlock-db
+	  kahua-db-open
+	  kahua-db-close
+	  read-kahua-instance
+	  write-kahua-instance
+	  kahua-db-write-id-counter
+	  make-kahua-collection
+	  kahua-write
           )
   )
 (select-module kahua.persistence)
@@ -930,65 +942,29 @@
    )
   :metaclass <kahua-db-meta>)
 
-;; filesystem-based persistent store (default)
-(define-class <kahua-db-fs> (<kahua-db>)
-  ((lock-port  :init-value #f) ;; port opened on lock file
-   ))
-
-;; DBI-based persistent store (optional)
-;;  Currently, only one server per backend database type can be 
-;;  used simultaneously, since a driver will be created as a
-;;  singleton.
-;;  NB: DBI bridge is _temporary_.  The current implementation
-;;  isn't efficient, and also it has hazards when multiple
-;;  processes access to the same DB.  The data format in DB
-;;  will be changed in future in incompatible way.
-(define-class <kahua-db-dbi> (<kahua-db>)
-  ((driver     :allocation :each-subclass :init-value #f)
-   (user       :allocation :each-subclass :init-value #f)
-   (password   :allocation :each-subclass :init-value #f)
-   (options    :allocation :each-subclass :init-value #f)
-   (connection :init-value #f)
-   (table-map  :init-value '())  ;; class-name -> table map
-   ))
-
-(define-class <kahua-db-mysql> (<kahua-db-dbi>) ())
-(define-class <kahua-db-postgresql> (<kahua-db-dbi>) ())
-
-(define-method dataval-type ((self <kahua-db-dbi>))
-  "text")
-
-(define-method dataval-type ((self <kahua-db-mysql>))
-  "longtext")
-
-(when (library-exists? 'dbi :strict? #f)
-  (autoload dbi
-            <dbi-exception>
-            dbi-do
-            dbi-make-driver dbi-make-connection dbi-close dbi-get-value dbi-escape-sql))
-
-(define-method initialize ((db <kahua-db-dbi>) initargs)
-  (next-method)
-  (unless (ref db 'driver)
-    (let1 m (#/(.*?):(?:([^:]+)(?::([^:]*)(?::(.*))?)?)?/ (ref db 'path))
-      (unless m (errorf "unsupported database driver path: ~a" (ref db 'path)))
-      (set! (ref db 'driver)   (dbi-make-driver (m 1)))
-      (set! (ref db 'user)     (m 2))
-      (set! (ref db 'password) (m 3))
-      (set! (ref db 'options)  (m 4))
-      (log-format "DBI(~a) setup: user ~a, options ~a" (m 1) (m 2) (m 4))
-      )))
+(define (kahua-concrete-db-class dbtype)
+  (let* ((module (string->symbol #`"kahua.persistence.,|dbtype|"))
+	 (path (module-name->path module))
+	 (class-name (string->symbol #`"<kahua-db-,|dbtype|>")))
+    (eval `(begin
+	     (require ,path)
+	     (with-module ,module ,class-name))
+	  (current-module))))
 
 ;; Depending on path, select appropriate subclass of <kahua-db>.
 (define (select-db-class path)
   (cond ((#/^(\w*?):/ path)
          => (lambda (m)
               (let1 dbtype (m 1)
-                (cond ((equal? dbtype "mysql") <kahua-db-mysql>)
-                      ((equal? dbtype "pg")    <kahua-db-postgresql>)
-                      (else (errorf "unknown external database driver: ~s"
-                                   dbtype))))))
-        (else <kahua-db-fs>)))
+		(guard (e (else (errorf "unknown external database driver: ~s: ~a"
+					dbtype (ref e 'message))))
+		  (if (equal? dbtype "pg")
+		      (kahua-concrete-db-class "postgresql") ; for backword compatibility
+		      (kahua-concrete-db-class dbtype))))))
+        (else (kahua-concrete-db-class "fs"))))
+
+(define (kahua-override-error mn)
+  (errorf "You should override this method for concrete database class: ~a" mn))
 
 (define-method write-object ((obj <kahua-db>) port)
   (format port "#<kahua-db ~s (~a)>"
@@ -1000,38 +976,35 @@
     (unless db (error "kahua-db-unique-id: No db is active"))
     (kahua-db-unique-id-internal db)))
 
-(define-method kahua-db-unique-id-internal ((db <kahua-db-fs>))
-  (begin0
-    (ref db 'id-counter)
-    (inc! (ref db 'id-counter))))
+(define-method kahua-db-unique-id-internal ((db <kahua-db>))
+  (kahua-override-error "kahua-db-unique-id-internal"))
 
-(define-method kahua-db-unique-id-internal ((db <kahua-db-dbi>))
-  (begin0
-    (ref db 'id-counter)
-    (inc! (ref db 'id-counter))))
+(define-method lock-db ((db <kahua-db>))
+  (kahua-override-error "lock-db"))
 
-(define (mysql-lock-table conn table directive)
-  (dbi-do conn #`"lock tables ,|table| ,|directive|" '(:pass-through #t)))
-(define (mysql-unlock-tables conn)
-  (dbi-do conn "unlock tables" '(:pass-through #t)))
+(define-method unlock-db ((db <kahua-db>))
+  (kahua-override-error "unlock-db"))
 
-(define (with-mysql-table-write-lock conn table thunk)
-  (dynamic-wind
-      (cut mysql-lock-table conn table "write")
-      thunk
-      (cut mysql-unlock-tables conn)))
+(define-method kahua-db-open ((db <kahua-db>))
+  (kahua-override-error "kahua-db-open"))
 
-(define-method kahua-db-unique-id-internal ((db <kahua-db-mysql>))
-  (guard (e ((else (format (current-error-port) "Error: kahua-db-unique-id-internal: ~a" (ref e 'message)))))
-    (let1 conn (ref db 'connection)
-      (with-mysql-table-write-lock conn "kahua_db_idcount"
-	(lambda ()
-	  (let* ((r (dbi-do conn "select value from kahua_db_idcount limit 1" '(:pass-through #t)))
-		 (cnt (x->integer (car (map (cut dbi-get-value <> 0) r))))
-		 (next (+ cnt 1)))
-	    (set! (ref db 'id-counter) next)
-	    (dbi-do conn "update kahua_db_idcount set value = ?" '() (x->string next))
-	    cnt))))))
+(define-method kahua-db-close ((db <kahua-db>))
+  (kahua-override-error "kahua-db-close"))
+
+(define-method read-kahua-instance ((db <kahua-db>)
+				    (class <kahua-persistent-meta>)
+				    (key <string>))
+  (kahua-override-error "read-kahua-instance"))
+
+(define-method write-kahua-instance ((db <kahua-db>)
+				     (obj <kahua-persistent-base>))
+  (kahua-override-error "write-kahua-instance"))
+
+(define-method kahua-db-write-id-counter ((db <kahua-db>))
+  (kahua-override-error "kahua-db-write-id-counter"))
+
+(define-method make-kahua-collection ((db <kahua-db>))
+  (kahua-override-error "make-kahua-collection"))
 
 (define-condition-type <with-db-error> <error>
   with-db-error?
@@ -1078,163 +1051,8 @@
     (set! (ref db 'instance-by-id)  (make-hash-table 'eqv?))
     (set! (ref db 'instance-by-key) (make-hash-table 'equal?))))
 
-(define (id-counter-path path)
-  (build-path path "id-counter"))
-
-;; write id-counter or kahua-instance into kahua-db-fs safely.
-(define (%call-writer-to-file-safely file tmpbase writer)
-  (receive (out tmp) (sys-mkstemp tmpbase)
-    (with-error-handler
-     (lambda (e) (sys-unlink tmp) (raise e))
-     (lambda ()
-       (writer out)
-       (close-output-port out)
-       (sys-rename tmp file)))))
-
-;; lock mechanism - we need more robust one later, but just for now...
-(define (lock-file-path path)
-  (build-path path "lock"))
-
-(define-method lock-db ((db <kahua-db-dbi>)) #t)
-(define-method unlock-db ((db <kahua-db-dbi>)) #t)
-
-(define-constant *lock-db-fs* (make <sys-flock> :type F_WRLCK))
-(define-constant *unlock-db-fs* (make <sys-flock> :type F_UNLCK))
-(define-method lock-db ((db <kahua-db-fs>))
-  (let1 lock-file (lock-file-path (ref db 'path))
-    (unless (file-exists? lock-file)
-      ;; This is an old db.  This is only transitional, and may
-      ;; be called very rarely, so we just leave this though unsafe.
-      (with-output-to-file lock-file (lambda () (newline))))
-    (let1 lock-port (open-output-file lock-file :if-exists? :append)
-      (define (try-lock retry)
-        (cond ((zero? retry) #f)
-              ((sys-fcntl lock-port F_SETLK *lock-db-fs*)
-               (slot-set! db 'lock-port lock-port) #t)
-              (else (sys-sleep 1) (try-lock (- retry 1)))))
-      (try-lock 10))))
-(define-method unlock-db ((db <kahua-db-fs>))
-  (and-let* ((lock-port (ref db 'lock-port)))
-    (sys-fcntl lock-port F_SETLK *unlock-db-fs*)
-    (close-output-port lock-port)
-    (slot-set! db 'lock-port #f)
-    #t))
-
-(define (kahua-db-open path)
-  (let1 class (select-db-class path)
-    (if (eq? class <kahua-db-fs>)
-      (kahua-db-open-fs class path)
-      (kahua-db-open-dbi class path))))
-
-(define (kahua-db-open-fs class path)
-  (let ((cntfile (id-counter-path path)))
-    (if (file-is-directory? path)
-      (if (file-is-regular? cntfile)
-          (let ((db (make class :path path))
-                (cnt (with-input-from-file cntfile read)))
-            (unless (number? cnt)
-              (error "kahua-db-open: number required but got as id-counter: " cnt))
-            (set! (ref db 'active) #t)
-            (set! (ref db 'id-counter) cnt)
-            (unless (lock-db db)
-              (error "kahua-db-open: couldn't obtain database lock: " path))
-            db)
-        (error "kahua-db-open: path is not a db: " path))
-      (begin
-        ;; There could be a race condition here, but it would be very
-        ;; low prob., so for now it should be OK.
-        (make-directory* path)
-        (let1 tmp-path (build-path path "tmp/")
-          (make-directory* tmp-path)
-          (%call-writer-to-file-safely cntfile tmp-path (pa$ write 0)))
-        (let1 db (make class :path path)
-          (set! (ref db 'active) #t)
-          (unless (lock-db db)
-            (error "kahua-db-open: couldn't obtain database lock: " path))
-          db))
-      )))
-
-(define (kahua-db-open-dbi class path)
-  (let* ((db   (make class :path path))
-         (_    (set! (ref db 'active) #t))
-         (conn (dbi-make-connection (ref db 'driver)
-                                    (ref db 'user)
-                                    (ref db 'password)
-                                    (ref db 'options))))
-
-    (kahua-db-dbi-open db conn)))
-
-(define-method kahua-db-dbi-open ((db <kahua-db-dbi>) conn)
-  (define (safe-query query)
-    (guard (e ((<dbi-exception> e) #f)
-	      (else (raise e)))
-      (dbi-do conn query '(:pass-through #t))))
-
-  (define (query-idcount)
-    (and-let* ((r (safe-query "select value from kahua_db_idcount"))
-	       (p (map (cut dbi-get-value <> 0) r))
-	       ((not (null? p))))
-      (x->integer (car p))))
-
-  (define (query-classtable)
-    (and-let* ((r (safe-query "select class_name, table_name from kahua_db_classes")))
-      (map (lambda (row)
-	     (cons (string->symbol (dbi-get-value row 0))
-		   (dbi-get-value row 1)))
-	   r)))
-
-  (set! (ref db 'connection) conn)
-  ;; check table existence
-  (let1 z (query-idcount)
-    (unless z
-      ;; this is the first time we use db.
-      ;; TODO: error check
-      (for-each
-       (cut dbi-do conn <> '(:pass-through #t))
-       '("create table kahua_db_classes (class_name varchar(255), table_name varchar(255), primary key (class_name))"
-	 "create table kahua_db_idcount (value integer)"
-	 "insert into kahua_db_idcount values (0)"))
-      (let1 zz (query-idcount)
-	(unless zz
-	  (error "couldn't initialize database"))
-	(set! z zz)))
-    (set! (ref db 'id-counter) z)
-    (set! (ref db 'table-map) (query-classtable))
-    db))
-
-(define-method kahua-db-dbi-open ((db <kahua-db-mysql>) conn)
-  (define (db-lock conn)
-    (dbi-do conn "lock tables kahua_db_idcount write, kahua_db_classes read" '(:pass-through #t)))
-  (define db-unlock mysql-unlock-tables)
-
-  (set! (ref db 'connection) conn)
-  (dynamic-wind
-      (lambda () #t)
-      (lambda ()
-	(guard (e ((<dbi-exception> e)
-		   (dbi-do conn "create table kahua_db_idcount (value integer)" '(:pass-through #t))
-		   (mysql-lock-table conn "kahua_db_idcount" "write")
-		   (dbi-do
-		    conn
-		    "create table kahua_db_classes (class_name varchar(255), table_name varchar(255), primary key (class_name))"
-		    '(:pass-through #t))
-		   (db-lock conn)
-		   (dbi-do conn "insert into kahua_db_idcount values (0)" '(:pass-through #t)))
-		  (else (raise e)))
-	  (db-lock conn))
-	(set! (ref db 'id-counter)
-	      (and-let* ((r (dbi-do conn "select value from kahua_db_idcount" '(:pass-through #t)))
-			 (p (map (cut dbi-get-value <> 0) r))
-			 ((not (null? p))))
-		(x->integer (car p))))
-	(set! (ref db 'table-map)
-	      (and-let* ((r (dbi-do conn "select class_name, table_name from kahua_db_classes" '(:pass-through #t))))
-		(map (lambda (row)
-		       (cons (string->symbol (dbi-get-value row 0))
-			     (dbi-get-value row 1)))
-		     r)))
-	db)
-      (cut db-unlock conn)))
+(define-method kahua-db-open ((path <string>))
+  (kahua-db-open (make (select-db-class path) :path path)))
 
 (define (kahua-db-sync . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
@@ -1242,20 +1060,6 @@
               (ref db 'modified-instances))
     (set! (ref db 'modified-instances) '())
     (kahua-db-write-id-counter db)))
-
-(define-method kahua-db-write-id-counter ((db <kahua-db-fs>))
-  (let1 db-path (ref db 'path)
-    (%call-writer-to-file-safely (id-counter-path db-path)
-                                 (build-path db-path "tmp/")
-                                 (pa$ write (ref db 'id-counter)))))
-
-
-(define-method kahua-db-write-id-counter ((db <kahua-db-dbi>))
-  (dbi-do (ref db 'connection)
-          "update kahua_db_idcount set value = ?" '() (ref db 'id-counter)))
-
-(define-method kahua-db-write-id-counter ((db <kahua-db-mysql>))
-  #f)					; Dummy
 
 (define (kahua-db-rollback . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
@@ -1276,29 +1080,6 @@
 
     (for-each rollback-object
               (ref db 'modified-instances))))
-
-(define-method kahua-db-close ((db <kahua-db-fs>) commit)
-  (if commit
-      (kahua-db-sync db)
-    (kahua-db-rollback db))
-  (unlock-db db)
-  (set! (ref db 'modified-instances) '())
-  (set! (ref db 'active) #f))
-
-(define-method kahua-db-close ((db <kahua-db-dbi>) commit)
-  (if commit
-      (kahua-db-sync db)
-    (kahua-db-rollback db))
-  (dbi-close (ref db 'connection))
-  (set! (ref db 'connection) #f)
-  (set! (ref db 'modified-instances) '())
-  (set! (ref db 'active) #f))
-
-(define (data-path db class . key)
-  (apply build-path
-         (ref db 'path)
-         (string-trim-both (x->string (class-name class)) #[<>])
-         key))
 
 ;; cache consistency management -----------------------------------
 (define (current-transaction-id)
@@ -1374,93 +1155,6 @@
 (define-method read-kahua-instance ((object <kahua-persistent-base>))
   (read-kahua-instance (current-db) (current-class-of object) (key-of object)))
 
-(define-method read-kahua-instance ((db <kahua-db-fs>)
-                                    (class <kahua-persistent-meta>)
-                                    (key <string>))
-  (let1 path (data-path db class key)
-    (and (file-exists? path)
-         (call-with-input-file path read))))
-
-(define-method read-kahua-instance ((db <kahua-db-dbi>)
-                                    (class <kahua-persistent-meta>)
-                                    (key <string>))
-
-  (and-let* ((tab (assq-ref (ref db 'table-map) (class-name class)))
-             (r (dbi-do
-                 (ref db 'connection)
-                 #`"select dataval from ,|tab| where keyval = ?" '() key))
-             (rv  (map (cut dbi-get-value <> 0) r))
-             ((not (null? rv))))
-    (call-with-input-string (car rv) read)))
-
-(define-method write-kahua-instance ((db <kahua-db-fs>)
-                                     (obj <kahua-persistent-base>))
-  (let* ((class-path  (data-path db (class-of obj))))
-    (make-directory* class-path)
-    (%call-writer-to-file-safely (build-path class-path (key-of obj))
-                                 (build-path (ref db 'path) "tmp/")
-                                 (pa$ kahua-write obj))
-    (set! (ref obj '%floating-instance) #f)))
-
-
-(define-method write-kahua-instance ((db <kahua-db-dbi>)
-                                     (obj <kahua-persistent-base>))
-
-  (define (table-name)
-    (let1 cname (class-name (class-of obj))
-      (or (assq-ref (ref db 'table-map) cname)
-          (let1 newtab (format "kahua_~a" (length (ref db 'table-map)))
-            (dbi-do
-             (ref db 'connection)
-             "insert into kahua_db_classes values (? , ?)" '() cname newtab)
-            (dbi-do
-             (ref db 'connection)
-             #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))"
-             '(:pass-through #t))
-            (push! (ref db 'table-map) (cons cname newtab))
-            newtab))))
-
-  (let* ((data (call-with-output-string (cut kahua-write obj <>)))
-         (key  (key-of obj))
-         (tab  (table-name)))
-    (if (ref obj '%floating-instance)
-        (dbi-do
-         (ref db 'connection)
-         #`"insert into ,|tab| values (?,, ?)" '() key data)
-      (dbi-do
-       (ref db 'connection)
-       #`"update ,|tab| set dataval = ? where keyval = ?" '() data key))
-    (set! (ref obj '%floating-instance) #f)
-    ))
-
-(define-method write-kahua-instance ((db <kahua-db-mysql>)
-                                     (obj <kahua-persistent-base>))
-
-  (let1 conn (ref db 'connection)
-    (define (table-name)
-      (let1 cname (class-name (class-of obj))
-	(or (assq-ref (ref db 'table-map) cname)
-	    (let1 newtab (format "kahua_~a" (length (ref db 'table-map)))
-	      (with-mysql-table-write-lock conn "kahua_db_classes"
-		(lambda ()
-		  (dbi-do conn "insert into kahua_db_classes values (? , ?)" '() cname newtab)))
-	      (dbi-do
-	       conn #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))"
-	       '(:pass-through #t))
-	      (push! (ref db 'table-map) (cons cname newtab))
-	      newtab))))
-
-    (let* ((data (call-with-output-string (cut kahua-write obj <>)))
-	   (key  (key-of obj))
-	   (tab  (table-name)))
-      (with-mysql-table-write-lock conn tab
-	(lambda ()
-	  (if (ref obj '%floating-instance)
-	      (dbi-do conn #`"insert into ,|tab| values (?,, ?)" '() key data)
-	      (dbi-do conn #`"update ,|tab| set dataval = ? where keyval = ?" '() data key))))
-      (set! (ref obj '%floating-instance) #f)
-      )))
-
 ;;=========================================================
 ;; "View" as a collection
 ;;
@@ -1488,25 +1182,6 @@
                       (cons class
                             (class-subclasses class)))
           (make-kahua-collection db class opts)))))
-
-(define-method make-kahua-collection ((db <kahua-db-fs>)
-                                      class opts)
-  (make <kahua-collection>
-    :instances (map (cut find-kahua-instance class <>)
-                    (if (file-is-directory? (data-path db class))
-                      (directory-list (data-path db class) :children? #t)
-                      '()))))
-
-(define-method make-kahua-collection ((db <kahua-db-dbi>)
-                                      class opts)
-  (let1 tab (assq-ref (ref db 'table-map) (class-name class))
-    (if (not tab)
-      (make <kahua-collection> :instances '())
-      (let* ((r (dbi-do (ref db 'connection)
-                        #`"select keyval from ,|tab|" '(:pass-through #t)))
-             (keys (if r (map (cut dbi-get-value <> 0) r) '())))
-        (make <kahua-collection>
-          :instances (map (cut find-kahua-instance class <>) keys))))))
 
 (define-method call-with-iterator ((coll <kahua-collection>) proc . opts)
   (let1 p (ref coll 'instances)
