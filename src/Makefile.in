@@ -39,7 +39,8 @@ INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) \
                $(SCM_INSTALL_DIR) \
                $(SCM_INSTALL_DIR)/kahua \
 	       $(SCM_INSTALL_DIR)/kahua/test \
-               $(SCM_INSTALL_DIR)/kahua/pdf
+               $(SCM_INSTALL_DIR)/kahua/pdf \
+	       $(SCM_INSTALL_DIR)/kahua/persistence
 
 TESTENV_DIR  = $(top_builddir)/tmp
 
@@ -64,7 +65,9 @@ SCMFILES = $(SCM_SCRIPTS) \
            kahua/pdf/interp.scm kahua/pdf/main.scm kahua/pdf/monad.scm \
            kahua/pdf/srfi-48-draft.scm  kahua/pdf/srfi-48.scm \
            kahua/pdf/state.scm kahua/pdf/typeset.scm kahua/pdf/util.scm \
-           kahua/error-report.scm kahua/thread-pool.scm
+           kahua/error-report.scm kahua/thread-pool.scm \
+	   kahua/persistence/fs.scm kahua/persistence/dbi.scm \
+	   kahua/persistence/mysql.scm kahua/persistence/postgresql.scm
 
 CONFFILE = $(sysconfdir)/kahua.conf
 USERCONFFILE = $(localstatedir)/user.conf
