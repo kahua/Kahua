@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.1.2.1 2006/06/16 08:13:16 bizenn Exp $
+;; $Id: dbi.scm,v 1.1.2.2 2006/06/23 05:09:19 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (extend kahua.persistence
@@ -14,7 +14,7 @@
 	  gauche.logger)
   (export <kahua-db-dbi>
 	  dataval-type
-	  kahua-db-unique-id-internal
+	  kahua-db-unique-id
 	  lock-db
 	  unlock-db
 	  kahua-db-open
@@ -23,7 +23,10 @@
 	  kahua-db-close
 	  read-kahua-instance
 	  write-kahua-instance
-	  make-kahua-collection))
+	  make-kahua-collection
+	  class-table-name
+	  class-table-next-suffix
+	  with-transaction))
 
 (select-module kahua.persistence.dbi)
 
@@ -40,8 +43,8 @@
    (user       :allocation :each-subclass :init-value #f)
    (password   :allocation :each-subclass :init-value #f)
    (options    :allocation :each-subclass :init-value #f)
-   (connection :init-value #f)
-   (table-map  :init-value '())  ;; class-name -> table map
+   (connection :init-value #f :getter connection-of)
+   (table-map  :init-form (make-hash-table) :getter table-map-of)
    ))
 
 (define (kahua-dbi-warn fname)
@@ -51,12 +54,6 @@
 (define-method dataval-type ((self <kahua-db-dbi>))
   (kahua-dbi-warn "dataval-type")
   "text")
-
-;(when (library-exists? 'dbi :strict? #f)
-;  (autoload dbi
-;            <dbi-exception>
-;            dbi-do
-;            dbi-make-driver dbi-make-connection dbi-close dbi-get-value dbi-escape-sql))
 
 (define-method initialize ((db <kahua-db-dbi>) initargs)
   (next-method)
@@ -70,8 +67,16 @@
       (log-format "DBI(~a) setup: user ~a, options ~a" (m 1) (m 2) (m 4))
       )))
 
-(define-method kahua-db-unique-id-internal ((db <kahua-db-dbi>))
-  (kahua-dbi-warn "kahua-db-unique-id-internal")
+(define-method with-transaction ((db <kahua-db-dbi>) proc)
+  (let1 conn (connection-of db)
+    (guard (e (else (dbi-do conn "rollback" '(:pass-through #t))))
+      (dbi-do conn "start transaction" '(:pass-through #t))
+      (begin0
+	(proc conn)
+	(dbi-do conn "commit" '(:pass-through #t))))))
+
+(define-method kahua-db-unique-id ((db <kahua-db-dbi>))
+  (kahua-dbi-warn "kahua-db-unique-id")
   (begin0
     (ref db 'id-counter)
     (inc! (ref db 'id-counter))))
@@ -84,8 +89,20 @@
 				  (ref db 'user)
 				  (ref db 'password)
 				  (ref db 'options))
-    (set! (ref db 'active) #t)
+    (set! (active? db) #t)
     (kahua-db-dbi-open db conn)))
+
+(define-constant *create-kahua-db-classes*
+  "create table kahua_db_classes (
+     class_name varchar(255) not null,
+     table_name varchar(255) not null,
+     constraint pk_kahua_db_classes primary key (class_name),
+     constraint uq_kahua_db_classes unique (table_name)
+  )")
+(define-constant *create-kahua-db-idcount*
+  "create table kahua_db_idcount (value integer)")
+(define-constant *initialize-kahua-db-idcount*
+  "insert into kahua_db_idcount values (0)")
 
 (define-method kahua-db-dbi-open ((db <kahua-db-dbi>) conn)
   (define (safe-query query)
@@ -115,21 +132,25 @@
       ;; TODO: error check
       (for-each
        (cut dbi-do conn <> '(:pass-through #t))
-       '("create table kahua_db_classes (class_name varchar(255), table_name varchar(255), primary key (class_name))"
-	 "create table kahua_db_idcount (value integer)"
-	 "insert into kahua_db_idcount values (0)"))
+       `(,*create-kahua-db-classes*
+	 ,*create-kahua-db-idcount*
+	 ,*initialize-kahua-db-idcount*))
       (let1 zz (query-idcount)
 	(unless zz
 	  (error "couldn't initialize database"))
 	(set! z zz)))
     (set! (ref db 'id-counter) z)
-    (set! (ref db 'table-map) (query-classtable))
+    (for-each (lambda (p)
+		(hash-table-put! (table-map-of db) (car p) (cdr p)))
+	      (query-classtable))
     db))
+
+(define-constant *update-kahua-db-idcount*
+  "update kahua_db_idcount set value = ?")
 
 (define-method kahua-db-write-id-counter ((db <kahua-db-dbi>))
   (kahua-dbi-warn "kahua-db-write-id-counter")
-  (dbi-do (ref db 'connection)
-          "update kahua_db_idcount set value = ?" '() (ref db 'id-counter)))
+  (dbi-do (connection-of db) *update-kahua-db-idcount* '() (ref db 'id-counter)))
 
 (define-method kahua-db-close ((db <kahua-db-dbi>) commit)
   (if commit
@@ -138,16 +159,35 @@
   (dbi-close (ref db 'connection))
   (set! (ref db 'connection) #f)
   (set! (ref db 'modified-instances) '())
-  (set! (ref db 'active) #f))
+  (set! (active? db) #f))
+
+(define-method class-table-next-suffix ((db <kahua-db-dbi>))
+  (let1 r (dbi-do (connection-of db) "select count(*) from kahua_db_classes" '())
+    (car (map (cut dbi-get-value <> 0) r))))
+
+(define-constant *class-table-name*
+  "select table_name from kahua_db_classes where class_name=?")
+(define-constant (select-class-instance tabname)
+  (format "select dataval from ~a where keyval=?" tabname))
+
+(define-method class-table-name ((db <kahua-db-dbi>) (class <kahua-persistent-meta>))
+  (let ((cname  (class-name class))
+	(table-map (table-map-of db)))
+    (or (hash-table-get table-map cname #f)
+	(and-let* ((conn (connection-of db))
+		   (r (dbi-do conn *class-table-name* '() cname))
+		   (l (map (cut dbi-get-value <> 0) r))
+		   ((not (null? l)))
+		   (tabname (car l)))
+	  (hash-table-put! table-map cname tabname)
+	  tabname))))
 
 (define-method read-kahua-instance ((db <kahua-db-dbi>)
                                     (class <kahua-persistent-meta>)
                                     (key <string>))
-
-  (and-let* ((tab (assq-ref (ref db 'table-map) (class-name class)))
-             (r (dbi-do
-                 (ref db 'connection)
-                 #`"select dataval from ,|tab| where keyval = ?" '() key))
+  (and-let* ((conn (connection-of db))
+	     (tab (class-table-name db class))
+             (r (dbi-do conn (select-class-instance tab) '() key))
              (rv  (map (cut dbi-get-value <> 0) r))
              ((not (null? rv))))
     (call-with-input-string (car rv) read)))
@@ -155,16 +195,13 @@
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
                                      (obj <kahua-persistent-base>))
   (define (table-name)
-    (let1 cname (class-name (class-of obj))
-      (or (assq-ref (ref db 'table-map) cname)
-          (let1 newtab (format "kahua_~a" (length (ref db 'table-map)))
-            (dbi-do
-             (ref db 'connection)
-             "insert into kahua_db_classes values (? , ?)" '() cname newtab)
-            (dbi-do
-             (ref db 'connection)
-             #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))"
-             '(:pass-through #t))
+    (let* ((class (class-of obj))
+	   (cname (class-name class))
+	   (conn (connection-of db)))
+      (or (class-table-name db class)
+          (let1 newtab (format "kahua_~a" (class-table-next-suffix db))
+            (dbi-do conn "insert into kahua_db_classes values (? , ?)" '() cname newtab)
+            (dbi-do conn #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))" '(:pass-through #t))
             (push! (ref db 'table-map) (cons cname newtab))
             newtab))))
 
@@ -184,7 +221,8 @@
 
 (define-method make-kahua-collection ((db <kahua-db-dbi>)
                                       class opts)
-  (let1 tab (assq-ref (ref db 'table-map) (class-name class))
+  (let* ((conn (connection-of db))
+	 (tab (class-table-name db class)))
     (if (not tab)
       (make <kahua-collection> :instances '())
       (let* ((r (dbi-do (ref db 'connection)

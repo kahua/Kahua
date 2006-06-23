@@ -2,7 +2,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.13.2.3 2006/06/16 08:13:16 bizenn Exp $
+;; $Id: persistence.scm,v 1.13.2.4 2006/06/23 05:09:20 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -41,17 +41,28 @@
 (test* "creating database" '(#t #t #t)
        (with-db (db *dbname*)
          (cons (is-a? db <kahua-db>)
-               (if (eq? '<kahua-db-fs> (class-name (class-of db)))
-                 (list
-                  (file-is-directory? *dbname*)
-                  (file-exists? (build-path *dbname* "id-counter")))
-                 (list
-                  (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
-                  (and (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_idcount"))
-                                  (p (map (cut dbi-get-value <> 0) r)))
-                         (and (not (null? p))
-                              (integer? (x->integer (car p))))))
-                  )))))
+	       (case (class-name (class-of db))
+		 ((<kahua-db-fs>)
+		  (list
+		   (file-is-directory? *dbname*)
+		   (file-exists? (build-path *dbname* "id-counter"))))
+                 ((<kahua-db-mysql>)
+		  (list
+		   (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
+		   (and (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_idcount"))
+				   (p (map (cut dbi-get-value <> 0) r)))
+			  (and (not (null? p))
+			       (integer? (x->integer (car p))))))
+		   ))
+		 ((<kahua-db-postgresql>)
+		  (list
+		   (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
+		   (and (and-let* ((r (dbi-do (ref db 'connection) "select count(*) from pg_class where relname='kahua_db_idcount' and relkind='S'"))
+				   (p (map (cut dbi-get-value <> 0) r)))
+			  (and (not (null? p))
+			       (= (x->integer (car p)) 1))))
+		   )))
+	       )))
 
 ;;  データベースがwith-dbの動的スコープ中で有効であり、
 ;;  その外で無効になることを確認する。

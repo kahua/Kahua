@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.1.2.1 2006/06/16 08:13:16 bizenn Exp $
+;; $Id: fs.scm,v 1.1.2.2 2006/06/23 05:09:19 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-13)
@@ -21,7 +21,7 @@
   ((lock-port  :init-value #f) ;; port opened on lock file
    ))
 
-(define-method kahua-db-unique-id-internal ((db <kahua-db-fs>))
+(define-method kahua-db-unique-id ((db <kahua-db-fs>))
   (begin0
     (ref db 'id-counter)
     (inc! (ref db 'id-counter))))
@@ -73,7 +73,7 @@
 	    (let1 cnt (with-input-from-file cntfile read)
 	      (unless (number? cnt)
 		(error "kahua-db-open: number required but got as id-counter: " cnt))
-	      (set! (ref db 'active) #t)
+	      (set! (active? db) #t)
 	      (set! (ref db 'id-counter) cnt)
 	      (unless (lock-db db)
 		(error "kahua-db-open: couldn't obtain database lock: " path)))
@@ -85,7 +85,7 @@
 	  (let1 tmp-path (build-path path "tmp/")
 	    (make-directory* tmp-path)
 	    (%call-writer-to-file-safely cntfile tmp-path (pa$ write 0)))
-	  (set! (ref db 'active) #t)
+	  (set! (active? db) #t)
 	  (unless (lock-db db)
 	    (error "kahua-db-open: couldn't obtain database lock: " path)))
 	))
@@ -97,7 +97,7 @@
     (kahua-db-rollback db))
   (unlock-db db)
   (set! (ref db 'modified-instances) '())
-  (set! (ref db 'active) #f))
+  (set! (active? db) #f))
 
 (define-method read-kahua-instance ((db <kahua-db-fs>)
                                     (class <kahua-persistent-meta>)

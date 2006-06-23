@@ -4,19 +4,14 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.6 2006/06/16 08:13:16 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.7 2006/06/23 05:09:17 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
-  (use srfi-2)
-  (use srfi-13)
   (use file.util)
   (use util.list)
   (use gauche.sequence)
   (use gauche.parameter)
-  (use gauche.version)
-  (use gauche.fcntl)
-  (use gauche.logger)
   (use gauche.collection)
   (export <kahua-persistent-meta> <kahua-persistent-base>
           <kahua-persistent-metainfo>
@@ -39,7 +34,7 @@
           kahua-check-transaction!
 
 	  ;; for Database Driver Module.
-	  kahua-db-unique-id-internal
+	  kahua-db-unique-id
 	  lock-db unlock-db
 	  kahua-db-open
 	  kahua-db-close
@@ -325,7 +320,7 @@
 ;; Mark a persistent object dirty
 (define-method touch-kahua-instance! ((obj <kahua-persistent-base>))
   (let1 db (ref obj 'db)
-    (unless (ref db 'active)
+    (unless (active? db)
       (error "database not active"))
     (unless (memq obj (ref db 'modified-instances))
       (push! (ref db 'modified-instances) obj))))
@@ -933,7 +928,7 @@
 (define-class <kahua-db> ()
   ((path       :init-keyword :path :init-value #f)
    (id-counter :init-keyword :id-counter :init-value 0)
-   (active     :init-keyword :active :init-value #f)
+   (active     :init-keyword :active :init-value #f :accessor active?)
    (instance-by-id  :init-form (make-hash-table 'eqv?))
    (instance-by-key :init-form (make-hash-table 'equal?))
    (modified-instances :init-form '())
@@ -961,23 +956,24 @@
 		  (if (equal? dbtype "pg")
 		      (kahua-concrete-db-class "postgresql") ; for backword compatibility
 		      (kahua-concrete-db-class dbtype))))))
-        (else (kahua-concrete-db-class "fs"))))
+        (else (kahua-concrete-db-class "fs"))))	; fall back to default file-system DB.
 
 (define (kahua-override-error mn)
   (errorf "You should override this method for concrete database class: ~a" mn))
 
 (define-method write-object ((obj <kahua-db>) port)
-  (format port "#<kahua-db ~s (~a)>"
+  (format port "#<~a ~s (~a)>"
+	  (class-name (class-of obj))
           (ref obj 'path)
-          (if (ref obj 'active) "active" "inactive")))
+          (if (active? obj) "active" "inactive")))
 
 (define (kahua-db-unique-id)
   (let1 db (current-db)
     (unless db (error "kahua-db-unique-id: No db is active"))
-    (kahua-db-unique-id-internal db)))
+    (kahua-db-unique-id db)))
 
-(define-method kahua-db-unique-id-internal ((db <kahua-db>))
-  (kahua-override-error "kahua-db-unique-id-internal"))
+(define-method kahua-db-unique-id ((db <kahua-db>))
+  (kahua-override-error "kahua-db-unique-id"))
 
 (define-method lock-db ((db <kahua-db>))
   (kahua-override-error "lock-db"))
@@ -1021,7 +1017,7 @@
   (syntax-rules ()
     ((with-db (db dbpath) . body)
      (if (and (current-db)
-              (ref (current-db) 'active)
+              (active? (current-db))
               (or (boolean? dbpath)
 		  (equal? (ref (current-db) 'path) dbpath)))
        (begin . body)
@@ -1043,7 +1039,7 @@
               (inc! (ref db 'current-transaction-id))
               ;;(kahua-meta-write-syncer)
               (begin0 (begin . body)
-                (when (ref (current-db) 'active)
+                (when (active? (current-db))
                   (kahua-db-close db #t)))))))))))
 
 (define (kahua-db-purge-objs)
