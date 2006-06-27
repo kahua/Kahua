@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.8 2006/06/27 02:34:04 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.9 2006/06/27 03:44:03 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -15,6 +15,7 @@
   (use gauche.collection)
   (export <kahua-persistent-meta> <kahua-persistent-base>
           <kahua-persistent-metainfo>
+	  kahua-persistent-id
           key-of find-kahua-class find-kahua-instance
           touch-kahua-instance!
           kahua-serializable-object?
@@ -237,6 +238,7 @@
 (define-class <kahua-persistent-base> ()
   (;; unique ID 
    (%kahua-persistent-base::id :init-keyword :%kahua-persistent-base::id
+			       :getter kahua-persistent-id
 			       :init-form (kahua-db-unique-id) :final #t)
    ;; management data
    (%kahua-persistent-base::db :init-form (current-db) :final #t)  ; points back to db
@@ -286,7 +288,7 @@
 (define-method initialize ((obj <kahua-persistent-base>) initargs)
   (next-method)
   (let ((db (current-db))
-        (id (ref obj '%kahua-persistent-base::id))
+        (id (kahua-persistent-id obj))
         (rsv (get-keyword :%realization-slot-values initargs #f)))
     (when (id->kahua-instance id)
       (errorf "instance with same ID (~s) is active (class ~s)"
@@ -380,7 +382,7 @@
 	(display " ")
 	(display generation)
 	(display ") ")
-	(display (ref obj '%kahua-persistent-base::id))
+	(display (kahua-persistent-id obj))
         (for-each save-slot
                   (if (null? hidden)
                     vals
@@ -1062,7 +1064,7 @@
     (define (rollback-object obj)
       (if (ref obj '%floating-instance)
           (begin
-            (hash-table-delete! (ref db 'instance-by-id) (ref obj '%kahua-persistent-base::id))
+            (hash-table-delete! (ref db 'instance-by-id) (kahua-persistent-id obj))
             (hash-table-delete! (ref db 'instance-by-key)
                                 (cons
                                  (class-name (class-of obj))
