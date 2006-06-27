@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.1.2.2 2006/06/23 05:09:19 bizenn Exp $
+;; $Id: dbi.scm,v 1.1.2.3 2006/06/27 02:34:05 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (extend kahua.persistence
@@ -13,7 +13,6 @@
 	  gauche.collection
 	  gauche.logger)
   (export <kahua-db-dbi>
-	  dataval-type
 	  kahua-db-unique-id
 	  lock-db
 	  unlock-db
@@ -24,7 +23,7 @@
 	  read-kahua-instance
 	  write-kahua-instance
 	  make-kahua-collection
-	  class-table-name
+	  class-name->table-name
 	  class-table-next-suffix
 	  with-transaction))
 
@@ -39,11 +38,10 @@
 ;;  processes access to the same DB.  The data format in DB
 ;;  will be changed in future in incompatible way.
 (define-class <kahua-db-dbi> (<kahua-db>)
-  ((driver     :allocation :each-subclass :init-value #f)
-   (user       :allocation :each-subclass :init-value #f)
-   (password   :allocation :each-subclass :init-value #f)
-   (options    :allocation :each-subclass :init-value #f)
-   (connection :init-value #f :getter connection-of)
+  ((dsn        :init-value #f :accessor dsn-of)
+   (user       :init-value #f :accessor user-of)
+   (password   :init-value #f :accessor password-of)
+   (connection :init-value #f :accessor connection-of)
    (table-map  :init-form (make-hash-table) :getter table-map-of)
    ))
 
@@ -57,13 +55,12 @@
 
 (define-method initialize ((db <kahua-db-dbi>) initargs)
   (next-method)
-  (unless (ref db 'driver)
+  (unless (dsn-of db)
     (let1 m (#/(.*?):(?:([^:]+)(?::([^:]*)(?::(.*))?)?)?/ (ref db 'path))
       (unless m (errorf "unsupported database driver path: ~a" (ref db 'path)))
-      (set! (ref db 'driver)   (dbi-make-driver (m 1)))
-      (set! (ref db 'user)     (m 2))
-      (set! (ref db 'password) (m 3))
-      (set! (ref db 'options)  (m 4))
+      (set! (dsn-of db) (format "dbi:~a:~a" (m 1) (m 4)))
+      (set! (user-of db)     (m 2))
+      (set! (password-of db) (m 3))
       (log-format "DBI(~a) setup: user ~a, options ~a" (m 1) (m 2) (m 4))
       )))
 
@@ -85,10 +82,9 @@
 (define-method unlock-db ((db <kahua-db-dbi>)) #t)
 
 (define-method kahua-db-open ((db <kahua-db-dbi>))
-  (let1 conn (dbi-make-connection (ref db 'driver)
-				  (ref db 'user)
-				  (ref db 'password)
-				  (ref db 'options))
+  (let1 conn (dbi-connect (dsn-of db)
+			  :username (user-of db)
+			  :password (password-of db))
     (set! (active? db) #t)
     (kahua-db-dbi-open db conn)))
 
@@ -124,7 +120,7 @@
 	   r)))
 
   (kahua-dbi-warn "kahua-db-dbi-open")
-  (set! (ref db 'connection) conn)
+  (set! (connection-of db) conn)
   ;; check table existence
   (let1 z (query-idcount)
     (unless z
@@ -156,8 +152,8 @@
   (if commit
       (kahua-db-sync db)
     (kahua-db-rollback db))
-  (dbi-close (ref db 'connection))
-  (set! (ref db 'connection) #f)
+  (dbi-close (connection-of db))
+  (set! (connection-of db) #f)
   (set! (ref db 'modified-instances) '())
   (set! (active? db) #f))
 
@@ -170,7 +166,7 @@
 (define-constant (select-class-instance tabname)
   (format "select dataval from ~a where keyval=?" tabname))
 
-(define-method class-table-name ((db <kahua-db-dbi>) (class <kahua-persistent-meta>))
+(define-method class-name->table-name ((db <kahua-db-dbi>) (class <kahua-persistent-meta>))
   (let ((cname  (class-name class))
 	(table-map (table-map-of db)))
     (or (hash-table-get table-map cname #f)
@@ -186,7 +182,7 @@
                                     (class <kahua-persistent-meta>)
                                     (key <string>))
   (and-let* ((conn (connection-of db))
-	     (tab (class-table-name db class))
+	     (tab (class-name->table-name db class))
              (r (dbi-do conn (select-class-instance tab) '() key))
              (rv  (map (cut dbi-get-value <> 0) r))
              ((not (null? rv))))
@@ -198,7 +194,7 @@
     (let* ((class (class-of obj))
 	   (cname (class-name class))
 	   (conn (connection-of db)))
-      (or (class-table-name db class)
+      (or (class-name->table-name db class)
           (let1 newtab (format "kahua_~a" (class-table-next-suffix db))
             (dbi-do conn "insert into kahua_db_classes values (? , ?)" '() cname newtab)
             (dbi-do conn #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))" '(:pass-through #t))
@@ -210,22 +206,20 @@
          (key  (key-of obj))
          (tab  (table-name)))
     (if (ref obj '%floating-instance)
-        (dbi-do
-         (ref db 'connection)
-         #`"insert into ,|tab| values (?,, ?)" '() key data)
-      (dbi-do
-       (ref db 'connection)
-       #`"update ,|tab| set dataval = ? where keyval = ?" '() data key))
+        (dbi-do (connection-of db)
+		#`"insert into ,|tab| values (?,, ?)" '() key data)
+      (dbi-do (connection-of db)
+	      #`"update ,|tab| set dataval = ? where keyval = ?" '() data key))
     (set! (ref obj '%floating-instance) #f)
     ))
 
 (define-method make-kahua-collection ((db <kahua-db-dbi>)
                                       class opts)
   (let* ((conn (connection-of db))
-	 (tab (class-table-name db class)))
+	 (tab (class-name->table-name db class)))
     (if (not tab)
       (make <kahua-collection> :instances '())
-      (let* ((r (dbi-do (ref db 'connection)
+      (let* ((r (dbi-do (connection-of db)
                         #`"select keyval from ,|tab|" '(:pass-through #t)))
              (keys (if r (map (cut dbi-get-value <> 0) r) '())))
         (make <kahua-collection>

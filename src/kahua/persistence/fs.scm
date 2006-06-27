@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.1.2.2 2006/06/23 05:09:19 bizenn Exp $
+;; $Id: fs.scm,v 1.1.2.3 2006/06/27 02:34:05 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-13)
@@ -18,7 +18,8 @@
 
 ;; filesystem-based persistent store (default)
 (define-class <kahua-db-fs> (<kahua-db>)
-  ((lock-port  :init-value #f) ;; port opened on lock file
+  ((id-counter :init-keyword :id-counter :init-value 0)
+   (lock-port  :init-value #f :accessor lock-port-of) ;; port opened on lock file
    ))
 
 (define-method kahua-db-unique-id ((db <kahua-db-fs>))
@@ -55,14 +56,15 @@
       (define (try-lock retry)
         (cond ((zero? retry) #f)
               ((sys-fcntl lock-port F_SETLK *lock-db-fs*)
-               (slot-set! db 'lock-port lock-port) #t)
+               (set! (lock-port-of db) lock-port)
+	       #t)
               (else (sys-sleep 1) (try-lock (- retry 1)))))
       (try-lock 10))))
 (define-method unlock-db ((db <kahua-db-fs>))
-  (and-let* ((lock-port (ref db 'lock-port)))
+  (and-let* ((lock-port (lock-port-of db)))
     (sys-fcntl lock-port F_SETLK *unlock-db-fs*)
     (close-output-port lock-port)
-    (slot-set! db 'lock-port #f)
+    (set! (lock-port-of db) #f)
     #t))
 
 (define-method kahua-db-open ((db <kahua-db-fs>))

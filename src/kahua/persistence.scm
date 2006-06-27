@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.7 2006/06/23 05:09:17 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.8 2006/06/27 02:34:04 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -32,6 +32,7 @@
           kahua-wrapper?
           key-of-using-instance
           kahua-check-transaction!
+	  kahua-write
 
 	  ;; for Database Driver Module.
 	  kahua-db-unique-id
@@ -42,7 +43,6 @@
 	  write-kahua-instance
 	  kahua-db-write-id-counter
 	  make-kahua-collection
-	  kahua-write
           )
   )
 (select-module kahua.persistence)
@@ -236,9 +236,10 @@
 
 (define-class <kahua-persistent-base> ()
   (;; unique ID 
-   (id    :init-keyword :id :init-form (kahua-db-unique-id) :final #t)
+   (%kahua-persistent-base::id :init-keyword :%kahua-persistent-base::id
+			       :init-form (kahua-db-unique-id) :final #t)
    ;; management data
-   (db    :init-form (current-db) :final #t)  ; points back to db
+   (%kahua-persistent-base::db :init-form (current-db) :final #t)  ; points back to db
    ;; alist of slot data which is in the DB but not in the current
    ;; in-memory class.
    (%hidden-slot-values :init-keyword :%hidden-slot-values :init-value '())
@@ -260,7 +261,7 @@
 
 ;; this method should be overriden by subclasses for convenience.
 (define-method key-of ((obj <kahua-persistent-base>))
-  (format "~6,'0d" (slot-ref-using-class (current-class-of obj) obj 'id)))
+  (format "~6,'0d" (slot-ref-using-class (current-class-of obj) obj '%kahua-persistent-base::id)))
 
 ;; Initializing persistent instance:
 ;;  * (initialize (obj <kahua-persistent-base>)) initializes in-memory
@@ -285,7 +286,7 @@
 (define-method initialize ((obj <kahua-persistent-base>) initargs)
   (next-method)
   (let ((db (current-db))
-        (id (ref obj 'id))
+        (id (ref obj '%kahua-persistent-base::id))
         (rsv (get-keyword :%realization-slot-values initargs #f)))
     (when (id->kahua-instance id)
       (errorf "instance with same ID (~s) is active (class ~s)"
@@ -319,7 +320,7 @@
 
 ;; Mark a persistent object dirty
 (define-method touch-kahua-instance! ((obj <kahua-persistent-base>))
-  (let1 db (ref obj 'db)
+  (let1 db (ref obj '%kahua-persistent-base::db)
     (unless (active? db)
       (error "database not active"))
     (unless (memq obj (ref db 'modified-instances))
@@ -379,7 +380,7 @@
 	(display " ")
 	(display generation)
 	(display ") ")
-	(display (ref obj 'id))
+	(display (ref obj '%kahua-persistent-base::id))
         (for-each save-slot
                   (if (null? hidden)
                     vals
@@ -467,7 +468,7 @@
                 ((ref class 'read-syncer) object slot-alist)
                 object)
               (begin
-                (make class :id id
+                (make class :%kahua-persistent-base::id id
                       :%realization-slot-values slot-alist
                       :%hidden-slot-values save-slots
                       :%persistent-generation generation))
@@ -927,7 +928,6 @@
 
 (define-class <kahua-db> ()
   ((path       :init-keyword :path :init-value #f)
-   (id-counter :init-keyword :id-counter :init-value 0)
    (active     :init-keyword :active :init-value #f :accessor active?)
    (instance-by-id  :init-form (make-hash-table 'eqv?))
    (instance-by-key :init-form (make-hash-table 'equal?))
@@ -1062,7 +1062,7 @@
     (define (rollback-object obj)
       (if (ref obj '%floating-instance)
           (begin
-            (hash-table-delete! (ref db 'instance-by-id) (ref obj 'id))
+            (hash-table-delete! (ref db 'instance-by-id) (ref obj '%kahua-persistent-base::id))
             (hash-table-delete! (ref db 'instance-by-key)
                                 (cons
                                  (class-name (class-of obj))
@@ -1109,7 +1109,7 @@
                    (class-slots class))))
 
 (define (floted-instance-touch! o)
-  (update! (ref (ref o 'db) 'floated-modified-instances)
+  (update! (ref (ref o '%kahua-persistent-base::db) 'floated-modified-instances)
            (lambda (instances)
              (if (memq o instances)
                  instances
@@ -1225,7 +1225,7 @@
     (unless (eq? (class-name old-class)
                  (class-name new-class))
       (ensure-metainfo new-class)
-      (slot-set-using-class! new-class obj 'id (kahua-db-unique-id))
+      (slot-set-using-class! new-class obj '%kahua-persistent-base::id (kahua-db-unique-id))
       (slot-set-using-class! new-class obj '%persistent-generation 0)
       (slot-set-using-class! new-class obj '%floating-instance #t))
     ;; restore persistent slots value.

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.1.2.2 2006/06/23 05:09:19 bizenn Exp $
+;; $Id: postgresql.scm,v 1.1.2.3 2006/06/27 02:34:05 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -13,8 +13,6 @@
 (select-module kahua.persistence.postgresql)
 
 (define-class <kahua-db-postgresql> (<kahua-db-dbi>) ())
-
-(define-method dataval-type ((self <kahua-db-postgresql>)) "text")
 
 (define-constant *create-kahua-db-idcount*
   "create sequence kahua_db_idcount start 0 minvalue 0")
@@ -31,8 +29,8 @@
 
 (define-constant *create-kahua-db-classes*
   "create table kahua_db_classes (
-     class_name varchar(255) not null,
-     table_name varchar(255) not null,
+     class_name text not null,
+     table_name name not null,
      constraint pk_kahua_db_classes primary key (class_name),
      constraint uq_kahua_db_classes unique (table_name)
    )")
@@ -47,7 +45,7 @@
 
 (define (create-class-table tabname)
   (format "create table ~a (
-             keyval varchar(255) not null,
+             keyval  text not null,
              dataval text not null,
            constraint pk_~a primary key (keyval)
            )" tabname tabname))
@@ -59,11 +57,9 @@
   (format "update ~a set dataval = ? where keyval = ?" tabname))
 
 (define-method kahua-db-unique-id ((db <kahua-db-postgresql>))
-  (let* ((r (dbi-do (ref db 'connection) *select-kahua-db-idcount* '(:pass-through #t)))
+  (let* ((r (dbi-do (connection-of db) *select-kahua-db-idcount* '(:pass-through #t)))
 	 (cnt (x->integer (car (map (cut dbi-get-value <> 0) r)))))
-    (begin
-      (set! (ref db 'id-counter) cnt)
-      cnt)))
+    cnt))
 
 (define-method kahua-db-dbi-open ((db <kahua-db-postgresql>) conn)
   (define (safe-query query)
@@ -84,9 +80,8 @@
 	       ((not (null? l))))
       (positive? (x->integer (car l)))))
 
-  (set! (ref db 'connection) conn)
+  (set! (connection-of db) conn)
   ;; check table existence
-  (set! (ref db 'id-counter) 0) ; DUMMY
   (let1 table-map (table-map-of db)
     (for-each (lambda (p)
 		(hash-table-put! table-map (car p) (cdr p)))
@@ -114,7 +109,7 @@
 	(with-transaction db
 	  (lambda (conn)
 	    (dbi-do conn *lock-kahua-db-classes* '(:pass-through #t))
-	    (or (class-table-name db (class-of obj))
+	    (or (class-name->table-name db (class-of obj))
 		(let1 newtab (format "kahua_~a" (class-table-next-suffix db))
 		  (dbi-do conn *insert-kahua-db-classes* '() cname newtab)
 		  (dbi-do conn (create-class-table newtab) '(:pass-through #t))
