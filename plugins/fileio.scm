@@ -1,7 +1,7 @@
 ;;; upload and download plugin
 
 (define-plugin "fileio"
-  (version "0.5")
+  (version "0.6")
   (export open-uploaded-file
 	  call-with-uploaded-file
 	  with-input-from-uploaded-file
@@ -11,17 +11,15 @@
   (depend #f))
 
 (define-export (open-uploaded-file spec)
-  (let1 tmpf (car spec)
-    (open-input-file tmpf)))
+  (and spec (open-input-file (car spec))))
 
 (define-export (call-with-uploaded-file spec proc)
   (let1 in (open-uploaded-file spec)
-    (with-error-handler
-      (lambda (e) (close-input-port in) (raise e))
-      (lambda ()
-	(begin0
-	  (proc in)
-	  (close-input-port in))))))
+    (dynamic-wind
+	(cut values)
+	(cut proc in)
+	(lambda ()
+	  (and in (close-input-port in))))))
 
 (define-export (with-input-from-uploaded-file spec thunk)
   (call-with-uploaded-file spec (cut with-input-from-port <> thunk)))

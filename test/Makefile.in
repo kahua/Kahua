@@ -79,8 +79,12 @@ partcont :
 persistence :
 	@gosh -I../src ./persistence.scm >> test.log
 
-persistence-dbi :
+persistence-dbi : persistence-dbi-mysql persistence-dbi-pg
+
+persistence-dbi-mysql :
 	@gosh -I../src ./persistence-dbi-mysql.scm >> test.log
+
+persistence-dbi-pg :
 	@gosh -I../src ./persistence-dbi-pg.scm >> test.log
 
 rollback :
