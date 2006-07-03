@@ -11,15 +11,14 @@
   (depend #f))
 
 (define-export (open-uploaded-file spec)
-  (and spec (open-input-file (car spec))))
+  (open-input-file (car spec)))
 
 (define-export (call-with-uploaded-file spec proc)
   (let1 in (open-uploaded-file spec)
     (dynamic-wind
 	(cut values)
 	(cut proc in)
-	(lambda ()
-	  (and in (close-input-port in))))))
+	(cut close-input-port in))))
 
 (define-export (with-input-from-uploaded-file spec thunk)
   (call-with-uploaded-file spec (cut with-input-from-port <> thunk)))

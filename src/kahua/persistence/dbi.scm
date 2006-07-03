@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.1.2.3 2006/06/27 02:34:05 bizenn Exp $
+;; $Id: dbi.scm,v 1.1.2.4 2006/07/03 09:33:36 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (extend kahua.persistence
@@ -23,7 +23,7 @@
 	  read-kahua-instance
 	  write-kahua-instance
 	  make-kahua-collection
-	  class-name->table-name
+	  class->table-name
 	  class-table-next-suffix
 	  with-transaction))
 
@@ -166,7 +166,7 @@
 (define-constant (select-class-instance tabname)
   (format "select dataval from ~a where keyval=?" tabname))
 
-(define-method class-name->table-name ((db <kahua-db-dbi>) (class <kahua-persistent-meta>))
+(define-method class->table-name ((db <kahua-db-dbi>) (class <kahua-persistent-meta>))
   (let ((cname  (class-name class))
 	(table-map (table-map-of db)))
     (or (hash-table-get table-map cname #f)
@@ -182,7 +182,7 @@
                                     (class <kahua-persistent-meta>)
                                     (key <string>))
   (and-let* ((conn (connection-of db))
-	     (tab (class-name->table-name db class))
+	     (tab (class->table-name db class))
              (r (dbi-do conn (select-class-instance tab) '() key))
              (rv  (map (cut dbi-get-value <> 0) r))
              ((not (null? rv))))
@@ -194,7 +194,7 @@
     (let* ((class (class-of obj))
 	   (cname (class-name class))
 	   (conn (connection-of db)))
-      (or (class-name->table-name db class)
+      (or (class->table-name db class)
           (let1 newtab (format "kahua_~a" (class-table-next-suffix db))
             (dbi-do conn "insert into kahua_db_classes values (? , ?)" '() cname newtab)
             (dbi-do conn #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))" '(:pass-through #t))
@@ -213,16 +213,28 @@
     (set! (ref obj '%floating-instance) #f)
     ))
 
+(define (select-all-instances-sql table-name)
+  (format "select keyval,dataval from ~a" table-name))
+
 (define-method make-kahua-collection ((db <kahua-db-dbi>)
                                       class opts)
   (let* ((conn (connection-of db))
-	 (tab (class-name->table-name db class)))
-    (if (not tab)
-      (make <kahua-collection> :instances '())
-      (let* ((r (dbi-do (connection-of db)
-                        #`"select keyval from ,|tab|" '(:pass-through #t)))
-             (keys (if r (map (cut dbi-get-value <> 0) r) '())))
+	 (tab (class->table-name db class)))
+    (if tab
+      (let ((inst-table (ref db 'instance-by-key))
+	    (cname (class-name class))
+	    (r (dbi-do (connection-of db) (select-all-instances-sql tab) '(:pass-through #t))))
+	(for-each (lambda (row)
+		    (let1 k (dbi-get-value row 0)
+		      (or (hash-table-get inst-table (cons cname k) #f)
+			  (call-with-input-string (dbi-get-value row 1) read))))
+		  r)
         (make <kahua-collection>
-          :instances (map (cut find-kahua-instance class <>) keys))))))
+          :instances (filter values
+			     (hash-table-map inst-table
+			       (lambda (k v)
+				 (and (eq? (car k) cname) v))))))
+      (make <kahua-collection> :instances '())
+      )))
 
 (provide "kahua/persistence/dbi")

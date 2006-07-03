@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.1.2.3 2006/06/27 02:34:05 bizenn Exp $
+;; $Id: postgresql.scm,v 1.1.2.4 2006/07/03 09:33:36 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -109,7 +109,7 @@
 	(with-transaction db
 	  (lambda (conn)
 	    (dbi-do conn *lock-kahua-db-classes* '(:pass-through #t))
-	    (or (class-name->table-name db (class-of obj))
+	    (or (class->table-name db (class-of obj))
 		(let1 newtab (format "kahua_~a" (class-table-next-suffix db))
 		  (dbi-do conn *insert-kahua-db-classes* '() cname newtab)
 		  (dbi-do conn (create-class-table newtab) '(:pass-through #t))
