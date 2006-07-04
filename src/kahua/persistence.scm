@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.9 2006/06/27 03:44:03 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.10 2006/07/04 06:04:14 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -27,7 +27,7 @@
           current-db with-db kahua-db-sync kahua-db-rollback
 	  kahua-db-purge-objs
           id->kahua-instance class&key->kahua-instance
-          <kahua-collection> make-kahua-collection
+          <kahua-collection>
           raise-with-db-error
           persistent-initialize
           kahua-wrapper?

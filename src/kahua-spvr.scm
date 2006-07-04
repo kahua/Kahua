@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17.2.7 2006/06/04 01:55:02 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.8 2006/07/04 06:04:13 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -556,9 +556,10 @@
 
 (define-method %find-worker ((self <kahua-spvr>) _)
   ;; Fallback case, where the session-initiating request doesn't specify
-  ;; the worker.  For now, we just dispatch the request to the first
-  ;; worker in the queue.  Eventually we need some scheduling strategy
+  ;; the worker.  For now, we just throw error.
+  ;; Eventually we need some scheduling strategy.
   (spvr-errorf <spvr-worker-not-running> "no worker specified"))
+(define find-worker %find-worker)
 
 ;;;=================================================================
 ;;; <kahua-worker-type> implementation

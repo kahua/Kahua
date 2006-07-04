@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.1.2.4 2006/07/03 09:33:36 bizenn Exp $
+;; $Id: mysql.scm,v 1.1.2.5 2006/07/04 06:04:14 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use kahua.persistence.dbi))
@@ -78,18 +78,30 @@
 
 (define-method kahua-db-unique-id ((db <kahua-db-mysql>))
   (guard (e ((else (format (current-error-port)
-			   "Error: kahua-db-unique-id-internal: ~a" (ref e 'message)))))
+			   "Error: kahua-db-unique-id: ~a" (ref e 'message)))))
     (let1 conn (connection-of db)
       (with-mysql-table-write-lock conn "kahua_db_idcount"
 	(lambda ()
 	  (dbi-do conn *update-kahua-db-idcount* '(:pass-through #t))
-	  (let* ((r (dbi-do conn *select-kahua-db-idcount* '(:pass-through #t)))
-		 (cnt (x->integer (car (map (cut dbi-get-value <> 0) r))))) ; Oops!!
-	    cnt))))))
+	  (x->integer (car (map (cut dbi-get-value <> 0)
+				(dbi-do conn *select-kahua-db-idcount* '(:pass-through #t))))))))))
+
+(define-method class-table-next-suffix ((db <kahua-db-mysql>))
+  (guard (e ((else (format (current-error-port)
+			   "Error: class-table-next-suffix: ~a" (ref e 'message)))))
+    (let1 conn (connection-of db)
+      (with-mysql-table-write-lock conn "kahua_db_classcount"
+	(lambda ()
+	  (dbi-do conn *update-kahua-db-classcount* '(:pass-through #t))
+	  (x->integer (car (map (cut dbi-get-value <> 0)
+				(dbi-do conn *select-kahua-db-classcount* '(:pass-through #t))))))))))
 
 (define-method kahua-db-dbi-open ((db <kahua-db-mysql>) conn)
   (define (db-lock conn)
-    (dbi-do conn "lock tables kahua_db_idcount write, kahua_db_classcount write, kahua_db_classes read" '(:pass-through #t)))
+    (dbi-do conn "
+      lock tables kahua_db_idcount write,
+                  kahua_db_classcount write,
+                  kahua_db_classes read" '(:pass-through #t)))
   (define db-unlock mysql-unlock-tables)
   (set! (connection-of db) conn)
   (dynamic-wind
