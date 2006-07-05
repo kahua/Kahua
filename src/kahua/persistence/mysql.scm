@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.1.2.6 2006/07/04 09:41:38 bizenn Exp $
+;; $Id: mysql.scm,v 1.1.2.7 2006/07/05 13:47:26 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use kahua.persistence.dbi))
@@ -113,7 +113,9 @@
   (set! (connection-of db) conn)
   (dynamic-wind
       (lambda ()
-	(dbi-do conn *set-default-character-set* '(:pass-through #t)))
+	(guard (e ((<dbi-exception> e) #f)
+		  (else (raise e)))
+	  (dbi-do conn *set-default-character-set* '(:pass-through #t))))
       (lambda ()
 	(guard (e ((<dbi-exception> e)
 		   (dbi-do conn (*create-kahua-db-idcount* db) '(:pass-through #t))
@@ -162,7 +164,8 @@
 	(lambda ()
 	  (if (ref obj '%floating-instance)
 	      (dbi-do conn (format *insert-class-table-format* tab) '() key data)
-	      (dbi-do conn (format *update-class-table-format* tab) '() data key))))
+	      (dbi-do conn (format *update-class-table-format* tab) '() data key))
+	  ))
       (set! (ref obj '%floating-instance) #f)
       )))
 
