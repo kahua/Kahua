@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.51 2006/05/31 18:20:38 cut-sea Exp $
+;; $Id: persistence.scm,v 1.52 2006/07/05 06:43:48 yasuyuki Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -20,6 +20,7 @@
   (use gauche.collection)
   (export <kahua-persistent-meta> <kahua-persistent-base>
           <kahua-persistent-metainfo>
+	  kahua-persistent-id
           key-of find-kahua-class find-kahua-instance
           touch-kahua-instance!
           kahua-serializable-object?
@@ -206,7 +207,8 @@
 
 (define-class <kahua-persistent-base> ()
   (;; unique ID 
-   (id    :init-keyword :id :init-form (kahua-db-unique-id))
+   (id    :init-keyword :id :getter kahua-persistent-id
+	  :init-form (kahua-db-unique-id))
    ;; management data
    (db    :init-form (current-db))  ; points back to db
    ;; alist of slot data which is in the DB but not in the current

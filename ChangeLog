@@ -1,3 +1,8 @@
+2006-07-05  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* src/kahua/persistence.scm (<kahua-persistent-base>): add getter kahua-persistent-id.
+	(kahua.persistence): add export kahua-persistent-id.
+
 2006-06-06  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
 	* src/kahua-server.scm (kahua-write-static-file): call make-director* before with-output-to-file.
