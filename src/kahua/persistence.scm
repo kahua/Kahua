@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.10 2006/07/04 06:04:14 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.11 2006/07/06 14:39:12 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -96,11 +96,14 @@
   ;; we shuold update transaction-id of in-memory object at last,
   ;; but to avoid inifinite loop, we update it here.
   (let1 class (class-of in-memory)
-    (for-each (lambda (slot)
-                (slot-set-using-class! class in-memory
-                                       (car slot)
-                                       (make <kahua-wrapper> :value (cdr slot))))
-              in-db-slots)))
+    (let* ((db (current-db))
+	   (already-modified? (modified-instance? db in-memory)))
+      (for-each (lambda (slot)
+		  (slot-set-using-class! class in-memory
+					 (car slot)
+					 (make <kahua-wrapper> :value (cdr slot))))
+		in-db-slots)
+      (or already-modified? (reset-modified-instance! db in-memory)))))
 
 ; (define (kahua-write-syncer in-memory in-db-slots)
 ;   (let* ((db    (current-db))
@@ -192,6 +195,16 @@
 	       (reverse! (map (lambda (s) (symbol->string (slot-definition-name s))) vs)) ", ")))
     (reverse! slots)))
 
+(define (modified-instance? db obj)
+  (memq obj (modified-instances-of db)))
+
+(define (add-modified-instance! db obj)
+  (unless (modified-instance? db obj)
+    (push! (modified-instances-of db) obj)))
+
+(define (reset-modified-instance! db obj)
+  (update! (modified-instances-of db) (cut delete obj <>)))
+
 (define (make-kahua-getter acc class slot)
   (let ((aot (slot-definition-option slot :out-of-transaction :read-only)))
     (lambda (o)
@@ -199,7 +212,6 @@
           (ensure-transaction o)
           (when (eq? aot :denied)
             (error "database not active")))
-      
       (let1 val (slot-ref-using-accessor o acc)
         (if (is-a? val <kahua-wrapper>)
             (let1 real (peel-wrapper val)
@@ -215,17 +227,16 @@
         (if db
             (begin
               (ensure-transaction o)
-              (unless (memq o (ref db 'modified-instances))
-                (push! (ref db 'modified-instances) o))
+	      (add-modified-instance! db o)
               (slot-set-using-accessor! o acc v))
-          (if (eq? aot :read/write)
-              (begin
-                (unless (assq slot-name (ref o '%in-transaction-cache))
-                  (push! (ref o '%in-transaction-cache)
-                         (cons slot-name (slot-ref-using-accessor o acc))))
-                (floted-instance-touch! o)
-                (slot-set-using-accessor! o acc v))
-            (error "database not active")))))))
+	    (if (eq? aot :read/write)
+		(begin
+		  (unless (assq slot-name (ref o '%in-transaction-cache))
+		    (push! (ref o '%in-transaction-cache)
+			   (cons slot-name (slot-ref-using-accessor o acc))))
+		  (floted-instance-touch! o)
+		  (slot-set-using-accessor! o acc v))
+		(error "database not active")))))))
 
 (define (make-kahua-boundp acc)
   (lambda (o)
@@ -306,7 +317,7 @@
           ;; obj is marked dirty because of the above setup.
           ;; we revert it to clean.  it is ugly, but it's the easiest
           ;; way to prevent obj from being marked dirty inadvertently.
-          (update! (ref db 'modified-instances) (cut delete obj <>)))
+          (reset-modified-instance! db obj))
       ;; initialize persistent object for the first time.
       (persistent-initialize obj initargs))
 
@@ -325,8 +336,7 @@
   (let1 db (ref obj '%kahua-persistent-base::db)
     (unless (active? db)
       (error "database not active"))
-    (unless (memq obj (ref db 'modified-instances))
-      (push! (ref db 'modified-instances) obj))))
+    (add-modified-instance! db obj)))
 
 ;; kahua-wrapper is used to mark a slot value that has been just
 ;; read from the disk, and may contain <kahua-proxy> reference.
@@ -933,7 +943,7 @@
    (active     :init-keyword :active :init-value #f :accessor active?)
    (instance-by-id  :init-form (make-hash-table 'eqv?))
    (instance-by-key :init-form (make-hash-table 'equal?))
-   (modified-instances :init-form '())
+   (modified-instances :init-form '() :accessor modified-instances-of)
    (current-transaction-id :init-value 0)
    (floated-modified-instances :init-value '()) ;; modified, but...
    )
@@ -1054,9 +1064,8 @@
 
 (define (kahua-db-sync . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
-    (for-each (cut write-kahua-instance db <>)
-              (ref db 'modified-instances))
-    (set! (ref db 'modified-instances) '())
+    (for-each (cut write-kahua-instance db <>) (modified-instances-of db))
+    (set! (modified-instances-of db) '())
     (kahua-db-write-id-counter db)))
 
 (define (kahua-db-rollback . maybe-db)
@@ -1076,8 +1085,7 @@
                   (set! (ref klass 'metainfo) #f)))))
         (read-kahua-instance obj)))
 
-    (for-each rollback-object
-              (ref db 'modified-instances))))
+    (for-each rollback-object (modified-instances-of db))))
 
 ;; cache consistency management -----------------------------------
 (define (current-transaction-id)
@@ -1231,8 +1239,7 @@
       (slot-set-using-class! new-class obj '%persistent-generation 0)
       (slot-set-using-class! new-class obj '%floating-instance #t))
     ;; restore persistent slots value.
-    (unless (memq obj (ref (current-db) 'modified-instances))
-      (push! (ref (current-db) 'modified-instances) obj))
+    (add-modified-instance! (current-db) obj)
     (dolist (slot carry-over-slots)
       (if (pair? slot)
           (slot-set! obj (car slot) (cdr slot))

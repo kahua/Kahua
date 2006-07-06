@@ -5,12 +5,17 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.1.2.7 2006/07/05 13:47:26 bizenn Exp $
+;; $Id: mysql.scm,v 1.1.2.8 2006/07/06 14:39:13 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use kahua.persistence.dbi))
 
 (select-module kahua.persistence.mysql)
+
+(define *DEBUG* #t)
+(define (debug-write . args)
+  (when *DEBUG*
+    (apply format (current-error-port) args)))
 
 (define-constant *set-default-character-set*
   (format "set character set ~a" (case (gauche-character-encoding)
@@ -160,6 +165,7 @@
     (let* ((data (call-with-output-string (cut kahua-write obj <>)))
 	   (key  (key-of obj))
 	   (tab  (table-name)))
+      (debug-write "~a: ~a: ~s\n" (if (ref obj '%floating-instance) 'INSERT 'UPDATE) key obj)
       (with-mysql-table-write-lock conn tab
 	(lambda ()
 	  (if (ref obj '%floating-instance)
