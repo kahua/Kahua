@@ -5,9 +5,10 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.1.2.6 2006/07/07 03:18:06 bizenn Exp $
+;; $Id: dbi.scm,v 1.1.2.7 2006/07/07 15:15:29 bizenn Exp $
 
 (define-module kahua.persistence.dbi
+  (use kahua.util)
   (extend kahua.persistence
 	  dbi util.list
 	  gauche.collection
@@ -226,13 +227,17 @@
 	  (let1 v (call-with-input-string (dbi-get-value row 1) read)
 	    (set! (ref v '%floating-instance) #f)
 	    v))))
-  (let* ((conn (connection-of db))
-	 (tab (class->table-name db class)))
-    (if tab
-      (let* ((r (dbi-do (connection-of db) (%select-all-instances tab) '(:pass-through #t))))
-	(make <kahua-collection>
-	  :instances (map %find-kahua-instance r)))
-      (make <kahua-collection> :instances '())
-      )))
+  (let-keywords* opts ((predicate #f))
+    (let* ((conn (connection-of db))
+	   (tab (class->table-name db class))
+	   (func (if predicate
+		     (lambda (v) (and (predicate v) v))
+		     identity)))
+      (if tab
+	  (let* ((r (dbi-do (connection-of db) (%select-all-instances tab) '(:pass-through #t))))
+	    (make <kahua-collection>
+	      :instances (filter-map1 (lambda (row) (func (%find-kahua-instance row))) r)))
+	  (make <kahua-collection> :instances '())
+	  ))))
 
 (provide "kahua/persistence/dbi")
