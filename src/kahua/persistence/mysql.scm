@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.1.2.8 2006/07/06 14:39:13 bizenn Exp $
+;; $Id: mysql.scm,v 1.1.2.9 2006/07/07 03:18:06 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use kahua.persistence.dbi))
@@ -19,10 +19,10 @@
 
 (define-constant *set-default-character-set*
   (format "set character set ~a" (case (gauche-character-encoding)
-				   ((utf-8) 'utf8)
+				   ((utf-8)  'utf8)
 				   ((euc-jp) 'ujis)
-				   ((sjis) 'sjis)
-				   (else   'binary))))
+				   ((sjis)   'sjis)
+				   (else     'binary))))
 
 ;; ID counter in database.
 (define (*create-kahua-db-idcount* db)

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.1.2.5 2006/07/05 13:47:26 bizenn Exp $
+;; $Id: dbi.scm,v 1.1.2.6 2006/07/07 03:18:06 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (extend kahua.persistence
@@ -215,14 +215,24 @@
 
 (define-method make-kahua-collection ((db <kahua-db-dbi>)
                                       class opts)
+  (define (%select-all-instances tab)
+    (format "select keyval, dataval from ~a" tab))
+  (define (%key->kahua-instance key)
+    (hash-table-get (ref db 'instance-by-key)
+		    (cons (class-name class) key) #f))
+  (define (%find-kahua-instance row)
+    (let1 k (dbi-get-value row 0)
+      (or (%key->kahua-instance k)
+	  (let1 v (call-with-input-string (dbi-get-value row 1) read)
+	    (set! (ref v '%floating-instance) #f)
+	    v))))
   (let* ((conn (connection-of db))
 	 (tab (class->table-name db class)))
-    (if (not tab)
+    (if tab
+      (let* ((r (dbi-do (connection-of db) (%select-all-instances tab) '(:pass-through #t))))
+	(make <kahua-collection>
+	  :instances (map %find-kahua-instance r)))
       (make <kahua-collection> :instances '())
-      (let* ((r (dbi-do (connection-of db)
-                        #`"select keyval from ,|tab|" '(:pass-through #t)))
-             (keys (if r (map (cut dbi-get-value <> 0) r) '())))
-        (make <kahua-collection>
-          :instances (map (cut find-kahua-instance class <>) keys))))))
+      )))
 
 (provide "kahua/persistence/dbi")
