@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.11 2006/07/06 14:39:12 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.12 2006/07/07 10:38:57 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -156,15 +156,16 @@
 ;; Support of persistent slot
 (define-method compute-get-n-set ((class <kahua-persistent-meta>) slot)
   (define (delete-slot-definition-allocation slot)
-    (cons (car slot)
-          (delete-keyword :allocation (cdr slot))))
+    (call-with-values
+      (cut car+cdr slot)
+      (lambda (sn opts)
+	(cons sn (delete-keyword :allocation opts)))))
 
   (let ((alloc (slot-definition-allocation slot)))
     (case alloc
       ((:persistent)
-       (let* ((slot-num (slot-ref class 'num-instance-slots))
-              (acc (let1 slot (delete-slot-definition-allocation slot)
-                     (compute-slot-accessor class slot (next-method class slot)))))
+       (let1 acc (let1 slot (delete-slot-definition-allocation slot)
+		   (compute-slot-accessor class slot (next-method class slot)))
          (inc! (slot-ref class 'num-instance-slots))
          (list (make-kahua-getter acc class slot)
                (make-kahua-setter acc slot)
