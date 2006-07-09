@@ -5,12 +5,20 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.1.2.4 2006/07/03 09:33:36 bizenn Exp $
+;; $Id: postgresql.scm,v 1.1.2.5 2006/07/09 00:59:57 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
 
 (select-module kahua.persistence.postgresql)
+
+(define-constant *set-default-character-set*
+  (and-let* ((client-encoding (case (gauche-character-encoding)
+				((utf-8) 'UTF8)
+				((euc-jp) 'EUC_JP)
+				((sjis)  'SJIS)
+				(else #f))))
+    (format "set client_encoding=~a" client-encoding)))
 
 (define-class <kahua-db-postgresql> (<kahua-db-dbi>) ())
 
@@ -81,6 +89,7 @@
       (positive? (x->integer (car l)))))
 
   (set! (connection-of db) conn)
+  (safe-query *set-default-character-set*)
   ;; check table existence
   (let1 table-map (table-map-of db)
     (for-each (lambda (p)
