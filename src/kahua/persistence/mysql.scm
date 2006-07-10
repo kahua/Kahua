@@ -5,14 +5,14 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.1.2.9 2006/07/07 03:18:06 bizenn Exp $
+;; $Id: mysql.scm,v 1.1.2.10 2006/07/10 14:41:08 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use kahua.persistence.dbi))
 
 (select-module kahua.persistence.mysql)
 
-(define *DEBUG* #t)
+(define *DEBUG* #f)
 (define (debug-write . args)
   (when *DEBUG*
     (apply format (current-error-port) args)))

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17.2.8 2006/07/04 06:04:13 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.9 2006/07/10 14:41:07 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -24,6 +24,7 @@
 (use gauche.listener)
 (use gauche.parseopt)
 (use gauche.parameter)
+(use gauche.collection)
 (use gauche.mop.singleton)
 (use srfi-1)
 (use srfi-2)
@@ -137,14 +138,6 @@
                :init-form (sys-time))
    (zombee :getter zombee?	      ; it's going to shutdown?
 	   :init-form #f)
-   (ping-last-time  :getter ping-last-time-of
-	       :init-form (sys-time))
-   (ping-deactivator :getter ping-deactivator-of
-		     :init-form (lambda () (error (e) "not initialized")))
-   (pinger :getter pinger-of
-	   :init-form (lambda () (error (e) "not initialized")))
-   (ping-responded :getter ping-responded?
-		   :init-form #f)
    ;; internal
    (next-wno :allocation :class :init-value 0)
    ))
@@ -348,7 +341,9 @@
 (define (%unregister-worker spvr type worker)
   (hash-table-delete! (wid-table-of spvr) (wid-of worker))
   (hash-table-delete! (wno-table-of spvr) (wno-of worker))
-  (%remove-worker! type worker))
+  (%remove-worker! type worker)
+  (unless (workers-of type)
+    (hash-table-delete! (wtype-table-of spvr) (name-of type))))
 (define (unregister-worker spvr type worker)
   (with-locking-chain (cut %register-worker spvr type worker) spvr type))
 
@@ -365,7 +360,6 @@
   (let1 w (make <kahua-worker> :type type)
     (log-worker-action "run" w)
     (%register-worker spvr type w)
-    (ping-activate spvr w)
     w))
 
 (define (%run-workers spvr type count)
@@ -438,8 +432,25 @@
 ;	  (log-worker-action "collect finished worker" w)
 ;	  (finish-worker w)))
 ;    w))
-(define (check-workers . _)
-  #f)					; DUMMY
+(define (check-workers spvr)
+  (define (find-worker-by-process p)
+    (let1 k&v (find (lambda (k&v)
+		      (eq? (process-of (cdr k&v)) p))
+		    (wid-table-of spvr))
+      (and k&v (cdr k&v))))
+
+  (with-locking spvr
+    (lambda ()
+      (while (process-wait-any #t) => p
+	(and-let* ((w (find-worker-by-process p))
+		   (wtype (type-of w)))
+	  (%unregister-worker spvr wtype w)
+	  (log-worker-action "unexpceted terminated worker" w)
+	  (when (kahua-auto-restart)
+	    (let1 w (%run-worker spvr wtype)
+	      (log-worker-action "restarted terminated worker type:" w)))
+	  )))))
+	
 
 ;; terminate all workers
 (define-method nuke-all-workers ((self <kahua-spvr>))
@@ -471,68 +482,6 @@
 (define-method restart-workers ((self <kahua-spvr>) (wno <integer>))
   (and-let* ((w (hash-table-get (wno-table-of self) wno)))
     (restart-workers self (list w))))
-
-(define-method ping-timeout? ((worker <kahua-worker>))
-  (if (zombee? worker)
-      #f
-      (let ((d (- (sys-time) (ping-last-time-of worker))))
-	(if (and (not (ping-responded? worker))
-		 (> d (kahua-ping-timeout-sec)))
-	    (begin
-	      (log-worker-action "ping timeout" worker)
-	      #t) ; timeout!	    
-	    ;; not timeout
-	    (begin
-	      (if (and (ping-responded? worker)
-		       (>= d (kahua-ping-interval-sec)))
-		  ;; next ping
-		  (ping-to-worker worker))
-	      #f)))))
-
-(define-method ping-activate ((spvr <kahua-spvr>) (worker <kahua-worker>))
-  (let*
-      (
-       (sock #f)
-       (in   #f)
-       (out  #f)	
-       (proc (lambda (fd flag)
-	       (set! (ref worker 'ping-responded) #t)
-	       (set! (ref worker 'ping-last-time) (sys-time))
-	       (receive-message fd)
-	       (ping-deactivate worker)
-	       (log-worker-action "ping respond" worker)
-	       ))
-
-       (reset-sock
-	(lambda ()
-	  (set! sock (make-client-socket (sockaddr-of worker)))
-	  (set! in   (socket-input-port sock))
-	  (set! out  (socket-output-port sock))
-	  )))
-
-    (set! (ref worker 'pinger)
-	  (lambda ()
-	    (guard (e (else #t)) ;; do nothing, collected by check-workers
-              (reset-sock)
-              (set! (ref worker 'ping-responded) #f)
-              (send-message out `(("x-kahua-ping" ,(wid-of worker)))
-                            '())
-	      (proc in #f)
-	      )
-	    )
-	  )
-    (set! (ref worker 'ping-deactivator)
-	  (lambda () 
-	    (and sock (socket-close sock))))
-    (ping-to-worker worker)
-    ))
-
-(define-method ping-deactivate ((worker <kahua-worker>))
-  ((ping-deactivator-of worker)))
-
-(define-method ping-to-worker ((worker <kahua-worker>))
-  ; (log-worker-action "ping send" worker)
-  ((pinger-of worker)))
 
 ;; pick one worker that has worker-id WID.  If WID is #f, pick arbitrary one.
 (define-method %find-worker ((self <kahua-spvr>) (wid <string>))
@@ -577,7 +526,7 @@
        (dotimes (_ (count-of self))
 	 (let1 w (make <kahua-worker> :type self)
 	   (%register-worker spvr self w)
-	   (ping-activate spvr w))))
+	   )))
      spvr self)))
 
 (define (%next-worker! wtype)
@@ -640,9 +589,6 @@
   (slot-set! worker 'zombee #t)
   (log-worker-action "terminate" worker)
   (%unregister-worker spvr type worker)
-  (ping-deactivate worker)
-  (unless (workers-of type)
-    (hash-table-delete! (wtype-table-of spvr) (name-of type)))
   (let1 p (process-of worker)
     (process-send-signal p SIGTERM)
     p))
@@ -652,16 +598,18 @@
       #f
       (let* ((type (type-of self))
 	     (spvr (spvr-of type)))
-	  (process-wait (with-locking-chain (cut %terminate! spvr type self) spvr type)))))
+	(with-locking-chain (lambda ()
+			      (process-wait (%terminate! spvr type self)))
+			    spvr type))))
 
 (define-method terminate! ((self <kahua-worker-type>))
   (let1 spvr (spvr-of self)
-    (for-each process-wait
-	      (with-locking-chain
-	       (lambda ()
-		 (and-let* ((wcl (workers-of self)))
-		   (map (pa$ %terminate! spvr self) (circular-list->list wcl))))
-	       spvr self))))
+    (and-let* ((wcl (workers-of self)))
+      (with-locking-chain (lambda ()
+			    (for-each process-wait
+				      (map (pa$ %terminate! spvr self)
+					   (circular-list->list wcl))))
+			  spvr self))))
 
 ;; dummy method to do something when a worker ends unexpected
 (define-method unexpected-end ((self <kahua-worker>))
