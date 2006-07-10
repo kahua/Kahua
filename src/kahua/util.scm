@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.3.8.2 2006/07/07 15:15:29 bizenn Exp $
+;; $Id: util.scm,v 1.3.8.3 2006/07/10 02:15:58 bizenn Exp $
 
 ;; This module contains generally useful routines, which don't belong to
 ;; a particular module.
@@ -13,7 +13,6 @@
 (define-module kahua.util
   (use srfi-1)
   (use util.list)
-  (use util.queue)
   (use gauche.collection)
   (export kahua-error-string
 	  with-sigmask
@@ -38,11 +37,11 @@
 	(lambda () (sys-sigmask SIG_SETMASK old_sigset)))))
 
 (define-method filter-map1 (f (c <collection>))
-  (dequeue-all!
-   (fold (lambda (e q)
+  (reverse!
+   (fold (lambda (e res)
 	   (let1 v (f e)
-	     (if v (enqueue! q v) q)))
-	 (make-queue)
+	     (if v (cons v res) res)))
+	 '()
 	 c)))
 
 (provide "kahua/util")
