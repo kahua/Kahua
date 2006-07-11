@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.1.2.7 2006/07/07 15:15:29 bizenn Exp $
+;; $Id: dbi.scm,v 1.1.2.8 2006/07/11 07:28:51 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use kahua.util)
@@ -216,8 +216,14 @@
 
 (define-method make-kahua-collection ((db <kahua-db-dbi>)
                                       class opts)
-  (define (%select-all-instances tab)
-    (format "select keyval, dataval from ~a" tab))
+  (define (%select-instances tab where)
+    (format "select keyval, dataval from ~a ~a" tab where))
+  (define (%make-where-in-clause keys)
+    (cond ((not keys) "")
+	  ((null? keys) "where keyval is NULL")
+	  (else
+	   (format "where keyval in (~a)"
+		   (string-join (map (lambda _ "?") keys) ",")))))
   (define (%key->kahua-instance key)
     (hash-table-get (ref db 'instance-by-key)
 		    (cons (class-name class) key) #f))
@@ -227,14 +233,17 @@
 	  (let1 v (call-with-input-string (dbi-get-value row 1) read)
 	    (set! (ref v '%floating-instance) #f)
 	    v))))
-  (let-keywords* opts ((predicate #f))
+  (let-keywords* opts ((predicate #f)
+		       (keys #f))
     (let* ((conn (connection-of db))
 	   (tab (class->table-name db class))
 	   (func (if predicate
 		     (lambda (v) (and (predicate v) v))
 		     identity)))
       (if tab
-	  (let* ((r (dbi-do (connection-of db) (%select-all-instances tab) '(:pass-through #t))))
+	  (let1 r (apply dbi-do (connection-of db)
+			 (%select-instances tab (%make-where-in-clause keys))
+			 '() (or keys '()))
 	    (make <kahua-collection>
 	      :instances (filter-map1 (lambda (row) (func (%find-kahua-instance row))) r)))
 	  (make <kahua-collection> :instances '())

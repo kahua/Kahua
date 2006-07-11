@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.12 2006/07/07 10:38:57 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.13 2006/07/11 07:28:50 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1065,7 +1065,8 @@
 
 (define (kahua-db-sync . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
-    (for-each (cut write-kahua-instance db <>) (modified-instances-of db))
+    (for-each (cut write-kahua-instance db <>)
+	      (reverse! (modified-instances-of db)))
     (set! (modified-instances-of db) '())
     (kahua-db-write-id-counter db)))
 

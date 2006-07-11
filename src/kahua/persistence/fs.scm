@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.1.2.4 2006/07/07 15:15:29 bizenn Exp $
+;; $Id: fs.scm,v 1.1.2.5 2006/07/11 07:28:51 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-13)
@@ -133,14 +133,16 @@
 
 (define-method make-kahua-collection ((db <kahua-db-fs>)
                                       class opts)
-  (let-keywords* opts ((predicate #f))
+  (let-keywords* opts ((predicate #f)
+		       (keys #f))
     (let1 f (if predicate
 		(lambda (v) (and (predicate v) v))
 		identity)
       (make <kahua-collection>
 	:instances (filter-map1 (lambda (k) (f (find-kahua-instance class k)))
-				(if (file-is-directory? (data-path db class))
-				    (directory-list (data-path db class) :children? #t)
-				    '()))))))
+				(or keys
+				    (if (file-is-directory? (data-path db class))
+					(directory-list (data-path db class) :children? #t)
+					'())))))))
 
 (provide "kahua/persistence/fs")

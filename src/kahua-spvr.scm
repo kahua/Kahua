@@ -1,10 +1,10 @@
 ;; "Supervisor" or super server for kahua
 ;;
-;;  Copyright (c) 2003-2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17.2.9 2006/07/10 14:41:07 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.10 2006/07/11 07:28:50 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -405,33 +405,6 @@
   (with-locking self (cut %list-workers self)))
 
 ;; collect exit status of workers that has exit.
-;(define-method check-workers ((self <kahua-spvr>))
-;  ;; respond check with ping
-;  (let ((workers (list-workers self)))
-;    (restart-workers 
-;     self
-;     (filter (lambda (w) (ping-timeout? w))
-;	     workers)))
-;  
-;  ;; collect finish processes
-;  (and-let* ((wq (workers-of self))
-;             ((not (null? wq)))
-;	     (p (process-wait-any #t))
-;             (w (find (lambda (w) (eq? (worker-process-of w) p))
-;                      (queue->list wq))))
-;    (remove-from-queue! (cut eq? w <>) wq)
-;    (if (and (kahua-auto-restart)
-;	     (not (zombee? w))
-;	     (> (- (sys-time) (start-time-of w)) 60))
-;	;; unexpected terminated process
-;	(begin
-;	  (log-worker-action "restart unexpected terminated worker" w)
-;	  (restart-workers self (list w)))
-;	;;
-;	(begin
-;	  (log-worker-action "collect finished worker" w)
-;	  (finish-worker w)))
-;    w))
 (define (check-workers spvr)
   (define (find-worker-by-process p)
     (let1 k&v (find (lambda (k&v)
