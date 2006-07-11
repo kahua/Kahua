@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.66.2.2 2006/06/01 06:03:33 bizenn Exp $
+;; $Id: server.scm,v 1.66.2.3 2006/07/11 09:48:34 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -233,7 +233,8 @@
                        )
           (if (assoc-ref-car header "x-kahua-eval" #f)
             (receive (headers result) (run-eval)
-              (reply-cont headers result))
+	      (lambda ()
+		(reply-cont headers result)))
             (receive (stree context)
                 (run-cont (if cont-id
                             (or (session-cont-get cont-id) stale-proc)
@@ -257,12 +258,13 @@
                            body))
               (let1 extra-headers
                   (assoc-ref-car context "extra-headers" '())
-                (reply-cont
-                 (kahua-merge-headers header extra-headers
-                                      (hash-table-map
-                                       (assoc-ref-car context "x-kahua-headers" '())
-                                       list))
-                 stree)))))
+		(lambda ()
+		  (reply-cont
+		   (kahua-merge-headers header extra-headers
+					(hash-table-map
+					    (assoc-ref-car context "x-kahua-headers" '())
+					  list))
+		   stree))))))
         )))
   )
 
