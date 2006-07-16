@@ -47,14 +47,18 @@ TESTENV_DIR  = $(top_builddir)/tmp
 SH_SCRIPTS  = kahua-spvr    \
               kahua-admin   \
               kahua-install \
-              kahua-shell
+              kahua-shell \
+              kahua-config \
+              kahua-package
 
 SCM_SCRIPTS  = kahua-spvr.scm    \
                kahua-admin.scm   \
                kahua-install.scm \
                kahua-shell.scm   \
                kahua-server.scm  \
-               kahua-keyserv.scm
+               kahua-keyserv.scm \
+               kahua-config.scm  \
+               kahua-package.scm
 
 SCMFILES = $(SCM_SCRIPTS) \
            kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
@@ -93,6 +97,12 @@ kahua-install :
 
 kahua-shell :
 	$(MAKE_SH_SCRIPT) kahua-shell
+
+kahua-config :
+	$(MAKE_SH_SCRIPT) kahua-config
+
+kahua-package :
+	$(MAKE_SH_SCRIPT) kahua-package
 
 
 kahua/config.scm: kahua/config.scm.in
@@ -133,6 +143,9 @@ install: all
 	$(INSTALL) -m 555 -T $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
 	@if test ! -f $(sysconfdir)/kahua.conf; then \
 	  $(INSTALL) -m 444 kahua.conf $(sysconfdir)/kahua.conf; \
+	fi
+	@if test ! -d $(sysconfdir)/skel; then \
+	  cp -pR
 	fi
 	@if test ! -f $(localstatedir)/user.conf; then \
 	  $(INSTALL) -m 644 user.conf.sample $(localstatedir)/user.conf; \

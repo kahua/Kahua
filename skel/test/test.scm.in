@@ -1,0 +1,54 @@
+;; -*- coding: euc-jp; mode: scheme -*-
+;; test hello script.
+;; $Id: test.scm.in,v 1.2 2005/08/15 22:13:28 nobsun Exp $
+
+(use gauche.test)
+(use file.util)
+(use text.tree)
+(use sxml.ssax)
+(use sxml.sxpath)
+(use kahua)
+(use kahua.test.xml)
+(use kahua.test.worker)
+
+(test-start "hello")
+
+(define GOSH "##GOSH##")
+
+(sys-system "rm -rf _tmp _work")
+(sys-mkdir "_tmp" #o755)
+(sys-mkdir "_work" #o755)
+(sys-mkdir "_work/plugins" #o755)
+
+(copy-file "../plugins/hello.scm"  "_work/plugins/hello.scm")
+
+(define *config* "../hello.conf")
+(kahua-init *config*)
+
+;;------------------------------------------------------------
+;; Run hello
+(test-section "kahua-server hello.kahua")
+
+(with-worker
+ (w `(,GOSH "-I.." "-I##KAHUA_LIB##" "kahua-server.scm" "-c" ,*config*
+            "../hello/hello.kahua"))
+
+ (test* "run hello.kahua" #t (worker-running? w))
+
+ (test* "hello"
+        '(html (head (title "Hello, world!"))
+               (body (h1 "Hello, world!")
+                     (a (@ (href ?&)) "version")))
+        (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
+        (make-match&pick w))
+
+ (test* "version"
+       '(html (head (title "Hello: version ##HELLO_VERSION##"))
+              (body (h1 "Hello: version ##HELLO_VERSION##")
+                    (a ?@ ?*)))
+       (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
+       (make-match&pick w))
+ )
+
+(test-end)
+

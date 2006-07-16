@@ -1,0 +1,42 @@
+;; -*- coding: euc-jp; mode: scheme -*-
+;;
+;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: hello.kahua,v 1.4 2006/04/03 12:15:22 cut-sea Exp $
+;;
+(load "hello/version.kahua")
+
+;
+; hello-page-template
+;
+
+(define (hello-page-template title body)
+  (node-set:
+   (html:
+    (head: (title: title))
+    (body: (h1: title) body))))
+
+;
+; main-proc 
+;
+
+(define-entry (greeting)
+  (hello-page-template "Hello, world!"
+                       (a/cont: (@@: (cont version))
+                                "version")))
+
+;
+; version
+;
+
+(define-entry (version)
+  (hello-page-template (format "Hello: version ~a" *hello-version*)
+                       (a/cont: (@@: (cont greeting))
+                                "greeting")))
+
+;
+; initialization
+;
+   
+(initialize-main-proc greeting)
