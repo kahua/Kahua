@@ -4,10 +4,14 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.1.2.1 2006/07/16 13:13:30 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.1.2.2 2006/07/16 15:48:24 cut-sea Exp $
 (use srfi-13)
+
+(use file.util)
 (use gauche.parseopt)
 (use util.match)
+
+(use kahua.config)
 
 ;
 ; generate
@@ -20,8 +24,29 @@
 		  (flush)
 		  (lp (read-line)))))))
 
-
-(define (generate proj creator mail)
+(define (generate skel proj creator mail)
+  (define (gen-src&dst-directory proj)
+    (list (cons #`",|skel|/proj" proj)
+	  (cons #`",|skel|/test" "test")))
+  (define (gen-src&dst-files proj)
+    (list (cons #`",|skel|/proj/proj.css" #`",|proj|/,|proj|.css")
+	  (cons #`",|skel|/proj/proj.kahua" #`",|proj|/,|proj|.kahua")
+	  (cons #`",|skel|/proj/version.kahua.in" #`",|proj|/version.kahua.in")
+	  (cons #`",|skel|/test/test.scm.in" "test/test.scm.in")
+	  (cons #`",|skel|/AUTHORS" "AUTHORS")
+	  (cons #`",|skel|/ChangeLog" "ChangeLog")
+	  (cons #`",|skel|/DIST" "DIST")
+	  (cons #`",|skel|/DIST_EXCLUDE" "DIST_EXCLUDE")
+	  (cons #`",|skel|/INSTALL" "INSTALL")
+	  (cons #`",|skel|/Makefile.in" "Makefile.in")
+	  (cons #`",|skel|/README" "README")
+	  (cons #`",|skel|/app-servers" "app-servers")
+	  (cons #`",|skel|/configure.ac" "configure.ac")
+	  (cons #`",|skel|/install-sh" "install-sh")
+	  (cons #`",|skel|/proj-start.in" #`",|proj|-start.in")
+	  (cons #`",|skel|/proj-stop.in" #`",|proj|-stop.in")
+	  (cons #`",|skel|/proj.conf.in" #`",|proj|.conf.in")
+	  (cons #`",|skel|/COPYING" "COPYING")))
   (define get-project-name
     (generate-getter
      "Project Name> "
@@ -37,7 +62,22 @@
   (let ((proj (or proj (get-project-name)))
 	(creator (or creator (get-creator-name)))
 	(mail (or mail (get-mail-address))))
-    'copy&replace-names))
+    (define (copy&replace src dst)
+      (call-with-input-file src
+	(lambda (in)
+	  (call-with-output-file dst
+	    (lambda (out)
+	      (let lp ((ln (read-line in)))
+		(cond ((eof-object? ln) 'done)
+		      (else (display (replace ln proj creator mail) out)
+			    (newline out)
+			    (lp (read-line in))))))))))
+    (for-each (lambda (pair)
+		(make-directory* (cdr pair)))
+	      (gen-src&dst-directory proj))
+    (for-each (lambda (pair)
+		(copy&replace (car pair) (cdr pair)))
+	      (gen-src&dst-files proj))))
 
 (define (replace str proj creator mail)
   (define (regexp-fold rx proc-nomatch proc-match seed line)
@@ -53,7 +93,6 @@
 			(loop post (proc-match m (proc-nomatch pre seed)))))))
 	    (else
 	     (proc-nomatch line seed)))))
-
   (define (replace-email line seed)
     (regexp-fold
      #/##_EMAIL_ADDRESS_##/
@@ -86,17 +125,21 @@
     (or (member "gen" arg)
 	(member "generate" arg)
 	))
-  (let1 args (get-opts args)
-    (let-args (cdr args)
-	((conf-file "c=s")
-	 (proj      "p=s")
+  (let-args (cdr args)
+    ((conf-file "c=s")
+     (gosh      "gosh=s"))
+    (let-args (cddddr args)
+	((proj      "p=s")
 	 (creator   "u=s")
-	 (mail      "m=s")
-	 (gosh      "gosh=s"))
-      (match args
-	(("gen" . _) (generate proj creator mail))
-	(("generate" . _) (generate proj creator mail))
-	(else (usage))))))
+	 (mail      "m=s"))
+      (kahua-init conf-file)
+      (let* ((conf (kahua-config))
+	     (file (ref conf 'conf-file))
+	     (skel (build-path (sys-dirname file) "skel")))
+	(match (cdddr args)
+	  (("gen" . _) (generate skel proj creator mail))
+	  (("generate" . _) (generate skel proj creator mail))
+	  (else (usage)))))))
 
 (define (usage)
   (print "kahua-package generate [-p=project] [-c=creator] [-m=mail@addr]")
