@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-config.scm,v 1.1.2.1 2006/07/16 13:13:30 cut-sea Exp $
+;; $Id: kahua-config.scm,v 1.1.2.2 2006/07/16 14:10:03 cut-sea Exp $
 (use gauche.parseopt)
 (use kahua.config)
 
@@ -14,7 +14,9 @@
 (define (main args)
   (let-args (cdr args)
       ((conf-file "c=s")
-       (gosh      "gosh=s"))
+       (gosh      "gosh=s")
+       (help      "h|help"))
+    (if help (usage conf-file))
     (kahua-init conf-file)
     (let* ((conf (kahua-config))
 	   (klass (class-of conf))
@@ -23,13 +25,21 @@
 			(string-length (x->string s)))
 		      slots))
 	   (max-len (apply max lens)))
-      (for-each (lambda (slot len)
-		  (format #t "~a:" slot)
-		  (display (make-string (- (+ max-len 4) len) #\sp))
-		  (format #t "~a~%" (ref conf slot)))
-		slots lens))))
+      (cond ((null? (cdddr args))
+	     (for-each (lambda (slot len)
+			 (format #t "~a:" slot)
+			 (display (make-string (- (+ max-len 4) len) #\sp))
+			 (format #t "~a~%" (ref conf slot)))
+		       slots lens))
+	    (else (let1 slot (string->symbol (cadddr args))
+		    (format #t "~a~%" (ref conf slot))))))))
 
-(define (usage)
-  (print "kahua-config")
+(define (usage conf-file)
+  (kahua-init conf-file)
+  (let1 conf (kahua-config)
+    (format #t "kahua-config [option]~%")
+    (for-each (lambda (slot)
+		(format #t "            ~a~%" slot))
+	      (map car (ref (class-of conf) 'slots))))
   (exit 0))
 

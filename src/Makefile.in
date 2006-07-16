@@ -144,9 +144,6 @@ install: all
 	@if test ! -f $(sysconfdir)/kahua.conf; then \
 	  $(INSTALL) -m 444 kahua.conf $(sysconfdir)/kahua.conf; \
 	fi
-	@if test ! -d $(sysconfdir)/skel; then \
-	  cp -pR
-	fi
 	@if test ! -f $(localstatedir)/user.conf; then \
 	  $(INSTALL) -m 644 user.conf.sample $(localstatedir)/user.conf; \
 	fi
