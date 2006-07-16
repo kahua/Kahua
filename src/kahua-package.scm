@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.1.2.4 2006/07/16 16:45:33 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.1.2.5 2006/07/16 22:56:05 cut-sea Exp $
 (use srfi-13)
 
 (use file.util)
@@ -79,7 +79,8 @@
 	      (gen-src&dst-directory proj))
     (for-each (lambda (pair)
 		(copy&replace (car pair) (cdr pair)))
-	      (gen-src&dst-files proj))))
+	      (gen-src&dst-files proj))
+    (sys-chmod "DIST" #o755)))
 
 (define (replace str proj creator mail)
   (define (regexp-fold rx proc-nomatch proc-match seed line)
