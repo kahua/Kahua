@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.1.2.3 2006/07/16 16:16:55 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.1.2.4 2006/07/16 16:45:33 cut-sea Exp $
 (use srfi-13)
 
 (use file.util)
@@ -27,12 +27,14 @@
 (define (generate skel proj creator mail)
   (define (gen-src&dst-directory proj)
     (list (cons #`",|skel|/proj" proj)
-	  (cons #`",|skel|/test" "test")))
+	  (cons #`",|skel|/test" "test")
+	  (cons #`",|skel|/plugins" "plugins")))
   (define (gen-src&dst-files proj)
     (list (cons #`",|skel|/proj/proj.css" #`",|proj|/,|proj|.css")
 	  (cons #`",|skel|/proj/proj.kahua" #`",|proj|/,|proj|.kahua")
 	  (cons #`",|skel|/proj/version.kahua.in" #`",|proj|/version.kahua.in")
 	  (cons #`",|skel|/test/test.scm.in" "test/test.scm.in")
+	  (cons #`",|skel|/plugins/proj.scm" #`"plugins/,|proj|.scm")
 	  (cons #`",|skel|/AUTHORS" "AUTHORS")
 	  (cons #`",|skel|/ChangeLog" "ChangeLog")
 	  (cons #`",|skel|/DIST" "DIST")
@@ -112,7 +114,7 @@
      #/%%_PROJECT_NAME_UP_%%/
      replace-creator
      (lambda (match seed)
-       (string-append seed proj))
+       (string-append seed (string-upcase proj)))
      seed line))
   (define (replace-proj line seed)
     (regexp-fold

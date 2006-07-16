@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: $
+;; $Id: proj.kahua,v 1.1.2.2 2006/07/16 16:16:55 cut-sea Exp $
 ;;
 (load "%%_PROJECT_NAME_%%/version.kahua")
 
@@ -31,7 +31,7 @@
 ;
 
 (define-entry (version)
-  (%%_PROJECT_NAME_%%-page-template (format "%%_PROJECT_NAME_%%: version ~a" *hello-version*)
+  (%%_PROJECT_NAME_%%-page-template (format "%%_PROJECT_NAME_%%: version ~a" *%%_PROJECT_NAME_%%-version*)
                        (a/cont: (@@: (cont greeting))
                                 "greeting")))
 
