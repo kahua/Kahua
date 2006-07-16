@@ -137,7 +137,7 @@ clean:
 # installation
 # NB: libexecdir is created for backward compatibility.  Eventually
 # we'll remove it.
-install: all
+install: all install-skel
 	$(INSTALL) -m 770 -d $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir) $(libexecdir) $(TMP_BASE_DIR)
 	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR) -S $(srcdir) $(SCMFILES)
 	$(INSTALL) -m 555 -T $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
@@ -146,6 +146,13 @@ install: all
 	fi
 	@if test ! -f $(localstatedir)/user.conf; then \
 	  $(INSTALL) -m 644 user.conf.sample $(localstatedir)/user.conf; \
+	fi
+
+install-skel:
+	mv ../skel/TEMPLATE_DIST ../skel/DIST
+	mv ../skel/TEMPLATE_DIST_EXCLUDE ../skel/DIST_EXCLUDE
+	@if test ! -d $(sysconfdir)/skel; then \
+	  cp -R ../skel $(sysconfdir)/skel; \
 	fi
 
 uninstall:
