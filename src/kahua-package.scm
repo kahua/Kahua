@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.1.2.2 2006/07/16 15:48:24 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.1.2.3 2006/07/16 16:16:55 cut-sea Exp $
 (use srfi-13)
 
 (use file.util)
@@ -95,22 +95,29 @@
 	     (proc-nomatch line seed)))))
   (define (replace-email line seed)
     (regexp-fold
-     #/##_EMAIL_ADDRESS_##/
+     #/%%_EMAIL_ADDRESS_%%/
      (lambda (a b) (string-append b a))
      (lambda (match seed)
        (string-append seed mail))
      seed line))
   (define (replace-creator line seed)
     (regexp-fold
-     #/##_CREATOR_NAME_##/
+     #/%%_CREATOR_NAME_%%/
      replace-email
      (lambda (match seed)
        (string-append seed creator))
      seed line))
+  (define (replace-proj-up line seed)
+    (regexp-fold
+     #/%%_PROJECT_NAME_UP_%%/
+     replace-creator
+     (lambda (match seed)
+       (string-append seed proj))
+     seed line))
   (define (replace-proj line seed)
     (regexp-fold
-     #/##_PROJECT_NAME_##/
-     replace-creator
+     #/%%_PROJECT_NAME_%%/
+     replace-proj-up
      (lambda (match seed)
        (string-append seed proj))
      seed line))

@@ -1,5 +1,5 @@
 #!/bin/sh
-MODULE=hello
+MODULE=%%_PROJECT_NAME_%%
 
 while [ $# -gt 0 ]; do
   case $1 in

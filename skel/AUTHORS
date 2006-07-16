@@ -1,5 +1,5 @@
-Authors of Kahua hello.
+Authors of Kahua %%_PROJECT_NAME_%%.
 
-hello   Nobuo Yamashita <nobsun@kahua.org>
+%%_PROJECT_NAME_%%   %%_CREATOR_NAME_%% <%%_EMAIL_ADDRESS_%%>
 
 AUTHORS ends here

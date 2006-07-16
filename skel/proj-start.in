@@ -5,4 +5,4 @@ else
     PORT=8080
 fi
 
-(kahua-spvr -c ###HELLO_INPLACE###/hello.conf -H $PORT -l - &)
+(kahua-spvr -c ###%%_PROJECT_NAME_UP_%%_INPLACE###/%%_PROJECT_NAME_%%.conf -H $PORT -l - &)

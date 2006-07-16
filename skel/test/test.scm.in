@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp; mode: scheme -*-
-;; test hello script.
-;; $Id: test.scm.in,v 1.2 2005/08/15 22:13:28 nobsun Exp $
+;; test %%_PROJECT_NAME_%% script.
+;; $Id: $
 
 (use gauche.test)
 (use file.util)
@@ -11,7 +11,7 @@
 (use kahua.test.xml)
 (use kahua.test.worker)
 
-(test-start "hello")
+(test-start "%%_PROJECT_NAME_%%")
 
 (define GOSH "##GOSH##")
 
@@ -20,22 +20,22 @@
 (sys-mkdir "_work" #o755)
 (sys-mkdir "_work/plugins" #o755)
 
-(copy-file "../plugins/hello.scm"  "_work/plugins/hello.scm")
+(copy-file "../plugins/%%_PROJECT_NAME_%%.scm"  "_work/plugins/%%_PROJECT_NAME_%%.scm")
 
-(define *config* "../hello.conf")
+(define *config* "../%%_PROJECT_NAME_%%.conf")
 (kahua-init *config*)
 
 ;;------------------------------------------------------------
-;; Run hello
-(test-section "kahua-server hello.kahua")
+;; Run %%_PROJECT_NAME_%%
+(test-section "kahua-server %%_PROJECT_NAME_%%.kahua")
 
 (with-worker
  (w `(,GOSH "-I.." "-I##KAHUA_LIB##" "kahua-server.scm" "-c" ,*config*
-            "../hello/hello.kahua"))
+            "../%%_PROJECT_NAME_%%/%%_PROJECT_NAME_%%.kahua"))
 
- (test* "run hello.kahua" #t (worker-running? w))
+ (test* "run %%_PROJECT_NAME_%%.kahua" #t (worker-running? w))
 
- (test* "hello"
+ (test* "%%_PROJECT_NAME_%%"
         '(html (head (title "Hello, world!"))
                (body (h1 "Hello, world!")
                      (a (@ (href ?&)) "version")))
@@ -43,8 +43,8 @@
         (make-match&pick w))
 
  (test* "version"
-       '(html (head (title "Hello: version ##HELLO_VERSION##"))
-              (body (h1 "Hello: version ##HELLO_VERSION##")
+       '(html (head (title "%%_PROJECT_NAME_%%: version ##%%_PROJECT_NAME_UP_%%_VERSION##"))
+              (body (h1 "%%_PROJECT_NAME_%%: version ##%%_PROJECT_NAME_UP_%%_VERSION##")
                     (a ?@ ?*)))
        (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
        (make-match&pick w))
