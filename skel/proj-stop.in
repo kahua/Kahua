@@ -1,0 +1,4 @@
+#!/bin/sh
+
+kahua-admin -c ###HELLO_INPLACE###/hello.conf shutdown > /dev/null 2>&1
+

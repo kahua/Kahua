@@ -1,0 +1,10 @@
+;; -*- coding: euc-jp; mode: scheme -*-
+;;
+;; $Id: hello.conf.in,v 1.2 2005/09/21 11:10:37 shibata Exp $
+
+(make <kahua-config>
+  :sockbase             "unix:###HELLO_INPLACE_SOCKETBASE###"
+  :working-directory    "###HELLO_INPLACE_WORKING###"
+  :static-document-path "###HELLO_INPLACE_DOCPATH###"
+  :static-document-url  "/doc"
+  )

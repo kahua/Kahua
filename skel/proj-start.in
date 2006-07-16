@@ -1,0 +1,8 @@
+#!/bin/sh
+if [ -n "$1" ]; then
+    PORT=$1
+else
+    PORT=8080
+fi
+
+(kahua-spvr -c ###HELLO_INPLACE###/hello.conf -H $PORT -l - &)

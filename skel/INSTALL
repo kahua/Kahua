@@ -1,0 +1,53 @@
+$Id: INSTALL,v 1.1 2005/07/11 04:50:03 nobsun Exp $
+
+hello : A simple dummy application of Kahua
+
+[Requirements]
+
+Gauche-0.8.5
+Kahua-0.3.2
+
+[Installation]
+
+  % autoconf
+  % ./configure [any options if you need]
+
+You have to give some options to specify the same install directories 
+as Kahua installed. For example if you gave --prefix=$HOME to 
+configure script of Kahua when you installed it, you have to give the 
+same option to kahua-web's configure script.
+
+  % ./configure --prefix=$HOME
+
+And then
+
+  % make
+  % make check
+  % make install
+
+Then, edit app-servers in the Kahua working directory to add "hello" entry.
+
+  (hello :argument () :run-by-default 0)
+
+If you want to allow non registered user to edit page, 
+give 'non-member-edit as a argument.
+
+  (hello :argument (non-member-edit) :run-by-default 0)
+
+[Invoke hello in place]
+
+You can invoke the hello before doing "make install", using
+"hello-start" script.  This script invoke hello in the kahua-spvr
+with test HTTP direct mode on 8080 port.  You can also use
+"hello-stop" to stop process invoked by "hello-start"
+
+[Information]
+
+You can find some hello's information at the Kahua.org site.
+
+Sorry, it is now not updated.  Please participate and post your questions
+to the kahua-dev mailing list.
+
+http://www.kahua.org/cgi-bin/kahua.cgi/kahua-web/show/info/Mailing%20List
+
+

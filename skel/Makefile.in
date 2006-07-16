@@ -1,0 +1,109 @@
+# Makefile for hello
+# $Id: Makefile.in,v 1.7 2006/05/13 05:04:02 cut-sea Exp $
+
+package	          = hello
+kahua		  = kahua
+SHELL             = @SHELL@
+prefix            = @prefix@
+exec_prefix       = @exec_prefix@
+bindir            = @bindir@/$(kahua)
+sbindir           = @sbindir@/$(kahua)
+libexecdir	  = @libexecdir@/$(kahua)
+datadir		  = @datadir@/$(kahua)
+sysconfdir        = @sysconfdir@/$(kahua)
+sharedstatedir    = @sharedstatedir@/$(kahua)
+localstatedir     = @localstatedir@/$(kahua)
+libdir            = @libdir@/$(kahua)
+includedir        = @includedir@/$(kahua)
+oldincludedir     = @oldincludedir@/$(kahua)
+infodir           = @infodir@/$(kahua)
+mandir            = @mandir@/$(kahua)
+srcdir            = @srcdir@
+VPATH             = $(srcdir)
+top_builddir      = @top_builddir@
+top_srcdir        = @top_srcdir@
+
+DESTDIR  =
+
+GOSH = @GOSH@
+INSTALL = @INSTALL@
+KAHUA_INSTALL = @KAHUA_INSTALL@
+KAHUA_WORKING = $(localstatedir)
+KAHUA_LIB     = $(libdir)
+
+# specify -c ../kahua.conf etc. to give an alternative conf file
+KAHUACONFIG = -c $(sysconfdir)/kahua.conf
+
+HELLO_INPLACE = $(shell pwd)
+
+HELLO_VERSION = $(shell cat $(top_srcdir)/VERSION)
+HELLO_WORKING = $(HELLO_INPLACE)
+HELLOCONFIG = -c $(HELLO_INPLACE)/hello.conf
+
+SCRIPTS	= hello-start hello-stop
+
+SCRIPTFILES = hello/hello.kahua \
+	      hello/version.kahua
+
+STATICFILES = hello/hello.css
+
+SOURCEDIR   = hello
+PLUGINDIR   = plugins
+PLUGINFILE  = hello.scm
+
+
+
+CONFIG_GENERATED = Makefile hello.conf test/test.scm config.log config.status autom4*.cache
+
+.PHONY: all check clean distclean install maintainer-clean
+
+all:	test/test.scm $(SCRIPTS) hello/version.kahua hello.conf
+	-rm -rf tmp
+	mkdir tmp
+	test -L checkout || ln -s . checkout
+
+hello-start: hello-start.in
+	sed -e "s@###HELLO_INPLACE###@$(HELLO_INPLACE)@" $< > $@
+	chmod +x $@
+
+hello-stop: hello-stop.in
+	sed -e "s@###HELLO_INPLACE###@$(HELLO_INPLACE)@" $< > $@
+	chmod +x $@
+
+test/test.scm:	test/test.scm.in
+	sed -e "s@##GOSH##@$(GOSH)@" -e "s@##KAHUA_WORKING##@$(KAHUA_WORKING)@" -e "s@##KAHUA_LIB##@$(KAHUA_LIB)@" -e "s@##HELLO_VERSION##@$(HELLO_VERSION)@" $< > $@
+
+hello/version.kahua: hello/version.kahua.in
+	sed -e "s@###HELLO_VERSION###@$(HELLO_VERSION)@" $< > $@
+
+hello.conf: hello.conf.in
+	sed -e "s@###HELLO_INPLACE_SOCKETBASE###@$(HELLO_INPLACE)/tmp@" -e "s@###HELLO_INPLACE_WORKING###@$(HELLO_INPLACE)@" -e "s@###HELLO_INPLACE_DOCPATH###@$(HELLO_INPLACE)@" $< > $@
+
+check:  all
+	rm -f test/test.log
+	cd test; $(GOSH) -I$(KAHUA_LIB) ./test.scm > test.log
+
+clean:
+	rm -rf core *~ hello/*~ test/*~ test/test.log $(SCRIPTS) checkout
+
+install: 
+	$(KAHUA_INSTALL) $(KAHUACONFIG) -t script $(SCRIPTFILES)
+	$(KAHUA_INSTALL) $(KAHUACONFIG) -t script --no-overwrite $(LOCALSCRIPTFILES)
+	$(KAHUA_INSTALL) $(KAHUACONFIG) -t static --no-overwrite $(STATICFILES)
+	$(KAHUA_INSTALL) $(KAHUACONFIG) -t plugin -r $(PLUGINFILE) \
+                                        $(PLUGINDIR)/$(PLUGINFILE)
+	for f in $(SCRIPTS); do \
+	  $(INSTALL) -m 555 $$f $(bindir)/$$f;\
+	done
+
+uninstall :
+	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t script $(SCRIPTFILES)
+	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t static $(STATICFILES)
+	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t plugin -r $(PLUGINFILE) \
+                                        $(PLUGINDIR)/$(PLUGINFILE)
+
+distclean: clean
+	-rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	-rm -rf $(CONFIG_GENERATED) configure VERSION DIST_EXCLUDE_X
