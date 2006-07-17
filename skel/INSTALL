@@ -1,11 +1,11 @@
-$Id: INSTALL,v 1.1 2005/07/11 04:50:03 nobsun Exp $
+$Id: $
 
-hello : A simple dummy application of Kahua
+%%_PROJECT_NAME_%% : A simple dummy application of Kahua
 
 [Requirements]
 
-Gauche-0.8.5
-Kahua-0.3.2
+Gauche-0.8.7
+Kahua-0.4.1
 
 [Installation]
 
@@ -25,25 +25,25 @@ And then
   % make check
   % make install
 
-Then, edit app-servers in the Kahua working directory to add "hello" entry.
+Then, edit app-servers in the Kahua working directory to add "%%_CREATOR_NAME_%%" entry.
 
-  (hello :argument () :run-by-default 0)
+  (%%_PROJECT_NAME_%% :argument () :run-by-default 0)
 
 If you want to allow non registered user to edit page, 
 give 'non-member-edit as a argument.
 
-  (hello :argument (non-member-edit) :run-by-default 0)
+  (%%_PROJECT_NAME_%% :argument (non-member-edit) :run-by-default 0)
 
-[Invoke hello in place]
+[Invoke %%_PROJECT_NAME_%% in place]
 
-You can invoke the hello before doing "make install", using
-"hello-start" script.  This script invoke hello in the kahua-spvr
+You can invoke the %%_PROJECT_NAME_%% before doing "make install", using
+"%%_PROJECT_NAME_%%-start" script.  This script invoke %%_PROJECT_NAME_%% in the kahua-spvr
 with test HTTP direct mode on 8080 port.  You can also use
-"hello-stop" to stop process invoked by "hello-start"
+"%%_PROJECT_NAME_%%-stop" to stop process invoked by "%%_PROJECT_NAME_%%-start"
 
 [Information]
 
-You can find some hello's information at the Kahua.org site.
+You can find some %%_PROJECT_NAME_%%'s information at the Kahua.org site.
 
 Sorry, it is now not updated.  Please participate and post your questions
 to the kahua-dev mailing list.
