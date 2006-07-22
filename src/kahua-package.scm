@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.1.2.6 2006/07/22 14:33:27 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.1.2.7 2006/07/22 15:26:18 cut-sea Exp $
 (use srfi-13)
 
 (use file.util)
@@ -81,6 +81,8 @@
 		      (else (display (replace ln proj creator mail) out)
 			    (newline out)
 			    (lp (read-line in))))))))))
+    (sys-mkdir proj #o755)
+    (sys-chdir proj)
     (for-each (lambda (pair)
 		(make-directory* (cdr pair)))
 	      (gen-src&dst-directory proj))
