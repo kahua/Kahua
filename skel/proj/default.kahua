@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: default.kahua,v 1.1.2.1 2006/07/22 14:33:27 cut-sea Exp $
+;; $Id: default.kahua,v 1.1.2.2 2006/07/22 14:41:00 cut-sea Exp $
 ;;
 
 ;
@@ -27,7 +27,7 @@
 ; site title
 (define *site-title* "%%_PROJECT_NAME_%%")
 ; site legal name
-(define *site-name* "%%_PROJECT_NAME%%")
+(define *site-name* "%%_PROJECT_NAME_%%")
 ; site email
 (define *site-email-address* "%%_EMAIL_ADDRESS_%%")
 
