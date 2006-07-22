@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.66.2.3 2006/07/11 09:48:34 bizenn Exp $
+;; $Id: server.scm,v 1.66.2.4 2006/07/22 13:35:54 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -337,10 +337,12 @@
 ;;
 ;;  Like kahua-context-ref, but retrieves multiple values as a list.
 ;;  It returns '() if the data corresponding to the key isn't found.
+;;  But at GET REQUEST, It returns #f.
 
 (define (kahua-context-ref* key . maybe-default)
   (or (apply assoc-ref (kahua-current-context) key maybe-default)
-      '()))
+      (cond ((equal? (kahua-meta-ref "REQUEST_METHOD") "GET") #f)
+	    (else '()))))
 
 ;; KAHUA-LOCAL-SESSION-REF var
 ;;
