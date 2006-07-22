@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: validator.kahua,v 1.1.2.1 2006/07/22 14:33:27 cut-sea Exp $
+;; $Id: validator.kahua,v 1.1.2.2 2006/07/22 16:13:41 cut-sea Exp $
 ;;
 
 ;
@@ -38,10 +38,16 @@
 	    ((keyword? (car r)) (error "Illegal Validator, No such keyword supported."))
 	    (else (%sep-mvkeys v k (cons (car r) m) (cdr r)))))
     (%sep-vars '() '() '() vars-list))
+  (define (get-request?)
+    (equal? (kahua-meta-ref "REQUEST_METHOD") "GET"))
   (define (make-binds keys mvkeys)
     (append
-     (map (lambda (v) `(,v (kahua-context-ref ,v))) keys)
-     (map (lambda (v) `(,v (kahua-context-ref* ,v))) mvkeys)))
+     (map (lambda (v)
+	    `(,v (kahua-context-ref ,v)))
+	  keys)
+     (map (lambda (v)
+	    `(,v (kahua-context-ref* ,v (if (,get-request?) #f '()))))
+	  mvkeys)))
   (define (default-predicate keys mvkeys)
     (cons 'and
 	  (append (map (lambda (v) `(not ,v)) keys)
