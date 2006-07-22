@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.1.2.5 2006/07/16 22:56:05 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.1.2.6 2006/07/22 14:33:27 cut-sea Exp $
 (use srfi-13)
 
 (use file.util)
@@ -32,6 +32,13 @@
   (define (gen-src&dst-files proj)
     (list (cons #`",|skel|/proj/proj.css" #`",|proj|/,|proj|.css")
 	  (cons #`",|skel|/proj/proj.kahua" #`",|proj|/,|proj|.kahua")
+	  (cons #`",|skel|/proj/base.kahua" #`",|proj|/base.kahua")
+	  (cons #`",|skel|/proj/default.kahua" #`",|proj|/default.kahua")
+	  (cons #`",|skel|/proj/page.kahua" #`",|proj|/page.kahua")
+	  (cons #`",|skel|/proj/pcont-page.kahua" #`",|proj|/pcont-page.kahua")
+	  (cons #`",|skel|/proj/session.kahua" #`",|proj|/session.kahua")
+	  (cons #`",|skel|/proj/utility.kahua" #`",|proj|/utility.kahua")
+	  (cons #`",|skel|/proj/validator.kahua" #`",|proj|/validator.kahua")
 	  (cons #`",|skel|/proj/version.kahua.in" #`",|proj|/version.kahua.in")
 	  (cons #`",|skel|/test/test.scm.in" "test/test.scm.in")
 	  (cons #`",|skel|/plugins/proj.scm" #`"plugins/,|proj|.scm")

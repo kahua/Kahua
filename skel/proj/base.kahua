@@ -1,0 +1,59 @@
+;; -*- coding: euc-jp; mode: kahua -*-
+;;
+;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: base.kahua,v 1.1.2.1 2006/07/22 14:33:27 cut-sea Exp $
+;;
+
+;
+; <auto-update-meta>
+;
+(define-class <auto-update-meta> (<class>)
+  ())
+
+(define-method compute-get-n-set ((class <auto-update-meta>) slot)
+  (let1 auto? (slot-definition-option slot :auto-update #f)
+    (if auto?
+	(let* ((acc (compute-slot-accessor class slot (next-method)))
+	       (getter (lambda (o) (slot-ref-using-accessor o acc)))
+	       (bound? (lambda (o) (slot-bound-using-accessor? o acc)))
+	       (setter (lambda (o v)
+			 (cond ((and (bound? o) (not (kahua-wrapper? v)))
+				(slot-set-using-accessor! o acc v)
+				(set! (ref o 'mtime) (current-date)))
+			       (else
+				(slot-set-using-accessor! o acc v))))))
+	  (list getter setter bound? #t))
+	(next-method))))
+
+(define-class <auto-update-mixin> ()
+  ()
+  :metaclass <auto-update-meta>)
+
+;
+; <base>
+;
+(define-class <base> (<auto-update-mixin> <kahua-persistent-base>)
+  ((%ctime       :allocation :persistent :init-keyword :%ctime
+		 :init-form (time->seconds (date->time-utc (current-date)))
+		 :auto-update #f :accessor %ctime-of)
+   (ctime        :allocation :virtual :getter ctime-of
+		 :slot-ref (lambda (o)
+			     (time-utc->date (seconds->time (ref o '%ctime))))
+		 :auto-update #f)
+   (%mtime       :allocation :persistent :init-keyword :%mtime
+		 :init-form (time->seconds (date->time-utc (current-date)))
+		 :auto-update #f :accessor %mtime-of)
+   (mtime        :allocation :virtual :accessor mtime-of
+		 :slot-ref (lambda (o)
+			     (time-utc->date (seconds->time (ref o '%mtime))))
+		 :slot-set! (lambda (o d)
+			      (set! (ref o '%mtime)
+				    (time->seconds (date->time-utc d))))
+		 :auto-update #f)
+   (delete       :allocation :persistent :init-keyword :delete
+		 :init-value #f :accessor delete-of :auto-update #t)
+   ))
+
+

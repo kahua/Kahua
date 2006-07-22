@@ -1,5 +1,5 @@
 # Makefile for %%_PROJECT_NAME_%%
-# $Id: Makefile.in,v 1.1.2.1 2006/07/16 13:13:08 cut-sea Exp $
+# $Id: Makefile.in,v 1.1.2.2 2006/07/16 16:16:55 cut-sea Exp $
 
 package	          = %%_PROJECT_NAME_%%
 kahua		  = kahua
@@ -43,6 +43,13 @@ KAHUACONFIG = -c $(sysconfdir)/kahua.conf
 SCRIPTS	= %%_PROJECT_NAME_%%-start %%_PROJECT_NAME_%%-stop
 
 SCRIPTFILES = %%_PROJECT_NAME_%%/%%_PROJECT_NAME_%%.kahua \
+              %%_PROJECT_NAME_%%/base.kahua \
+              %%_PROJECT_NAME_%%/default.kahua \
+              %%_PROJECT_NAME_%%/page.kahua \
+              %%_PROJECT_NAME_%%/pcont-page.kahua \
+              %%_PROJECT_NAME_%%/session.kahua \
+              %%_PROJECT_NAME_%%/utility.kahua \
+              %%_PROJECT_NAME_%%/validator.kahua \
 	      %%_PROJECT_NAME_%%/version.kahua
 
 STATICFILES = %%_PROJECT_NAME_%%/%%_PROJECT_NAME_%%.css

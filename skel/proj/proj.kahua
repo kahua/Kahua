@@ -3,9 +3,25 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: proj.kahua,v 1.1.2.2 2006/07/16 16:16:55 cut-sea Exp $
+;; $Id: proj.kahua,v 1.1.2.3 2006/07/16 16:50:29 cut-sea Exp $
 ;;
+
 (load "%%_PROJECT_NAME_%%/version.kahua")
+(load "%%_PROJECT_NAME_%%/default.kahua")
+(load "%%_PROJECT_NAME_%%/utility.kahua")
+(load "%%_PROJECT_NAME_%%/validator.kahua")
+(load "%%_PROJECT_NAME_%%/session.kahua")
+
+;; page template
+(load "%%_PROJECT_NAME_%%/page.kahua")
+
+;; partcont page
+(load "%%_PROJECT_NAME_%%/pcont-page.kahua")
+
+;; classes and methods
+(load "%%_PROJECT_NAME_%%/base.kahua")
+
+;; You should add loading files below here.
 
 ;
 ; %%_PROJECT_NAME_%%-page-template
