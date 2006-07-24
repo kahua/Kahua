@@ -48,6 +48,7 @@ SH_SCRIPTS  = kahua-spvr    \
               kahua-admin   \
               kahua-install \
               kahua-shell \
+	      kahua-httpd \
               kahua-config \
               kahua-package
 
@@ -57,6 +58,7 @@ SCM_SCRIPTS  = kahua-spvr.scm    \
                kahua-shell.scm   \
                kahua-server.scm  \
                kahua-keyserv.scm \
+	       kahua-httpd.scm   \
                kahua-config.scm  \
                kahua-package.scm
 
@@ -104,6 +106,8 @@ kahua-config :
 kahua-package :
 	$(MAKE_SH_SCRIPT) kahua-package
 
+kahua-httpd :
+	$(MAKE_SH_SCRIPT) kahua-httpd
 
 kahua/config.scm: kahua/config.scm.in
 	test ! -f $@ || chmod +w $@

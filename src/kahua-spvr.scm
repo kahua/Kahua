@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17.2.10 2006/07/11 07:28:50 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.11 2006/07/24 15:55:08 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -277,6 +277,32 @@
       (process-wait (ref serv 'process)))))
 
 ;;;=================================================================
+;;; Httpd management
+;;;
+
+(define (start-httpd spvr spec)
+  (let* ((m (#/^\d+$/ spec))
+	 (cmd (script-command spvr "kahua-httpd.scm"
+			      (cond-list
+			       ((kahua-config-file)
+				=> (pa$ list "-c"))
+			       ((ref (kahua-config) 'user-mode)
+				=> (pa$ list "-user"))
+			       (#t (list "-l" (kahua-logpath "kahua-httpd.log")))
+			       ((and m (m 0))
+				=> (pa$ list "-p"))
+			       ((not m) '(list spec)))))
+	 (httpd (run-piped-cmd cmd)))
+    (set! (ref spvr 'httpd) httpd)
+    (close-input-port (process-output httpd))))
+
+(define (stop-httpd spvr)
+  (and-let* ((httpd (ref spvr 'httpd)))
+    (set! (ref spvr 'httpd) #f)
+    (process-send-signal httpd SIGHUP)
+    (process-wait httpd)))
+
+;;;=================================================================
 ;;; Worker management
 ;;;
 
@@ -418,7 +444,7 @@
 	(and-let* ((w (find-worker-by-process p))
 		   (wtype (type-of w)))
 	  (%unregister-worker spvr wtype w)
-	  (log-worker-action "unexpceted terminated worker" w)
+	  (log-worker-action "unexpected terminated worker" w)
 	  (when (kahua-auto-restart)
 	    (let1 w (%run-worker spvr wtype)
 	      (log-worker-action "restarted terminated worker type:" w)))
@@ -801,6 +827,7 @@
         (when (is-a? sockaddr <sockaddr-un>)
           (sys-chmod (sockaddr-name sockaddr) #o770))
         (start-keyserv spvr)
+	(when httpd (start-httpd spvr httpd))
         (log-format "[spvr] started at ~a" sockaddr)
 	(let1 ret
 	    (call/cc
@@ -825,6 +852,7 @@
 	  (nuke-all-workers spvr)
 	  (wait-all tpool)
 	  (finish-all tpool)
+	  (stop-httpd spvr)
 	  (stop-keyserv spvr)
 	  (log-format "[spvr] exitting")
 	  (sys-unlink (kahua-pidpath))

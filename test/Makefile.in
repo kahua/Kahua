@@ -27,7 +27,7 @@ SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
 	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm \
 	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
 	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
-	spvr.scm spvr-httpd.scm test-xml.scm user.scm wiki-iki.scm \
+	spvr.scm httpd.scm test-xml.scm user.scm wiki-iki.scm \
 	worker.scm query.scm rollback.scm entry-method.scm redirectcont.scm
 
 SCMFILES2 = shell.scm usermode.scm
@@ -49,7 +49,7 @@ TESTS = test-xml persistence rollback entry-method \
         server kahua-dbm worker redirectcont \
 	define-method-rule kahua-call-with-current-context \
 	lambdabooks wiki-iki nqueen foldlist \
-	spvr spvr-httpd admin developer shell usermode sandbox plugin query
+	spvr httpd admin developer shell usermode sandbox plugin query
 
 CONFIG_GENERATED = Makefile
 
@@ -126,9 +126,8 @@ foldlist :
 spvr :
 	@gosh -I../src ./spvr.scm >> test.log
 
-spvr-httpd :
-#	@gosh -I../src ./spvr-httpd.scm >> test.log
-	@echo "Skip spvr-httpd test."
+httpd :
+	@gosh -I../src ./httpd.scm >> test.log
 
 admin:
 	@gosh -I../src ./admin.scm >> test.log

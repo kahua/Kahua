@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.66.2.5 2006/07/22 15:55:20 cut-sea Exp $
+;; $Id: server.scm,v 1.66.2.6 2006/07/24 15:55:08 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -84,13 +84,6 @@
 ;; internally keep explicitly specified worker uri
 (define (worker-uri)
   (kahua-context-ref "x-kahua-worker-uri"))
-
-;; utility
-(define (ref-car cmp lis item . maybe-default)
-  (cond ((assoc item lis cmp) => cadr)
-        (else (get-optional maybe-default #f))))
-(define assq-ref-car  (pa$ ref-car eq?))
-(define assoc-ref-car (pa$ ref-car equal?))
 
 ;; Context
 ;;  A context is established every time the control is passed from
@@ -325,7 +318,7 @@
 ;;  Key should be in upper case plus underscore.
 
 (define (kahua-meta-ref key . maybe-default)
-  (apply assoc-ref
+  (apply assoc-ref-car
          (kahua-context-ref "x-kahua-metavariables" '()) key maybe-default))
 
 
