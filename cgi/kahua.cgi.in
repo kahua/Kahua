@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.36.2.2 2006/07/24 15:55:07 bizenn Exp $
+;; $Id: kahua.cgi.in,v 1.36.2.3 2006/07/24 16:22:27 bizenn Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -80,10 +80,15 @@
     "SERVER_SOFTWARE"
     ))
 
+(define (cookie-path)
+  (or (*worker-uri*)
+      (sys-dirname
+       (or (cgi-get-metavariable "SCRIPT_NAME") "/"))))
+
 (define (metavariable-list)
   (filter-map (lambda (meta)
                 (let1 meta-var (cgi-get-metavariable meta)
-                  (and meta-var (cons meta meta-var))))
+                  (and meta-var (list meta meta-var))))
               *metavariables*))
 
 (define (kcv value)
@@ -111,9 +116,7 @@
  	  (set-cookie!
            (construct-cookie-string
             `(("x-kahua-sgsid" ,state
-               :path ,(or (*worker-uri*)
-                       (sys-dirname
-                        (or (cgi-get-metavariable "SCRIPT_NAME") "/")))))))
+               :path ,(cookie-path)))))
 	  body))))
 
 ;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
@@ -303,9 +306,7 @@
                      (set-cookie!
                       (construct-cookie-string
                        `(("kahua-passwd" ,(base64-encode-string passwd)
-                          :path ,(or (*worker-uri*)
-                                     (sys-dirname
-                                      (or (cgi-get-metavariable "SCRIPT_NAME") "/")))))))
+                          :path ,(cookie-path)))))
                      (send-reply params))
                  (unauthorized-form)
                  ))
