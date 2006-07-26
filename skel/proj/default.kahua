@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: default.kahua,v 1.1.2.2 2006/07/22 14:41:00 cut-sea Exp $
+;; $Id: default.kahua,v 1.1.2.3 2006/07/26 15:47:28 cut-sea Exp $
 ;;
 
 ;
@@ -30,6 +30,9 @@
 (define *site-name* "%%_PROJECT_NAME_%%")
 ; site email
 (define *site-email-address* "%%_EMAIL_ADDRESS_%%")
+; for double click with same value posted.
+(define *click-interval-time* 60)
+
 
 ;
 ; Application specific setting.
