@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.17.2.11 2006/07/24 15:55:08 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.17.2.12 2006/07/26 03:56:29 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -291,7 +291,7 @@
 			       (#t (list "-l" (kahua-logpath "kahua-httpd.log")))
 			       ((and m (m 0))
 				=> (pa$ list "-p"))
-			       ((not m) '(list spec)))))
+			       ((not m) (list spec)))))
 	 (httpd (run-piped-cmd cmd)))
     (set! (ref spvr 'httpd) httpd)
     (close-input-port (process-output httpd))))
