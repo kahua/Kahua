@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.50.2.13 2006/07/11 07:28:50 bizenn Exp $
+;; $Id: persistence.scm,v 1.50.2.14 2006/07/26 15:59:00 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -44,6 +44,11 @@
 	  write-kahua-instance
 	  kahua-db-write-id-counter
 	  make-kahua-collection
+
+	  ;; for Check and fix database consistency.
+	  check-kahua-db-classcount
+	  check-kahua-db-idcount
+	  load-all-kahua-tables
           )
   )
 (select-module kahua.persistence)
@@ -1248,5 +1253,15 @@
         (let ((acc (class-slot-accessor new-class slot)))
           (slot-initialize-using-accessor! obj acc '()))))))
 
+;; for check and fix database consistency.
+
+(define-method check-kahua-db-classcount ((db <kahua-db>) . _)
+  (kahua-override-error "check-kahua-db-classcount"))
+
+(define-method check-kahua-db-idcount ((db <kahua-db>) . _)
+  (kahua-override-error "check-kahua-db-idcount"))
+
+(define-method load-all-kahua-tables ((db <kahua-db>) . _)
+  (kahua-override-error "load-all-kahua-tables"))
 
 (provide "kahua/persistence")

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.1.2.8 2006/07/11 07:28:51 bizenn Exp $
+;; $Id: dbi.scm,v 1.1.2.9 2006/07/26 15:59:01 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use kahua.util)
@@ -26,7 +26,8 @@
 	  make-kahua-collection
 	  class->table-name
 	  class-table-next-suffix
-	  with-transaction))
+	  with-transaction
+	  ))
 
 (select-module kahua.persistence.dbi)
 
@@ -248,5 +249,61 @@
 	      :instances (filter-map1 (lambda (row) (func (%find-kahua-instance row))) r)))
 	  (make <kahua-collection> :instances '())
 	  ))))
+
+;;=================================================================
+;; Database Consistency Check and Fix
+;;
+
+(define-method check-kahua-db-classcount ((db <kahua-db-dbi>) . maybe-do-fix?)
+  (define-method max-table-name-prefix ((db <kahua-db-dbi>))
+    (let* ((conn (connection-of db))
+	   (r (dbi-do conn "select table_name from kahua_db_classes" '())))
+      (apply max (map (lambda (row)
+			(rxmatch-case (dbi-get-value row 0)
+			  (#/^kahua_(\d+)$/ (#f d) (x->integer d))
+			  (else -1)))
+		      r))))
+  (let* ((do-fix? (get-optional maybe-do-fix? #f))
+	 (conn (connection-of db))
+	 (cc (x->integer (car (map (cut dbi-get-value <> 0)
+				   (dbi-do conn "select value from kahua_db_classcount" '())))))
+	 (max-prefix (max-table-name-prefix db)))
+    (or (= cc max-prefix)
+	(and do-fix?
+	     (dbi-do conn "update kahua_db_classcount set value = ?" '() max-prefix)))))
+
+(define-method load-all-kahua-tables ((db <kahua-db-dbi>) ht)
+  (define-method enumerate-kahua-class-table ((db <kahua-db-dbi>))
+    (map (lambda (row)
+	   (list (dbi-get-value row 0) (dbi-get-value row 1)))
+	 (dbi-do (connection-of db) "select class_name, table_name from kahua_db_classes" '())))
+  (define-method load-kahua-table ((db <kahua-db-dbi>) ht class table)
+    (let1 class-sym (string->symbol class)
+      (for-each (lambda (row)
+		  (hash-table-push! ht (dbi-get-value row 0) (cons class-sym (dbi-get-value row 1))))
+		(dbi-do (connection-of db)
+			(format "select keyval, dataval from ~a" table) '()))))
+  (for-each (lambda (class&table)
+	      (apply load-kahua-table db ht class&table))
+	    (enumerate-kahua-class-table db))
+  ht)
+
+(define-method max-kahua-key-from-idcount ((db <kahua-db-dbi>))
+  (let1 ht (load-all-kahua-tables db (make-hash-table 'equal?))
+    (hash-table-fold ht (lambda (k v r)
+			  (rxmatch-case k
+			    (#/^\d+$/ (d) (max (x->integer d) r))
+			    (else         r)))
+		     -1)))
+
+(define-method check-kahua-db-idcount ((db <kahua-db-dbi>) . maybe-do-fix?)
+  (let* ((do-fix? (get-optional maybe-do-fix? #f))
+	 (conn (connection-of db))
+	 (ic (x->integer (car (map (cut dbi-get-value <> 0)
+				   (dbi-do conn "select value from kahua_db_idcount" '())))))
+	 (max-id (max-kahua-key-from-idcount db)))
+    (or (= ic max-id)
+	(and do-fix?
+	     (dbi-do conn "update kahua_db_idcount set value = ?" '() max-id)))))
 
 (provide "kahua/persistence/dbi")
