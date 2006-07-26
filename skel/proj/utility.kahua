@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: utility.kahua,v 1.1.2.1 2006/07/22 14:33:27 cut-sea Exp $
+;; $Id: utility.kahua,v 1.1.2.2 2006/07/26 15:16:08 cut-sea Exp $
 ;;
 
 ;
@@ -103,8 +103,20 @@
   (let-keywords* options ((loseless-voices :voiced #t)
                           (loseless-semivoices :semivoiced #t))
     (let* ((normal (make-table
-                    "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｧｨｩｪｫｬｭｮｯｰ､｡｢｣･"
-                    "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンァィゥェォャュョッー、。「」・"))
+                    (++ "ｱｲｳｴｵｶｷｸｹｺ"
+			"ｻｼｽｾｿﾀﾁﾂﾃﾄ"
+			"ﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ"
+			"ﾏﾐﾑﾒﾓﾔﾕﾖ"
+			"ﾗﾘﾙﾚﾛﾜｦﾝ"
+			"ｧｨｩｪｫｬｭｮｯｰ"
+			"､｡｢｣･")
+                    (++ "アイウエオカキクケコ"
+			"サシスセソタチツテト"
+			"ナニヌネノハヒフヘホ"
+			"マミムメモヤユヨ"
+			"ラリルレロワヲン"
+			"ァィゥェォャュョッー"
+			"、。「」・")))
            (voiced (make-table
                     "ｳｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾊﾋﾌﾍﾎ"
                     "ヴガギグゲゴザジズゼゾダヂヅデドバビブベボ"))
@@ -126,19 +138,28 @@
               (list->string result)
               (let ((c (car rev-str))
                     (rest (cdr rev-str)))
-                (cond ((eq? c #\ﾞ) (cond ((null? rest) (if voiced-loseless?
-                                                           (lp rest (cons #\゛ result))
-                                                           (lp rest result)))
-                                         ((hash-table-get voiced (car rest) #f) => (lambda (v) (lp (cdr rest) (cons v result))))
-                                         ((hash-table-get vs (car rest) voiced-loseless?) (lp rest (cons #\゛ result)))
-                                         (else (lp rest result))))
-                      ((eq? c #\ﾟ) (cond ((null? rest) (if semivoiced-loseless?
-                                                           (lp rest (cons #\゜ result))
-                                                           (lp rest result)))
-                                         ((hash-table-get semivoiced (car rest) #f) => (lambda (v) (lp (cdr rest) (cons v result))))
-                                         ((hash-table-get svs (car rest) semivoiced-loseless?) (lp rest (cons #\゜ result)))
-                                         (else (lp rest result))))
-                      ((hash-table-get normal c #f) => (lambda (v) (lp rest (cons v result))))
+                (cond ((eq? c #\ﾞ)
+		       (cond ((null? rest)
+			      (if voiced-loseless?
+				  (lp rest (cons #\゛ result))
+				  (lp rest result)))
+			     ((hash-table-get voiced (car rest) #f)
+			      => (lambda (v) (lp (cdr rest) (cons v result))))
+			     ((hash-table-get vs (car rest) voiced-loseless?)
+			      (lp rest (cons #\゛ result)))
+			     (else (lp rest result))))
+                      ((eq? c #\ﾟ)
+		       (cond ((null? rest)
+			      (if semivoiced-loseless?
+				  (lp rest (cons #\゜ result))
+				  (lp rest result)))
+			     ((hash-table-get semivoiced (car rest) #f)
+			      => (lambda (v) (lp (cdr rest) (cons v result))))
+			     ((hash-table-get svs (car rest) semivoiced-loseless?)
+			      (lp rest (cons #\゜ result)))
+			     (else (lp rest result))))
+                      ((hash-table-get normal c #f)
+		       => (lambda (v) (lp rest (cons v result))))
                       (else (lp rest (cons c result)))))))))))
 
 (define half-kana-sanitize (gen-kana-trans))
