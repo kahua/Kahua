@@ -102,6 +102,9 @@ kahua-install :
 kahua-shell :
 	$(MAKE_SH_SCRIPT) kahua-shell
 
+kahua-httpd :
+	$(MAKE_SH_SCRIPT) kahua-httpd
+
 kahua-dbutil :
 	$(MAKE_SH_SCRIPT) kahua-dbutil
 
