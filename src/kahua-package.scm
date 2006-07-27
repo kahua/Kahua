@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.1.2.7 2006/07/22 15:26:18 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.1.2.8 2006/07/27 14:16:54 cut-sea Exp $
 (use srfi-13)
 
 (use file.util)
@@ -34,6 +34,7 @@
 	  (cons #`",|skel|/proj/proj.kahua" #`",|proj|/,|proj|.kahua")
 	  (cons #`",|skel|/proj/base.kahua" #`",|proj|/base.kahua")
 	  (cons #`",|skel|/proj/default.kahua" #`",|proj|/default.kahua")
+	  (cons #`",|skel|/proj/debug-support.kahua" #`",|proj|/debug-support.kahua")
 	  (cons #`",|skel|/proj/page.kahua" #`",|proj|/page.kahua")
 	  (cons #`",|skel|/proj/pcont-page.kahua" #`",|proj|/pcont-page.kahua")
 	  (cons #`",|skel|/proj/session.kahua" #`",|proj|/session.kahua")

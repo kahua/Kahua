@@ -1,5 +1,5 @@
 # Makefile for %%_PROJECT_NAME_%%
-# $Id: Makefile.in,v 1.1.2.3 2006/07/22 14:33:27 cut-sea Exp $
+# $Id: Makefile.in,v 1.1.2.4 2006/07/27 05:31:50 bizenn Exp $
 
 package	          = %%_PROJECT_NAME_%%
 kahua		  = kahua
@@ -44,6 +44,7 @@ SCRIPTS	= %%_PROJECT_NAME_%%-start %%_PROJECT_NAME_%%-stop
 
 SCRIPTFILES = %%_PROJECT_NAME_%%/%%_PROJECT_NAME_%%.kahua \
               %%_PROJECT_NAME_%%/base.kahua \
+              %%_PROJECT_NAME_%%/debug-support.kahua \
               %%_PROJECT_NAME_%%/default.kahua \
               %%_PROJECT_NAME_%%/page.kahua \
               %%_PROJECT_NAME_%%/pcont-page.kahua \
