@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.66.2.6 2006/07/24 15:55:08 bizenn Exp $
+;; $Id: server.scm,v 1.66.2.7 2006/07/27 07:50:36 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -72,6 +72,13 @@
           )
   )
 (select-module kahua.server)
+
+(define-constant *default-charset*
+  (case (gauche-character-encoding)
+    ((utf-8)  'UTF-8)
+    ((euc-jp) 'EUC-JP)
+    ((sjis)   'Shift_JIS)
+    (else     #f)))
 
 ;; internally keep worker-id
 (define worker-id (make-parameter "dummy"))
@@ -1311,6 +1318,8 @@
 
 (add-interp! 'css interp-css)
 
+(define-constant *json-media-type* "application/x-javascript")
+
 (define-class <json-base> () ())
 (define-method x->json ((self <json-base>))
   (let* ((class (class-of self))
@@ -1327,8 +1336,10 @@
 
 (define (interp-json nodes context cont)
 
-  (define (write-str str)
-    (ces-convert (format "~s" str) (gauche-character-encoding) "utf-8"))
+;  (define (write-str str)
+;    (ces-convert (format "~s" str) (gauche-character-encoding) "utf-8"))
+
+  (define write-str (pa$ format "~s"))
 
   (define (write-ht vec)
     (list "{"
@@ -1373,7 +1384,10 @@
     (cont (list "(" (x->json (cadr nodes)) ")\n")
           (cons `("extra-headers"
                   ,(kahua-merge-headers
-                    headers '(("Content-Type" "text/javascript"))))
+                    headers `(("Content-Type"
+			       ,(if *default-charset*
+				    (format "~a; charset=~a" *json-media-type* *default-charset*)
+				    *json-media-type*)))))
                 context))))
 
 (add-interp! 'json interp-json)
