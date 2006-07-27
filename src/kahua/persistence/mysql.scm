@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.1.2.10 2006/07/10 14:41:08 bizenn Exp $
+;; $Id: mysql.scm,v 1.1.2.11 2006/07/27 05:31:50 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use kahua.persistence.dbi))
@@ -123,13 +123,17 @@
 	  (dbi-do conn *set-default-character-set* '(:pass-through #t))))
       (lambda ()
 	(guard (e ((<dbi-exception> e)
-		   (dbi-do conn (*create-kahua-db-idcount* db) '(:pass-through #t))
-		   (mysql-lock-table conn "kahua_db_idcount" "write")
-		   (dbi-do conn (*create-kahua-db-classes* db) '(:pass-through #t))
-		   (dbi-do conn (*create-kahua-db-classcount* db) '(:pass-through #t))
-		   (db-lock conn)
-		   (dbi-do conn *initialize-kahua-db-idcount* '(:pass-through #t))
-		   (dbi-do conn *initialize-kahua-db-classcount* '(:pass-through #t)))
+		   (guard (e (else #f))
+		     (dbi-do conn (*create-kahua-db-idcount* db) '(:pass-through #t))
+		     (mysql-lock-table conn "kahua_db_idcount" "write")
+		     (dbi-do conn *initialize-kahua-db-idcount* '(:pass-through #t)))
+		   (guard (e (else #f))
+		     (dbi-do conn (*create-kahua-db-classes* db) '(:pass-through #t)))
+		   (guard (e (else #f))
+		     (dbi-do conn (*create-kahua-db-classcount* db) '(:pass-through #t))
+		     (mysql-lock-table conn "kahua_db_classcount" "write")
+		     (dbi-do conn *initialize-kahua-db-classcount* '(:pass-through #t)))
+		   (db-lock conn))
 		  (else (raise e)))
 	  (db-lock conn))
 	(let1 r (dbi-do conn *select-kahua-db-classes* '(:pass-through #t))

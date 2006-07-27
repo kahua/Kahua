@@ -1,14 +1,14 @@
 # Makefile for %%_PROJECT_NAME_%%
-# $Id: Makefile.in,v 1.1.2.2 2006/07/16 16:16:55 cut-sea Exp $
+# $Id: Makefile.in,v 1.1.2.3 2006/07/22 14:33:27 cut-sea Exp $
 
 package	          = %%_PROJECT_NAME_%%
 kahua		  = kahua
 SHELL             = @SHELL@
 prefix            = @prefix@
 exec_prefix       = @exec_prefix@
-bindir            = @bindir@/$(kahua)
-sbindir           = @sbindir@/$(kahua)
-libexecdir	  = @libexecdir@/$(kahua)
+bindir            = @bindir@
+sbindir           = @sbindir@
+libexecdir	  = @libexecdir@
 datadir		  = @datadir@/$(kahua)
 sysconfdir        = @sysconfdir@/$(kahua)
 sharedstatedir    = @sharedstatedir@/$(kahua)
@@ -16,8 +16,8 @@ localstatedir     = @localstatedir@/$(kahua)
 libdir            = @libdir@/$(kahua)
 includedir        = @includedir@/$(kahua)
 oldincludedir     = @oldincludedir@/$(kahua)
-infodir           = @infodir@/$(kahua)
-mandir            = @mandir@/$(kahua)
+infodir           = @infodir@
+mandir            = @mandir@
 srcdir            = @srcdir@
 VPATH             = $(srcdir)
 top_builddir      = @top_builddir@

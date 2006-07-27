@@ -49,6 +49,7 @@ SH_SCRIPTS  = kahua-spvr    \
               kahua-install \
               kahua-shell \
 	      kahua-httpd \
+	      kahua-dbutil \
               kahua-config \
               kahua-package
 
@@ -59,6 +60,7 @@ SCM_SCRIPTS  = kahua-spvr.scm    \
                kahua-server.scm  \
                kahua-keyserv.scm \
 	       kahua-httpd.scm   \
+	       kahua-dbutil.scm  \
                kahua-config.scm  \
                kahua-package.scm
 
@@ -100,14 +102,14 @@ kahua-install :
 kahua-shell :
 	$(MAKE_SH_SCRIPT) kahua-shell
 
+kahua-dbutil :
+	$(MAKE_SH_SCRIPT) kahua-dbutil
+
 kahua-config :
 	$(MAKE_SH_SCRIPT) kahua-config
 
 kahua-package :
 	$(MAKE_SH_SCRIPT) kahua-package
-
-kahua-httpd :
-	$(MAKE_SH_SCRIPT) kahua-httpd
 
 kahua/config.scm: kahua/config.scm.in
 	test ! -f $@ || chmod +w $@
@@ -153,10 +155,10 @@ install: all install-skel
 	fi
 
 install-skel:
-	mv ../skel/TEMPLATE_DIST ../skel/DIST
-	mv ../skel/TEMPLATE_DIST_EXCLUDE ../skel/DIST_EXCLUDE
 	@if test ! -d $(sysconfdir)/skel; then \
 	  cp -R ../skel $(sysconfdir)/skel; \
+	  mv $(sysconfdir)/skel/TEMPLATE_DIST $(sysconfdir)/skel/DIST; \
+	  mv $(sysconfdir)/skel/TEMPLATE_DIST_EXCLUDE $(sysconfdir)/skel/DIST_EXCLUDE; \
 	fi
 
 uninstall:

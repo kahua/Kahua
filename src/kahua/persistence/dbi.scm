@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.1.2.9 2006/07/26 15:59:01 bizenn Exp $
+;; $Id: dbi.scm,v 1.1.2.10 2006/07/27 05:31:50 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use kahua.util)
@@ -268,9 +268,12 @@
 	 (cc (x->integer (car (map (cut dbi-get-value <> 0)
 				   (dbi-do conn "select value from kahua_db_classcount" '())))))
 	 (max-prefix (max-table-name-prefix db)))
-    (or (= cc max-prefix)
+    (or (and (= cc max-prefix) 'OK)
 	(and do-fix?
-	     (dbi-do conn "update kahua_db_classcount set value = ?" '() max-prefix)))))
+	     (begin
+	       (dbi-do conn "update kahua_db_classcount set value = ?" '() max-prefix)
+	       'FIXED))
+	'NG)))
 
 (define-method load-all-kahua-tables ((db <kahua-db-dbi>) ht)
   (define-method enumerate-kahua-class-table ((db <kahua-db-dbi>))
@@ -302,8 +305,11 @@
 	 (ic (x->integer (car (map (cut dbi-get-value <> 0)
 				   (dbi-do conn "select value from kahua_db_idcount" '())))))
 	 (max-id (max-kahua-key-from-idcount db)))
-    (or (= ic max-id)
+    (or (and (= ic max-id) 'OK)
 	(and do-fix?
-	     (dbi-do conn "update kahua_db_idcount set value = ?" '() max-id)))))
+	     (begin
+	       (dbi-do conn "update kahua_db_idcount set value = ?" '() max-id)
+	       'FIXED))
+	'NG)))
 
 (provide "kahua/persistence/dbi")
