@@ -1,0 +1,7 @@
+;; -*-scheme-*-
+;; Sample app-servers file.
+(
+;; (<type> :arguments (<arg> ...) :run-by-default <num>)
+;; See http://www.kahua.org/cgi-bin/index.cgi/kahua-spvr
+ (%%_PROJECT_NAME_%% :arguments () :run-by-default 1)
+)

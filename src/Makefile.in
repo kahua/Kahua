@@ -39,21 +39,30 @@ INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) \
                $(SCM_INSTALL_DIR) \
                $(SCM_INSTALL_DIR)/kahua \
 	       $(SCM_INSTALL_DIR)/kahua/test \
-               $(SCM_INSTALL_DIR)/kahua/pdf
+               $(SCM_INSTALL_DIR)/kahua/pdf \
+	       $(SCM_INSTALL_DIR)/kahua/persistence
 
 TESTENV_DIR  = $(top_builddir)/tmp
 
 SH_SCRIPTS  = kahua-spvr    \
               kahua-admin   \
               kahua-install \
-              kahua-shell
+              kahua-shell \
+	      kahua-httpd \
+	      kahua-dbutil \
+              kahua-config \
+              kahua-package
 
 SCM_SCRIPTS  = kahua-spvr.scm    \
                kahua-admin.scm   \
                kahua-install.scm \
                kahua-shell.scm   \
                kahua-server.scm  \
-               kahua-keyserv.scm
+               kahua-keyserv.scm \
+	       kahua-httpd.scm   \
+	       kahua-dbutil.scm  \
+               kahua-config.scm  \
+               kahua-package.scm
 
 SCMFILES = $(SCM_SCRIPTS) \
            kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
@@ -64,7 +73,9 @@ SCMFILES = $(SCM_SCRIPTS) \
            kahua/pdf/interp.scm kahua/pdf/main.scm kahua/pdf/monad.scm \
            kahua/pdf/srfi-48-draft.scm  kahua/pdf/srfi-48.scm \
            kahua/pdf/state.scm kahua/pdf/typeset.scm kahua/pdf/util.scm \
-           kahua/error-report.scm
+           kahua/error-report.scm kahua/thread-pool.scm \
+	   kahua/persistence/fs.scm kahua/persistence/dbi.scm \
+	   kahua/persistence/mysql.scm kahua/persistence/postgresql.scm
 
 CONFFILE = $(sysconfdir)/kahua.conf
 USERCONFFILE = $(localstatedir)/user.conf
@@ -91,6 +102,17 @@ kahua-install :
 kahua-shell :
 	$(MAKE_SH_SCRIPT) kahua-shell
 
+kahua-httpd :
+	$(MAKE_SH_SCRIPT) kahua-httpd
+
+kahua-dbutil :
+	$(MAKE_SH_SCRIPT) kahua-dbutil
+
+kahua-config :
+	$(MAKE_SH_SCRIPT) kahua-config
+
+kahua-package :
+	$(MAKE_SH_SCRIPT) kahua-package
 
 kahua/config.scm: kahua/config.scm.in
 	test ! -f $@ || chmod +w $@
@@ -124,7 +146,7 @@ clean:
 # installation
 # NB: libexecdir is created for backward compatibility.  Eventually
 # we'll remove it.
-install: all
+install: all install-skel
 	$(INSTALL) -m 770 -d $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir) $(libexecdir) $(TMP_BASE_DIR)
 	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR) -S $(srcdir) $(SCMFILES)
 	$(INSTALL) -m 555 -T $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
@@ -133,6 +155,13 @@ install: all
 	fi
 	@if test ! -f $(localstatedir)/user.conf; then \
 	  $(INSTALL) -m 644 user.conf.sample $(localstatedir)/user.conf; \
+	fi
+
+install-skel:
+	@if test ! -d $(sysconfdir)/skel; then \
+	  cp -R ../skel $(sysconfdir)/skel; \
+	  mv $(sysconfdir)/skel/TEMPLATE_DIST $(sysconfdir)/skel/DIST; \
+	  mv $(sysconfdir)/skel/TEMPLATE_DIST_EXCLUDE $(sysconfdir)/skel/DIST_EXCLUDE; \
 	fi
 
 uninstall:

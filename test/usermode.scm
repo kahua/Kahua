@@ -2,7 +2,7 @@
 ;; test user exclusive mode.
 ;; ユーザ専用モードのテスト
 
-;; $Id: usermode.scm,v 1.6 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: usermode.scm,v 1.6.8.2 2006/05/26 15:25:57 bizenn Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -111,7 +111,7 @@
 		(in  (process-output *admin*)))
 	   (read in))))
 
-;; kahua-admin をユーザ専用モードで起動する。
+;; kahua-shell をユーザ専用モードで起動する。
 ;; -user オプション付きで起動することを確認する。
 (test* "start shell" "Welcome to Kahua."
        (let ((p (run-process 'env "-i" "../src/kahua-shell" "--test"
@@ -180,7 +180,6 @@
     (write msg out)
     (newline out)))
 
-
 ;;------------------------------------------------------------
 ;; ユーザ専用モードでの kahua-admin の動作を確認する。
 (test-section "kahua-admin with -user option")
@@ -198,7 +197,7 @@
 	     (and (list? ans)
 		  (< 0 (length ans)))))
 
-;; type コマンドを実行。
+;; types コマンドを実行。
 ;; hello greeting lister の3つのアプリケーションが表示される
 ;; ことを確認する。
 (test* "admin: types" '(hello greeting lister)
@@ -246,7 +245,7 @@
          (read (shell-in))
          (send-shell 'friend)
          (sys-sleep 1)
-         (read-line (shell-in))
+	 (read-line (shell-in))
          (sys-sleep 1)
          (read-line (shell-in))
          (sys-sleep 1)
@@ -297,8 +296,12 @@
 (test* "shutdown spvr" '()
        (begin
 	 (send&recv 'shutdown)
-	 (sys-sleep 1)
-	 (directory-list "_tmp/user/gandalf" :children? #t)))
+	 (call/cc (lambda (exit)
+		    (dotimes (i 15)
+		      (sys-sleep 1)
+		      (when (null? (directory-list "_tmp/user/gandalf" :children? #t))
+			(exit '())))
+		    #f))))
 
 ;; kahua-admin が終了することを確認する。
 (test* "shutdown admin" #t

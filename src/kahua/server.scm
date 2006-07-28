@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.66 2006/04/10 16:54:35 shibata Exp $
+;; $Id: server.scm,v 1.66.2.8 2006/07/28 07:42:59 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -44,6 +44,9 @@
           kahua-context-ref
           kahua-meta-ref
           kahua-context-ref*
+	  kahua-local-session-ref
+	  kahua-local-session-set!
+	  define-session-object
           kahua-current-entry-name
           kahua-current-user
           kahua-current-user-name
@@ -70,6 +73,13 @@
   )
 (select-module kahua.server)
 
+(define-constant *default-charset*
+  (case (gauche-character-encoding)
+    ((utf-8)  'UTF-8)
+    ((euc-jp) 'EUC-JP)
+    ((sjis)   'Shift_JIS)
+    (else     #f)))
+
 ;; internally keep worker-id
 (define worker-id (make-parameter "dummy"))
 
@@ -81,13 +91,6 @@
 ;; internally keep explicitly specified worker uri
 (define (worker-uri)
   (kahua-context-ref "x-kahua-worker-uri"))
-
-;; utility
-(define (ref-car cmp lis item . maybe-default)
-  (cond ((assoc item lis cmp) => cadr)
-        (else (get-optional maybe-default #f))))
-(define assq-ref-car  (pa$ ref-car eq?))
-(define assoc-ref-car (pa$ ref-car equal?))
 
 ;; Context
 ;;  A context is established every time the control is passed from
@@ -230,7 +233,8 @@
                        )
           (if (assoc-ref-car header "x-kahua-eval" #f)
             (receive (headers result) (run-eval)
-              (reply-cont headers result))
+	      (lambda ()
+		(reply-cont headers result)))
             (receive (stree context)
                 (run-cont (if cont-id
                             (or (session-cont-get cont-id) stale-proc)
@@ -254,12 +258,13 @@
                            body))
               (let1 extra-headers
                   (assoc-ref-car context "extra-headers" '())
-                (reply-cont
-                 (kahua-merge-headers header extra-headers
-                                      (hash-table-map
-                                       (assoc-ref-car context "x-kahua-headers" '())
-                                       list))
-                 stree)))))
+		(lambda ()
+		  (reply-cont
+		   (kahua-merge-headers header extra-headers
+					(hash-table-map
+					    (assoc-ref-car context "x-kahua-headers" '())
+					  list))
+		   stree))))))
         )))
   )
 
@@ -320,7 +325,7 @@
 ;;  Key should be in upper case plus underscore.
 
 (define (kahua-meta-ref key . maybe-default)
-  (apply assoc-ref
+  (apply assoc-ref-car
          (kahua-context-ref "x-kahua-metavariables" '()) key maybe-default))
 
 
@@ -332,10 +337,52 @@
 ;;
 ;;  Like kahua-context-ref, but retrieves multiple values as a list.
 ;;  It returns '() if the data corresponding to the key isn't found.
+;;  But at GET REQUEST, It returns #f.
 
 (define (kahua-context-ref* key . maybe-default)
-  (or (apply assoc-ref (kahua-current-context) key maybe-default)
-      '()))
+  (assoc-ref (kahua-current-context) key (get-optional maybe-default '())))
+
+;; KAHUA-LOCAL-SESSION-REF var
+;;
+;; var is symbol, which is any slot name of <session-state>.
+;;
+(define kahua-local-session-ref
+  (let1 get-session
+      (lambda ()
+	(kahua-context-ref "session-state"))
+    (getter-with-setter
+     (lambda (key) (ref (get-session) key))
+     (lambda (key val) (set! (ref (get-session) key) val)))))
+
+;; KAHUA-LOCAL-SESSION-SET! var val
+;;
+;; var is symbol, which is any slot name of <session-state>.
+;; and val is permitted every value include non-persistent object.
+;; the value object is local object in only app server.
+;;
+(define (kahua-local-session-set! key val)
+  (set! (kahua-local-session-ref key) val))
+
+;; DEFINE-SESSION-OBJECT name create
+;;
+;; name is the object name which we use session object.
+;; and init-value is normally make expression.
+;; so, the init-value expression is called only first. 
+;;
+;; it's used as like as parameter.
+;;
+(define-macro (define-session-object name init-value)
+  (let1 get-session (gensym)
+    `(define ,name
+       (let1 ,get-session
+	   (lambda ()
+	     (kahua-context-ref "session-state"))
+	 (getter-with-setter
+	  (lambda () (cond ((ref (,get-session) ',name))
+			   (else (set! (ref (,get-session) ',name) ,init-value)
+				 (ref (,get-session) ',name))))
+	  (lambda (val) (set! (ref (,get-session) ',name) val)))))))
+			 
 
 ;; KAHUA-CURRENT-ENTRY-NAME
 ;;  A parameter that holds the name of entry.
@@ -1271,6 +1318,8 @@
 
 (add-interp! 'css interp-css)
 
+(define-constant *json-media-type* "application/x-javascript")
+
 (define-class <json-base> () ())
 (define-method x->json ((self <json-base>))
   (let* ((class (class-of self))
@@ -1286,10 +1335,7 @@
        slots)))))
 
 (define (interp-json nodes context cont)
-
-  (define (write-str str)
-    (ces-convert (format "~s" str) (gauche-character-encoding) "utf-8"))
-
+  (define write-str (pa$ format "~s"))
   (define (write-ht vec)
     (list "{"
           (intersperse
@@ -1333,7 +1379,10 @@
     (cont (list "(" (x->json (cadr nodes)) ")\n")
           (cons `("extra-headers"
                   ,(kahua-merge-headers
-                    headers '(("Content-Type" "text/javascript"))))
+                    headers `(("Content-Type"
+			       ,(if *default-charset*
+				    (format "~a; charset=~a" *json-media-type* *default-charset*)
+				    *json-media-type*)))))
                 context))))
 
 (add-interp! 'json interp-json)

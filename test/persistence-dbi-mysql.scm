@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; MySQLバックエンドのテスト
-;; $Id: persistence-dbi-mysql.scm,v 1.3 2006/02/04 07:38:08 shibata Exp $
+;; $Id: persistence-dbi-mysql.scm,v 1.3.2.1 2006/06/12 08:04:44 bizenn Exp $
 
 ;; Notes:
 ;;  * テストケース自体はpersistence.scmのものを使う。
@@ -13,6 +13,7 @@
 (define *dbname* #`"mysql:,|*user*|::db=test")
 
 ;; 前回のテストで作られたテーブルが残っていればそれをクリアしておく
+(load "./persistence-dbi.scm")
 (cleanup-db "mysql" *user* "" "db=test")
 
 (load "./persistence.scm")

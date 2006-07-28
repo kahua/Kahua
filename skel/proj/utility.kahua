@@ -1,0 +1,166 @@
+;; -*- coding: euc-jp; mode: kahua -*-
+;;
+;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: utility.kahua,v 1.1.2.2 2006/07/26 15:16:08 cut-sea Exp $
+;;
+
+;
+; utility
+;
+
+;; simple utility functions
+;;
+(define (prev n) (- n 1))
+(define (next n) (+ n 1))
+(define (+++ . args) (string-join args "\n"))
+
+
+;; alias
+;;
+(define invisible identity)
+(define kall/cc kahua-call-with-current-context)
+(define ++ string-append)
+
+(define (ymd-of date)
+  (date->string date "~y/~m/~d ~H:~M:~S"))
+(define year-of date-year)
+(define month-of date-month)
+(define day-of date-day)
+
+;;
+;; define-persistent-from-non-base
+;;
+(define-macro (define-persistent-from-non-base pclass npclass)
+  (define (replace slot)
+    (cond ((null? slot) slot)
+	  ((eq? :allocation (car slot))
+	   (append '(:allocation :persistent)
+		   (replace (cddr slot))))
+	  (else (cons (car slot) (replace (cdr slot))))))
+  (let1 klass (eval npclass (current-module))
+    `(define-class ,pclass (<kahua-persistent-base> ,npclass)
+       ,(map replace (ref klass 'direct-slots)))))
+
+;; random password generator
+;;
+(define (generate-pass)
+  (number->string (random-integer (expt 10 32)) 36))
+
+
+;; split multi-line text data to string data.
+;;
+(define (text->list text)
+  (remove string-null?
+	  (map string-trim-both
+	       (string-split text "\r\n"))))
+
+;; upload file
+;;
+
+(define (handle-uploaded-file spec proc)
+  (define (nop . args) 'nop)
+  (define (exec thunk)
+    (if spec (thunk) (nop)))
+
+  (if spec
+      (call-with-uploaded-file spec
+	(lambda (in)
+	  (define (get-name)
+	    (get-original-name spec))
+	  (define (save-file-to outfile)
+	    (call-with-output-file outfile (pa$ copy-port in)))
+	  (proc exec get-name save-file-to)))
+      (proc exec nop nop)))
+
+;; define compares and these toggles
+;;
+(define-method object-hash ((obj <generic>))
+  (hash (ref obj 'name)))
+
+(define-values (compare-set! compare-get)
+  (let ((hash (make-hash-table 'equal?)))
+    (values
+     (lambda (f g)
+       (hash-table-put! hash f g)
+       (hash-table-put! hash g f))
+     (lambda (f)
+       (hash-table-get hash f #f)))))
+
+;; for jisx0201 half kana
+;;
+
+(define (gen-kana-trans . options)
+  (define (make-table src . dst)
+    (let1 dst (get-optional dst (make-list (string-length src) #t))
+      (let ((pairs (map cons src dst))
+	    (tbl (make-hash-table)))
+	(for-each (lambda (kv)
+		    (hash-table-put! tbl (car kv) (cdr kv)))
+		  pairs)
+	tbl)))
+  (let-keywords* options ((loseless-voices :voiced #t)
+                          (loseless-semivoices :semivoiced #t))
+    (let* ((normal (make-table
+                    (++ "ｱｲｳｴｵｶｷｸｹｺ"
+			"ｻｼｽｾｿﾀﾁﾂﾃﾄ"
+			"ﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ"
+			"ﾏﾐﾑﾒﾓﾔﾕﾖ"
+			"ﾗﾘﾙﾚﾛﾜｦﾝ"
+			"ｧｨｩｪｫｬｭｮｯｰ"
+			"､｡｢｣･")
+                    (++ "アイウエオカキクケコ"
+			"サシスセソタチツテト"
+			"ナニヌネノハヒフヘホ"
+			"マミムメモヤユヨ"
+			"ラリルレロワヲン"
+			"ァィゥェォャュョッー"
+			"、。「」・")))
+           (voiced (make-table
+                    "ｳｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾊﾋﾌﾍﾎ"
+                    "ヴガギグゲゴザジズゼゾダヂヅデドバビブベボ"))
+           (semivoiced (make-table
+                        "ﾊﾋﾌﾍﾎ"
+                        "パピプペポ"))
+           (voiced-loseless? (if (string? loseless-voices) #f #t))
+           (semivoiced-loseless? (if (string? loseless-semivoices) #f #t))
+           (vs (if voiced-loseless?
+                   (make-hash-table)
+                   (make-table loseless-voices)))
+           (svs (if semivoiced-loseless?
+                    (make-hash-table)
+                    (make-table loseless-semivoices))))
+      (lambda (orig-string)
+        (let lp ((rev-str (reverse (string->list orig-string)))
+                 (result '()))
+          (if (null? rev-str)
+              (list->string result)
+              (let ((c (car rev-str))
+                    (rest (cdr rev-str)))
+                (cond ((eq? c #\ﾞ)
+		       (cond ((null? rest)
+			      (if voiced-loseless?
+				  (lp rest (cons #\゛ result))
+				  (lp rest result)))
+			     ((hash-table-get voiced (car rest) #f)
+			      => (lambda (v) (lp (cdr rest) (cons v result))))
+			     ((hash-table-get vs (car rest) voiced-loseless?)
+			      (lp rest (cons #\゛ result)))
+			     (else (lp rest result))))
+                      ((eq? c #\ﾟ)
+		       (cond ((null? rest)
+			      (if semivoiced-loseless?
+				  (lp rest (cons #\゜ result))
+				  (lp rest result)))
+			     ((hash-table-get semivoiced (car rest) #f)
+			      => (lambda (v) (lp (cdr rest) (cons v result))))
+			     ((hash-table-get svs (car rest) semivoiced-loseless?)
+			      (lp rest (cons #\゜ result)))
+			     (else (lp rest result))))
+                      ((hash-table-get normal c #f)
+		       => (lambda (v) (lp rest (cons v result))))
+                      (else (lp rest (cons c result)))))))))))
+
+(define half-kana-sanitize (gen-kana-trans))
+

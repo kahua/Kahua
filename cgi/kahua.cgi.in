@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.36 2006/04/10 16:54:35 shibata Exp $
+;; $Id: kahua.cgi.in,v 1.36.2.3 2006/07/24 16:22:27 bizenn Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -32,6 +32,7 @@
 (use rfc.cookie)
 (use rfc.base64)
 (use rfc.sha1)
+(use text.tree)
 (use text.html-lite)
 (use kahua.gsid)
 (use kahua.config)
@@ -43,20 +44,14 @@
 (define *sockbase* "unix:##KAHUA_SOCKET_BASE##")
 (define *tmpbase* "##localstatedir##/tmp/kahua-")
 
+(define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP SIGPIPE))
+
 ;; Change this if you're using non-default log path
 ;;(log-open "/tmp/kahua-cgi.log" :prefix "~Y ~T ~P[~$]: ")
 (log-open "##KAHUA_CGI_LOGPATH##/kahua-cgi.log" :prefix "~Y ~T ~P[~$]: ")
 
 ;; bridge name option, mainly to pass "~user" information
 (define *bridge-option* "")
-
-;; getting cgi meta-variables; first we try cgi-metavariables parameter,
-;; then use getenv for fallback.
-(define (get-meta name)
-  (or (and-let* ((mv (cgi-metavariables))
-                 (p  (assoc name mv)))
-        (cadr p))
-      (sys-getenv name)))
 
 ;; send standard metavariables to worker.
 (define *metavariables*
@@ -85,11 +80,15 @@
     "SERVER_SOFTWARE"
     ))
 
-(define (metavariable-alist)
+(define (cookie-path)
+  (or (*worker-uri*)
+      (sys-dirname
+       (or (cgi-get-metavariable "SCRIPT_NAME") "/"))))
+
+(define (metavariable-list)
   (filter-map (lambda (meta)
-                (let1 meta-var (get-meta meta)
-                  (and meta-var
-                       (cons meta meta-var))))
+                (let1 meta-var (cgi-get-metavariable meta)
+                  (and meta-var (list meta meta-var))))
               *metavariables*))
 
 (define (kcv value)
@@ -117,9 +116,7 @@
  	  (set-cookie!
            (construct-cookie-string
             `(("x-kahua-sgsid" ,state
-               :path ,(or (*worker-uri*)
-                       (sys-dirname
-                        (or (get-meta "SCRIPT_NAME") "/")))))))
+               :path ,(cookie-path)))))
 	  body))))
 
 ;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
@@ -132,7 +129,7 @@
 ;; retrieve PATH_INFO, with processing ~user component.
 ;; returns #f if there's no PATH_INFO.
 (define (get-path-info)
-  (and-let* ((p (get-meta "PATH_INFO"))
+  (and-let* ((p (cgi-get-metavariable "PATH_INFO"))
              (l (cdr (string-split p #\/))))
     (when (and (pair? l) (#/^~.+/ (car l)))
       (load-user-config (car l))
@@ -157,9 +154,9 @@
 ;; construct absolute uri for the server root.
 ;; note that we can only guess the protocol scheme.
 (define (server-uri)
-  (let ((scheme (if (get-meta "HTTPS") "https" "http"))
-        (name   (or (get-meta "SERVER_NAME") "localhost"))
-        (port   (or (x->integer (get-meta "SERVER_PORT")) 80)))
+  (let ((scheme (if (cgi-get-metavariable "HTTPS") "https" "http"))
+        (name   (or (cgi-get-metavariable "SERVER_NAME") "localhost"))
+        (port   (or (x->integer (cgi-get-metavariable "SERVER_PORT")) 80)))
     (format "~a://~a~a"
             scheme name
             (if (or (and (string=? scheme "http")  (= port 80))
@@ -174,13 +171,13 @@
       (dispatch-destination param)
     (log-format "~s ~s ~s" worker-id worker-type cont-gsid)
     (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
-           (remote-addr (get-meta "REMOTE_ADDR"))
+           (remote-addr (cgi-get-metavariable "REMOTE_ADDR"))
            (header     (list*
                         `("x-kahua-bridge"
-                          ,(string-append (get-meta "SCRIPT_NAME")
+                          ,(string-append (cgi-get-metavariable "SCRIPT_NAME")
                                           *bridge-option*))
                         `("x-kahua-server-uri" ,(server-uri))
-                        `("x-kahua-metavariables" ,(metavariable-alist))
+                        `("x-kahua-metavariables" ,(metavariable-list))
                         (cond-list
                          ((*worker-uri*) `("x-kahua-worker-uri" ,(*worker-uri*)))
                          (worker-type `("x-kahua-worker" ,worker-type))
@@ -253,7 +250,7 @@
   (publish (response) body))
 
 (define (analize-virtual-hosting)
-  (let1 path-info (get-meta "PATH_INFO")
+  (let1 path-info (cgi-get-metavariable "PATH_INFO")
     (if (not path-info)
         (cgi-metavariables)
 
@@ -288,7 +285,7 @@
 ;; publish html. provide ~user authentication.
 (define (publisher params)
   (parameterize ((cgi-metavariables (analize-virtual-hosting)))
-    (let* ((path-info (get-meta "PATH_INFO"))
+    (let* ((path-info (cgi-get-metavariable "PATH_INFO"))
            (p (cadr (string-split (if (or (not path-info) 
                                           (string-null? path-info)) 
                                       "/" path-info) #\/))))
@@ -309,9 +306,7 @@
                      (set-cookie!
                       (construct-cookie-string
                        `(("kahua-passwd" ,(base64-encode-string passwd)
-                          :path ,(or (*worker-uri*)
-                                     (sys-dirname
-                                      (or (get-meta "SCRIPT_NAME") "/")))))))
+                          :path ,(cookie-path)))))
                      (send-reply params))
                  (unauthorized-form)
                  ))
@@ -333,30 +328,45 @@
                    (html:input :type "submit" :value "login"))))))
 
 (define (main args)
-  (let1 cleanup (lambda () (for-each sys-unlink
-                                     (cgi-temporary-files)))
-    (log-format "CGI start")
-    (guard (e (else (log-format "error(ignored): ~a" e)))
-      (set-signal-handler! SIGTERM (lambda _ (log-format "SIGTERM")
-                                           (cleanup) (sys-exit 0)))
-      (set-signal-handler! SIGINT  (lambda _ (log-format "SIGINT")
-                                           (cleanup) (sys-exit 0)))
-      (set-signal-handler! SIGHUP  (lambda _ (log-format "SIGHUP")
-                                           (cleanup) (sys-exit 0)))
-      (set-signal-handler! SIGPIPE (lambda _ (log-format "SIGPIPE")
-                                           (cleanup) (sys-exit 0)))
-      ##CGIBEGIN##
-      (parameterize ((response (make <response>)))
-        (cgi-main publisher
-                  :merge-cookies #t
-                  :on-error cgi-error-proc
-                  :part-handlers `((#t file+name ,*tmpbase*))
-                  ))
-      ##CGIEND##
-      )
-    (cleanup)
-    (log-format "CGI end")
-    (sys-exit 0)))
+  (define (output-handler sexp)
+    (let1 sbody (cadr sexp)
+      (case (car sbody)
+	((file)
+	 (write-tree (car sexp))
+	 (call-with-input-file (cadr sbody)
+	   (lambda (in)
+	     (copy-port in (current-output-port))
+	     (flush))))
+	(else
+	 (if (ces-equivalent? (gauche-character-encoding)
+			      (cgi-output-character-encoding))
+	     (write-tree sexp)
+	     (with-output-conversion
+		 (current-output-port)
+	       (cut write-tree sexp)
+	       :encoding (cgi-output-character-encoding)))))))
+  (call/cc
+   (lambda (bye)
+     (define (cleanup) (for-each sys-unlink (cgi-temporary-files)))
+     (define (finish-server sig)
+       (log-format (sys-signal-name sig))
+       (cleanup) (bye 0))
+     (log-format "CGI start")
+     (guard (e (else (log-format "error(ignored): ~a" e)))
+       (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
+       ##CGIBEGIN##
+       (parameterize ((response (make <response>)))
+	 (cgi-main publisher
+		   :merge-cookies #t
+		   :on-error cgi-error-proc
+		   :output-proc output-handler
+		   :part-handlers `((#t file+name ,*tmpbase*))
+		   ))
+       ##CGIEND##
+       )
+     (cleanup)
+     (log-format "CGI end")
+     (bye 0))))
 
 (define (get-error-string e)
   (call-with-output-string

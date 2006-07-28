@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.14 2006/04/10 16:54:35 shibata Exp $
+;; $Id: kahua-server.scm,v 1.14.2.7 2006/07/11 09:48:34 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -85,9 +85,12 @@
             (lambda (place thunk)
               (make-hook-action delete-hook! place thunk)))))
 
+(define (database-name)
+  (or (primary-database-name)
+      (build-path (ref (kahua-config) 'working-directory) "db")))
+
 (define (run-kahua-hook-initial)
-  (let1 dbname (or (primary-database-name)
-                   (build-path (ref (kahua-config) 'working-directory) "db"))
+  (let1 dbname (database-name)
     (with-db (db dbname)
              (run-hook (kahua-hook-initial)))))
 
@@ -97,16 +100,19 @@
 (define (handle-request header body reply-cont selector)
   (if (ping-request? header)
     (reply-cont #t #t)
-    (let1 dbname (or (primary-database-name)
-                     (build-path (ref (kahua-config) 'working-directory) "db"))
-      (with-db (db dbname)
-        (run-hook (kahua-hook-before))
-        (begin0
-          (kahua-default-handler header body reply-cont default-handler
-                                 :error-proc (kahua-error-proc)
-                                 :eval-environment (current-module))
-          (run-hook (kahua-hook-after))
-          )))))
+    (let1 dbname (database-name)
+      (with-sigmask SIG_BLOCK *TERMINATION-SIGNALS*
+	(lambda ()
+	  (let1 do-reply (with-db (db dbname)
+			   (run-hook (kahua-hook-before))
+			   (begin0
+			     (kahua-default-handler header body reply-cont default-handler
+						    :error-proc (kahua-error-proc)
+						    :eval-environment (current-module))
+			     (run-hook (kahua-hook-after))
+			     ))
+	    (do-reply))))
+      )))
 
 (define (default-handler) ((main-proc)))
 
@@ -119,14 +125,13 @@
     (lambda ()
       (load mod :environment kahua-app-server))))
 
-(define (run-server worker-id sockaddr)
+(define (run-server worker-id sockaddr profile)
   (let ((sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
         (selector (make <selector>)))
     (define (accept-handler fd flag)
       (let* ((client (socket-accept sock))
              (input  (socket-input-port client :buffered? #f))
-             (output (socket-output-port client))
-             (old_sigset (sys-sigmask SIG_BLOCK *TERMINATION-SIGNALS*)))
+             (output (socket-output-port client)))
         (guard (e
                 (#t (log-format
                      "[server]: Read error occured in accept-handler: ~a" (ref e 'message))))
@@ -143,8 +148,7 @@
                              (write r-body output)   (newline output)
                              (flush output)))
                     (socket-close client))
-                  selector)))
-        (sys-sigmask SIG_SETMASK old_sigset)))
+                  selector)))))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
@@ -152,8 +156,12 @@
     (run-kahua-hook-initial)
     (format #t "~a\n" worker-id)
     (selector-add! selector (socket-fd sock) accept-handler '(r))
-    (do () (#f) (selector-select selector))
-    ))
+    (do () (#f)
+      (kahua-profiler-start profile)
+      (dotimes (_ 100)
+	(selector-select selector))
+      (kahua-profiler-flush profile)
+      )))
 
 (define *kahua-top-module* #f)
 
@@ -171,54 +179,78 @@
       (every (lambda (f) (load-k-module f)) files)
       (load-k-module *kahua-top-module*)))
 
+;; Profiler Facility
+
+(define (kahua-profiler-start pfile)
+  (when pfile
+    (guard (e (else (log-format "[server] cannot start profiler: ~a" (ref e 'message))))
+      (profiler-start))))
+
+(define (kahua-profiler-flush pfile)
+  (when pfile
+    (guard (e (else (log-format "[server] fail to flush profiling result: ~a" (ref e 'message))))
+      (profiler-stop)
+      (with-output-to-file pfile
+	(lambda ()
+	  (format #t "====Profiler flushed: ~s\n" (sys-localtime (sys-time)))
+	  (profiler-show :max-rows #f))
+	:if-exists :append)
+      (profiler-reset))))
+
 (define (kahua-server-main args)
   (let-args (cdr args) ((conf-file "c=s" #f)
                         (user "user=s" #f)
                         (keyserv "k=s" #f)
+			(db "default-db=s" #f)
+			(prof "profile=s" #f)
                         . mods)
     (unless (pair? mods)
-      (error "usage: kahua-server [-c <conf>] [-user <user>] [-k <keyserv-id>] <app-server> <args> ..." mods))
+      (error "usage: kahua-server [-c <conf>] [-user <user>] [-k <keyserv-id>] [-default-db <default-db-path>] [-profile <profile-out>] <app-server> <args> ..." mods))
     (set! *kahua-top-module* (car mods))
     (kahua-init conf-file :user user)
     (set! kahua-app-server (kahua-application-environment))
+    (primary-database-name db)
     (initialize-plugins)
     (kahua-app-args (cdr mods))
     (load-kahua-module (car mods))
     (let* ((worker-name (car (string-split (sys-basename (car mods)) #\.))) 
            (worker-id (kahua-init-server worker-name keyserv))
+	   (profile (and prof (string-append prof "." worker-id)))
            (sockbase  (kahua-sockbase))
            (sockaddr  (worker-id->sockaddr worker-id sockbase))
            (cleanup   (lambda ()
                         (log-format "[~a] exit" worker-name)
                         (when (is-a? sockaddr <sockaddr-un>)
                           (sys-unlink (sockaddr-name sockaddr))))))
-      (call/cc
-       (lambda (bye)
-	 (define (finish-server sig)
-	   (log-format "[~a] ~a" worker-name (sys-signal-name sig))
-	   (cleanup) (bye 0))
-	 (log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
-	 (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
-	 (with-error-handler
-	   (lambda (e)
-	     (log-format "[server] error in main:\n~a"
-			 (kahua-error-string e #t))
-	     (report-error e)
-	     (cleanup)
-	     (bye 70))
-	   (lambda ()
-	     (log-format "[~a] start" worker-name)
-	     (run-server worker-id sockaddr)
-	     (bye 0)))))
-    )))
+      (begin0
+	(call/cc
+	 (lambda (bye)
+	   (define (finish-server sig)
+	     (log-format "[~a] ~a" worker-name (sys-signal-name sig)) (bye 0))
+	   (log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
+	   (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
+	   (with-error-handler
+	     (lambda (e)
+	       (log-format "[server] error in main:\n~a"
+			   (kahua-error-string e #t))
+	       (report-error e)
+	       (bye 70))
+	     (lambda ()
+	       (log-format "[~a] start" worker-name)
+	       (run-server worker-id sockaddr profile)
+	       (bye 0)))))
+	(cleanup))
+      )))
 
 (define (kahua-write-static-file path nodes context . rargs)
   (when (string-scan path "../")
     (error "can't use 'up' component in kahua-write-static-file" path))
-  (with-output-to-file (kahua-static-document-path path)
-    (lambda ()
-      (display (kahua-render nodes context)))
-    :encoding (get-keyword :encoding rargs (gauche-character-encoding))))
+  (let ((write-path (kahua-static-document-path path)))
+    (make-directory* (sys-dirname write-path))
+    (with-output-to-file write-path
+      (lambda ()
+	(display (kahua-render nodes context)))
+      :encoding (get-keyword :encoding rargs (gauche-character-encoding)))))
 
 ;; Main -----------------------------------------------------
 

@@ -1,7 +1,8 @@
+;; -*- coding: euc-jp; mode: scheme -*-
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.13 2006/05/12 04:11:33 bizenn Exp $
+;; $Id: persistence.scm,v 1.13.2.9 2006/07/11 07:28:51 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -40,17 +41,28 @@
 (test* "creating database" '(#t #t #t)
        (with-db (db *dbname*)
          (cons (is-a? db <kahua-db>)
-               (if (is-a? db <kahua-db-fs>)
-                 (list
-                  (file-is-directory? *dbname*)
-                  (file-exists? (build-path *dbname* "id-counter")))
-                 (list
-                  (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
-                  (and (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_idcount"))
-                                  (p (map (cut dbi-get-value <> 0) r)))
-                         (and (not (null? p))
-                              (integer? (x->integer (car p))))))
-                  )))))
+	       (case (class-name (class-of db))
+		 ((<kahua-db-fs>)
+		  (list
+		   (file-is-directory? *dbname*)
+		   (file-exists? (build-path *dbname* "id-counter"))))
+                 ((<kahua-db-mysql>)
+		  (list
+		   (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
+		   (and (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_idcount"))
+				   (p (map (cut dbi-get-value <> 0) r)))
+			  (and (not (null? p))
+			       (integer? (x->integer (car p))))))
+		   ))
+		 ((<kahua-db-postgresql>)
+		  (list
+		   (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
+		   (and (and-let* ((r (dbi-do (ref db 'connection) "select count(*) from pg_class where relname='kahua_db_idcount' and relkind='S'"))
+				   (p (map (cut dbi-get-value <> 0) r)))
+			  (and (not (null? p))
+			       (= (x->integer (car p)) 1))))
+		   )))
+	       )))
 
 ;;  データベースがwith-dbの動的スコープ中で有効であり、
 ;;  その外で無効になることを確認する。
@@ -72,7 +84,7 @@
   :source-id "Rev 1")
 
 (define-method list-slots ((obj <kahua-test>))
-  (map (cut ref obj <>) '(id quick quack quock)))
+  (map (cut ref obj <>) '(%kahua-persistent-base::id quick quack quock)))
 
 (define (get-test-obj id)
   (find-kahua-instance <kahua-test> (format "~6,'0d" id)))
@@ -128,6 +140,20 @@
        (with-clean-db (db *dbname*)
          (list (ref <kahua-test> 'generation)
                (ref <kahua-test> 'persistent-generation))))
+
+;; オーバーライドを禁止したスロットをオーバーライドするクラスを定義してみる。
+;; エラーになるはず。
+(test* "Final slot overriding: %kahua-persistent-base::id"
+       *test-error*
+       (eval '(define-class <kahua-violation-id> (<kahua-persistent-base>)
+		((%kahua-persistent-base::id :init-value 0)))
+	     (current-module)))
+(test* "Final slot overriding: %kahua-persistent-base::db"
+       *test-error*
+       (eval '(define-class <kahua-violation-db> (<kahua-persistent-base>)
+		((%kahua-persistent-base::db :init-value #f)
+		 (%kahua-persistent-base::id :init-value 0)))
+	     (current-module)))
 
 ;;----------------------------------------------------------
 ;; トランザクションに関するテスト
@@ -266,7 +292,7 @@
   :source-id "Rev 3")
 
 (define-method list-slots ((obj <kahua-test-sub>))
-  (map (cut ref obj <>) '(id quick quack woo boo quock)))
+  (map (cut ref obj <>) '(%kahua-persistent-base::id quick quack woo boo quock)))
 
 (define-method key-of ((obj <kahua-test-sub>))
   (string-append (ref obj 'woo) (ref obj 'boo)))
@@ -320,13 +346,25 @@
 ;;  確認する。
 (test* "kahua-test" '(1 2)
        (sort (with-clean-db (db *dbname*)
-               (map (cut ref <> 'id)
+               (map kahua-persistent-id
                     (make-kahua-collection <kahua-test>)))))
 
 (test* "kahua-test-sub" '("woo" "wooo")
        (sort (with-clean-db (db *dbname*)
                (map (cut ref <> 'woo)
                     (make-kahua-collection <kahua-test-sub>)))))
+
+(test* "kahua-test-sub w/ predicate" '("woo")
+       (sort (with-clean-db (db *dbname*)
+	       (map (cut ref <> 'woo)
+		    (make-kahua-collection <kahua-test-sub>
+					   :predicate (lambda (obj)
+							(string=? "woo" (ref obj 'woo))))))))
+
+(test* "kahua-test-sub w/ keys" '(4 5)
+       (sort (with-clean-db (db *dbname*)
+	       (map kahua-persistent-id
+		    (make-kahua-collection <kahua-test-sub> :keys '("wooboo" "wooobooo"))))))
 
 ;; This tests instance-by-key table initialization protocol
 ;; 永続コレクションの作成時に、in-memoryデータベースのインデックスハッシュが
@@ -343,7 +381,7 @@
 ;; make-kahua-collectionを用いて作成できることを確認する．
 (test* "kahua-test-subclasses" '(1 2 4 5)
        (sort (with-clean-db (db *dbname*)
-               (map (cut ref <> 'id)
+               (map kahua-persistent-id
                     (make-kahua-collection <kahua-test> :subclasses #t)))))
 
 ;;----------------------------------------------------------
@@ -984,23 +1022,23 @@
 (test* "make first instance(1)" 0
        (with-db (db *dbname*)
          (let1 obj (make <redefine-A>)
-           (set! *id* (ref obj 'id))
+           (set! *id* (kahua-persistent-id obj))
            (ref obj 'base))))
 
 (redefine-class! <redefine-A> <redefine-B>)
 
 (test* "redefine instance(1)" '(#f 0)
        (with-db (db *dbname*)
-                (let1 obj (find-kahua-instance <redefine-A> "a")
-                  (set! *id2* (ref obj 'id))
-                  (list (eq? *id* (ref obj 'id))
-                        (ref obj 'base)))))
+	 (let1 obj (find-kahua-instance <redefine-A> "a")
+	   (set! *id2* (kahua-persistent-id obj))
+	   (list (eq? *id* (kahua-persistent-id obj))
+		 (ref obj 'base)))))
 
 (test* "find redefined instance(1)" '(#t 0)
        (with-clean-db (db *dbname*)
-                (let1 obj (find-kahua-instance <redefine-B> "a")
-           (list (eq? *id2* (ref obj 'id))
-                 (ref obj 'base)))))
+		      (let1 obj (find-kahua-instance <redefine-B> "a")
+			(list (eq? *id2* (kahua-persistent-id obj))
+			      (ref obj 'base)))))
 
 (define-class <redefine-C> (<kahua-persistent-base>)
   ((base :allocation :persistent :init-value 0)
@@ -1009,7 +1047,7 @@
 (test* "make first instance(2)" 0
        (with-db (db *dbname*)
          (let1 obj (make <redefine-C>)
-           (set! *id* (ref obj 'id))
+           (set! *id* (kahua-persistent-id obj))
            (ref obj 'base))))
 
 (define-class <redefine-C> (<kahua-persistent-base>)
@@ -1020,7 +1058,7 @@
 (test* "find redefined instance(2)" '(#t 0 10)
        (with-clean-db (db *dbname*)
                 (let1 obj (find-kahua-instance <redefine-C> "c")
-           (list (eq? *id* (ref obj 'id))
+           (list (eq? *id* (kahua-persistent-id obj))
                  (ref obj 'base)
                  (ref obj 'base2)))))
 

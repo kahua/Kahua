@@ -3,7 +3,7 @@
 ;; this test isn't for modules, but for actual scripts.
 ;; kahua-admin テスト
 
-;; $Id: admin.scm,v 1.4 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: admin.scm,v 1.4.8.1 2006/05/22 09:00:53 bizenn Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -256,8 +256,12 @@
 (test* "shutdown spvr" '()
        (begin
 	 (send&recv 'shutdown)
-	 (sys-sleep 1)
-	 (directory-list "_tmp" :children? #t)))
+	 (call/cc (lambda (exit)
+		    (dotimes (i 15)
+		      (sys-sleep 1)
+		      (when (null? (directory-list "_tmp" :children? #t))
+			(exit '())))
+		    #f))))
 
 ;; kahua-admin が終了することを確認する。
 (test* "shutdown admin" #t

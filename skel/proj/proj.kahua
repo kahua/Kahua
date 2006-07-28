@@ -1,0 +1,71 @@
+;; -*- coding: euc-jp; mode: scheme -*-
+;;
+;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: proj.kahua,v 1.1.2.4 2006/07/22 14:33:27 cut-sea Exp $
+;;
+
+;; module (in plugins/%%_PROJECT_NAME_%%.scm)
+(use srfi-1)
+(use srfi-13)
+(use srfi-19)
+(use srfi-27)
+(use util.list)
+(use util.match)
+(use file.util)
+(use gauche.collection)
+(use gauche.mop.singleton)
+(use rfc.uri)
+
+;; etc
+(load "%%_PROJECT_NAME_%%/version.kahua")
+(load "%%_PROJECT_NAME_%%/default.kahua")
+(load "%%_PROJECT_NAME_%%/utility.kahua")
+(load "%%_PROJECT_NAME_%%/validator.kahua")
+(load "%%_PROJECT_NAME_%%/session.kahua")
+
+;; page template
+(load "%%_PROJECT_NAME_%%/page.kahua")
+
+;; partcont page
+(load "%%_PROJECT_NAME_%%/pcont-page.kahua")
+
+;; classes and methods
+(load "%%_PROJECT_NAME_%%/base.kahua")
+
+;; You should add loading files below here.
+
+;
+; %%_PROJECT_NAME_%%-page-template
+;
+
+(define (%%_PROJECT_NAME_%%-page-template title body)
+  (node-set:
+   (html:
+    (head: (title: title))
+    (body: (h1: title) body))))
+
+;
+; main-proc 
+;
+
+(define-entry (greeting)
+  (%%_PROJECT_NAME_%%-page-template "Hello, world!"
+                       (a/cont: (@@: (cont version))
+                                "version")))
+
+;
+; version
+;
+
+(define-entry (version)
+  (%%_PROJECT_NAME_%%-page-template (format "%%_PROJECT_NAME_%%: version ~a" *%%_PROJECT_NAME_%%-version*)
+                       (a/cont: (@@: (cont greeting))
+                                "greeting")))
+
+;
+; initialization
+;
+   
+(initialize-main-proc greeting)

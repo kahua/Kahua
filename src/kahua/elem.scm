@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.20 2006/03/16 16:15:01 shibata Exp $
+;; $Id: elem.scm,v 1.20.2.1 2006/07/12 04:25:41 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -39,6 +39,8 @@
           with-ie/
 	  &/
 
+	  applet/ param/ object/ embed/ noembed/
+
 	  node-list-to-node-set
 	  node-set:
 	  font: tt: i: b: big: small: em: strong: dfn: code: samp: kbd: var:
@@ -58,6 +60,8 @@
 	  map:
 	  with-ie:
 	  &:
+
+	  applet: param: object: embed: noembed:
 
           obj->string
           html:element?
@@ -340,6 +344,17 @@
 (define (frame/ . args)
   (update (cut cons `(frame ,@(exec '() (node-set args))) <>)))
 
+(define (applet/ . args)
+  (update (cut cons `(applet ,@(exec '() (node-set args))) <>)))
+(define (param/ . args)
+  (update (cut cons `(param ,@(exec '() (node-set args))) <>)))
+(define (object/ . args)
+  (update (cut cons `(param ,@(exec '() (node-set args))) <>)))
+(define (embed/ . args)
+  (update (cut cons `(param ,@(exec '() (node-set args))) <>)))
+(define (noembed/ . args)
+  (update (cut cons `(param ,@(exec '() (node-set args))) <>)))
+
 ;;--------------------------------------------------------------------------
 
 (define (flatten ls)
@@ -435,6 +450,12 @@
 (define (pdf: . arg) `(pdf ,@(flatten arg)))
 (define (frameset: . arg) `(frameset ,@(flatten arg)))
 (define (frame: . arg) `(frame ,@(flatten arg)))
+
+(define (applet: . arg) `(applet ,@(flatten arg)))
+(define (param: . arg) `(param ,@(flatten arg)))
+(define (object: . arg) `(object ,@(flatten arg)))
+(define (embed: . arg) `(embed ,@(flatten arg)))
+(define (noembed: . arg) `(noembed ,@(flatten arg)))
 
 (define-syntax @:
   (syntax-rules ()

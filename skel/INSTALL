@@ -1,0 +1,53 @@
+$Id: $
+
+%%_PROJECT_NAME_%% : A simple dummy application of Kahua
+
+[Requirements]
+
+Gauche-0.8.7
+Kahua-0.4.1
+
+[Installation]
+
+  % autoconf
+  % ./configure [any options if you need]
+
+You have to give some options to specify the same install directories 
+as Kahua installed. For example if you gave --prefix=$HOME to 
+configure script of Kahua when you installed it, you have to give the 
+same option to kahua-web's configure script.
+
+  % ./configure --prefix=$HOME
+
+And then
+
+  % make
+  % make check
+  % make install
+
+Then, edit app-servers in the Kahua working directory to add "%%_CREATOR_NAME_%%" entry.
+
+  (%%_PROJECT_NAME_%% :argument () :run-by-default 0)
+
+If you want to allow non registered user to edit page, 
+give 'non-member-edit as a argument.
+
+  (%%_PROJECT_NAME_%% :argument (non-member-edit) :run-by-default 0)
+
+[Invoke %%_PROJECT_NAME_%% in place]
+
+You can invoke the %%_PROJECT_NAME_%% before doing "make install", using
+"%%_PROJECT_NAME_%%-start" script.  This script invoke %%_PROJECT_NAME_%% in the kahua-spvr
+with test HTTP direct mode on 8080 port.  You can also use
+"%%_PROJECT_NAME_%%-stop" to stop process invoked by "%%_PROJECT_NAME_%%-start"
+
+[Information]
+
+You can find some %%_PROJECT_NAME_%%'s information at the Kahua.org site.
+
+Sorry, it is now not updated.  Please participate and post your questions
+to the kahua-dev mailing list.
+
+http://www.kahua.org/cgi-bin/kahua.cgi/kahua-web/show/info/Mailing%20List
+
+
