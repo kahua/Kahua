@@ -1,5 +1,8 @@
 2006-07-28  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* skel/*, src/kahua-package.scm, src/kahua-config.scm: Added.
+	  Package manager, configuration utility.
+
 	* Fix many bugs.
 
 	* src/kahua-httpd.scm: Added
