@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.1.2.10 2006/07/27 05:31:50 bizenn Exp $
+;; $Id: dbi.scm,v 1.1.2.11 2006/07/28 07:43:32 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use kahua.util)
@@ -85,8 +85,8 @@
 
 (define-method kahua-db-open ((db <kahua-db-dbi>))
   (let1 conn (dbi-connect (dsn-of db)
-			  :username (user-of db)
-			  :password (password-of db))
+			   :username (user-of db)
+			   :password (password-of db))
     (set! (active? db) #t)
     (kahua-db-dbi-open db conn)))
 
@@ -254,24 +254,25 @@
 ;; Database Consistency Check and Fix
 ;;
 
+(define-method max-table-name-suffix ((db <kahua-db-dbi>))
+  (let* ((conn (connection-of db))
+	 (r (dbi-do conn "select table_name from kahua_db_classes" '())))
+    (apply max (map (lambda (row)
+		      (rxmatch-case (dbi-get-value row 0)
+			(#/^kahua_(\d+)$/ (#f d) (x->integer d))
+			(else -1)))
+		    r))))
+
 (define-method check-kahua-db-classcount ((db <kahua-db-dbi>) . maybe-do-fix?)
-  (define-method max-table-name-prefix ((db <kahua-db-dbi>))
-    (let* ((conn (connection-of db))
-	   (r (dbi-do conn "select table_name from kahua_db_classes" '())))
-      (apply max (map (lambda (row)
-			(rxmatch-case (dbi-get-value row 0)
-			  (#/^kahua_(\d+)$/ (#f d) (x->integer d))
-			  (else -1)))
-		      r))))
   (let* ((do-fix? (get-optional maybe-do-fix? #f))
 	 (conn (connection-of db))
 	 (cc (x->integer (car (map (cut dbi-get-value <> 0)
 				   (dbi-do conn "select value from kahua_db_classcount" '())))))
-	 (max-prefix (max-table-name-prefix db)))
-    (or (and (= cc max-prefix) 'OK)
+	 (max-suffix (max-table-name-suffix db)))
+    (or (and (>= cc max-suffix) 'OK)
 	(and do-fix?
 	     (begin
-	       (dbi-do conn "update kahua_db_classcount set value = ?" '() max-prefix)
+	       (dbi-do conn "update kahua_db_classcount set value = ?" '() max-suffix)
 	       'FIXED))
 	'NG)))
 
@@ -305,7 +306,7 @@
 	 (ic (x->integer (car (map (cut dbi-get-value <> 0)
 				   (dbi-do conn "select value from kahua_db_idcount" '())))))
 	 (max-id (max-kahua-key-from-idcount db)))
-    (or (and (= ic max-id) 'OK)
+    (or (and (>= ic max-id) 'OK)
 	(and do-fix?
 	     (begin
 	       (dbi-do conn "update kahua_db_idcount set value = ?" '() max-id)
