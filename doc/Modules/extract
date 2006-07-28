@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.1 2006/05/20 15:53:42 shibata Exp $
+;;;  $Id: extract,v 1.2 2006/07/28 13:09:32 bizenn Exp $
 ;;;
 
 (use gauche.regexp)

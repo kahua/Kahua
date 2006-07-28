@@ -1,0 +1,44 @@
+;; -*- coding: euc-jp; mode: kahua -*-
+;;
+;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: pcont-page.kahua,v 1.2 2006/07/28 13:09:39 bizenn Exp $
+;;
+
+;
+; login page
+;
+(define (generate-login-page checker)
+  (define (login-pc return login-name password)
+    (simple-page
+     (a/cont/ (@@/ (cont %%_PROJECT_NAME_%%)) "[Page TOP]")
+     (span/ (@/ (class "warning"))
+	    "Please Login for continue")
+     (form/cont/
+      (@@/ (cont (entry-lambda (:keyword name pass)
+		     (let1 user (kahua-check-user name pass)
+		       (if (and user (checker user))
+			   (begin
+			     (set! (kahua-current-user) name)
+			     (return user))
+			   (login-pc return name pass))))))
+      (table/ (tr/ (th/ "UserName:")
+		   (td/ (input/ (@/ (type "text") (name "name")
+				    (size 20) (value login-name)))))
+	      (tr/ (th/ "Password:")
+		   (td/ (input/ (@/ (type "password") (name "pass")
+				    (size 20) (value password))))))
+      (input/ (@/ (type "submit") (value "Login")))
+      (span/ (@/ (class "warning")) (v:login :keyword "name" "pass")))))
+  (lambda ()
+    (let/pc k (login-pc k "" ""))))
+
+(define get-admin-user
+  (generate-login-page (cut kahua-user-has-role? <> '(admin))))
+
+(define get-normal-user
+  (generate-login-page identity))
+
+(define (signin?)
+  (kahua-current-user))

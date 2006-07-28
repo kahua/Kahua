@@ -1,0 +1,10 @@
+;;-*- coding: euc-jp; mode: scheme -*-
+;; %%_PROJECT_NAME_%% version
+;;
+;;  Copyright (c) 2005 KahuaOrg
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: version.kahua.in,v 1.1.2.2 2006/07/16 16:16:55 cut-sea Exp $
+
+;;---------------------------------------------------------
+(define *%%_PROJECT_NAME_%%-version* "###%%_PROJECT_NAME_UP_%%_VERSION###")

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua.scm,v 1.9 2005/08/06 09:33:28 nel Exp $
+;; $Id: kahua.scm,v 1.10 2006/07/28 13:09:43 bizenn Exp $
 
 (define-module kahua
   (extend kahua.config
@@ -21,6 +21,7 @@
           kahua.sandbox
           kahua.pdf
           kahua.error-report
+	  kahua.thread-pool
 	  )
   )
 

@@ -1,0 +1,42 @@
+;; -*- coding: euc-jp; mode: kahua -*-
+;;
+;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: default.kahua,v 1.2 2006/07/28 13:09:39 bizenn Exp $
+;;
+
+;
+; configure - default values
+;
+
+(define *%%_PROJECT_NAME_%%-database-name*
+  (build-path (ref (kahua-config) 'working-directory)
+	      "%%_PROJECT_NAME_%%" "db"))
+(define *file-directory*
+  (let1 upload-path (kahua-static-document-path "%%_PROJECT_NAME_%%/files")
+    (make-directory* upload-path)
+    upload-path))
+
+(primary-database-name *%%_PROJECT_NAME_%%-database-name*)
+(kahua-check-transaction! #f)
+
+;
+; site setting
+;
+; site title
+(define *site-title* "%%_PROJECT_NAME_%%")
+; site legal name
+(define *site-name* "%%_PROJECT_NAME_%%")
+; site email
+(define *site-email-address* "%%_EMAIL_ADDRESS_%%")
+; for double click with same value posted.
+(define *click-interval-time* 60)
+
+
+;
+; Application specific setting.
+;
+; You should add default values below here.
+;
+

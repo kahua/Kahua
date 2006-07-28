@@ -1,0 +1,38 @@
+;; -*- coding: euc-jp; mode: kahua -*-
+;;
+;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: page.kahua,v 1.2 2006/07/28 13:09:39 bizenn Exp $
+;;
+
+;
+; page-template
+;
+(define-constant *content-type*
+  (format "text/html; charset=~a"
+	  (case (gauche-character-encoding)
+	    ((euc-jp) 'EUC-JP)
+	    ((utf-8)  'UTF-8)
+	    ((sjis)   'Shift_JIS)
+	    (else     'EUC-JP))))
+
+(define (page-base . body)
+  (html/
+   (head/ (title/ "%%_PROJECT_NAME_UP_%%")
+	  (meta/ (@/ (http-equiv "content-type")
+		     (content *content-type*)))
+	  (link/ (@/ (rel "stylesheet") (type "text/css")
+		     (href (kahua-static-document-url
+			    "%%_PROJECT_NAME_%%/%%_PROJECT_NAME_%%.css")))))
+   (body/
+    (h1/ *site-title*)
+    (node-set body)
+    (div/ (@/ (id "bottom-pane"))
+	  (p/ &copy
+	      #`" 2006 Kahua Project ver ,*%%_PROJECT_NAME_%%-version*")))))
+
+(define (simple-page . body)
+  (page-base (node-set body)))
+
+

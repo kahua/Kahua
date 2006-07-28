@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test supervisor scripts in http mode.
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: spvr-httpd.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: httpd.scm,v 1.2 2006/07/28 13:09:49 bizenn Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -9,14 +9,14 @@
 (use kahua.test.xml)
 (use file.util)
 
-(test-start "supervisor script (http mode)")
+(test-start "kahua-httpd script")
 
 (define *spvr* #f)
 
 (define *port* 27490)
 
 ;;-----------------------------------------------------------
-(test-section "start kahua-spvr with httpd")
+(test-section "start kahua-spvr with kahua-httpd")
 
 (test* "start" #t
        (let* ((p (run-process "../src/kahua-spvr" "--test"
@@ -31,7 +31,7 @@
 
 (test* "httpd get" '("200" #t)
        (receive (status headers body)
-           (http-get #`"localhost:,*port*" "/")
+           (http-get #`"localhost:,*port*" "/lambdabooks")
          (list status
                (test-xml-match? 
                 '(html (head (title "Lambda books") ?*)

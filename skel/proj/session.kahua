@@ -1,0 +1,57 @@
+;; -*- coding: euc-jp; mode: kahua -*-
+;;
+;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: session.kahua,v 1.2 2006/07/28 13:09:39 bizenn Exp $
+;;
+
+;
+; current user
+;
+(define (current-admin-user)
+  (or (and-let* ((usr (kahua-current-user))
+		 ((kahua-user-has-role? usr '(admin))))
+	usr)
+      (get-admin-user)))
+
+(define (current-normal-user)
+  (or (and-let* ((usr (kahua-current-user)))
+	usr)
+      (get-normal-user)))
+
+(define (signin?)
+  (and-let* ((usr (kahua-current-user)))
+    usr))
+
+;
+; session objects
+;
+; for double click safety net.
+;
+(define-session-object posted-history (make-hash-table 'equal?))
+
+(define (legal-post? . args)
+  (let ((past (hash-table-get (posted-history) args (sys-time)))
+	(now (sys-time)))
+    (hash-table-put! (posted-history) args (+ now *click-interval-time*))
+    (>= now past)))
+
+(define-method object-equal? ((a <kahua-persistent-base>) (b <kahua-persistent-base>))
+  (equal? (kahua-persistent-id a) (kahua-persistent-id b)))
+
+(define-method object-hash ((obj <kahua-persistent-base>))
+  (hash (kahua-persistent-id obj)))
+
+(define-method object-equal? ((f <procedure>) (g <procedure>))
+  (eq? f g))
+
+(define-method object-hash ((obj <procedure>))
+  (hash (ref obj 'info)))
+
+;
+; Application specific setting.
+;
+; You should add define-session-object below here.
+;
+

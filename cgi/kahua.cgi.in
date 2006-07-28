@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.37 2006/05/31 18:20:38 cut-sea Exp $
+;; $Id: kahua.cgi.in,v 1.38 2006/07/28 13:09:31 bizenn Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -53,14 +53,6 @@
 ;; bridge name option, mainly to pass "~user" information
 (define *bridge-option* "")
 
-;; getting cgi meta-variables; first we try cgi-metavariables parameter,
-;; then use getenv for fallback.
-(define (get-meta name)
-  (or (and-let* ((mv (cgi-metavariables))
-                 (p  (assoc name mv)))
-        (cadr p))
-      (sys-getenv name)))
-
 ;; send standard metavariables to worker.
 (define *metavariables*
   '("AUTH_TYPE"
@@ -88,11 +80,15 @@
     "SERVER_SOFTWARE"
     ))
 
-(define (metavariable-alist)
+(define (cookie-path)
+  (or (*worker-uri*)
+      (sys-dirname
+       (or (cgi-get-metavariable "SCRIPT_NAME") "/"))))
+
+(define (metavariable-list)
   (filter-map (lambda (meta)
-                (let1 meta-var (get-meta meta)
-                  (and meta-var
-                       (cons meta meta-var))))
+                (let1 meta-var (cgi-get-metavariable meta)
+                  (and meta-var (list meta meta-var))))
               *metavariables*))
 
 (define (kcv value)
@@ -120,9 +116,7 @@
  	  (set-cookie!
            (construct-cookie-string
             `(("x-kahua-sgsid" ,state
-               :path ,(or (*worker-uri*)
-                       (sys-dirname
-                        (or (get-meta "SCRIPT_NAME") "/")))))))
+               :path ,(cookie-path)))))
 	  body))))
 
 ;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
@@ -135,7 +129,7 @@
 ;; retrieve PATH_INFO, with processing ~user component.
 ;; returns #f if there's no PATH_INFO.
 (define (get-path-info)
-  (and-let* ((p (get-meta "PATH_INFO"))
+  (and-let* ((p (cgi-get-metavariable "PATH_INFO"))
              (l (cdr (string-split p #\/))))
     (when (and (pair? l) (#/^~.+/ (car l)))
       (load-user-config (car l))
@@ -160,9 +154,9 @@
 ;; construct absolute uri for the server root.
 ;; note that we can only guess the protocol scheme.
 (define (server-uri)
-  (let ((scheme (if (get-meta "HTTPS") "https" "http"))
-        (name   (or (get-meta "SERVER_NAME") "localhost"))
-        (port   (or (x->integer (get-meta "SERVER_PORT")) 80)))
+  (let ((scheme (if (cgi-get-metavariable "HTTPS") "https" "http"))
+        (name   (or (cgi-get-metavariable "SERVER_NAME") "localhost"))
+        (port   (or (x->integer (cgi-get-metavariable "SERVER_PORT")) 80)))
     (format "~a://~a~a"
             scheme name
             (if (or (and (string=? scheme "http")  (= port 80))
@@ -177,13 +171,13 @@
       (dispatch-destination param)
     (log-format "~s ~s ~s" worker-id worker-type cont-gsid)
     (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
-           (remote-addr (get-meta "REMOTE_ADDR"))
+           (remote-addr (cgi-get-metavariable "REMOTE_ADDR"))
            (header     (list*
                         `("x-kahua-bridge"
-                          ,(string-append (get-meta "SCRIPT_NAME")
+                          ,(string-append (cgi-get-metavariable "SCRIPT_NAME")
                                           *bridge-option*))
                         `("x-kahua-server-uri" ,(server-uri))
-                        `("x-kahua-metavariables" ,(metavariable-alist))
+                        `("x-kahua-metavariables" ,(metavariable-list))
                         (cond-list
                          ((*worker-uri*) `("x-kahua-worker-uri" ,(*worker-uri*)))
                          (worker-type `("x-kahua-worker" ,worker-type))
@@ -256,7 +250,7 @@
   (publish (response) body))
 
 (define (analize-virtual-hosting)
-  (let1 path-info (get-meta "PATH_INFO")
+  (let1 path-info (cgi-get-metavariable "PATH_INFO")
     (if (not path-info)
         (cgi-metavariables)
 
@@ -291,7 +285,7 @@
 ;; publish html. provide ~user authentication.
 (define (publisher params)
   (parameterize ((cgi-metavariables (analize-virtual-hosting)))
-    (let* ((path-info (get-meta "PATH_INFO"))
+    (let* ((path-info (cgi-get-metavariable "PATH_INFO"))
            (p (cadr (string-split (if (or (not path-info) 
                                           (string-null? path-info)) 
                                       "/" path-info) #\/))))
@@ -312,9 +306,7 @@
                      (set-cookie!
                       (construct-cookie-string
                        `(("kahua-passwd" ,(base64-encode-string passwd)
-                          :path ,(or (*worker-uri*)
-                                     (sys-dirname
-                                      (or (get-meta "SCRIPT_NAME") "/")))))))
+                          :path ,(cookie-path)))))
                      (send-reply params))
                  (unauthorized-form)
                  ))

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.21 2006/07/12 04:23:06 bizenn Exp $
+;; $Id: elem.scm,v 1.22 2006/07/28 13:09:43 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 

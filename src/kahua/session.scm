@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.14 2006/05/23 13:36:01 cut-sea Exp $
+;; $Id: session.scm,v 1.15 2006/07/28 13:09:43 bizenn Exp $
 
 ;; This module manages two session-related structure.
 ;;

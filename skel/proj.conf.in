@@ -1,0 +1,10 @@
+;; -*- coding: euc-jp; mode: scheme -*-
+;;
+;; $Id: proj.conf.in,v 1.1.2.2 2006/07/16 16:45:32 cut-sea Exp $
+
+(make <kahua-config>
+  :sockbase             "unix:###%%_PROJECT_NAME_UP_%%_INPLACE_SOCKETBASE###"
+  :working-directory    "###%%_PROJECT_NAME_UP_%%_INPLACE_WORKING###"
+  :static-document-path "###%%_PROJECT_NAME_UP_%%_INPLACE_DOCPATH###"
+  :static-document-url  "/doc"
+  )
