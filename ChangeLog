@@ -1,3 +1,77 @@
+2006-07-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix many bugs.
+
+	* src/kahua-httpd.scm: Added
+	- Simple HTTPd server.
+	- It invoked from kahua-spvr, but you can start kahua-httpd
+	  separatedly.
+	- Now test/spvr-httpd.scm renamed into test/httpd.scm.
+	- It can set UID and GID to specified user:group with --runas
+	  option when started with root privilege.
+	- It print log into $logdir/kahua-httpd.log when it is invoked
+	  form kahua-spvr.
+	
+	* src/kahua/persistence.scm: Reconstructed.
+	- It was splitted into:
+		kahua/persistence.scm
+		kahua/persistence/fs.scm
+		kahua/persistence/dbi.scm
+		kahua/persistence/mysql.scm
+		kahua/persistence/postgresql.scm
+	- Now it work properly with multi-process worker(eh, it should be so).
+	- Fix database connection leak.
+	- Now database encoding handled properly.
+	- Now more robust, efficient(eh, I hope so).  It handle lock and
+	  transaction properly.
+	- :final slot option added to <kahua-persistet-base> class(and any
+	  classes whose metaclass is <kahua-persistent-meta>).  If it has
+	  #t, the slot cannot be override in its subclass.
+	- Now the database structure is changed in MySQL or PostgreSQL.
+	  So add kahua-dbutil script to check and to fix database structure.
+	- Now the slots of <kahua-db> have its accessor.  You should use them
+	  instead of referring slot directly.
+	- Rename id and db slot in <kahua-persistent-base> are renamed to
+	  %kahua-persistent-base::id and %kahua-persistent-base::db.
+	  You cannot override them, and should not refer them directly.
+	- Add kahua-persistent-id as getter to get value of
+	  %kahua-persistent-base::id.
+	- Fix suppress extra INSERT/UPDATE to database.
+	- Now make-kahua-collection can take :predicate or :keys keyword
+	  argument for filtering instances.
+
+	* src/kahua/server.scm
+	  Now interp-json handle multi-byte character encoding properly,
+	  and it return "application/x-javascript" instead of "text/javascript"
+	  as Content-Type.
+
+	* src/kahua-server.scm:
+	  Now response send to spvr or client after database is committed or
+	  rollbacked.
+
+	* src/kahua-spvr.scm, src/kahua-server.scm:
+	- Now we can specify default database name with :default-database-name
+	  in the "app-servers" file.
+	- Now we run any workers with profiler.  You specify :profiler path-base
+	  of output file in the "app-servers" file.
+	- Drop pinger to workers.  But a worker is restarted automatically when
+	  it is terminated unexpectedly if you specify so in kahua.conf.
+	
+	* src/kahua-spvr.scm: Reconstructed.
+	- Split HTTPd function into kahua-httpd.
+	- If a worker is in multi-process, kahua-spvr distributes requests to
+	  each process in round-robin.
+	- Now it has no default worker.  If no worker specified, spvr return
+	  error.
+	- Now it handle worker processes or its thread properly.
+
+	* src/kahua-spvr.scm, src/kahua-keyserv:
+	  Now they use kahua.thread-pool module.
+
+	* src/kahua/thread-pool.scm: Added
+
+	* Merged from "dev_ha" experimental branch.
+
 2006-07-05  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
 	* src/kahua/persistence.scm (<kahua-persistent-base>): add getter kahua-persistent-id.
