@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.1.2.11 2006/07/28 07:43:32 bizenn Exp $
+;; $Id: dbi.scm,v 1.1.2.12 2006/07/28 09:46:54 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use kahua.util)
@@ -27,6 +27,13 @@
 	  class->table-name
 	  class-table-next-suffix
 	  with-transaction
+
+	  current-kahua-db-classcount
+	  fix-kahua-db-classcount
+	  create-kahua-db-classcount
+	  current-kahua-db-idcount
+	  fix-kahua-db-idcount
+	  create-kahua-db-idcount
 	  ))
 
 (select-module kahua.persistence.dbi)
@@ -100,7 +107,16 @@
 (define-constant *create-kahua-db-idcount*
   "create table kahua_db_idcount (value integer)")
 (define-constant *initialize-kahua-db-idcount*
-  "insert into kahua_db_idcount values (0)")
+  "insert into kahua_db_idcount values (?)")
+(define-constant *clear-kahua-db-idcount*
+  "delete from kahua_db_idcount")
+
+(define-constant *create-kahua-db-classcount*
+  "create table kahua_db_classcount (value integer)")
+(define-constant *initialize-kahua-db-classcount*
+  "insert into kahua_db_classcount values (?)")
+(define-constant *clear-kahua-db-classcount*
+  "delete from kahua_db_classcount")
 
 (define-method kahua-db-dbi-open ((db <kahua-db-dbi>) conn)
   (define (safe-query query)
@@ -129,10 +145,11 @@
       ;; this is the first time we use db.
       ;; TODO: error check
       (for-each
-       (cut dbi-do conn <> '(:pass-through #t))
+       (cut apply dbi-do conn <> '(:pass-through #t) <>)
        `(,*create-kahua-db-classes*
 	 ,*create-kahua-db-idcount*
-	 ,*initialize-kahua-db-idcount*))
+	 ,*initialize-kahua-db-idcount*)
+       '(() (0) ()))
       (let1 zz (query-idcount)
 	(unless zz
 	  (error "couldn't initialize database"))
@@ -263,18 +280,35 @@
 			(else -1)))
 		    r))))
 
+(define-method current-kahua-db-classcount ((db <kahua-db-dbi>))
+  (x->integer (car (map (cut dbi-get-value <> 0)
+			(dbi-do (connection-of db) "select value from kahua_db_classcount" '())))))
+
+(define-method fix-kahua-db-classcount ((db <kahua-db-dbi>) n)
+  (dbi-do (connection-of db) "update kahua_db_classcount set value=?" '() n))
+
+(define-method create-kahua-db-classcount ((db <kahua-db-dbi>) n)
+  (let1 conn (connection-of db)
+    (guard (e ((<dbi-exception> e) #t))
+      (dbi-do conn *create-kahua-db-classcount* '()))
+    (dbi-do conn *clear-kahua-db-classcount* '())
+    (dbi-do conn *initialize-kahua-db-classcount* '() n)))
+
 (define-method check-kahua-db-classcount ((db <kahua-db-dbi>) . maybe-do-fix?)
-  (let* ((do-fix? (get-optional maybe-do-fix? #f))
-	 (conn (connection-of db))
-	 (cc (x->integer (car (map (cut dbi-get-value <> 0)
-				   (dbi-do conn "select value from kahua_db_classcount" '())))))
-	 (max-suffix (max-table-name-suffix db)))
-    (or (and (>= cc max-suffix) 'OK)
-	(and do-fix?
-	     (begin
-	       (dbi-do conn "update kahua_db_classcount set value = ?" '() max-suffix)
-	       'FIXED))
-	'NG)))
+  (call/cc (lambda (ret)
+	     (let* ((do-fix? (get-optional maybe-do-fix? #f))
+		    (max-suffix (max-table-name-suffix db))
+		    (classcount (guard (e ((<dbi-exception> e)
+					   (cond (do-fix?
+						  (create-kahua-db-classcount db max-suffix)
+						  (ret 'FIXED))
+						 (ret 'NG))))
+				  (current-kahua-db-classcount db))))
+	       (or (and (>= classcount max-suffix) 'OK)
+		   (and do-fix?
+			(fix-kahua-db-classcount db max-suffix)
+			'FIXED)
+		   'NG)))))
 
 (define-method load-all-kahua-tables ((db <kahua-db-dbi>) ht)
   (define-method enumerate-kahua-class-table ((db <kahua-db-dbi>))
@@ -300,17 +334,34 @@
 			    (else         r)))
 		     -1)))
 
+(define-method current-kahua-db-idcount ((db <kahua-db-dbi>))
+  (x->integer (car (map (cut dbi-get-value <> 0)
+			(dbi-do (connection-of db) "select value from kahua_db_idcount" '())))))
+
+(define-method fix-kahua-db-idcount ((db <kahua-db-dbi>) n)
+  (dbi-do (connection-of db) "update kahua_db_idcount set value = ?" '() n))
+
+(define-method create-kahua-db-idcount ((db <kahua-db-dbi>) n)
+  (let1 conn (connection-of db)
+    (guard (e ((<dbi-exception> e) #t))	; ignore
+      (dbi-do conn *create-kahua-db-idcount* '()))
+    (dbi-do conn *clear-kahua-db-idcount* '())
+    (dbi-do conn *initialize-kahua-db-idcount* '() n)))
+
 (define-method check-kahua-db-idcount ((db <kahua-db-dbi>) . maybe-do-fix?)
-  (let* ((do-fix? (get-optional maybe-do-fix? #f))
-	 (conn (connection-of db))
-	 (ic (x->integer (car (map (cut dbi-get-value <> 0)
-				   (dbi-do conn "select value from kahua_db_idcount" '())))))
-	 (max-id (max-kahua-key-from-idcount db)))
-    (or (and (>= ic max-id) 'OK)
-	(and do-fix?
-	     (begin
-	       (dbi-do conn "update kahua_db_idcount set value = ?" '() max-id)
-	       'FIXED))
-	'NG)))
+  (call/cc (lambda (ret)
+	     (let* ((do-fix? (get-optional maybe-do-fix? #f))
+		    (max-id (max-kahua-key-from-idcount db))
+		    (idcount (guard (e ((<dbi-exception> e)
+					(cond (do-fix?
+					       (create-kahua-db-idcount db max-id)
+					       (ret 'FIXED))
+					      (else (ret 'NG)))))
+			       (current-kahua-db-idcount db))))
+	       (or (and (>= idcount max-id) 'OK)
+		   (and do-fix?
+			(fix-kahua-db-idcount db max-id)
+			'FIXED)
+		   'NG)))))
 
 (provide "kahua/persistence/dbi")

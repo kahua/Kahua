@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.1.2.6 2006/07/28 07:43:32 bizenn Exp $
+;; $Id: postgresql.scm,v 1.1.2.7 2006/07/28 09:46:54 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -146,51 +146,32 @@
   (x->integer (car (map (cut dbi-get-value <> 0)
 			(dbi-do (connection-of db) (format "select last_value from ~a" name) '())))))
 
-(define-method replace-kahua-db-idcount ((db <kahua-db-postgresql>) n)
+(define-method current-kahua-db-idcount ((db <kahua-db-postgresql>))
+  (last-value-of-sequence db "kahua_db_idcount"))
+
+(define-method fix-kahua-db-idcount ((db <kahua-db-postgresql>) n)
+  (dbi-do (connection-of db)
+	  (format "select setval('kahua_db_idcount', ~d)" n)
+	  '(:pass-through #t)))
+
+(define-method create-kahua-db-idcount ((db <kahua-db-postgresql>) n)
   (let1 conn (connection-of db)
     (guard (e ((<dbi-exception> e) #f))
-      (dbi-do conn "drop table kahua_db_idcount" '())
+      (dbi-do conn "drop table kahua_db_idcount" '()))
+    (guard (e ((<dbi-exception> e) #f))
       (dbi-do conn (format "create sequence kahua_db_idcount start ~d minvalue 0" n)
 	      '(:pass-through #t)))))
 
-(define-method check-kahua-db-idcount ((db <kahua-db-postgresql>) . maybe-do-fix?)
-  (let* ((do-fix? (get-optional maybe-do-fix? #f))
-	 (max-id  (max-kahua-key-from-idcount db))
-	 (idcount (guard (e ((<dbi-exception> e)
-			     (cond (do-fix?
-				    (replace-kahua-db-idcount db max-id)
-				    max-id)
-				   (else -1))))
-		    (last-value-of-sequence db "kahua_db_idcount"))))
-    (or (and (<= max-id idcount) 'OK)
-	(and do-fix?
-	     (begin
-	       (dbi-do (connection-of db)
-		       (format "select setval('kahua_db_idcount', ~d)" max-id)
-		       '(:pass-through #t))
-	       'FIXED))
-	'NG)))
+(define-method current-kahua-db-classcount ((db <kahua-db-postgresql>))
+  (last-value-of-sequence db "kahua_db_classcount"))
+
+(define-method fix-kahua-db-classcount ((db <kahua-db-postgresql>) n)
+  (dbi-do (connection-of db)
+	  (format "select setval('kahua_db_classcount', ~d)" n)
+	  '(:pass-through #t)))
 
 (define-method create-kahua-db-classcount ((db <kahua-db-postgresql>) n)
   (dbi-do (connection-of db) (format "create sequence kahua_db_classcount start ~d minvalue 0" n)
 	  '(:pass-through #t)))
-
-(define-method check-kahua-db-classcount ((db <kahua-db-postgresql>) . maybe-do-fix?)
-  (let* ((do-fix? (get-optional maybe-do-fix? #f))
-	 (max-id (max-table-name-suffix db))
-	 (classcount (guard (e ((<dbi-exception> e)
-				(cond (do-fix?
-				       (create-kahua-db-classcount db max-id)
-				       max-id)
-				      (else -1))))
-		       (last-value-of-sequence db "kahua_db_classcount"))))
-    (or (and (<= max-id classcount) 'OK)
-	(and do-fix?
-	     (begin
-	       (dbi-do (connection-of db)
-		       (format "select setval('kahua_db_classcount', ~d)" max-id)
-		       '(:pass-through #t))
-	       'FIXED))
-	'NG)))
 
 (provide "kahua/persistence/postgresql")
