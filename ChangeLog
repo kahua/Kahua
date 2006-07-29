@@ -1,3 +1,7 @@
+2006-07-30  Katsutoshi Itoh <cut-sea@kahua.org>
+
+        * modify and add functions into debug-support.kahua.
+
 2006-07-29  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* sanitize node in node->html (skel/debug-support.kahua).

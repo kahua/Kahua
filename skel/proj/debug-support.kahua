@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: debug-support.kahua,v 1.3 2006/07/29 11:58:57 cut-sea Exp $
+;; $Id: debug-support.kahua,v 1.4 2006/07/29 18:42:18 cut-sea Exp $
 ;;
 
 (use text.tree)
@@ -16,6 +16,7 @@
 ;;(use slib)
 ;;(require 'pretty-print)
 
+;; with-login :: String -> [Expr] -> Node
 (define-macro (with-login user . body)
   (let ((ss (gensym))
 	(user (x->string user)))
@@ -25,18 +26,38 @@
 	   ((kahua-current-context `(("session-state" ,,ss))))
 	 ,@body))))
 
+;; node->sxml :: Node -> List
 (define (node->sxml node)
   (pretty-print (rev-nodes (exec () node))))
 
+;; node->html :: Node -> String
 (define (node->html node)
-  (define (safety-net node)
-    (cond ((procedure? node) #`"#[closure,(ref node 'info)]")
-	  ((pair? node) (cons (safety-net (car node))
-			      (safety-net (cdr node))))
-	  (else node)))
   (write-tree
-   (sxml:sxml->xml
-    (safety-net (car (rev-nodes (exec () node)))))))
+   (interp-html (rev-nodes (exec () node))
+		(kahua-current-context))))
+
+;; proc/login :: (String -> Node -> a) -> String -> [Expr] -> a
+(define-macro (proc/login proc user . body)
+  (let ((ss (gensym))
+	(user (x->string user)))
+    `(let1 ,ss (session-state-get (session-state-register))
+       (set! (ref ,ss 'user) ,user)
+       (,proc
+	(parameterize
+	    ((kahua-current-context `(("session-state" ,,ss))))
+	  ,@body)))))
+
+;; node->sxml-with-login :: String -> Node -> List
+(define-macro (node->sxml-with-login user node)
+  `(proc/login node->sxml ,user ,node))
+
+(define node->sxml/login node->sxml-with-login)
+
+;; node->html-with-login :: String -> Node -> String
+(define-macro (node->html-with-login user node)
+  `(proc/login node->html ,user ,node))
+
+(define node->html/login node->html-with-login)
 
 ;;-------------------------------------------------------------------
 ;;
