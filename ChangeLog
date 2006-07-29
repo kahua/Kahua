@@ -1,3 +1,7 @@
+2006-07-29  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* sanitize node in node->html (skel/debug-support.kahua).
+	
 2006-07-28  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* skel/*, src/kahua-package.scm, src/kahua-config.scm: Added.
