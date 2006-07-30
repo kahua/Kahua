@@ -1,3 +1,9 @@
+2006-07-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* doc/Setup.ja: Catch up to current version.
+
+	* configure.ac: Bump version number up to 0.5.
+
 2006-07-30  Katsutoshi Itoh <cut-sea@kahua.org>
 
         * modify and add functions into debug-support.kahua.

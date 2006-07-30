@@ -7,10 +7,11 @@
 *** Gauche のインストール
 
 0.8.7 以降のバージョンの、pthreadをサポートしたGaucheがインストール済み
-である必要があります。
+である必要があります。可能ならCVS HEADの使用をお薦めします(いくつか
+クリティカルなバグが修正されています)。
 
     $ gosh -V
-    Gauche scheme interpreter, version 0.8.7 [euc-jp,pthreads]
+    Gauche scheme interpreter, version 0.8.7 [utf-8,pthreads]
 
 適切なバージョンの Gauche がインストールされていなければ、インストール
 してください。
