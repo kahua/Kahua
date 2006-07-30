@@ -1,4 +1,10 @@
+2006-07-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 0.5 released.
+
 2006-07-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* doc/Scripts/kahua-httpd, doc/Scripts/kahua-dbutil: Add
 
 	* doc/Setup.ja: Catch up to current version.
 
