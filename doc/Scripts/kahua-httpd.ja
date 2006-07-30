@@ -1,0 +1,33 @@
+kahua-httpd
+
+kahua-httpd [-c conf-file] [--user username] [--runas user:group]
+            [-l logfile] [-t threads] [-p port] host[:port] ...
+
+簡易 HTTPd である。kahua-spvr -H によってkahua-spvr配下で動かすことも、
+単独で起動することも可能である。
+
+--user ユーザ名
+kahua-httpdを起動するkahua-spvrに--userオプションが指定されていると
+このオプションを渡してkahua-httpdが起動される。
+
+--runas user:group
+サーバソケットを開いた後、指定されたuser、groupにそれぞれsetuid(2)、
+setgid(2)する。特権ポートをlisten(2)する際、root権限が必要となるため、
+このオプションを指定し、必要な作業を終えた後は権限を落とすことが
+望ましい。
+
+-l はログファイル指定。省略した場合は標準エラー出力を使用するが、
+kahua-spvrから起動された場合は $working-directory/logs/kahua-httpd.log
+を使用する。
+
+-t はスレッドプールであらかじめ起動するスレッドの数を指定する。
+デフォルトは10。
+
+-p port
+デフォルトでlisten(2)するポート番号を指定する。デフォルトは80。
+
+host[:port]
+listen(2)するアドレスとポートを指定する。ポートが省略された場合は
+-pで指定したポートを、それも省略されている場合は80番を使用する。
+hostはIPアドレスもしくは有効なホスト名を指定する。省略した場合は
+0.0.0.0および::(IPv6が有効な場合)を使用する。

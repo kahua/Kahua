@@ -38,16 +38,14 @@ $ ./kahua-spvr --test
 のように使う。
 
 -H, --httpd 
-このオプションを与えられた、kahua-spvr は自前の HTTPd 機能を使います。
-このときには、Apache および kahua.cgi は必要なくなる。
+このオプションを与えられた kahua-spvr は、オプションの値を引数に
+kahua-httpdを起動する。このときには、Apache および kahua.cgi は
+必要なくなる。
 
 -H 8080
 -H sherzo:8080
 
-のように指定する。
-いずれも指定のポート番号でサーバソケットをオープンする。ホスト名
-部分はアプリケーションサーバがホスト名を含むuriを生成するのに
-使われ、省略されるとlocalhostになる。
+のように指定する。詳細は kahua-httpd の説明を参照すること。
 
 立ち上がっているkahua-spvrプロセスは、kahua-adminコマンドによ
 って制御できる。ただし、--test を与えて起動した kahua-spvr を制御する
@@ -57,7 +55,11 @@ $ ./kahua-spvr --test
 い。 daemonとして立ち上げたい場合は、例えばbashなら次のように
 する：
 
-$ (kahua-spvr > /dev/null 2>&1 &)
+$ (kahua-spvr > /logpath 2>&1 &)
+
+バグなどの影響でkahua-spvrが異常終了する際、
+標準エラー出力にエラーメッセージを出力することがある。
+このため、実運用環境では /dev/null にリダイレクトすべきではない。
 
 アプリケーションサーバの種類と立ち上げ方法については、
 conf-fileで指定されたworking-directory下のapp-serversというフ
@@ -70,7 +72,8 @@ app-serversの書式
 
 S式で書く。
 
-((<server-type> :arguments <args> :run-by-default <count>)
+((<server-type> :arguments <args> :run-by-default <count>
+  [:profiler <base-path>] [:default-database-name <dbname>])
  ...)
 
 <server-type>
@@ -85,7 +88,22 @@ S式で書く。
 <count>
 
     kahua-spvr起動時にいくつこのアプリケーションサーバのイン
-    スタンスを立ち上げるか、という指定。通常0か1にしておく。
+    スタンスを立ち上げるか、という指定。kahua-spvrは、
+    クライアントからのリクエストをインスタンス群にラウンドロビンする。
+
+<base-path>
+
+    Gaucheのプロファイラ機能を使用する際、出力先となるファイルのベース名
+    を指定する。例えば /usr/local/kahua/logs/profile と指定した場合、
+    実際のファイル名は /usr/local/kahua/logs/profile.<worker-id> となり、
+    ワーカーひとつあたり100リクエストを処理するごとにプロファイル結果を
+    出力する。省略した場合はプロファイリングは行われない。
+
+<dbname>
+
+    アプリケーションがデフォルトで使用するデータベース名を指定する。
+    省略した場合は ${working-directory}/db にファイルシステムデータベース
+    が作られ、それが使用される。
 
 app-serversの読み込み時にエラーがあった場合は、単に
 app-serversの内容は無視される。
