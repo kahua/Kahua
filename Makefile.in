@@ -44,9 +44,9 @@ install-examples :
 	cd examples; $(MAKE) install-examples
 
 uninstall :
+	cd plugins; $(MAKE) uninstall
 	cd src; $(MAKE) uninstall
 	cd cgi; $(MAKE) uninstall
-	cd plugins; $(MAKE) uninstall
 
 uninstall-examples :
 	cd examples; $(MAKE) uninstall-examples

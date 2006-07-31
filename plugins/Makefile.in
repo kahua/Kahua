@@ -47,9 +47,8 @@ install:
 	done
 
 uninstall:
-	@for f in $(PLUGINS); do \
-	  rm -f $(INSTALL_DIR)/$$f; \
-	done
+	@cd $(INSTALL_DIR) && rm -f $(PLUGINS)
+	-@rmdir -p $(INSTALL_DIR)
 
 distclean: clean
 	rm -rf $(CONFIG_GENERATED)
