@@ -2,7 +2,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.14 2006/07/28 13:09:49 bizenn Exp $
+;; $Id: persistence.scm,v 1.15 2006/08/02 04:24:19 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -379,10 +379,24 @@
 ;; <kahua-test>と，そのsubclassである<kahua-test-sub>両者ともの
 ;; 永続インスタンスのコレクションを，<kahua-test>に対する
 ;; make-kahua-collectionを用いて作成できることを確認する．
-(test* "kahua-test-subclasses" '(1 2 4 5)
+(test* "kahua-test-subclasses"
+       `((1 . <kahua-test>) (2 . <kahua-test>) (4 . <kahua-test-sub>) (5 . <kahua-test-sub>))
        (sort (with-clean-db (db *dbname*)
-               (map kahua-persistent-id
-                    (make-kahua-collection <kahua-test> :subclasses #t)))))
+               (map (lambda (i) (cons (kahua-persistent-id i) (class-name (class-of i))))
+                    (make-kahua-collection <kahua-test> :subclasses #t)))
+	     (lambda (a b) (< (car a) (car b)))))
+
+(define-class <hogehoge> (<kahua-persistent-base>)
+  ((a :allocation :persistent :init-keyword :a)))
+
+(test* "make-kahua-collection / floating instance" 1
+       (with-clean-db (db *dbname*)
+          (make <hogehoge> :a 'a)
+          (size-of (make-kahua-collection <hogehoge>))))
+
+(test* "make-kahua-collection / db instance" 1
+       (with-clean-db (db *dbname*)
+          (size-of (make-kahua-collection <hogehoge>))))
 
 ;;----------------------------------------------------------
 ;; メタ情報履歴に関するテスト：永続クラスの変更をオブジェクトマネージャ

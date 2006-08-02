@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.53 2006/07/28 13:09:43 bizenn Exp $
+;; $Id: persistence.scm,v 1.54 2006/08/02 04:24:18 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -44,6 +44,8 @@
 	  write-kahua-instance
 	  kahua-db-write-id-counter
 	  make-kahua-collection
+
+	  kahua-persistent-instances
 
 	  ;; for Check and fix database consistency.
 	  check-kahua-db-classcount
@@ -1019,8 +1021,26 @@
 (define-method kahua-db-write-id-counter ((db <kahua-db>))
   (kahua-override-error "kahua-db-write-id-counter"))
 
-(define-method make-kahua-collection ((db <kahua-db>))
-  (kahua-override-error "make-kahua-collection"))
+(define-generic kahua-persistent-instances)
+(define-method make-kahua-collection ((db <kahua-db>)
+                                      class opts)
+  (let-keywords* opts ((predicate #f)
+		       (keys #f))
+    (let ((icache (ref db 'instance-by-key))
+	  (cn (class-name class))
+	  (f (if predicate
+		 (lambda (v) (and (predicate v) v))
+		 identity)))
+      (make <kahua-collection>
+	:instances
+	(append!
+	 (kahua-persistent-instances db class keys f)
+	 (filter-map (lambda (i) (and (ref i '%floating-instance)
+				      (is-a? i class)
+				      (or (not keys) (member (key-of i) keys))
+				      (f i)))
+		     (modified-instances-of db)))
+	 ))))
 
 (define-condition-type <with-db-error> <error>
   with-db-error?

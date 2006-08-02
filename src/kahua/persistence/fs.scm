@@ -5,9 +5,10 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.2 2006/07/28 13:09:46 bizenn Exp $
+;; $Id: fs.scm,v 1.3 2006/08/02 04:24:19 bizenn Exp $
 
 (define-module kahua.persistence.fs
+  (use srfi-1)
   (use srfi-13)
   (use file.util)
   (use gauche.fcntl)
@@ -131,18 +132,14 @@
          (string-trim-both (x->string (class-name class)) #[<>])
          key))
 
-(define-method make-kahua-collection ((db <kahua-db-fs>)
-                                      class opts)
-  (let-keywords* opts ((predicate #f)
-		       (keys #f))
-    (let1 f (if predicate
-		(lambda (v) (and (predicate v) v))
-		identity)
-      (make <kahua-collection>
-	:instances (filter-map1 (lambda (k) (f (find-kahua-instance class k)))
-				(or keys
-				    (if (file-is-directory? (data-path db class))
-					(directory-list (data-path db class) :children? #t)
-					'())))))))
+(define-method kahua-persistent-instances ((db <kahua-db-fs>) class keys filter-proc)
+  (let ((cn (class-name class))
+	(icache (ref db 'instance-by-key)))
+    (filter-map (lambda (k) (filter-proc (or (hash-table-get icache (cons cn k) #f)
+					     (find-kahua-instance class k))))
+		(or keys
+		    (if (file-is-directory? (data-path db class))
+			(directory-list (data-path db class) :children? #t)
+			'())))))
 
 (provide "kahua/persistence/fs")

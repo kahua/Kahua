@@ -5,9 +5,10 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.2 2006/07/28 13:09:46 bizenn Exp $
+;; $Id: dbi.scm,v 1.3 2006/08/02 04:24:19 bizenn Exp $
 
 (define-module kahua.persistence.dbi
+  (use srfi-1)
   (use kahua.util)
   (extend kahua.persistence
 	  dbi util.list
@@ -232,40 +233,29 @@
     (set! (ref obj '%floating-instance) #f)
     ))
 
-(define-method make-kahua-collection ((db <kahua-db-dbi>)
-                                      class opts)
-  (define (%select-instances tab where)
-    (format "select keyval, dataval from ~a ~a" tab where))
-  (define (%make-where-in-clause keys)
-    (cond ((not keys) "")
-	  ((null? keys) "where keyval is NULL")
-	  (else
-	   (format "where keyval in (~a)"
-		   (string-join (map (lambda _ "?") keys) ",")))))
-  (define (%key->kahua-instance key)
-    (hash-table-get (ref db 'instance-by-key)
-		    (cons (class-name class) key) #f))
-  (define (%find-kahua-instance row)
-    (let1 k (dbi-get-value row 0)
-      (or (%key->kahua-instance k)
-	  (let1 v (call-with-input-string (dbi-get-value row 1) read)
-	    (set! (ref v '%floating-instance) #f)
-	    v))))
-  (let-keywords* opts ((predicate #f)
-		       (keys #f))
-    (let* ((conn (connection-of db))
-	   (tab (class->table-name db class))
-	   (func (if predicate
-		     (lambda (v) (and (predicate v) v))
-		     identity)))
-      (if tab
-	  (let1 r (apply dbi-do (connection-of db)
-			 (%select-instances tab (%make-where-in-clause keys))
-			 '() (or keys '()))
-	    (make <kahua-collection>
-	      :instances (filter-map1 (lambda (row) (func (%find-kahua-instance row))) r)))
-	  (make <kahua-collection> :instances '())
-	  ))))
+(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class keys filter-proc)
+  (let ((cn (class-name class))
+	(icache (ref db 'instance-by-key))
+	(conn (connection-of db)))
+    (define (%select-instances tab where)
+      (format "select keyval, dataval from ~a ~a" tab where))
+    (define (%make-where-in-clause keys)
+      (cond ((not keys) "")
+	    ((null? keys) "where keyval is NULL")
+	    (else
+	     (format "where keyval in (~a)"
+		     (string-join (map (lambda _ "?") keys) ",")))))
+    (define (%find-kahua-instance row)
+      (let1 k (dbi-get-value row 0)
+	(or (hash-table-get icache (cons cn k) #f)
+	    (let1 v (call-with-input-string (dbi-get-value row 1) read)
+	      (set! (ref v '%floating-instance) #f)
+	      v))))
+    (or (and-let* ((tab (class->table-name db class))
+		   (r (apply dbi-do conn (%select-instances tab (%make-where-in-clause keys))
+			     '() (or keys '()))))
+	  (filter-map1 (lambda (row) (filter-proc (%find-kahua-instance row))) r))
+	'())))
 
 ;;=================================================================
 ;; Database Consistency Check and Fix
