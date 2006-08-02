@@ -1,7 +1,12 @@
+2006-08-02  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: now make-kahua-collection collects also new instance
+	  before kahua-db-sync.
+
 2006-08-01  Tatsuya BIZENN  <bizenn@arthub.net>
 
-	* Fix the problem that install process fail when you install for the
-	  first time and make uninstall don't work properly.
+	* Fix: the problem that install process fail when you install
+	  for the first time and make uninstall don't work properly.
 
 2006-07-31  Tatsuya BIZENN  <bizenn@arthub.net>
 
