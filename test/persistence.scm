@@ -2,7 +2,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.15 2006/08/02 04:24:19 bizenn Exp $
+;; $Id: persistence.scm,v 1.16 2006/08/02 04:33:20 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -380,7 +380,7 @@
 ;; 永続インスタンスのコレクションを，<kahua-test>に対する
 ;; make-kahua-collectionを用いて作成できることを確認する．
 (test* "kahua-test-subclasses"
-       `((1 . <kahua-test>) (2 . <kahua-test>) (4 . <kahua-test-sub>) (5 . <kahua-test-sub>))
+       '((1 . <kahua-test>) (2 . <kahua-test>) (4 . <kahua-test-sub>) (5 . <kahua-test-sub>))
        (sort (with-clean-db (db *dbname*)
                (map (lambda (i) (cons (kahua-persistent-id i) (class-name (class-of i))))
                     (make-kahua-collection <kahua-test> :subclasses #t)))
