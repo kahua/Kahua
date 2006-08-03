@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.3 2006/08/03 10:59:30 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.4 2006/08/03 13:24:10 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -543,7 +543,7 @@
 		((<kahua-worker-not-found> e) (reply-not-found out (uri-of e) #f #t))
 		((<kahua-worker-error> e) (reply-internal-server-error out #f #t))
 		(else
-		 (format (current-error-port) "Error: ~a\n" (ref e 'message))
+		 (log-format "Unexpected error: ~s" (kahua-error-string e))
 		 (reply-internal-server-error out #f #t)))
 	(log-format "Request start: ~s" cs)
 	(receive (method uri ver static-path worker-sockaddr header params) (prepare-dispatch-request cs in)
