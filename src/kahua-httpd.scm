@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.2 2006/07/28 13:09:43 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.3 2006/08/03 10:59:30 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -282,11 +282,15 @@
 		header))))
 
 (define (process-static-document out uri path ver with-body?)
-  (if (file-exists? path)
-      (cond ((and (file-is-readable? path) (file-is-regular? path))
-	     (reply-static-document out path ver with-body?))
-	    (else (reply-forbidden out uri ver with-body?)))
-      (reply-not-found out uri ver with-body?)))
+  (cond ((file-exists? path)
+	 (cond ((and (file-is-readable? path) (file-is-regular? path))
+		(reply-static-document out path ver with-body?))
+	       (else
+		(log-format "Cannot serve file: ~s" path)
+		(reply-forbidden out uri ver with-body?))))
+	(else
+	 (log-format "Not found file: ~s" path)
+	 (reply-not-found out uri ver with-body?))))
 
 (define (reply-static-document out path ver with-body?)
   (receive (dir base ext) (decompose-path path)
@@ -340,6 +344,16 @@
   (define (http-host->server-name host)
     (and-let* ((m (#/\[?([^\]]+)\]?(?::(\d+))$/ host)))
       (values (m 1))))
+
+  (define (path-info->worker-name path-info)
+    (cond ((not path-info) #f)
+	  ((null? path-info) "")
+	  (else (car path-info))))
+
+  (define (path-info->cont-gsid path-info)
+    (if (> (length path-info) 1)
+	(cadr path-info)
+	#f))
 
   (define (sockaddr->ipaddr sa)
     (http-host->server-name (sockaddr-name sa)))
@@ -439,13 +453,11 @@
 						     :part-handlers `((#t file+name ,(kahua-tmpbase))))))))
 		 (state-gsid (cgi-get-parameter "x-kahua-sgsid" params))
 		 (cont-gsid (or (cgi-get-parameter "x-kahua-cgsid" params)
-				(if (and path-info (pair? (cdr path-info)))
-				    (cadr path-info)
-				    #f)))
+				(path-info->cont-gsid path-info)))
 		 (worker-id (and cont-gsid (gsid->worker-id cont-gsid)))
 		 (worker-sockaddr (worker-id->sockaddr worker-id (kahua-sockbase)))
 		 (kahua-header (kahua-worker-header
-				(car path-info) path-info
+				(path-info->worker-name path-info) path-info
 				:server-uri server-uri
 				:metavariables metavars
 				:remote-addr remote-ipaddr
@@ -530,7 +542,9 @@
       (guard (e ((<http-bad-request> e) (reply-bad-request out 'HTTP/1.0 #t))
 		((<kahua-worker-not-found> e) (reply-not-found out (uri-of e) #f #t))
 		((<kahua-worker-error> e) (reply-internal-server-error out #f #t))
-		(else (format (current-error-port) "Error: ~a\n" (ref e 'message))))
+		(else
+		 (format (current-error-port) "Error: ~a\n" (ref e 'message))
+		 (reply-internal-server-error out #f #t)))
 	(log-format "Request start: ~s" cs)
 	(receive (method uri ver static-path worker-sockaddr header params) (prepare-dispatch-request cs in)
 	  (if static-path
