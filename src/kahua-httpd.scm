@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.4 2006/08/03 13:24:10 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.5 2006/08/04 03:07:37 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -539,7 +539,7 @@
 (define (handle-request cs)
   (call-with-client-socket cs
     (lambda (in out)
-      (guard (e ((<http-bad-request> e) (reply-bad-request out 'HTTP/1.0 #t))
+      (guard (e ((<http-bad-request> e) (reply-bad-request out #f #t))
 		((<kahua-worker-not-found> e) (reply-not-found out (uri-of e) #f #t))
 		((<kahua-worker-error> e) (reply-internal-server-error out #f #t))
 		(else
@@ -549,8 +549,8 @@
 	(receive (method uri ver static-path worker-sockaddr header params) (prepare-dispatch-request cs in)
 	  (if static-path
 	      (serve-static-document out method uri ver static-path)
-	      (serve-via-worker out method uri ver worker-sockaddr header params)))
-	(log-format "Request finish: ~s" cs))
+	      (serve-via-worker out method uri ver worker-sockaddr header params))))
+      (log-format "Request finish: ~s" cs)
       (flush out)))
   (for-each sys-unlink (cgi-temporary-files)))
 
