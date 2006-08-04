@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.5 2006/08/04 03:07:37 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.6 2006/08/04 07:32:06 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -45,6 +45,14 @@
 (define (log-prefix drain)
   (format "[~s] " (current-thread)))
 
+(define request-line (make-parameter #f))
+(define request-method (make-parameter #f))
+(define request-uri (make-parameter #f))
+(define request-version (make-parameter #f))
+
+(define (with-body?)
+  (not (eq? (request-method) 'HEAD)))
+
 (define-constant *GATEWAY-INTERFACE* "CGI/1.1")
 
 (define-constant *DEFAULT-ENCODING*
@@ -54,10 +62,10 @@
     ((sjis)   'Shift_JIS)
     (else     #f)))
 
-(define-condition-type <kahua-error> <error> #f)
-(define-condition-type <kahua-worker-not-found> <kahua-error> #f (uri uri-of))
+(define-condition-type <kahua-error> <error> kahua-error?)
+(define-condition-type <kahua-worker-not-found> <kahua-error> #f)
 (define-condition-type <kahua-worker-error> <kahua-error> #f)
-(define-condition-type <http-bad-request> <kahua-error> #f (request request-of))
+(define-condition-type <kahua-http-error> <kahua-error> http-error?)
 
 (define (default-error-page out status msg)
   (display "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n" out)
@@ -71,39 +79,11 @@
   (build-path (ref (kahua-config) 'working-directory)
 	      "tmp" "kahua-"))
 
-;; Method dispatching.
-(define-values (do-get
-		do-head)
-  (let1 %do-get (lambda (out uri ver with-body?)
-		  (or (and-let* ((path (static-document-path uri (kahua-static-document-url))))
-			(process-static-document out uri path ver #t))
-		      (reply-not-found out uri ver #t)))
-    (values (lambda (method in out uri ver header cont) (%do-get out uri ver #t))
-	    (lambda (method in out uri ver header cont) (%do-get out uri ver #f)))))
-;; Unknown method handler
-(define (do-unknown method in out uri ver header cont)
-  (reply-not-implemented out method uri ver #t))
-(define do-post do-unknown)
-(define do-put do-unknown)
-(define do-delete do-unknown)
-(define do-options do-unknown)
-(define do-trace do-unknown)
-(define do-connect do-unknown)
-(define-constant *METHOD-TABLE*
-  `((GET     . ,do-get)
-    (HEAD    . ,do-head)
-    (POST    . ,do-post)
-    (PUT     . ,do-put)
-    (DELETE  . ,do-delete)
-    (OPTIONS . ,do-options)
-    (TRACE   . ,do-trace)
-    (CONNECT . ,do-connect)))
-(define (process-method method . args)
-  (let* ((method (if (symbol? method)
-		     method
-		     (string->symbol method)))
-	 (proc (assq-ref *METHOD-TABLE* method do-unknown)))
-    (apply proc method args)))
+;; Now support method GET, HEAD, POST only.
+(define (unsupported-method? method)
+  (case method
+    ((PUT DELETE OPTIONS TRACE CONNECT) #t)
+    (else                               #f)))
 
 ;; MIME Type.
 (define-constant *MIME-TYPES* '(("jpg"  . "image/jpeg")
@@ -218,7 +198,7 @@
   (with-port-locking out
     (lambda ()
       (format out "~a ~a\r\n" (or version 'HTTP/1.0) (assq-ref *STATUS-TABLE* status))
-      (send-header out header)
+      (send-http-header out header)
       (display "\r\n" out)
       (and body-cont (body-cont out)))))
 
@@ -260,9 +240,10 @@
 (define (basic-header ct)
   `(("date" ,(http-date (current-time)))
     ("server" ,(format "Kahua-HTTPd/~a" (kahua-version)))
-    ("content-type" ,ct)))
+    ("content-type" ,ct)
+    ("connection" "close")))		; Now not support keep-alive connection yet.
 
-(define (send-header out header)
+(define (send-http-header out header)
   (define (display-titlecase name)
     (fold (lambda (c prev)
 	    (write-char ((if (char=? #\- prev)
@@ -281,24 +262,23 @@
 		  (display "\r\n"))
 		header))))
 
-(define (process-static-document out uri path ver with-body?)
+(define (serve-static-document out path)
+  (define (reply-static-document out path ver with-body?)
+    (receive (dir base ext) (decompose-path path)
+      (reply out 200 ver (basic-header (mime-type ext))
+	     (and with-body?
+		  (lambda (out)
+		    (call-with-input-file path
+		      (cut copy-port <> out)))))))
   (cond ((file-exists? path)
 	 (cond ((and (file-is-readable? path) (file-is-regular? path))
-		(reply-static-document out path ver with-body?))
+		(reply-static-document out path (request-version) (with-body?)))
 	       (else
 		(log-format "Cannot serve file: ~s" path)
-		(reply-forbidden out uri ver with-body?))))
+		(raise (make-condition <http-forbidden>)))))
 	(else
 	 (log-format "Not found file: ~s" path)
-	 (reply-not-found out uri ver with-body?))))
-
-(define (reply-static-document out path ver with-body?)
-  (receive (dir base ext) (decompose-path path)
-    (reply out 200 ver (basic-header (mime-type ext))
-	   (and with-body?
-		(lambda (out)
-		  (call-with-input-file path
-		    (cut copy-port <> out)))))))
+	 (raise (make-condition <http-not-found>)))))
 
 ;; 400 Bad Request
 (define (reply-bad-request out ver with-body?)
@@ -306,6 +286,9 @@
 	 (and with-body?
 	      (cut default-error-page <> 400
 		   "Your browser sent a request that this server could not understand."))))
+(define-condition-type <http-bad-request> <kahua-http-error> #f)
+(define-method reply-error ((http-error <http-bad-request>) out)
+  (reply-bad-request out #f #t))
 
 ;; 403 Forbidden
 (define (reply-forbidden out uri ver with-body?)
@@ -313,6 +296,9 @@
 	 (and with-body?
 	      (cut default-error-page <> 403
 		   (format "You don't have permission to access ~a on this server." uri)))))
+(define-condition-type <http-forbidden> <kahua-http-error> #f)
+(define-method reply-error ((e <http-forbidden>) out)
+  (reply-forbidden out (request-uri) (request-version) (with-body?)))
 
 ;; 404 Not Found
 (define (reply-not-found out uri ver with-body?)
@@ -320,18 +306,29 @@
 	 (and with-body?
 	      (cut default-error-page <> 404
 		   (format "The requested URL ~a was not found on this server." uri)))))
+(define-condition-type <http-not-found> <kahua-http-error> #f)
+(define-method reply-error ((e <http-not-found>) out)
+  (reply-not-found out (request-uri) (request-version) (with-body?)))
+(define-method reply-error ((e <kahua-worker-not-found>) out)
+  (reply-not-found out (request-uri) (request-version) (with-body?)))
 
+;; 405 Method Not Allowed
 (define (reply-method-not-allowed out method uri ver with-body?)
   (reply out 405 ver (basic-header "text/html")
 	 (and with-body?
 	      (cut default-error-page <> 405
 		   (format "The requested method ~a is not allowed for the URL ~a." method uri)))))
+(define-condition-type <http-method-not-allowed> <kahua-http-error> #f)
+(define-method reply-error ((e <http-method-not-allowed>) out)
+  (reply-method-not-allowed out (request-method) (request-uri) (request-version) (with-body?)))
 
 ;; 500 Internal Server Error
 (define (reply-internal-server-error out ver with-body?)
   (reply out 500 ver (basic-header "text/html")
 	 (and with-body?
 	      (cut default-error-page <> 500 "Internal Server Error occured."))))
+(define-method reply-error ((e <kahua-error>) out)
+  (reply-internal-server-error out (request-version) (with-body?)))
 
 ;; 501 Not Implemented
 (define (reply-not-implemented out method uri ver with-body?)
@@ -339,6 +336,9 @@
 	 (and with-body?
 	      (cut default-error-page <> 501
 		   (format "~a to ~a not supported." method uri)))))
+(define-condition-type <http-not-implemented> <kahua-http-error> #f)
+(define-method reply-error ((e <http-not-implemented>) out)
+  (reply-not-implemented out (request-method) (request-uri) (request-version) #t))
 
 (define (prepare-dispatch-request cs in)
   (define (http-host->server-name host)
@@ -419,58 +419,56 @@
 				   "QUERY_STRING"      query-string))
 	       (http-header->kahua-metavariables http-header))))
 
-  (let*-values (((line) (read-line in))
-		((method request-uri version) (parse-request-line line)))
-    (unless method (raise (make-condition <http-bad-request> 'request line)))
-    (let*-values (((scheme user host port path query frag) (parse-uri request-uri))
-		  ((http-header) (parse-header in))
-		  ((path-info) (path->path-info path))
-		  ((abs-path) (path-info->abs-path path-info))
-		  ((path-translated) (static-document-path-info path-info (kahua-static-document-url))))
-      (if path-translated
-	  (values method request-uri version path-translated #f #f #f)
-	  (let* ((local-port (x->string (sockaddr-port (socket-getsockname cs))))
-		 (remote-ipaddr (sockaddr->ipaddr (socket-getpeername cs)))
-		 (http-host (rfc822-header-ref http-header "host"))
-		 (server-uri #`",(or scheme \"http\")://,|http-host|")
-		 (script-name "") ; DUMMY
-		 (metavars (kahua-metavariables http-header
-						:gateway-interface *GATEWAY-INTERFACE*
-						:remote-addr remote-ipaddr
-						:server-protocol (and version (symbol->string version))
-						:server-software (server-software)
-						:server-port local-port
-						:request-method (and method (symbol->string method))
-						:script-name script-name
-						:server-name (or host (http-host->server-name http-host))
-						:path-info abs-path
-						:path-translated path-translated
-						:query-string query))
-		 (params (parameterize ((cgi-metavariables metavars))
-			   (with-input-from-port in
-			     (lambda ()
-			       (cgi-parse-parameters :merge-cookies #t
-						     :part-handlers `((#t file+name ,(kahua-tmpbase))))))))
-		 (state-gsid (cgi-get-parameter "x-kahua-sgsid" params))
-		 (cont-gsid (or (cgi-get-parameter "x-kahua-cgsid" params)
-				(path-info->cont-gsid path-info)))
-		 (worker-id (and cont-gsid (gsid->worker-id cont-gsid)))
-		 (worker-sockaddr (worker-id->sockaddr worker-id (kahua-sockbase)))
-		 (kahua-header (kahua-worker-header
-				(path-info->worker-name path-info) path-info
-				:server-uri server-uri
-				:metavariables metavars
-				:remote-addr remote-ipaddr
-				:bridge script-name
-				:sgsid state-gsid :cgsid cont-gsid)))
-	    (for-each (lambda (f) (and (file-exists? f) (sys-chmod f #o660))) (cgi-temporary-files))
-	    (values method request-uri version path-translated worker-sockaddr kahua-header params))))))
+  (let*-values (((method request-uri version) (values (request-method) (request-uri) (request-version)))
+		((scheme user host port path query frag) (parse-uri request-uri))
+		((http-header) (parse-header in))
+		((path-info) (path->path-info path))
+		((abs-path) (path-info->abs-path path-info))
+		((path-translated) (static-document-path-info path-info (kahua-static-document-url))))
+    (if path-translated
+	(values path-translated #f #f #f)
+	(let* ((local-port (x->string (sockaddr-port (socket-getsockname cs))))
+	       (remote-ipaddr (sockaddr->ipaddr (socket-getpeername cs)))
+	       (http-host (rfc822-header-ref http-header "host"))
+	       (server-uri #`",(or scheme \"http\")://,|http-host|")
+	       (script-name "") ; DUMMY
+	       (metavars (kahua-metavariables http-header
+					      :gateway-interface *GATEWAY-INTERFACE*
+					      :remote-addr remote-ipaddr
+					      :server-protocol (and version (symbol->string version))
+					      :server-software (server-software)
+					      :server-port local-port
+					      :request-method (and method (symbol->string method))
+					      :script-name script-name
+					      :server-name (or host (http-host->server-name http-host))
+					      :path-info abs-path
+					      :path-translated path-translated
+					      :query-string query))
+	       (params (parameterize ((cgi-metavariables metavars))
+			 (with-input-from-port in
+			   (lambda ()
+			     (cgi-parse-parameters :merge-cookies #t
+						   :part-handlers `((#t file+name ,(kahua-tmpbase))))))))
+	       (state-gsid (cgi-get-parameter "x-kahua-sgsid" params))
+	       (cont-gsid (or (cgi-get-parameter "x-kahua-cgsid" params)
+			      (path-info->cont-gsid path-info)))
+	       (worker-id (and cont-gsid (gsid->worker-id cont-gsid)))
+	       (worker-sockaddr (worker-id->sockaddr worker-id (kahua-sockbase)))
+	       (kahua-header (kahua-worker-header
+			      (path-info->worker-name path-info) path-info
+			      :server-uri server-uri
+			      :metavariables metavars
+			      :remote-addr remote-ipaddr
+			      :bridge script-name
+			      :sgsid state-gsid :cgsid cont-gsid)))
+	  (for-each (lambda (f) (and (file-exists? f) (sys-chmod f #o660))) (cgi-temporary-files))
+	  (values path-translated worker-sockaddr kahua-header params)))))
 
 (define (check-kahua-status kheader kbody)
   (or (and-let* ((kahua-status (assoc-ref-car kheader "x-kahua-status")))
 	(case (string->symbol kahua-status)
 	  ((OK)         #t)
-	  ((SPVR-ERROR) (raise (make-condition <kahua-worker-not-found> 'uri (car kbody))))
+	  ((SPVR-ERROR) (raise (make-condition <kahua-worker-not-found>)))
 	  (else         (raise (make-condition <kahua-worker-error>)))))
       #t))
 
@@ -505,12 +503,6 @@
 		  header
 		   (reverse (basic-header content-type))))))
 
-(define (serve-static-document out method uri ver static-path)
-  (case method
-    ((GET)  (process-static-document out uri static-path ver #t))
-    ((HEAD) (process-static-document out uri static-path ver #f))
-    (else   (reply-method-not-allowed out method uri ver #t))))
-
 (define (send-http-body out encoding body)
   (unless (null? body)
     (case (car body)
@@ -520,7 +512,7 @@
 	   (write-tree body out)
 	   (with-output-conversion out (cut write-tree body) :encoding encoding))))))
 
-(define (serve-via-worker out method uri ver worker-sa header params)
+(define (serve-via-worker out worker-sa header params)
   (call-with-client-socket (make-client-socket worker-sa)
     (lambda (w-in w-out)
       (log-format "C->W header: ~s" header)
@@ -533,23 +525,34 @@
 	(log-format "C<-W header: ~s" w-header)
 	(check-kahua-status w-header w-body)
 	(receive (status encoding http-header) (interp-kahua-header w-header)
-	  (reply out status ver http-header (cut send-http-body <> encoding w-body))))
+	  (reply out status (request-version) http-header
+		 (and (with-body?) (cut send-http-body <> encoding w-body)))))
       )))
 
 (define (handle-request cs)
   (call-with-client-socket cs
     (lambda (in out)
-      (guard (e ((<http-bad-request> e) (reply-bad-request out #f #t))
-		((<kahua-worker-not-found> e) (reply-not-found out (uri-of e) #f #t))
-		((<kahua-worker-error> e) (reply-internal-server-error out #f #t))
+      (guard (e ((kahua-error? e)
+		 (log-format "Error: ~s" e)
+		 (reply-error e out))
 		(else
 		 (log-format "Unexpected error: ~s" (kahua-error-string e))
 		 (reply-internal-server-error out #f #t)))
 	(log-format "Request start: ~s" cs)
-	(receive (method uri ver static-path worker-sockaddr header params) (prepare-dispatch-request cs in)
-	  (if static-path
-	      (serve-static-document out method uri ver static-path)
-	      (serve-via-worker out method uri ver worker-sockaddr header params))))
+	(let*-values (((l) (read-line in))
+		      ((m u v) (parse-request-line l)))
+	  (request-line l)
+	  (request-method m)
+	  (request-uri u)
+	  (request-version v)
+	  (cond ((not m) (raise (make-condition <http-bad-request>)))
+		((unsupported-method? m) (raise (make-condition <http-not-implemented>)))
+		(else
+		 (receive (static-path worker-sockaddr header params)
+		     (prepare-dispatch-request cs in)
+		   (if static-path
+		       (serve-static-document out static-path)
+		       (serve-via-worker out worker-sockaddr header params)))))))
       (log-format "Request finish: ~s" cs)
       (flush out)))
   (for-each sys-unlink (cgi-temporary-files)))
