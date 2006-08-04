@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.7 2006/08/04 08:45:43 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.8 2006/08/04 09:25:19 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -202,7 +202,7 @@
       (format out "~a ~a\r\n" (or version 'HTTP/1.0) (assq-ref *STATUS-TABLE* status))
       (send-http-header out header)
       (display "\r\n" out)
-      (and body-cont (body-cont out)))))
+      (when body-cont (body-cont out)))))
 
 (define (parse-request-line l)
   (if (eof-object? l)
@@ -239,11 +239,13 @@
 (define (server-software)
   (format "Kahua-HTTPd/~a" (kahua-version)))
 
-(define (basic-header ct)
-  `(("date" ,(http-date (current-time)))
-    ("server" ,(format "Kahua-HTTPd/~a" (kahua-version)))
-    ("content-type" ,ct)
-    ("connection" "close")))		; Now not support keep-alive connection yet.
+(define (basic-header ct . args)
+  (let-keywords* args ((content-length #f))
+    (cond-list (#t `("date" ,(http-date (current-time))))
+	       (#t `("server" ,(format "Kahua-HTTPd/~a" (kahua-version))))
+	       (#t `("content-type" ,ct))
+	       (content-length `("content-length" ,content-length))
+	       (#t '("connection" "close")))))		; Now not support keep-alive connection yet.
 
 (define (send-http-header out header)
   (define (display-titlecase name)
@@ -265,10 +267,11 @@
 		header))))
 
 (define (serve-static-document out path)
-  (define (reply-static-document out path ver with-body?)
-    (receive (dir base ext) (decompose-path path)
-      (reply out 200 ver (basic-header (mime-type ext))
-	     (and with-body?
+  (define (reply-static-document out path)
+    (let*-values (((dir base ext) (decompose-path path))
+		  ((size) (ref (sys-stat path) 'size)))
+      (reply out 200 (request-version) (basic-header (mime-type ext) :content-length size)
+	     (and (with-body?)
 		  (lambda (out)
 		    (call-with-input-file path
 		      (cut copy-port <> out)))))))
@@ -284,7 +287,7 @@
 	 (let1 path (or (directory->index-file path) path)
 	   (or (and (file-is-regular? path)
 		    (guard (e (else #f))
-		      (reply-static-document out path (request-version) (with-body?))))
+		      (reply-static-document out path)))
 	       (raise (make-condition <http-forbidden>)))))
 	(else
 	 (log-format "Not found file: ~s" path)

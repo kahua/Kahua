@@ -5,6 +5,7 @@
 	- Clean up dead code.
 	- Request line, method, URI, HTTP version are as parameters now.
 	- Index file supported.  Now only index.html.
+	- Add Content-Length when document is static one.
 
 2006-08-03  Tatsuya BIZENN  <bizenn@arthub.net>
 
