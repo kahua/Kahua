@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.6 2006/08/04 07:32:06 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.7 2006/08/04 08:45:43 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -52,6 +52,8 @@
 
 (define (with-body?)
   (not (eq? (request-method) 'HEAD)))
+
+(define-constant *INDEX* '("index.html"))
 
 (define-constant *GATEWAY-INTERFACE* "CGI/1.1")
 
@@ -270,12 +272,20 @@
 		  (lambda (out)
 		    (call-with-input-file path
 		      (cut copy-port <> out)))))))
+  (define (directory->index-file path)
+    (and (file-is-directory? path)
+	 (let/cc ret
+	   (for-each (lambda (idx)
+		       (let1 f #`",|path|/,|idx|"
+			 (when (file-exists? f)
+			   (ret f))))
+		     *INDEX*))))
   (cond ((file-exists? path)
-	 (cond ((and (file-is-readable? path) (file-is-regular? path))
-		(reply-static-document out path (request-version) (with-body?)))
-	       (else
-		(log-format "Cannot serve file: ~s" path)
-		(raise (make-condition <http-forbidden>)))))
+	 (let1 path (or (directory->index-file path) path)
+	   (or (and (file-is-regular? path)
+		    (guard (e (else #f))
+		      (reply-static-document out path (request-version) (with-body?))))
+	       (raise (make-condition <http-forbidden>)))))
 	(else
 	 (log-format "Not found file: ~s" path)
 	 (raise (make-condition <http-not-found>)))))

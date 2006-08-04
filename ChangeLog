@@ -4,6 +4,7 @@
 	- Clean up all kind of error handling.
 	- Clean up dead code.
 	- Request line, method, URI, HTTP version are as parameters now.
+	- Index file supported.  Now only index.html.
 
 2006-08-03  Tatsuya BIZENN  <bizenn@arthub.net>
 
