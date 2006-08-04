@@ -1,3 +1,7 @@
+2006-08-05  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 0.5.1 released.
+
 2006-08-04  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* src/kahua-httpd.scm:
