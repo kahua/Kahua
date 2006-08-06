@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: utility.kahua,v 1.2 2006/07/28 13:09:39 bizenn Exp $
+;; $Id: utility.kahua,v 1.3 2006/08/06 13:43:36 cut-sea Exp $
 ;;
 
 ;
@@ -15,6 +15,21 @@
 (define (prev n) (- n 1))
 (define (next n) (+ n 1))
 (define (+++ . args) (string-join args "\n"))
+(define (list-ref* n lst)
+  (cond ((negative? n) (list-ref lst 0))
+	((> (length lst) n) (list-ref lst n))
+	(else (list-ref* (prev n) lst))))
+(define (replace-keywords kv-list . args)
+  (let* ((keys (filter keyword? args))
+	 (rest (fold delete-keyword kv-list keys)))
+    (append rest args)))
+(define (slices* lst n)
+  (cond ((null? lst) '(()))
+	(else (slices lst n))))
+(define (string-escape str)
+  (string-fold (lambda (c r) #`",r\\,c") "" str))
+(define (string->regexp/safe str)
+  (string->regexp (string-escape str)))
 
 
 ;; alias
@@ -22,12 +37,23 @@
 (define invisible identity)
 (define kall/cc kahua-call-with-current-context)
 (define ++ string-append)
-
+(define keyrep replace-keywords)
 (define (ymd-of date)
   (date->string date "~y/~m/~d ~H:~M:~S"))
 (define year-of date-year)
 (define month-of date-month)
 (define day-of date-day)
+
+; (define (gen-date-pred pred)
+;   (lambda (d1 d2)
+;     (pred (date->time-utc d1) (date->time-utc d2))))
+
+; (define date=? (gen-date-pred time=?))
+; (define date<? (gen-date-pred time<?))
+; (define date<=? (gen-date-pred time<=?))
+; (define date>? (gen-date-pred time>?))
+; (define date>=? (gen-date-pred time>=?))
+
 
 ;;
 ;; define-persistent-from-non-base
