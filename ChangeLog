@@ -1,3 +1,9 @@
+2006-08-07  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua-spvr.scm:
+	  If no worker type passed or "" worker type passed, dispatch to
+	  the first worker has 1 or greater value as :run-by-default.
+
 2006-08-06  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* add utility function into skel/utility.kahua.

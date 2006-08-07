@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.18 2006/07/28 13:09:43 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.19 2006/08/07 03:58:31 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -40,14 +40,13 @@
 (use kahua.util)
 (use kahua.thread-pool)
 
-;; Eventually this should be configurable by some conf file
-(define *default-worker-type* 'dummy)
-
 (define *spvr* #f) ;; bound to supervisor object for convenience
 
 (define *default-sigmask* #f)
 
 (define *worker-types* '()) ;; for multi-thread version
+
+(define *default-worker-type* #f)
 
 (define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP))
 
@@ -330,6 +329,12 @@
                           "unknown worker type: ~a" worker-type))))
 
 (define (load-app-servers-file)
+  (define (find-default-worker-type lis)
+    (and-let* ((w (find (lambda (e)
+			  (and-let* ((rbd (get-keyword :run-by-default (cdr e) #f)))
+			    (> rbd 0)))
+			lis)))
+      (car w)))
   (let1 app-map
       (build-path (ref (instance-of <kahua-config>) 'working-directory)
                   "app-servers")
@@ -349,6 +354,7 @@
           (cond ((check-entries lis)
                  (log-format "[spvr] loaded ~a" app-map)
                  (set! *worker-types* lis)
+		 (set! *default-worker-type* (find-default-worker-type *worker-types*))
                  #t)
                 (else
                  (log-format "[spvr] malformed app-servers file: ~a" app-map)
@@ -494,20 +500,18 @@
   (with-locking self (cut %find-worker self wno)))
 
 (define-method %find-worker ((self <kahua-spvr>) (wtype <symbol>))
-  (and-let* ((wt (hash-table-get (wtype-table-of self) wtype #f)))
-    (%next-worker! wt)))
+  (let1 wtype (if (eq? wtype '||)
+		  *default-worker-type*
+		  wtype)
+    (and-let* ((wt (hash-table-get (wtype-table-of self) wtype #f)))
+      (%next-worker! wt))))
 (define-method find-worker ((self <kahua-spvr>) (wtype <symbol>))
-  (with-locking self
-    (lambda ()
-      (and-let* ((wt (hash-table-get (wtype-table-of self) wtype #f)))
-	(with-locking wt (cut %next-worker! wt))))))
+  (with-locking self (cut %find-worker self wtype)))
 
 (define-method %find-worker ((self <kahua-spvr>) _)
-  ;; Fallback case, where the session-initiating request doesn't specify
-  ;; the worker.  For now, we just throw error.
-  ;; Eventually we need some scheduling strategy.
-  (spvr-errorf <spvr-worker-not-running> "no worker specified"))
-(define find-worker %find-worker)
+  (%find-worker self '||))
+(define-method find-worker ((self <kahua-spvr>) _)
+  (%find-worker self _))
 
 ;;;=================================================================
 ;;; <kahua-worker-type> implementation
