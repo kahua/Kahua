@@ -1,9 +1,9 @@
-;; -*- coding: euc-jp; mode: scheme -*-
+;; -*- coding: euc-jp; mode: kahua -*-
 ;;
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: proj.kahua,v 1.1.2.5 2006/07/22 14:51:31 cut-sea Exp $
+;; $Id: proj.kahua,v 1.2 2006/07/28 13:09:39 bizenn Exp $
 ;;
 
 ;; module (in plugins/%%_PROJECT_NAME_%%.scm)

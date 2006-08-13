@@ -1,3 +1,7 @@
+2006-08-13  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* add skel/proj/parts-collection.kahua and modify kahua-package.scm.
+
 2006-08-07  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* src/kahua-spvr.scm:

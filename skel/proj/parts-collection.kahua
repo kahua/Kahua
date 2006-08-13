@@ -1,0 +1,81 @@
+;; -*- coding: euc-jp; mode: kahua -*-
+;;
+;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: parts-collection.kahua,v 1.1 2006/08/13 07:18:48 cut-sea Exp $
+;;
+
+;
+; item control
+;
+(define (help/ msg)
+  (font/ (@/ (color "gray") (size 2)) msg))
+
+(define &copy (&/ #x169))
+(define &nbsp (&/ "nbsp"))
+
+
+
+
+;
+; paging
+;
+; sliced :: [[a]]
+; continue :: number -> IO()
+;           -- This is action like as page entry.
+;           -- So, you think continue is page of 'number' which paging as 'sliced'.
+; proc :: [[a] -> Node -> IO()
+;      :: sliced -> %%paging-header/ -> IO()
+;           -- This is action like as page entry.
+;
+(define (kahua-call-with-paging-context sliced continue proc)
+  (define max-page (length sliced))
+  (define (max? n) (>= n (- max-page 1)))
+  (define (min? n) (zero? n))
+  (define (%%paging-header/ page)
+    (node-set/
+     (cond ((min? page) "<<Prev")
+	   (else (a/cont/ (@@/ (cont (lambda ()
+				       (continue (prev page)))))
+			  "<<Prev")))
+     (map/ (lambda (n)
+	     (cond ((= n page) #`" ,(+ n 1) ")
+		   (else (a/cont/ (@@/ (cont (lambda ()
+					       (continue n))))
+				  #`" ,(+ n 1) "))))
+	   (iota max-page))
+     (cond ((max? page) "Next>>")
+	   (else (a/cont/ (@@/ (cont (lambda ()
+				       (continue (next page)))))
+			  "Next>>")))))
+  (proc sliced %%paging-header/))
+
+
+
+;
+; calendar
+;
+(define (calendar/ date limit)
+  (define (class-of d)
+    (receive (typ msg)
+	(holiday? d)
+      (string-join
+       (list (list-ref '("workday" "saturday" "sunday" "holiday" "compensate" "holy") typ)
+	     (if (and limit (date=? limit d)) "limit" "")
+	     (if (date=? (today) d) "today" "")
+	     (if (same-month? d date) "" "other-month")))))
+  (table/
+   (@/ (class "calendar"))
+   (tr/ (map/ (lambda (w a)
+		(th/ (@/ (align "center") (class a)) w))
+	      '("S" "M" "T" "W" "T" "F" "S")
+	      '("sunday" "workday" "workday" "workday" "workday" "workday" "saturday")))
+   (map/ (lambda (w)
+	   (tr/ (map/ (lambda (d)
+			(td/ (@/ (align "right") (class (class-of d)))
+			     (day-of d)))
+		      w)))
+	 (date-slices-of-month date #t))))
+
+
