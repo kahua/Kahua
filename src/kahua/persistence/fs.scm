@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.3 2006/08/02 04:24:19 bizenn Exp $
+;; $Id: fs.scm,v 1.4 2006/08/14 08:15:59 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -13,6 +13,7 @@
   (use file.util)
   (use gauche.fcntl)
   (use gauche.collection)
+  (use gauche.charconv)
   (use kahua.persistence)
   (use kahua.util))
 
@@ -20,36 +21,55 @@
 
 ;; filesystem-based persistent store (default)
 (define-class <kahua-db-fs> (<kahua-db>)
-  ((id-counter :init-keyword :id-counter :init-value 0)
+  ((id-counter :init-value 0 :accessor id-counter-of)
+   (character-encoding :init-value (gauche-character-encoding) :accessor character-encoding-of)
+   (id-counter-path :accessor id-counter-path-of)
+   (character-encoding-path :accessor character-encoding-path-of)
+   (lock-path  :init-value #f :accessor lock-path-of)
    (lock-port  :init-value #f :accessor lock-port-of) ;; port opened on lock file
+   (tmp-path   :init-value #f :accessor tmp-path-of)
+   (mode :init-value :readwrite :accessor mode-of) ;; :readwrite or :readonly
    ))
+
+(define-method initialize ((db <kahua-db-fs>) initargs)
+  (define (build-lock-path db-path)
+    (build-path (sys-dirname db-path) (string-append (sys-basename db-path) ".lock")))
+  (define (build-id-counter-path path)
+    (build-path path "id-counter"))
+  (define (build-character-encoding-path path)
+    (build-path path "%%character-encoding"))
+  (define (build-tmp-path path)
+    (build-path path "tmp"))
+
+  (next-method)
+  (let1 path (path-of db)
+    (set! (lock-path-of db) (build-lock-path path))
+    (set! (id-counter-path-of db) (build-id-counter-path path))
+    (set! (character-encoding-path-of db) (build-character-encoding-path path))
+    (set! (tmp-path-of db) (build-tmp-path path))))
 
 (define-method kahua-db-unique-id ((db <kahua-db-fs>))
   (begin0
-    (ref db 'id-counter)
-    (inc! (ref db 'id-counter))))
-
-(define (id-counter-path path)
-  (build-path path "id-counter"))
+    (id-counter-of db)
+    (inc! (id-counter-of db))))
 
 ;; write id-counter or kahua-instance into kahua-db-fs safely.
-(define (%call-writer-to-file-safely file tmpbase writer)
+(define (%call-writer-to-file-safely file tmpbase writer encoding)
   (receive (out tmp) (sys-mkstemp tmpbase)
-    (with-error-handler
-     (lambda (e) (sys-unlink tmp) (raise e))
-     (lambda ()
-       (writer out)
-       (close-output-port out)
-       (sys-rename tmp file)))))
-
-;; lock mechanism - we need more robust one later, but just for now...
-(define (lock-file-path path)
-  (build-path path "lock"))
+    (let1 out (if encoding
+		  (wrap-with-output-conversion out encoding)
+		  out)
+      (with-port-locking out
+	(lambda ()
+	  (guard (e ((else (sys-unlink tmp) (raise e))))
+	    (writer out)
+	    (close-output-port out)
+	    (sys-rename tmp file)))))))
 
 (define-constant *lock-db-fs* (make <sys-flock> :type F_WRLCK))
 (define-constant *unlock-db-fs* (make <sys-flock> :type F_UNLCK))
 (define-method lock-db ((db <kahua-db-fs>))
-  (let1 lock-file (lock-file-path (ref db 'path))
+  (let1 lock-file (lock-path-of db)
     (unless (file-exists? lock-file)
       ;; This is an old db.  This is only transitional, and may
       ;; be called very rarely, so we just leave this though unsafe.
@@ -69,30 +89,43 @@
     (set! (lock-port-of db) #f)
     #t))
 
+(define (kahua-db-create db)
+  ;; There could be a race condition here, but it would be very
+  ;; low prob., so for now it should be OK.
+  (let1 tmp (tmp-path-of db)
+    (make-directory* tmp)
+    (%call-writer-to-file-safely (id-counter-path-of db) tmp
+				 (pa$ write (id-counter-of db)) #f)
+    (%call-writer-to-file-safely (character-encoding-path-of db) tmp
+				 (pa$ write (character-encoding-of db)) #f))
+  db)
+
 (define-method kahua-db-open ((db <kahua-db-fs>))
-  (let* ((path (ref db 'path))
-	 (cntfile (id-counter-path path)))
-    (if (file-is-directory? path)
-	(if (file-is-regular? cntfile)
-	    (let1 cnt (with-input-from-file cntfile read)
-	      (unless (number? cnt)
-		(error "kahua-db-open: number required but got as id-counter: " cnt))
-	      (set! (active? db) #t)
-	      (set! (ref db 'id-counter) cnt)
-	      (unless (lock-db db)
-		(error "kahua-db-open: couldn't obtain database lock: " path)))
-	    (error "kahua-db-open: path is not a db: " path))
-	(begin
-	  ;; There could be a race condition here, but it would be very
-	  ;; low prob., so for now it should be OK.
-	  (make-directory* path)
-	  (let1 tmp-path (build-path path "tmp/")
-	    (make-directory* tmp-path)
-	    (%call-writer-to-file-safely cntfile tmp-path (pa$ write 0)))
-	  (set! (active? db) #t)
-	  (unless (lock-db db)
-	    (error "kahua-db-open: couldn't obtain database lock: " path)))
-	))
+  (define (read-id-counter db)
+    (let1 cnt (with-input-from-file (id-counter-path-of db) read)
+      (unless (number? cnt)
+	(error "kahua-db-open: number required but got as id-counter: " cnt))
+      cnt))
+
+  (define (read-character-encoding db)
+    (let1 cefile (character-encoding-path-of db)
+      (if (file-is-regular? cefile)
+	  (let1 ce (with-input-from-file cefile read)
+	    (unless (symbol? ce)
+	      (error "kahua-db-open: symbol required but got as character-encoding: " ce))
+	    ce)
+	  (let1 ce (gauche-character-encoding)
+	    (with-output-to-file cefile (cut write ce))
+	    ce))))
+
+  (unless (lock-db db)
+    (error "kahua-db-open: couldn't obtain database lock: " db))
+  (if (file-is-directory? (path-of db))
+      (begin
+	(set! (id-counter-of db) (read-id-counter db))
+	(set! (character-encoding-of db) (read-character-encoding db)))
+      (kahua-db-create db))
+  (set! (active? db) #t)
   db)
 
 (define-method kahua-db-close ((db <kahua-db-fs>) commit)
@@ -100,7 +133,7 @@
       (kahua-db-sync db)
     (kahua-db-rollback db))
   (unlock-db db)
-  (set! (ref db 'modified-instances) '())
+  (set! (modified-instances-of db) '())
   (set! (active? db) #f))
 
 (define-method read-kahua-instance ((db <kahua-db-fs>)
@@ -108,27 +141,30 @@
                                     (key <string>))
   (let1 path (data-path db class key)
     (and (file-exists? path)
-         (call-with-input-file path read))))
+         (call-with-input-file path
+	   (lambda (in)
+	     (with-port-locking in (cut read in)))
+	   :encoding (character-encoding-of db)))))
 
 (define-method write-kahua-instance ((db <kahua-db-fs>)
                                      (obj <kahua-persistent-base>))
   (let* ((class-path  (data-path db (class-of obj))))
     (make-directory* class-path)
     (%call-writer-to-file-safely (build-path class-path (key-of obj))
-                                 (build-path (ref db 'path) "tmp/")
-                                 (pa$ kahua-write obj))
+				 (tmp-path-of db)
+                                 (pa$ kahua-write obj)
+				 (character-encoding-of db))
     (set! (ref obj '%floating-instance) #f)))
 
 (define-method kahua-db-write-id-counter ((db <kahua-db-fs>))
-  (let1 db-path (ref db 'path)
-    (%call-writer-to-file-safely (id-counter-path db-path)
-                                 (build-path db-path "tmp/")
-                                 (pa$ write (ref db 'id-counter)))))
+  (%call-writer-to-file-safely (id-counter-path-of db)
+			       (tmp-path-of db)
+			       (pa$ write (id-counter-of db)) #f))
 
 
 (define (data-path db class . key)
   (apply build-path
-         (ref db 'path)
+         (path-of db)
          (string-trim-both (x->string (class-name class)) #[<>])
          key))
 

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.54 2006/08/02 04:24:18 bizenn Exp $
+;; $Id: persistence.scm,v 1.55 2006/08/14 08:15:58 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -13,7 +13,10 @@
   (use gauche.sequence)
   (use gauche.parameter)
   (use gauche.collection)
-  (export <kahua-persistent-meta> <kahua-persistent-base>
+  (use kahua.util)
+  (export <kahua-persistence-error>
+	  <kahua-persistent-meta>
+	  <kahua-persistent-base>
           <kahua-persistent-metainfo>
 	  kahua-persistent-id
           key-of find-kahua-class find-kahua-instance
@@ -56,6 +59,8 @@
           )
   )
 (select-module kahua.persistence)
+
+(define-condition-type <kahua-persistence-error> <kahua-error> #f)
 
 (define kahua-check-transaction! (make-parameter #t))
 
@@ -260,7 +265,7 @@
   (;; unique ID 
    (%kahua-persistent-base::id :init-keyword :%kahua-persistent-base::id
 			       :getter kahua-persistent-id
-			       :init-form (kahua-db-unique-id) :final #t)
+			       :init-form (%kahua-db-unique-id) :final #t)
    ;; management data
    (%kahua-persistent-base::db :init-form (current-db) :final #t)  ; points back to db
    ;; alist of slot data which is in the DB but not in the current
@@ -949,7 +954,7 @@
      i))
 
 (define-class <kahua-db> ()
-  ((path       :init-keyword :path :init-value #f)
+  ((path       :init-keyword :path :init-value #f :accessor path-of)
    (active     :init-keyword :active :init-value #f :accessor active?)
    (instance-by-id  :init-form (make-hash-table 'eqv?))
    (instance-by-key :init-form (make-hash-table 'equal?))
@@ -980,47 +985,25 @@
 		      (kahua-concrete-db-class dbtype))))))
         (else (kahua-concrete-db-class "fs"))))	; fall back to default file-system DB.
 
-(define (kahua-override-error mn)
-  (errorf "You should override this method for concrete database class: ~a" mn))
-
 (define-method write-object ((obj <kahua-db>) port)
   (format port "#<~a ~s (~a)>"
 	  (class-name (class-of obj))
           (ref obj 'path)
           (if (active? obj) "active" "inactive")))
 
-(define (kahua-db-unique-id)
+(define (%kahua-db-unique-id)
   (let1 db (current-db)
     (unless db (error "kahua-db-unique-id: No db is active"))
     (kahua-db-unique-id db)))
 
-(define-method kahua-db-unique-id ((db <kahua-db>))
-  (kahua-override-error "kahua-db-unique-id"))
-
-(define-method lock-db ((db <kahua-db>))
-  (kahua-override-error "lock-db"))
-
-(define-method unlock-db ((db <kahua-db>))
-  (kahua-override-error "unlock-db"))
-
-(define-method kahua-db-open ((db <kahua-db>))
-  (kahua-override-error "kahua-db-open"))
-
-(define-method kahua-db-close ((db <kahua-db>))
-  (kahua-override-error "kahua-db-close"))
-
-(define-method read-kahua-instance ((db <kahua-db>)
-				    (class <kahua-persistent-meta>)
-				    (key <string>))
-  (kahua-override-error "read-kahua-instance"))
-
-(define-method write-kahua-instance ((db <kahua-db>)
-				     (obj <kahua-persistent-base>))
-  (kahua-override-error "write-kahua-instance"))
-
-(define-method kahua-db-write-id-counter ((db <kahua-db>))
-  (kahua-override-error "kahua-db-write-id-counter"))
-
+(define-generic kahua-db-unique-id)
+(define-generic lock-db)
+(define-generic unlock-db)
+(define-generic kahua-db-open)
+(define-generic kahua-db-close)
+(define-generic read-kahua-instance)
+(define-generic write-kahua-instance)
+(define-generic kahua-db-write-id-counter)
 (define-generic kahua-persistent-instances)
 (define-method make-kahua-collection ((db <kahua-db>)
                                       class opts)
@@ -1264,7 +1247,7 @@
     (unless (eq? (class-name old-class)
                  (class-name new-class))
       (ensure-metainfo new-class)
-      (slot-set-using-class! new-class obj '%kahua-persistent-base::id (kahua-db-unique-id))
+      (slot-set-using-class! new-class obj '%kahua-persistent-base::id (%kahua-db-unique-id))
       (slot-set-using-class! new-class obj '%persistent-generation 0)
       (slot-set-using-class! new-class obj '%floating-instance #t))
     ;; restore persistent slots value.

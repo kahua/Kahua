@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.8 2006/08/04 09:25:19 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.9 2006/08/14 08:15:58 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -64,7 +64,6 @@
     ((sjis)   'Shift_JIS)
     (else     #f)))
 
-(define-condition-type <kahua-error> <error> kahua-error?)
 (define-condition-type <kahua-worker-not-found> <kahua-error> #f)
 (define-condition-type <kahua-worker-error> <kahua-error> #f)
 (define-condition-type <kahua-http-error> <kahua-error> http-error?)
