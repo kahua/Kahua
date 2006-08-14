@@ -2,6 +2,7 @@
 
         * modify skel/proj/proj.kahua.
         * delete tests from skel/test/test.scm.in.
+        * bug fix for skel/proj project template program.
 
 2006-08-13  Katsutoshi Itoh <cut-sea@kahua.org>
 
