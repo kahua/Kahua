@@ -1,6 +1,7 @@
 2006-08-14  Katsutoshi Itoh <cut-sea@kahua.org>
 
         * modify skel/proj/proj.kahua.
+        * delete tests from skel/test/test.scm.in.
 
 2006-08-13  Katsutoshi Itoh <cut-sea@kahua.org>
 

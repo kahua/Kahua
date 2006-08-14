@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp; mode: scheme -*-
 ;; test %%_PROJECT_NAME_%% script.
-;; $Id: test.scm.in,v 1.1.2.2 2006/07/16 16:16:55 cut-sea Exp $
+;; $Id: test.scm.in,v 1.2 2006/07/28 13:09:43 bizenn Exp $
 
 (use gauche.test)
 (use file.util)
@@ -35,19 +35,21 @@
 
  (test* "run %%_PROJECT_NAME_%%.kahua" #t (worker-running? w))
 
- (test* "%%_PROJECT_NAME_%%"
-        '(html (head (title "Hello, world!"))
-               (body (h1 "Hello, world!")
-                     (a (@ (href ?&)) "version")))
-        (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
-        (make-match&pick w))
 
- (test* "version"
-       '(html (head (title "%%_PROJECT_NAME_%%: version ##%%_PROJECT_NAME_UP_%%_VERSION##"))
-              (body (h1 "%%_PROJECT_NAME_%%: version ##%%_PROJECT_NAME_UP_%%_VERSION##")
-                    (a ?@ ?*)))
-       (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
-       (make-match&pick w))
+;  (test* "%%_PROJECT_NAME_%%"
+;         '(html (head (title "Hello, world!"))
+;                (body (h1 "Hello, world!")
+;                      (a (@ (href ?&)) "version")))
+;         (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
+;         (make-match&pick w))
+
+;  (test* "version"
+;        '(html (head (title "%%_PROJECT_NAME_%%: version ##%%_PROJECT_NAME_UP_%%_VERSION##"))
+;               (body (h1 "%%_PROJECT_NAME_%%: version ##%%_PROJECT_NAME_UP_%%_VERSION##")
+;                     (a ?@ ?*)))
+;        (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
+;        (make-match&pick w))
+
  )
 
 (test-end)
