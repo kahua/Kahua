@@ -1,3 +1,7 @@
+2006-08-14  Katsutoshi Itoh <cut-sea@kahua.org>
+
+        * modify skel/proj/proj.kahua.
+
 2006-08-13  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* add skel/proj/parts-collection.kahua and modify kahua-package.scm.

@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: proj.kahua,v 1.2 2006/07/28 13:09:39 bizenn Exp $
+;; $Id: proj.kahua,v 1.3 2006/08/13 07:18:48 cut-sea Exp $
 ;;
 
 ;; module (in plugins/%%_PROJECT_NAME_%%.scm)
@@ -34,38 +34,112 @@
 ;; classes and methods
 (load "%%_PROJECT_NAME_%%/base.kahua")
 
+;; parts
+(load "%%_PROJECT_NAME_%%/parts-collection.kahua")
+
 ;; You should add loading files below here.
 
 ;
-; %%_PROJECT_NAME_%%-page-template
+; class
 ;
+(define-class <item> (<base>)
+  (
+   (name     :allocation :persistent :init-keyword :name
+	     :init-value "" :accessor name-of :auto-update #t)
+   ))
 
-(define (%%_PROJECT_NAME_%%-page-template title body)
-  (node-set:
-   (html:
-    (head: (title: title))
-    (body: (h1: title) body))))
+(define (all-active-items)
+  (all-active-objects <item>))
+
+(define-method name>=? ((x <item>) (y <item>))
+  (string>=? (name-of x) (name-of y)))
+(define-method name<=? ((x <item>) (y <item>))
+  (string<=? (name-of x) (name-of y)))
+(compare-set! name>=? name<=?)
+
+
 
 ;
-; main-proc 
+; main-proc
 ;
+(define (%edit-item . args)
+  (let-keywords* args ((return %item-list)
+		       (edit? :item #f)
+		       (item #f)
+		       (name (cond (item => name-of)
+				   (else ""))))
+    (kall/cc
+     (lambda (self)
+       (define %%posted
+	 (entry-lambda (:keyword name)
+	     (cond ((string-null? name) (redirect/cont (cont return)))
+		   (edit? (set! (name-of item) name)
+			  (redirect/cont (cont return)))
+		   (else (make <item> :name name)
+			 (redirect/cont (cont return))))))
+       (simple-page
+	(h3/ (if edit? #`",(name-of item) - Update" "New Item - Create"))
+	(form/cont/
+	 (@@/ (cont %%posted))
+	 (table/
+	  (tr/ (th/ "Name")
+	       (th/ (input/ (@/ (type "text") (name "name") (value name)))))
+	  (input/ (@/ (type "submit") (name "commit") (value "Commit")))
+	  (a/cont/ (@@/ (cont return)) "Back"))))))))
 
-(define-entry (greeting)
-  (%%_PROJECT_NAME_%%-page-template "Hello, world!"
-                       (a/cont: (@@: (cont version))
-                                "version")))
+(define (%item-list . args)
+  (let-keywords* args ((return #f)
+		       (order? key>=?)
+		       (page 0))
+    (kall/cc
+     (lambda (self)
+       (define (%%sort cmp)
+	 (let1 cmp (if (eq? order? cmp) (compare-get cmp) cmp)
+	   (apply %item-list (keyrep args :order? cmp))))
+       (kahua-call-with-paging-context
+	(slices* (sort (all-active-items) order?) 50)
+	(lambda (n)
+	  (kall/cc
+	   (lambda (cont)
+	     (apply %item-list (keyrep args :page n)))))
+	(lambda (sliced-items paging-header/)
+	  (simple-page
+	   (h3/ "Item List")
+	   (a/cont/ (@@/ (cont (lambda ()
+				 (%edit-item :return self))))
+		    "[Create Item]")
+	   (paging-header/ page)
+	   (table/
+	    (tr/
+	     (map/ (lambda (cmp label)
+		     (th/
+		      (a/cont/
+		       (@@/ (cont (lambda () (%%sort cmp))))
+		       label)))
+		   (list key>=? name>=? ctime>=? mtime>=?)
+		   (list "No." "Name" "Created" "Modify")))
+	    (map/ (lambda (i)
+		    (tr/ (td/ (a/cont/ (@@/ (cont (lambda ()
+						    (%edit-item :item i :return self))))
+				       (key-of i)))
+			 (td/ (name-of i))
+			 (td/ (ymd-of (ctime-of i)))
+			 (td/ (ymd-of (mtime-of i)))))
+		  (list-ref* page sliced-items))
+	    (cond (return (a/cont/ (@@/ (cont return)) "Back"))
+		  (else invisible))
+	    ))))))))
 
-;
-; version
-;
 
-(define-entry (version)
-  (%%_PROJECT_NAME_%%-page-template (format "%%_PROJECT_NAME_%%: version ~a" *%%_PROJECT_NAME_%%-version*)
-                       (a/cont: (@@: (cont greeting))
-                                "greeting")))
+(define-entry (%%_PROJECT_NAME_%%)
+  (kall/cc
+   (lambda (self)
+     (%item-list :return self))))
+
+
 
 ;
 ; initialization
 ;
    
-(initialize-main-proc greeting)
+(initialize-main-proc %%_PROJECT_NAME_%%)
