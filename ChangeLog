@@ -1,3 +1,17 @@
+2006-08-14  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/persistence.scm, src/kahua/persistence/fs.scm:
+	- Now fsdb has its own character encoding in "%%character-encoding"
+	  file.  If it is different with (gauche-character-encoding), do
+	  conversion.
+	- Now fsdb has lock file outside of database directory, and lock it
+	  before open/create database.
+	- Lock input/output port explicitly.
+	- Clean up code.
+
+	* src/kahua/util.scm, src/kahua-httpd.scm:
+	  Moved <kahua-error> base condition from kahua-httpd.scm.
+
 2006-08-14  Katsutoshi Itoh <cut-sea@kahua.org>
 
         * modify skel/proj/proj.kahua.
@@ -14,7 +28,7 @@
 	  If no worker type passed or "" worker type passed, dispatch to
 	  the first worker has 1 or greater value as :run-by-default.
 
-2006-08-06  Tatsuya BIZENN  <bizenn@arthub.net>
+2006-08-06  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* add utility function into skel/utility.kahua.
 	
