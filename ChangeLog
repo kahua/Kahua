@@ -1,3 +1,7 @@
+2006-08-16  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* add money-box/ tag for skel/parts-collection.kahua.
+
 2006-08-16  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* src/kahua/elem.scm:

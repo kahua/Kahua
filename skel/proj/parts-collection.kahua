@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: parts-collection.kahua,v 1.1 2006/08/13 07:18:48 cut-sea Exp $
+;; $Id: parts-collection.kahua,v 1.2 2006/08/16 11:39:41 cut-sea Exp $
 ;;
 
 ;
@@ -15,7 +15,8 @@
 (define &copy (&/ #x169))
 (define &nbsp (&/ "nbsp"))
 
-
+(define (money-box/ amount)
+  (node-set/ (&/ 'yen) (format "~:d" amount)))
 
 
 ;
