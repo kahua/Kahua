@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.55 2006/08/14 08:15:58 bizenn Exp $
+;; $Id: persistence.scm,v 1.56 2006/08/16 07:32:41 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -53,7 +53,6 @@
 	  ;; for Check and fix database consistency.
 	  check-kahua-db-classcount
 	  check-kahua-db-idcount
-	  load-all-kahua-tables
 	  max-table-name-suffix
 	  max-kahua-key-from-idcount
           )
@@ -1262,7 +1261,6 @@
 
 (define-generic check-kahua-db-classcount)
 (define-generic check-kahua-db-idcount)
-(define-generic load-all-kahua-tables)
 (define-generic max-table-name-suffix)
 (define-generic max-kahua-key-from-idcount)
 
