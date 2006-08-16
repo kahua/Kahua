@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.4 2006/08/14 08:15:59 bizenn Exp $
+;; $Id: fs.scm,v 1.5 2006/08/16 07:33:19 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -113,6 +113,9 @@
 	  (let1 ce (with-input-from-file cefile read)
 	    (unless (symbol? ce)
 	      (error "kahua-db-open: symbol required but got as character-encoding: " ce))
+	    (unless (ces-upper-compatible? (gauche-character-encoding) ce)
+	      (log-format "DB character encoding ~a differ from native ~a" ce (gauche-character-encoding))
+	      (log-format "You should convert it into native encoding ~a" (gauche-character-encoding)))
 	    ce)
 	  (let1 ce (gauche-character-encoding)
 	    (with-output-to-file cefile (cut write ce))
