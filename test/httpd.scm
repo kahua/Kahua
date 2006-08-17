@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test supervisor scripts in http mode.
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: httpd.scm,v 1.2 2006/07/28 13:09:49 bizenn Exp $
+;; $Id: httpd.scm,v 1.3 2006/08/17 07:27:56 bizenn Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -14,6 +14,16 @@
 (define *spvr* #f)
 
 (define *port* 27490)
+
+(define (http-get/retry host path count)
+  (let/cc ret
+    (dotimes (i 10)
+      (guard (e (else #f))
+	(receive (status headers body)
+	    (http-get host path)
+	  (ret status headers body)))
+      (sys-sleep 1))
+    (error "httpd-get: retry error")))
 
 ;;-----------------------------------------------------------
 (test-section "start kahua-spvr with kahua-httpd")
@@ -31,7 +41,7 @@
 
 (test* "httpd get" '("200" #t)
        (receive (status headers body)
-           (http-get #`"localhost:,*port*" "/lambdabooks")
+           (http-get/retry #`"localhost:,*port*" "/lambdabooks" 10)
          (list status
                (test-xml-match? 
                 '(html (head (title "Lambda books") ?*)

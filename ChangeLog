@@ -1,3 +1,9 @@
+2006-08-17  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* test/httpd.scm
+	  Retry if connection refused for the first time request.  This
+	  is for avoiding test failure on a poor system.
+
 2006-08-16  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* add money-box/ tag for skel/parts-collection.kahua.
