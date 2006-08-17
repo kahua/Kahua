@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.23 2006/08/16 07:32:41 bizenn Exp $
+;; $Id: elem.scm,v 1.24 2006/08/17 02:28:21 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -169,7 +169,7 @@
 	  ((no-escape? node) node)
 	  ((or (eq? (car node) '@) (eq? (car node) '@@)) node)
 	  (else (cons (car node) (rev-nodes (cdr node))))))
-  (reverse (map rev node-set)))
+  (reverse! (map rev node-set)))
 
 (define-macro (define-basic-element name)
   `(define-values (,(string->symbol (string-append (symbol->string name) "/"))
