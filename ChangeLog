@@ -1,3 +1,7 @@
+2006-08-21  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* add remove-keyword/keyrem into skel/proj/utility.kahua.
+
 2006-08-17  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* test/httpd.scm

@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: utility.kahua,v 1.4 2006/08/14 05:46:52 cut-sea Exp $
+;; $Id: utility.kahua,v 1.5 2006/08/21 03:47:44 cut-sea Exp $
 ;;
 
 ;
@@ -19,6 +19,10 @@
   (cond ((negative? n) (list-ref lst 0))
 	((> (length lst) n) (list-ref lst n))
 	(else (list-ref* (prev n) lst))))
+(define (remove-keywords kv-list . args)
+  (let* ((keys (filter keyword? args))
+	 (rest (fold delete-keyword kv-list keys)))
+    rest))
 (define (replace-keywords kv-list . args)
   (let* ((keys (filter keyword? args))
 	 (rest (fold delete-keyword kv-list keys)))
@@ -38,21 +42,23 @@
 (define kall/cc kahua-call-with-current-context)
 (define ++ string-append)
 (define keyrep replace-keywords)
+(define keyrem remove-keywords)
 (define (ymd-of date)
   (date->string date "~y/~m/~d ~H:~M:~S"))
 (define year-of date-year)
 (define month-of date-month)
 (define day-of date-day)
 
-(define (gen-date-pred pred)
-  (lambda (d1 d2)
-    (pred (date->time-utc d1) (date->time-utc d2))))
 
-(define date=? (gen-date-pred time=?))
-(define date<? (gen-date-pred time<?))
-(define date<=? (gen-date-pred time<=?))
-(define date>? (gen-date-pred time>?))
-(define date>=? (gen-date-pred time>=?))
+; (define (gen-date-pred pred)
+;   (lambda (d1 d2)
+;     (pred (date->time-utc d1) (date->time-utc d2))))
+
+; (define date=? (gen-date-pred time=?))
+; (define date<? (gen-date-pred time<?))
+; (define date<=? (gen-date-pred time<=?))
+; (define date>? (gen-date-pred time>?))
+; (define date>=? (gen-date-pred time>=?))
 
 
 ;;
