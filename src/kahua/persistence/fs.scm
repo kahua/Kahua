@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.6 2006/08/17 02:28:21 bizenn Exp $
+;; $Id: fs.scm,v 1.7 2006/08/27 00:44:28 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -14,6 +14,7 @@
   (use gauche.fcntl)
   (use gauche.collection)
   (use gauche.charconv)
+  (use gauche.logger)
   (use kahua.persistence)
   (use kahua.util))
 

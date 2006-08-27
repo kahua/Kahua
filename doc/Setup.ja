@@ -16,6 +16,39 @@
 適切なバージョンの Gauche がインストールされていなければ、インストール
 してください。
 
+** とりあえず試す
+
+*** ビルドとインストール
+
+とりあえずKahuaを体験してみたいのなら、自分のHOMEの下にインストールして
+しまうことをお薦めします。後述のようなパーミッションやユーザ/グループの
+設定が不要になります。
+{{{
+% tar xvzf Kahua-0.5.1.tgz
+% cd Kahua-0.5.1
+% ./configure --prefix=$HOME/kahua
+% make
+% make check
+% make install
+% make install-examples
+}}}
+
+これで必要なものは全て ${HOME}/kahua の下にインストールされます。
+${HOME}/kahua/bin にPATHを通しておくと便利でしょう。
+
+起動するには、
+{{{
+% ($HOME/kahua/bin/kahua-spvr --httpd localhost:8888 >>/tmp/kahua-error.log &)
+}}}
+これで localhost の8888ポートにアクセスできるようになります。
+ポート番号は非特権ポートから適当に決めて下さい。
+なお、ポート番号だけを指定した場合は、0.0.0.0(および可能なら[::])にサーバソケットが
+bindされます。http://localhost:8888/ にアクセスしてみましょう。
+サンプルアプリケーションのlambdabooksが表示されたら成功です。
+いろいろ遊んでみてください。
+
+** きちんとインストールする
+
 *** /etc/group の調整
 
 Kahuaサーバ用のグループ kahua を作成します。
