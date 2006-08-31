@@ -1,4 +1,12 @@
-;;; -*- mode: scheme; coding: utf-8 -*-
+;; -*- mode: scheme; coding: utf-8 -*-
+;;
+;; Provides common HTTP handlers.
+;;
+;;  Copyright (c) 2006 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: http.scm,v 1.2 2006/08/31 04:46:58 bizenn Exp $
 (define-module kahua.protocol.http
   (use srfi-1)
   (use srfi-13)
