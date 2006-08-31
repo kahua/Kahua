@@ -75,7 +75,8 @@ SCMFILES = $(SCM_SCRIPTS) \
            kahua/pdf/state.scm kahua/pdf/typeset.scm kahua/pdf/util.scm \
            kahua/error-report.scm kahua/thread-pool.scm \
 	   kahua/persistence/fs.scm kahua/persistence/dbi.scm \
-	   kahua/persistence/mysql.scm kahua/persistence/postgresql.scm
+	   kahua/persistence/mysql.scm kahua/persistence/postgresql.scm \
+	   kahua/protocol/worker.scm kahua/protocol/http.scm
 
 CONFFILE = $(sysconfdir)/kahua.conf
 USERCONFFILE = $(localstatedir)/user.conf

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.9 2006/08/14 08:15:58 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.10 2006/08/31 04:15:10 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -15,7 +15,6 @@
 (use rfc.cookie)
 (use rfc.mime)
 (use text.tree)
-(use text.html-lite)
 (use www.cgi)
 (use util.list)
 (use util.match)
@@ -31,16 +30,12 @@
 (use kahua.util)
 (use kahua.config)
 (use kahua.thread-pool)
+(use kahua.protocol.http)
+(use kahua.protocol.worker)
 
 (define *default-sigmask* #f)
 (define-constant *TERMINATION-SIGNALS*
   (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP))
-
-(define-constant *default-content-type*
-  (let1 encoding (gauche-character-encoding)
-    (if (eq? 'none encoding)
-	"text/html"
-        (format "text/html; charset=~s" encoding))))
 
 (define (log-prefix drain)
   (format "[~s] " (current-thread)))
@@ -64,27 +59,11 @@
     ((sjis)   'Shift_JIS)
     (else     #f)))
 
-(define-condition-type <kahua-worker-not-found> <kahua-error> #f)
-(define-condition-type <kahua-worker-error> <kahua-error> #f)
 (define-condition-type <kahua-http-error> <kahua-error> http-error?)
-
-(define (default-error-page out status msg)
-  (display "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n" out)
-  (display "<html><head>\r\n" out)
-  (let1 status-line (assq-ref *STATUS-TABLE* status)
-    (format out "<title>~a</title>\r\n" status-line)
-    (format out "</head><body>\r\n<h1>~a</h1>\r\n<p>~a</p>\r\n</body></html>\r\n"
-	    status-line (html-escape-string msg))))
 
 (define (kahua-tmpbase)
   (build-path (ref (kahua-config) 'working-directory)
 	      "tmp" "kahua-"))
-
-;; Now support method GET, HEAD, POST only.
-(define (unsupported-method? method)
-  (case method
-    ((PUT DELETE OPTIONS TRACE CONNECT) #t)
-    (else                               #f)))
 
 ;; MIME Type.
 (define-constant *MIME-TYPES* '(("jpg"  . "image/jpeg")
@@ -108,86 +87,6 @@
 (define (mime-type ext)
   (assoc-ref *MIME-TYPES* ext "application/octet-stream"))
 
-;; HTTP Status code and message.
-(define-constant *STATUS-TABLE*
-  (let ()
-    (define (status-entry status message)
-      (cons status (format "~d ~a" status message)))
-    (list (status-entry 100 "Continue")
-	  (status-entry 101 "Switching Protocols")
-	  (status-entry 200 "OK")
-	  (status-entry 201 "Created")
-	  (status-entry 202 "Accepted")
-	  (status-entry 203 "Non-Authoritative Information")
-	  (status-entry 204 "No Content")
-	  (status-entry 205 "Reset Content")
-	  (status-entry 206 "Partial Content")
-	  (status-entry 300 "Multiple Choices")
-	  (status-entry 301 "Moved Permanently")
-	  (status-entry 302 "Found")
-	  (status-entry 303 "See Other")
-	  (status-entry 304 "Not Modified")
-	  (status-entry 305 "Use Proxy")
-	  (status-entry 307 "Temporary Redirect")
-	  (status-entry 400 "Bad Request")
-	  (status-entry 401 "Unauthorized")
-	  (status-entry 402 "Payment Required")
-	  (status-entry 403 "Forbidden")
-	  (status-entry 404 "Not Found")
-	  (status-entry 405 "Method Not Allowed")
-	  (status-entry 406 "Not Acceptable")
-	  (status-entry 407 "Proxy Authentication Required")
-	  (status-entry 408 "Request Time-out")
-	  (status-entry 409 "Conflict")
-	  (status-entry 410 "Gone")
-	  (status-entry 411 "Length Required")
-	  (status-entry 412 "Precondition Failed")
-	  (status-entry 413 "Request Entity Too Large")
-	  (status-entry 414 "Request-URI Too Large")
-	  (status-entry 415 "Unsupported Media Type")
-	  (status-entry 416 "Requested range not satisfiable")
-	  (status-entry 417 "Expectation Failed")
-	  (status-entry 500 "Internal Server Error")
-	  (status-entry 501 "Not Implemented")
-	  (status-entry 502 "Bad Gateway")
-	  (status-entry 503 "Service Unavailable")
-	  (status-entry 504 "Gateway Time-out")
-	  (status-entry 505 "HTTP Version not supported")
-	  )))
-
-(define (http-date t)
-  (time->rfc1123-string t))
-
-(define (path->path-info path)
-  (define (simplify-path-info path-info)
-    (reverse!
-     (fold (lambda (comp res)
-	     (cond ((string-null? comp) res)
-		   ((string=? "." comp) res)
-		   ((string=? ".." comp)
-		    (if (null? res)
-			res
-			(cdr res)))
-		   (else (cons comp res))))
-	   '()
-	   path-info)))
-  (simplify-path-info (string-split path #[/])))
-
-(define (path-info->abs-path path-info)
-  (if (null? path-info)
-      "/"
-      (string-join path-info "/" 'prefix)))
-
-(define normalize-path (compose path-info->abs-path path->path-info))
-
-(define (rel-path-info path-info base-info)
-  (let loop ((p path-info)
-	     (b base-info))
-    (cond ((null? b) p)
-	  ((null? p) #f)
-	  ((string=? (car p) (car b)) (loop (cdr p) (cdr b)))
-	  (else #f))))
-
 (define (static-document-path path base)
   (static-document-path-info (path->path-info path) base))
 
@@ -198,7 +97,7 @@
 (define (reply out status version header body-cont)
   (with-port-locking out
     (lambda ()
-      (format out "~a ~a\r\n" (or version 'HTTP/1.0) (assq-ref *STATUS-TABLE* status))
+      (print-status-line out status version)
       (send-http-header out header)
       (display "\r\n" out)
       (when body-cont (body-cont out)))))
@@ -224,17 +123,6 @@
 		   (and query (uri-decode-string query :cgi-decode #t))
 		   (and frag (uri-decode-string frag)))))))
 
-(define (add-kahua-header! header . args)
-  (let loop ((h header)
-	     (pairs args))
-    (if (null? pairs)
-	h
-	(let ((key (car pairs))
-	      (value (cadr pairs)))
-	  (if value
-	      (loop (assoc-set! h key (list value)) (cddr pairs))
-	      (loop h (cddr pairs)))))))
-
 (define (server-software)
   (format "Kahua-HTTPd/~a" (kahua-version)))
 
@@ -245,25 +133,6 @@
 	       (#t `("content-type" ,ct))
 	       (content-length `("content-length" ,content-length))
 	       (#t '("connection" "close")))))		; Now not support keep-alive connection yet.
-
-(define (send-http-header out header)
-  (define (display-titlecase name)
-    (fold (lambda (c prev)
-	    (write-char ((if (char=? #\- prev)
-			     char-upcase
-			     char-downcase)
-			 c))
-	    c)
-	  #\-
-	  name))
-  (with-output-to-port out
-    (lambda ()
-      (for-each (lambda (f)
-		  (display-titlecase (car f))
-		  (display ": ")
-		  (write-tree (cdr f))
-		  (display "\r\n"))
-		header))))
 
 (define (serve-static-document out path)
   (define (reply-static-document out path)
@@ -370,25 +239,6 @@
   (define (sockaddr->ipaddr sa)
     (http-host->server-name (sockaddr-name sa)))
 
-  (define (kahua-worker-header worker path-info . args)
-    (let-keywords* args ((server-uri #f)
-			 (metavariables #f)
-			 (sgsid #f)
-			 (cgsid #f)
-			 (remote-addr #f)
-			 (bridge #f))
-      (reverse!
-       (add-kahua-header! '()
-			  "x-kahua-worker"        worker
-			  "x-kahua-path-info"     path-info
-			  "x-kahua-sgsid"         sgsid
-			  "x-kahua-cgsid"         cgsid
-			  "x-kahua-server-uri"    server-uri
-			  "x-kahua-bridge"        bridge
-			  "x-kahua-remote-addr"   remote-addr
-			  "x-kahua-metavariables" metavariables
-			  ))))
-
   (define (http-header->kahua-metavariables header)
     (define (name-conv name)
       (map-to <string> (lambda (c)
@@ -464,8 +314,6 @@
 	       (state-gsid (cgi-get-parameter "x-kahua-sgsid" params))
 	       (cont-gsid (or (cgi-get-parameter "x-kahua-cgsid" params)
 			      (path-info->cont-gsid path-info)))
-	       (worker-id (and cont-gsid (gsid->worker-id cont-gsid)))
-	       (worker-sockaddr (worker-id->sockaddr worker-id (kahua-sockbase)))
 	       (kahua-header (kahua-worker-header
 			      (path-info->worker-name path-info) path-info
 			      :server-uri server-uri
@@ -474,34 +322,10 @@
 			      :bridge script-name
 			      :sgsid state-gsid :cgsid cont-gsid)))
 	  (for-each (lambda (f) (and (file-exists? f) (sys-chmod f #o660))) (cgi-temporary-files))
-	  (values path-translated worker-sockaddr kahua-header params)))))
-
-(define (check-kahua-status kheader kbody)
-  (or (and-let* ((kahua-status (assoc-ref-car kheader "x-kahua-status")))
-	(case (string->symbol kahua-status)
-	  ((OK)         #t)
-	  ((SPVR-ERROR) (raise (make-condition <kahua-worker-not-found>)))
-	  (else         (raise (make-condition <kahua-worker-error>)))))
-      #t))
+	  (values path-translated cont-gsid kahua-header params)))))
 
 ;; Return HTTP status, encoding of body HTTP header.
 (define (interp-kahua-header kheader)
-  (define (abs-uri uri base)
-    (receive (scheme spec) (uri-scheme&specific uri)
-      (if scheme
-	  uri
-	  (string-append base spec))))
-  (define (kahua-header->http-header kheader)
-    (filter-map (lambda (e)
-		  (rxmatch-case (car e)
-		    (#/^x-kahua-sgsid$/ (#f)
-		     (cons "set-cookie" (construct-cookie-string
-					 `(("x-kahua-sgsid" ,(cadr e) :path "/")))))
-		    (#/^x-kahua-/ (#f) #f)
-		    (#/(?i:^location$)/ (h)
-		     (list h (abs-uri (cadr e) (assoc-ref-car kheader "x-kahua-server-uri"))))
-		    (else e)))
-		kheader))
   (let* ((header (kahua-header->http-header kheader))
 	 (content-type (or (assoc-ref-car header "content-type") *default-content-type*))
 	 (encoding (and-let* ((m (#/\; *charset=([\w\-]+)/ content-type))) (m 1))))
@@ -511,35 +335,15 @@
 		200)
 	    encoding
 	    (fold (lambda (e r)
-		    (assoc-set! r (car e) (cadr e)))
+		    (assoc-set! r (car e) (cdr e)))
 		  header
 		   (reverse (basic-header content-type))))))
 
-(define (send-http-body out encoding body)
-  (unless (null? body)
-    (case (car body)
-      ((file) (call-with-input-file (cadr body) (cut copy-port <> out)))
-      (else
-       (if (ces-equivalent? encoding (gauche-character-encoding))
-	   (write-tree body out)
-	   (with-output-conversion out (cut write-tree body) :encoding encoding))))))
-
-(define (serve-via-worker out worker-sa header params)
-  (call-with-client-socket (make-client-socket worker-sa)
-    (lambda (w-in w-out)
-      (log-format "C->W header: ~s" header)
-      (log-format "C->W params: ~s" params)
-      (write header w-out)
-      (write params w-out)
-      (flush w-out)
-      (let* ((w-header (read w-in))
-	     (w-body   (read w-in)))
-	(log-format "C<-W header: ~s" w-header)
-	(check-kahua-status w-header w-body)
-	(receive (status encoding http-header) (interp-kahua-header w-header)
-	  (reply out status (request-version) http-header
-		 (and (with-body?) (cut send-http-body <> encoding w-body)))))
-      )))
+(define (serve-via-worker out cgsid header params)
+  (let*-values (((w-header w-body) (talk-to-worker cgsid header params))
+		((status encoding http-header) (interp-kahua-header w-header)))
+    (reply out status (request-version) http-header
+	   (and (with-body?) (cut send-http-body <> encoding w-body)))))
 
 (define (handle-request cs)
   (call-with-client-socket cs
@@ -560,11 +364,11 @@
 	  (cond ((not m) (raise (make-condition <http-bad-request>)))
 		((unsupported-method? m) (raise (make-condition <http-not-implemented>)))
 		(else
-		 (receive (static-path worker-sockaddr header params)
+		 (receive (static-path cgsid header params)
 		     (prepare-dispatch-request cs in)
 		   (if static-path
 		       (serve-static-document out static-path)
-		       (serve-via-worker out worker-sockaddr header params)))))))
+		       (serve-via-worker out cgsid header params)))))))
       (log-format "Request finish: ~s" cs)
       (flush out)))
   (for-each sys-unlink (cgi-temporary-files)))
@@ -604,6 +408,7 @@
       (cons h (if p (x->number p) port)))))
 
 (define (kahua-make-server-sockets hosts)
+  ;; Avoid to use IPv4 mapped address.
   (define (%avoid-mapped-addr sock addr)
     (when (eq? (sockaddr-family addr) 'inet6)
       (socket-setsockopt sock |IPPROTO_IPV6| |IPV6_V6ONLY| 1)))

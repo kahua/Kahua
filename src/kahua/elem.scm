@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.24 2006/08/17 02:28:21 bizenn Exp $
+;; $Id: elem.scm,v 1.25 2006/08/31 04:15:10 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -67,7 +67,7 @@
           html:element?
 	  make-no-escape-text-element
 	  no-escape?
-))
+	  ))
 
 (select-module kahua.elem)
 
@@ -310,4 +310,4 @@
 	  (else val)))
   `(& ,@(flatten (map val->string arg))))
 
-(provide "kahua.elem")
+(provide "kahua/elem")

@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: redirectcont.scm,v 1.1 2005/12/26 14:27:36 shibata Exp $
+;; $Id: redirectcont.scm,v 1.2 2006/08/31 04:15:16 bizenn Exp $
 
 (use srfi-2)
 (use gauche.test)
@@ -41,7 +41,7 @@
  (test* "run redirectcont.kahua" #t (worker-running? w))
 
  (test* "header->sxml"
-        '(*TOP* (!contain (Status "302 Moved")
+        '(*TOP* (!contain (Status "302 Found")
                           (Location ?&)))
         (call-worker/gsid
          w

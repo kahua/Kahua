@@ -1,3 +1,24 @@
+2006-08-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* test/worker.scm, test/redirectcont.scm: Fix for change of kahua.server
+
+	* src/kahua-spvr.scm: Fix
+	  - Use define-condition-type instead of define-class for definition
+	    of exceptions.
+
+	* src/kahua/server.scm: Fix bugs.
+	  - Fit 302 status message to RFC2616.
+	  - Use "content-type" instead of "Content-Type" for avoid error
+	    of FastCGI.
+
+	* src/kahua/persistence/fs.scm: Fix lack of (use gauche.logger).
+
+	* src/kahua/protocol/worker, src/kahua/protocol/http: Add
+	  Splitted from src/kahua-httpd.scm, and now kahua.cgi use
+	  them.
+
+	* cgi/kahua.cgi.in, src/kahua-httpd.scm: Arranged
+
 2006-08-21  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* add remove-keyword/keyrem into skel/proj/utility.kahua.

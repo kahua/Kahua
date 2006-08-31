@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.13 2006/02/19 08:16:51 shibata Exp $
+;; $Id: worker.scm,v 1.14 2006/08/31 04:15:16 bizenn Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -185,7 +185,7 @@
 ;; check 'http header' and save 'continuation session id' to worker.
 ;;
 ;; (test* "redirect header test"
-;;        '(*TOP* (!contain (Status "302 Moved")
+;;        '(*TOP* (!contain (Status "302 Found")
 ;;                            (Location ?&)))
 ;;        (call-worker/gsid
 ;;         w
@@ -198,8 +198,8 @@
 ;;                 '(("login-name" "shibata") ("passwd" "hogehoge")))
 
 
-;; '(("Status" "302 Moved") ("Location" "http://localho..")) (html..)
-;; => '(*TOP* (Status "302 Moved") (Location "http://localho.."))
+;; '(("Status" "302 Found") ("Location" "http://localho..")) (html..)
+;; => '(*TOP* (Status "302 Found") (Location "http://localho.."))
 (define (header->sxml h b)
   (define (url-fragment-cutoff pair)
     (cond ((and (eq? (car pair) 'Location)
@@ -216,7 +216,7 @@
 
 (define (test/send&pick label w send-data)
   (test* label
-         '(*TOP* (!contain (Status "302 Moved")
+         '(*TOP* (!contain (Status "302 Found")
                            (Location ?&)))
          (call-worker/gsid
           w

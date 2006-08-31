@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.38 2006/07/28 13:09:31 bizenn Exp $
+;; $Id: kahua.cgi.in,v 1.39 2006/08/31 04:15:09 bizenn Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -34,9 +34,12 @@
 (use rfc.sha1)
 (use text.tree)
 (use text.html-lite)
+(use kahua.util)
 (use kahua.gsid)
 (use kahua.config)
 (use kahua.developer)
+(use kahua.protocol.http)
+(use kahua.protocol.worker)
 (use file.util)
 ##ADDITIONAL_LIBS##
 
@@ -47,7 +50,6 @@
 (define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP SIGPIPE))
 
 ;; Change this if you're using non-default log path
-;;(log-open "/tmp/kahua-cgi.log" :prefix "~Y ~T ~P[~$]: ")
 (log-open "##KAHUA_CGI_LOGPATH##/kahua-cgi.log" :prefix "~Y ~T ~P[~$]: ")
 
 ;; bridge name option, mainly to pass "~user" information
@@ -91,33 +93,11 @@
                   (and meta-var (list meta meta-var))))
               *metavariables*))
 
-(define (kcv value)
-  (ces-convert value "*jp" (gauche-character-encoding)))
-
-(define *default-content-type*
-  (let1 encoding (gauche-character-encoding)
-    (if (eq? 'none encoding)
-        '("content-type" "text/html; charset=euc-jp")
-        `("content-type" ,(format "text/html; charset=~s" encoding)))))
-
 (define (compose-reply header body)
-  (let ((status (assoc-ref header "x-kahua-status"))
-	(header (if (assoc-ref header "content-type")
-                    header
-		    (cons *default-content-type* header))))
-    (if (and status (equal? (car status) "SPVR-ERROR"))
-        (let1 error-contents (string-append "SPVR-ERROR: " (car body)) (cadr body)
-          (log-format "~a" error-contents)
-	  (cgi-error-page error-contents))
-	(receive (state cont) (get-gsid-from-header header)
-          (for-each (lambda (hdr) (set-header! (car hdr) (cadr hdr)))
-		    (filter (lambda (hdr) (not (#/^x-kahua-/ (car hdr))))
-			    header))
- 	  (set-cookie!
-           (construct-cookie-string
-            `(("x-kahua-sgsid" ,state
-               :path ,(cookie-path)))))
-	  body))))
+  (let1 header (kahua-header->http-header header (cookie-path))
+    (list (if (assoc-ref-car header "content-type")
+	      header
+	      (assoc-set! header "content-type" *default-content-type*)) body)))
 
 ;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
 (define (load-user-config user-dir)
@@ -139,17 +119,15 @@
          (filter (compose not string-null?) l))))
 
 ;; determine dispatch destination.
-;; returns: (worker-id worker-type cont-gsid path-info)
+;; returns: (worker-type cont-gsid path-info)
 (define (dispatch-destination params)
   (let* ((path-info   (get-path-info))
          (cont-gsid   (or (cgi-get-parameter "x-kahua-cgsid" params)
                           (if (and path-info (pair? (cdr path-info)))
                             (cadr path-info)
                             #f)))
-         (worker-type (and path-info (car path-info)))
-         (worker-id   (and cont-gsid (gsid->worker-id cont-gsid)))
-         )
-    (values worker-id worker-type cont-gsid path-info)))
+         (worker-type (and path-info (car path-info))))
+    (values worker-type cont-gsid path-info)))
 
 ;; construct absolute uri for the server root.
 ;; note that we can only guess the protocol scheme.
@@ -167,87 +145,27 @@
 ;; prepare headers and dispatch the request to the appropriate server,
 ;; then receives the reply and forward it to the client.
 (define (send-reply param)
-  (receive (worker-id worker-type cont-gsid path-info)
+  (receive (worker-type cont-gsid path-info)
       (dispatch-destination param)
-    (log-format "~s ~s ~s" worker-id worker-type cont-gsid)
     (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
            (remote-addr (cgi-get-metavariable "REMOTE_ADDR"))
-           (header     (list*
-                        `("x-kahua-bridge"
-                          ,(string-append (cgi-get-metavariable "SCRIPT_NAME")
-                                          *bridge-option*))
-                        `("x-kahua-server-uri" ,(server-uri))
-                        `("x-kahua-metavariables" ,(metavariable-list))
-                        (cond-list
-                         ((*worker-uri*) `("x-kahua-worker-uri" ,(*worker-uri*)))
-                         (worker-type `("x-kahua-worker" ,worker-type))
-                         (state-gsid `("x-kahua-sgsid" ,state-gsid))
-                         (cont-gsid  `("x-kahua-cgsid" ,cont-gsid))
-                         (path-info  `("x-kahua-path-info" ,path-info))
-                         (remote-addr `("remote-addr" ,remote-addr)))))
-           (sockaddr   (worker-id->sockaddr worker-id *sockbase*))
-           )
-      (log-format "cgsid: ~a (~a)" cont-gsid remote-addr)
+           (header (kahua-worker-header worker-type path-info
+					:server-uri (server-uri)
+					:worker-uri (*worker-uri*)
+					:metavariables (metavariable-list)
+					:sgsid state-gsid
+					:cgsid cont-gsid
+					:remote-addr remote-addr
+					:bridge (string-append (cgi-get-metavariable "SCRIPT_NAME")
+							       *bridge-option*))))
       (for-each (lambda (f)
 		  (if (file-exists? f)
 		      (sys-chmod f #o660)))
 		(cgi-temporary-files))
-      (call-with-client-socket (make-client-socket sockaddr)
-        (lambda (in out)
-          (guard
-           (eo (#t (log-format "(send-reply): Write error")))
-           (write header out) (newline out)
-           (write param  out) (newline out)
-           (flush out)
-           (guard
-            (ei (#t (log-format "(send-reply): Read error")))
-            (let* ((header (read in))
-                   (body   (read in)))
-              (compose-reply header body))))))
-      )))
-
-;; class of http response representation.
-;; provide control over output headers, set cookies, redirect.
-(define-class <response> ()
-  ((headers  :init-value '())
-   (cookies  :init-value '())
-   (location :init-value #f)))
-
-(define-method set-header! ((self <response>) name value)
-  (set! (ref self 'headers)
-        (append
-         (list (make-keyword name) value)
-         (ref self 'headers))))
-
-(define-method set-cookie! ((self <response>) cookie)
-  (set! (ref self 'cookies)
-        (append cookie (ref self 'cookies))))
-
-(define-method set-redirect! ((self <response>) url)
-  (set! (ref self 'location) url))
-
-(define-method publish ((self <response>) body)
-  (list (apply cgi-header
-               :cookies  (ref self 'cookies)
-               :location (ref self 'location)
-               (ref self 'headers))
-        body))
-
-(define response (make-parameter #f))
+      (receive (header body) (talk-to-worker cont-gsid header param)
+	(compose-reply header body)))))
 
 (define *worker-uri* (make-parameter #f))
-
-(define-method set-header! (name value)
-  (set-header! (response) name value))
-
-(define-method set-cookie! (cookie)
-  (set-cookie! (response) cookie))
-
-(define-method set-redirect! (url)
-  (set-redirect! (response) url))
-
-(define-method publish (body)
-  (publish (response) body))
 
 (define (analize-virtual-hosting)
   (let1 path-info (cgi-get-metavariable "PATH_INFO")
@@ -285,87 +203,31 @@
 ;; publish html. provide ~user authentication.
 (define (publisher params)
   (parameterize ((cgi-metavariables (analize-virtual-hosting)))
-    (let* ((path-info (cgi-get-metavariable "PATH_INFO"))
-           (p (cadr (string-split (if (or (not path-info) 
-                                          (string-null? path-info)) 
-                                      "/" path-info) #\/))))
-      (publish
-       ;; make a body.
-       (if (#/^~.+/ p)
-           (begin
-             ;; ~user authentication
-             (let ((name (string-drop p 1))
-                   (passwd (or (cgi-get-parameter "kahua-passwd-plain"
-                                                  params :default #f)
-                               (base64-decode-string
-                                (cgi-get-parameter "kahua-passwd"
-                                                   params :default "")))))
-               (if (kahua-check-developer name passwd)
-                   (begin
-                     ;; when login successed, set passwd to cookie.
-                     (set-cookie!
-                      (construct-cookie-string
-                       `(("kahua-passwd" ,(base64-encode-string passwd)
-                          :path ,(cookie-path)))))
-                     (send-reply params))
-                 (unauthorized-form)
-                 ))
-             )
-         (send-reply params)
-         ))
-      )))
-
-;; ~user login form.
-;; when login failed, show this.
-(define (unauthorized-form)
-  `(,(html-doctype)
-    ,(html:html
-      (html:head (html:title "Unauthorized"))
-      (html:body (html:h1 "Unauthorized")
-                 (html:form :method "post"
-                   (html:span "password")
-                   (html:input :type "password" :name "kahua-passwd-plain")
-                   (html:input :type "submit" :value "login"))))))
+    (send-reply params)))
 
 (define (main args)
   (define (output-handler sexp)
-    (let1 sbody (cadr sexp)
-      (case (car sbody)
-	((file)
-	 (write-tree (car sexp))
-	 (call-with-input-file (cadr sbody)
-	   (lambda (in)
-	     (copy-port in (current-output-port))
-	     (flush))))
-	(else
-	 (if (ces-equivalent? (gauche-character-encoding)
-			      (cgi-output-character-encoding))
-	     (write-tree sexp)
-	     (with-output-conversion
-		 (current-output-port)
-	       (cut write-tree sexp)
-	       :encoding (cgi-output-character-encoding)))))))
+    (let1 out (current-output-port)
+      (send-http-header out (car sexp))
+      (display "\r\n" out)
+      (send-http-body out (cgi-output-character-encoding) (cadr sexp))))
   (call/cc
    (lambda (bye)
      (define (cleanup) (for-each sys-unlink (cgi-temporary-files)))
      (define (finish-server sig)
        (log-format (sys-signal-name sig))
        (cleanup) (bye 0))
-     (log-format "CGI start")
+     ##CGIBEGIN##
      (guard (e (else (log-format "error(ignored): ~a" e)))
        (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
-       ##CGIBEGIN##
-       (parameterize ((response (make <response>)))
-	 (cgi-main publisher
-		   :merge-cookies #t
-		   :on-error cgi-error-proc
-		   :output-proc output-handler
-		   :part-handlers `((#t file+name ,*tmpbase*))
-		   ))
-       ##CGIEND##
-       )
+       (cgi-main publisher
+		 :merge-cookies #t
+		 :on-error cgi-error-proc
+		 :output-proc output-handler
+		 :part-handlers `((#t file+name ,*tmpbase*))
+		 ))
+     ##CGIEND##
      (cleanup)
-     (log-format "CGI end")
      (bye 0))))
 
 (define (get-error-string e)

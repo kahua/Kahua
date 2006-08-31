@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.73 2006/07/28 13:09:43 bizenn Exp $
+;; $Id: server.scm,v 1.74 2006/08/31 04:15:10 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1149,7 +1149,7 @@
   (define (nodes path)
     (let/pc pc
       `((html (extra-header
-               (@ (name "Status") (value "302 Moved")))
+               (@ (name "Status") (value "302 Found")))
               (extra-header
                (@ (name "Location")
                   (value ,path)))))))
@@ -1355,7 +1355,7 @@
          context
        (cons `("extra-headers"
                ,(kahua-merge-headers
-                 headers '(("Content-Type" "text/css"))))
+                 headers '(("content-type" "text/css"))))
              context)))))
 
 (add-interp! 'css interp-css)
@@ -1421,7 +1421,7 @@
     (cont (list "(" (x->json (cadr nodes)) ")\n")
           (cons `("extra-headers"
                   ,(kahua-merge-headers
-                    headers `(("Content-Type"
+                    headers `(("content-type"
 			       ,(if *default-charset*
 				    (format "~a; charset=~a" *json-media-type* *default-charset*)
 				    *json-media-type*)))))

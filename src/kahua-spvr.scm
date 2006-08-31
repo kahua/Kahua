@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.19 2006/08/07 03:58:31 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.20 2006/08/31 04:15:10 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -155,7 +155,7 @@
 ;; If an object other than <spvr-exception> is thrown, it should be
 ;; a program bug.
 
-(define-class <spvr-exception> (<error>) ())
+(define-condition-type <spvr-exception> <kahua-error> #f)
 
 ;; A convenience function to raise <spvr-exception> or its subclasses
 (define (spvr-errorf class fmt . args)
@@ -164,18 +164,18 @@
 ;; This exception occurs when the URI given from the client doesn't
 ;; correspond to any known worker type.    "404 Not found" may be
 ;; an appropriate response to the http client.
-(define-class <spvr-unknown-worker-type> (<spvr-exception>) ())
+(define-condition-type <spvr-unknown-worker-type> <spvr-exception> #f)
 
 ;; This exception occurs when the URI given form the client
 ;; specifies a worker that is known, but is not running.
 ;; "503 Service unavailable" may be an appropriate response
 ;; to the http client.
-(define-class <spvr-worker-not-running> (<spvr-exception>) ())
+(define-condition-type <spvr-worker-not-running> <spvr-exception> #f)
 
 ;; This exception occurs when the given session id is invalid
 ;; or may be expired.  The httpd can return "200 OK" with
 ;; an appropriate message.
-(define-class <spvr-expired-session> (<spvr-exception>) ())
+(define-condition-type <spvr-expired-session> <spvr-exception> #f)
 
 ;; If errors occur before spvr service starts, we should terminate
 ;; spvr with appropriate error message.
