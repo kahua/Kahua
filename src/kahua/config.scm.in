@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm.in,v 1.9 2006/08/17 07:27:55 bizenn Exp $
+;; $Id: config.scm.in,v 1.10 2006/08/31 13:40:29 bizenn Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -25,6 +25,7 @@
           kahua-sockbase
 	  kahua-working-directory
           kahua-logpath
+	  kahua-tmpbase
           kahua-pidpath
 	  kahua-spvr-pidpath
           kahua-keyserv-pidpath
@@ -205,6 +206,9 @@
 
 (define (kahua-spvr-pidpath)
   (build-path (kahua-working-directory) "kahua-spvr.pid"))
+
+(define (kahua-tmpbase)
+  (build-path (kahua-working-directory) "tmp" "kahua-"))
 
 (define kahua-pidpath kahua-spvr-pidpath) ; for backward compatibility
 

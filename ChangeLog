@@ -1,5 +1,9 @@
 2006-08-31  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* cgi/kahua.cgi.in: Now its configuration follow kahua.config.
+
+	* src/kahua/config.scm.in: Add kaha-tmpbase for temporary file base.
+
 	* test/worker.scm, test/redirectcont.scm: Fix for change of kahua.server
 
 	* src/kahua-spvr.scm: Fix

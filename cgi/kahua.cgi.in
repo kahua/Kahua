@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.39 2006/08/31 04:15:09 bizenn Exp $
+;; $Id: kahua.cgi.in,v 1.40 2006/08/31 13:40:28 bizenn Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -43,14 +43,11 @@
 (use file.util)
 ##ADDITIONAL_LIBS##
 
-;; Change this if you're using non-default sockbase
-(define *sockbase* "unix:##KAHUA_SOCKET_BASE##")
-(define *tmpbase* "##localstatedir##/tmp/kahua-")
+;; Change this if you're using non-default log path
+(define-constant *LOG-PATH* "##KAHUA_CGI_LOGPATH##/kahua-cgi.log")
+(define-constant *LOG-PREFIX* "~Y ~T ~P[~$]: ")
 
 (define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP SIGPIPE))
-
-;; Change this if you're using non-default log path
-(log-open "##KAHUA_CGI_LOGPATH##/kahua-cgi.log" :prefix "~Y ~T ~P[~$]: ")
 
 ;; bridge name option, mainly to pass "~user" information
 (define *bridge-option* "")
@@ -104,7 +101,8 @@
   ;; use default kahua conf file.
   (kahua-init #f :user (string-drop user-dir 1))
   (set! *bridge-option* (string-append "/" user-dir))
-  (set! *sockbase* (ref (kahua-config) 'sockbase)))
+;  (set! *sockbase* (ref (kahua-config) 'sockbase))
+  )
 
 ;; retrieve PATH_INFO, with processing ~user component.
 ;; returns #f if there's no PATH_INFO.
@@ -211,6 +209,8 @@
       (send-http-header out (car sexp))
       (display "\r\n" out)
       (send-http-body out (cgi-output-character-encoding) (cadr sexp))))
+  (kahua-init #f)
+  (log-open *LOG-PATH* :prefix *LOG-PREFIX*)
   (call/cc
    (lambda (bye)
      (define (cleanup) (for-each sys-unlink (cgi-temporary-files)))
@@ -224,7 +224,7 @@
 		 :merge-cookies #t
 		 :on-error cgi-error-proc
 		 :output-proc output-handler
-		 :part-handlers `((#t file+name ,*tmpbase*))
+		 :part-handlers `((#t file+name ,(kahua-tmpbase)))
 		 ))
      ##CGIEND##
      (cleanup)
