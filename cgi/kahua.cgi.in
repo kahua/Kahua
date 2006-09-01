@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.40 2006/08/31 13:40:28 bizenn Exp $
+;; $Id: kahua.cgi.in,v 1.41 2006/09/01 06:20:49 bizenn Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -94,7 +94,8 @@
   (let1 header (kahua-header->http-header header (cookie-path))
     (list (if (assoc-ref-car header "content-type")
 	      header
-	      (assoc-set! header "content-type" *default-content-type*)) body)))
+	      (assoc-set! header "content-type" *default-content-type*))
+	  body)))
 
 ;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
 (define (load-user-config user-dir)
@@ -218,7 +219,7 @@
        (log-format (sys-signal-name sig))
        (cleanup) (bye 0))
      ##CGIBEGIN##
-     (guard (e (else (log-format "error(ignored): ~a" e)))
+     (guard (e (else (log-format "error(ignored): ~a" (slot-ref e 'message))))
        (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
        (cgi-main publisher
 		 :merge-cookies #t
@@ -230,25 +231,14 @@
      (cleanup)
      (bye 0))))
 
-(define (get-error-string e)
-  (call-with-output-string
-   (cut with-error-to-port <> (cut report-error e))))
-
-(define (cgi-error-page message)
-  `(,(html-doctype)
-    ,(html:html
-      (html:head (html:title "Error"))
-      (html:body
-       (html:h1 "Error")
-       (html:div
-	(html:p (html-escape-string message)))))))
-
 (define (cgi-error-proc e)
-  (let ((errmsg (string-append "CGI Error: " (slot-ref e 'message)))
-        (errdetail (get-error-string e)))
-    (log-format "CGI error caught: ~a ~a" errmsg errdetail)
-    `(,(cgi-header :status "503 Service Temporaly Unavailable")
-      ,(cgi-error-page errmsg))))
+  (let ((errmsg (slot-ref e 'message))
+	(status (cond ((<kahua-worker-not-found> e) 404)
+		      (else                         503))))
+    (log-format "CGI error caught: ~a" errmsg)
+    `((("status" ,(http-status-string status #f))
+       ("content-type" "text/html"))
+      ,(default-error-page status errmsg))))
 
 ;; local variables:
 ;; mode: scheme

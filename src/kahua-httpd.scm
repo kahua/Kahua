@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.10 2006/08/31 04:15:10 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.11 2006/09/01 06:20:50 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -165,7 +165,7 @@
 (define (reply-bad-request out ver with-body?)
   (reply out 400 ver (basic-header "text/html")
 	 (and with-body?
-	      (cut default-error-page <> 400
+	      (cut output-error-page <> 400
 		   "Your browser sent a request that this server could not understand."))))
 (define-condition-type <http-bad-request> <kahua-http-error> #f)
 (define-method reply-error ((http-error <http-bad-request>) out)
@@ -175,7 +175,7 @@
 (define (reply-forbidden out uri ver with-body?)
   (reply out 403 ver (basic-header "text/html")
 	 (and with-body?
-	      (cut default-error-page <> 403
+	      (cut output-error-page <> 403
 		   (format "You don't have permission to access ~a on this server." uri)))))
 (define-condition-type <http-forbidden> <kahua-http-error> #f)
 (define-method reply-error ((e <http-forbidden>) out)
@@ -185,7 +185,7 @@
 (define (reply-not-found out uri ver with-body?)
   (reply out 404 ver (basic-header "text/html")
 	 (and with-body?
-	      (cut default-error-page <> 404
+	      (cut output-error-page <> 404
 		   (format "The requested URL ~a was not found on this server." uri)))))
 (define-condition-type <http-not-found> <kahua-http-error> #f)
 (define-method reply-error ((e <http-not-found>) out)
@@ -197,7 +197,7 @@
 (define (reply-method-not-allowed out method uri ver with-body?)
   (reply out 405 ver (basic-header "text/html")
 	 (and with-body?
-	      (cut default-error-page <> 405
+	      (cut output-error-page <> 405
 		   (format "The requested method ~a is not allowed for the URL ~a." method uri)))))
 (define-condition-type <http-method-not-allowed> <kahua-http-error> #f)
 (define-method reply-error ((e <http-method-not-allowed>) out)
@@ -207,7 +207,7 @@
 (define (reply-internal-server-error out ver with-body?)
   (reply out 500 ver (basic-header "text/html")
 	 (and with-body?
-	      (cut default-error-page <> 500 "Internal Server Error occured."))))
+	      (cut output-error-page <> 500 "Internal Server Error occured."))))
 (define-method reply-error ((e <kahua-error>) out)
   (reply-internal-server-error out (request-version) (with-body?)))
 
@@ -215,7 +215,7 @@
 (define (reply-not-implemented out method uri ver with-body?)
   (reply out 501 ver (basic-header "text/html")
 	 (and with-body?
-	      (cut default-error-page <> 501
+	      (cut output-error-page <> 501
 		   (format "~a to ~a not supported." method uri)))))
 (define-condition-type <http-not-implemented> <kahua-http-error> #f)
 (define-method reply-error ((e <http-not-implemented>) out)
@@ -326,11 +326,12 @@
 
 ;; Return HTTP status, encoding of body HTTP header.
 (define (interp-kahua-header kheader)
-  (let* ((header (kahua-header->http-header kheader))
-	 (content-type (or (assoc-ref-car header "content-type") *default-content-type*))
+  (let* ((header (remove! (lambda (e) (string-ci=? (car e) "status"))
+			  (kahua-header->http-header kheader)))
+	 (content-type (or (ref-car string-ci=? header "content-type") *default-content-type*))
 	 (encoding (and-let* ((m (#/\; *charset=([\w\-]+)/ content-type))) (m 1))))
     (values (or (and-let* ((status (ref-car string-ci=? kheader "status"))
-			   (m (#/^\d{3}/ status)))
+			   (m (#/^\d\d\d/ status)))
 		  (string->number (m 0)))
 		200)
 	    encoding

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.20 2006/08/31 04:15:10 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.21 2006/09/01 06:20:50 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -746,36 +746,33 @@
 ;; Actual server loop
 ;;
 (define (run-server spvr tpool kahua-sock use-listener)
-  (let ((listener (and use-listener
-                       (make <listener>
-                         :prompter (lambda () (display "kahua> ")))))
-        )
-    (when kahua-sock
+  (when kahua-sock
+    (selector-add! (selector-of spvr)
+		   (socket-fd kahua-sock)
+		   (lambda (fd flags)
+		     (let1 client (socket-accept kahua-sock)
+		       (add tpool (cut handle-kahua spvr client))))
+		   '(r)))
+  (when use-listener
+    (let* ((listener (make <listener> :prompter (lambda () (display "kahua> "))))
+	   (listener-handler (listener-read-handler listener)))
+      (set! (port-buffering (current-input-port)) :none)
       (selector-add! (selector-of spvr)
-                     (socket-fd kahua-sock)
-                     (lambda (fd flags)
-		       (let1 client (socket-accept kahua-sock)
-			 (add tpool (cut handle-kahua spvr client))))
-                     '(r)))
-    (when listener
-      (let1 listener-handler (listener-read-handler listener)
-        (set! (port-buffering (current-input-port)) :none)
-        (selector-add! (selector-of spvr)
-                       (current-input-port)
-                       (lambda _ 
-			 (listener-handler))
-                       '(r)))
-      (listener-show-prompt listener))
+		     (current-input-port)
+		     (lambda _ 
+		       (listener-handler))
+		     '(r))
+      (listener-show-prompt listener)))
 
-    ;; The signal mask of "root" thread is changed unexpectedly on Mac OS X 10.4.5,
-    ;; maybe something wrong,  but I don't know what is wrong.
-    ;; So, I restore the signal mask of "root" thread periodically.
-    ;; FIXME!!
-    (do () (#f)
-      (sys-sigmask SIG_SETMASK *default-sigmask*)
-      (selector-select (selector-of spvr) 10.0e6)
-      (check-workers spvr))
-    ))
+  ;; The signal mask of "root" thread is changed unexpectedly on Mac OS X 10.4.5,
+  ;; maybe something wrong,  but I don't know what is wrong.
+  ;; So, I restore the signal mask of "root" thread periodically.
+  ;; FIXME!!
+  (do () (#f)
+    (sys-sigmask SIG_SETMASK *default-sigmask*)
+    (selector-select (selector-of spvr) 10.0e6)
+    (check-workers spvr))
+  )
 
 ;;;=================================================================
 ;;; Main

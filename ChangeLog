@@ -1,3 +1,8 @@
+2006-09-01  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/protocol/worker.scm, src/kahua/protocol/http.scm,
+	  src/kahua-httpd.scm, src/kahua-spvr.scm, cgi/kahua.cgi.in: Arrange
+
 2006-08-31  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* cgi/kahua.cgi.in: Now its configuration follow kahua.config.

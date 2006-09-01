@@ -6,7 +6,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.2 2006/08/31 04:46:58 bizenn Exp $
+;; $Id: worker.scm,v 1.3 2006/09/01 06:21:04 bizenn Exp $
 (define-module kahua.protocol.worker
   (use util.list)
   (use gauche.net)
@@ -63,7 +63,9 @@
 	(case (string->symbol kahua-status)
 	  ((OK)         #t)
 	  ((SPVR-ERROR) (raise (make-condition <kahua-worker-not-found> 'message "Worker not found")))
-	  (else         (raise (make-condition <kahua-worker-error> 'message "Worker error")))))
+	  (else
+	   (log-format "Unknown x-kahua-status: ~s" kahua-status)
+	   (raise (make-condition <kahua-worker-error> 'message "Worker error")))))
       #t))
 
 (define (make-socket-to-worker cgsid)

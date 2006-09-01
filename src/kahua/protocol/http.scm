@@ -6,7 +6,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: http.scm,v 1.2 2006/08/31 04:46:58 bizenn Exp $
+;; $Id: http.scm,v 1.3 2006/09/01 06:21:03 bizenn Exp $
 (define-module kahua.protocol.http
   (use srfi-1)
   (use srfi-13)
@@ -32,6 +32,9 @@
 	  send-http-header
 	  send-http-body
 	  default-error-page
+	  output-error-page
+	  default-redirect-page
+	  output-redirect-page
 	  http-status-string
 	  print-status-line
 	  ))
@@ -82,13 +85,26 @@
     ((PUT DELETE OPTIONS TRACE CONNECT) #t)
     (else                               #f)))
 
-(define (default-error-page out status msg)
-  (display "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n" out)
-  (display "<html><head>\r\n" out)
-  (let1 status-line (http-status-string status #f)
-    (format out "<title>~a</title>\r\n" status-line)
-    (format out "</head><body>\r\n<h1>~a</h1>\r\n<p>~a</p>\r\n</body></html>\r\n"
-	    status-line (html-escape-string msg))))
+(define (default-error-page status msg)
+  (let1 status-msg (http-status-string status #f)
+  `(,(html-doctype)
+    ,(html:html
+      (html:head (html:title status-msg))
+      (html:body
+       (html:h1 status-msg)
+       (html:p (html-escape-string msg)))))))
+
+(define (output-error-page out status msg)
+  (write-tree (default-error-page status msg) out))
+
+(define (default-redirect-page dest)
+  `(,(html-doctype)
+    ,(html:html
+      (html:head (html:title "Now redirecting..."))
+      (html:body (html:h1 "Redirecting to " (html:a :href dest "here") "...")))))
+
+(define (output-redirect-page out dest)
+  (write-tree (default-redirect-page dest) out))
 
 (define (abs-uri uri base)
   (receive (scheme spec) (uri-scheme&specific uri)
