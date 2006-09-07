@@ -1,5 +1,7 @@
 2006-09-07  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* INSTALL: Merge "Let's just try Kahua".
+
 	* cgi/kahua.cgi.in: Fix a bug.
 	  If SERVER_NAME has port number, Location header value was
 	  irregular URI: http://hostname:port:port/path/path/path...

@@ -1,33 +1,97 @@
-$Id: INSTALL,v 1.5 2005/12/22 16:29:19 shibata Exp $
+;; This document is written in WiLiKi format.
+;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
+;;
+;; $Id: INSTALL,v 1.6 2006/09/07 14:16:31 bizenn Exp $
 
-Installation procedure
+* Setup Kahua
 
-[Short Summary]
+** Preparation
 
-  % ./configure --with-cgidir=$(KAHUA_CGIDIR) --with-cgilogdir=$(KAHUA_CGILOGDIR) --with-staticdir=$(KAHUA_STATICDIR)
-  % make
-  % make check
-  % su
-  # make install
-  # vi $(CONFFILE)
-  # chgrp -R $(KAHUA_GROUP) $(KAHUA_DIRS) $(KAHUA_CGILOGDIR)
-  # chmod -R g+ws $(KAHUA_DIRS)
-  # chmod 755 $(KAHUA_CGILOGDIR)
-  # exit
-  % make install-examples
-  % vi $(KAHUA_WORK_DIR)/app-servers
-  % (kahua-spvr > /dev/null 2>&1) &
+*** Installing Gauche
+
+To use Kahua, you need Gauche 0.8.7 or later that supports pthread.
+CVS-HEAD version is recomended because critical bug was fixed.
+
+$ gosh -V
+Gauche scheme interpreter, version 0.8.7 [utf-8,pthreads]
+
+If you have not installed proper version of Gauche, please install new
+version.
+
+----
+** Let's just try Kahua
+
+*** Building tarball
+
+If you just simply try Kahua, installing under HOME directroy is
+recommended.  The reason is that you don't need to care about
+permissions and user/group settings.
+
+{{{
+% tar xvzf Kahua-0.6.tgz
+% cd Kahua-0.6
+% ./configure --prefix=$HOME/kahua --with-staticdir=$HOME/public_html/kahua
+% make
+% make check
+% make install
+% make install-examples
+}}}
+
+This will build from the source code and install it under the
+${HOME}/kahua and $HOME/public_html/kahua directory.  It will help you
+to add ${HOME}/kahua/bin directory to your PATH.
+
+*** Start Kahua
+
+After having installed, you can easily try by running the standalone server: 
+
+% ($HOME/kahua/bin/kahua-spvr --httpd localhost:8888 >>/tmp/kahua-error.log &)
+
+You can set any port number except privileged port.
+If you appoint only port number, you can bind server socket to 0.0.0.0(or[::]).
+
+Then, start a browser and visit http://localhost:8888/.
+You will see and use  one of sample application,"lambdabooks".
+
+
+----
+----
+* Proper Installation procedure
+
+** Short Summary
+
+{{{
+% ./configure --with-cgidir=$(KAHUA_CGIDIR) \
+  	      --with-cgilogdir=$(KAHUA_CGILOGDIR) \
+ 	      --with-staticdir=$(KAHUA_STATICDIR)
+% make
+% make check
+% su
+# make install
+# vi $(CONFFILE)
+# chgrp -R $(KAHUA_GROUP) $(KAHUA_DIRS) $(KAHUA_CGILOGDIR)
+# chmod -R g+ws $(KAHUA_DIRS)
+# chmod 755 $(KAHUA_CGILOGDIR)
+# exit
+% make install-examples
+% vi $(KAHUA_WORK_DIR)/app-servers
+% (kahua-spvr > /dev/null 2>&1) &
+}}}
 
 You have to have $(KAHUA_GROUP) in /etc/group and the user id which will
 run kahua.cgi have to be include in the line.
 
-[Step by step]
+** Step by step
 
-1. Configuration and make
--------------------------
+----
+*** [Step 1] Configuration and make
 
-  % ./configure --with-cgidir=$(KAHUA_CGIDIR) --with-cgilogdir=$(KAHUA_CGILOGDIR) --with-staticdir=$(KAHUA_STATICDIR)
-  % make
+{{{
+% ./configure --with-cgidir=$(KAHUA_CGIDIR) \
+  	      --with-cgilogdir=$(KAHUA_CGILOGDIR) \
+ 	      --with-staticdir=$(KAHUA_STATICDIR)
+% make
+}}}
 
 You need to give a directory name where cgi scripts should be installed
 by --with-cgidir option.  If the option is omitted, $prefix/libexec/kahua
@@ -55,12 +119,13 @@ You can run a self test by 'make check'.
   % make check
 
 
-2. Installation
----------------
+----
+*** [Step 2] Installation
 
 Installation process writes to several locations.   You have to
 have permissions to do so.
 
+{{{
   $(prefix)/tmp/kahua    : This directory is created for Unix domain sockets
                            kahua servers will use.  You can specify it
                            in the kahua.conf file which by default installed
@@ -77,28 +142,29 @@ have permissions to do so.
   $(libexecdir)/kahua    : Kahua executables called by kahua commands will be
                            copied to this location.
   $(libdir)/kahua        : Kahua modules will be copied to this location.
+}}}
 
 "make install" will do the job.
 
 
-3. Setting up
--------------
+----
+*** [Step 3] Setting up
 
 Check the file $(sysconfdir)/kahua.conf and edit it if necessary.
 
 During its normal operation, the Kahua system needs to write
 to the following directories:
 
- - socket directory (specified by :sockbase in kahua.conf;
-   the default is $(prefix)/tmp/kahua)
+- socket directory (specified by :sockbase in kahua.conf;
+  the default is $(prefix)/tmp/kahua)
 
- - working directory (specified by :working-directory
-   in kahua.conf; the default is $(localstatedir)/kahua)
+- working directory (specified by :working-directory
+  in kahua.conf; the default is $(localstatedir)/kahua)
 
- - document directory (specified by :static-document-path
-   in kahua.conf; the default is /var/www/kahua)
-   This directory is not created by 'make install'.
-   You need to make sure creating this directory.
+- document directory (specified by :static-document-path
+  in kahua.conf; the default is /var/www/kahua)
+  This directory is not created by 'make install'.
+  You need to make sure creating this directory.
 
 The write permissions of these directories should be open
 to the user/group who runs Kahua servers.  One strategy is
@@ -112,14 +178,16 @@ to make user that runs kahua.cgi belong the kahua group and chgrp
 the directory.
 
 
-4. Running Examples
--------------------
+----
+*** [Step 4] Running Examples
 
 Run "make install-examples" to install an example application
 servers, "lambdabooks", "wiki-iki", "login", "nqueen" "lazy-nqueen", and
 "lambdacalcul".
 
-  % make install-examples
+{{{
+% make install-examples
+}}}
 
 Check $(localstatedir)/kahua/app-servers file and make sure
 it contains the following line.  By default, unless you have
@@ -127,13 +195,19 @@ already created app-servers file, "make install-examples"
 copies a sample app-servers file that contains the following
 entry.
 
- (lambdabooks   :arguments () :run-by-default 1)
- (wiki-iki      :arguments () :run-by-default 1)
- (login         :arguments () :run-by-default 1)
+{{{
+(
+  (lambdabooks   :arguments () :run-by-default 1)
+  (wiki-iki      :arguments () :run-by-default 1)
+  (login         :arguments () :run-by-default 1)
+)
+}}}
 
 And run Kahua main server.
 
-  % (kahua-spvr > /dev/null 2>&1) &
+{{{
+% (kahua-spvr > /dev/null 2>&1) &
+}}}
 
 You can access the site via kahua-elua.cgi CGI script from
 your browser, for example, by specifying kahua.cgi/lambdabooks as URI
