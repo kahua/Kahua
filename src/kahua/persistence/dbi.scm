@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.4 2006/09/07 02:54:55 bizenn Exp $
+;; $Id: dbi.scm,v 1.5 2006/09/07 04:20:34 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -313,14 +313,15 @@
 (define-generic table-should-be-locked?)
 
 (define-method write-kahua-instances-modified ((db <kahua-db-dbi>))
-  (let* ((obj&table (map (lambda (obj)
-			   (list obj (kahua-class->table-name* db (class-of obj))))
-			 (reverse! (modified-instances-of db))))
-	 (tables (append! (filter-map (lambda (e)
-					(and (table-should-be-locked? db (car e))
-					     (cadr e)))
-				      obj&table)
-			  (map! (cut cons <> :read) (hash-table-values (table-map-of db))))))
+  (and-let* ((obj&table (map (lambda (obj)
+			       (list obj (kahua-class->table-name* db (class-of obj))))
+			     (reverse! (modified-instances-of db))))
+	     ((not (null? obj&table)))
+	     (tables (append! (filter-map (lambda (e)
+					    (and (table-should-be-locked? db (car e))
+						 (cadr e)))
+					  obj&table)
+			      (map! (cut cons <> :read) (hash-table-values (table-map-of db))))))
     (with-transaction db
       (lambda _
 	(apply with-locking-tables db
