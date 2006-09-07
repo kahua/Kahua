@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-dbutil.scm,v 1.2 2006/07/28 13:09:43 bizenn Exp $
+;; $Id: kahua-dbutil.scm,v 1.3 2006/09/07 02:54:55 bizenn Exp $
 
 (use gauche.parseopt)
 (use kahua.persistence)
@@ -26,8 +26,8 @@
       (if (or (#/^mysql/ dbname) (#/^pg/ dbname) (#/^postgresql/ dbname))
 	  (with-db (db dbname)
 	    (msg "==Start checking: ~s==\n" db)
-	    (msg "Checking kahua_db_idcount...~a\n" (check-kahua-db-idcount db do-fix?))
-	    (msg "Checking kahua_db_classcount...~a\n" (check-kahua-db-classcount db do-fix?))
+	    (msg "Checking kahua_db_idcount...~a\n" (dbutil:check-kahua-db-idcount db do-fix?))
+	    (msg "Checking kahua_db_classcount...~a\n" (dbutil:check-kahua-db-classcount db do-fix?))
 	    (msg "==Done==\n"))
 	  (format (current-error-port) "Sorry, ~s database not yet supported.\n"))
       0)))

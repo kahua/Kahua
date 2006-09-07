@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.74 2006/08/31 04:15:10 bizenn Exp $
+;; $Id: server.scm,v 1.75 2006/09/07 02:54:55 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -61,6 +61,7 @@
           apply-entry-method
           define-method-rule
 	  kahua-call-with-current-context
+	  kall/cc
           path->objects
           entry-lambda
           interp-html
@@ -760,6 +761,8 @@
 				 ((kahua-current-context ctxt))
 			       (return)))))))
     (return)))
+;; Alias
+(define kall/cc kahua-call-with-current-context)
 
 (define-syntax regist-entry-method
   (syntax-rules ()

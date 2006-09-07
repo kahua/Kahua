@@ -1,3 +1,8 @@
+2006-09-07  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/persistence.scm, src/kahua/persistence/*.scm:
+	  Now lock tables in kahua-db-sync, not in each write-kahua-instance.
+
 2006-09-01  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* src/kahua/protocol/worker.scm, src/kahua/protocol/http.scm,

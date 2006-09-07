@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.7 2006/08/27 00:44:28 bizenn Exp $
+;; $Id: fs.scm,v 1.8 2006/09/07 02:54:55 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -87,7 +87,7 @@
     (set! (lock-port-of db) #f)
     #t))
 
-(define (kahua-db-create db)
+(define-method kahua-db-create ((db <kahua-db-fs>))
   ;; There could be a race condition here, but it would be very
   ;; low prob., so for now it should be OK.
   (let1 tmp (tmp-path-of db)

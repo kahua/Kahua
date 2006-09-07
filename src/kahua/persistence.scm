@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.56 2006/08/16 07:32:41 bizenn Exp $
+;; $Id: persistence.scm,v 1.57 2006/09/07 02:54:55 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -25,7 +25,10 @@
           kahua-persistent-classes-in-db
           kahua-persistent-class-generation
           kahua-persistent-class-definition
+
+	  ;; Kahua Object Database
           <kahua-db>
+	  kahua-db-create
           <with-db-error>
           current-db with-db kahua-db-sync kahua-db-rollback
 	  kahua-db-purge-objs
@@ -40,23 +43,22 @@
 
 	  ;; for Database Driver Module.
 	  kahua-db-unique-id
-	  lock-db unlock-db
+	  lock-db unlock-db with-locking-db
 	  kahua-db-open
 	  kahua-db-close
 	  read-kahua-instance
 	  write-kahua-instance
+	  write-kahua-instances-modified
 	  kahua-db-write-id-counter
 	  make-kahua-collection
 
 	  kahua-persistent-instances
 
 	  ;; for Check and fix database consistency.
-	  check-kahua-db-classcount
-	  check-kahua-db-idcount
-	  max-table-name-suffix
-	  max-kahua-key-from-idcount
-          )
-  )
+	  dbutil:check-kahua-db-classcount
+	  dbutil:check-kahua-db-idcount
+          ))
+
 (select-module kahua.persistence)
 
 (define-condition-type <kahua-persistence-error> <kahua-error> #f)
@@ -933,7 +935,7 @@
        :source-id ,(car sid))))
 
 ;;=========================================================
-;; Database
+;; Kahua Object Database
 ;;
 
 ;; Database class -----------------------------------------
@@ -962,6 +964,8 @@
    (floated-modified-instances :init-value '()) ;; modified, but...
    )
   :metaclass <kahua-db-meta>)
+
+(define-generic kahua-db-create)
 
 (define (kahua-concrete-db-class dbtype)
   (let* ((module (string->symbol #`"kahua.persistence.,|dbtype|"))
@@ -996,8 +1000,14 @@
     (kahua-db-unique-id db)))
 
 (define-generic kahua-db-unique-id)
+
 (define-generic lock-db)
 (define-generic unlock-db)
+(define-method with-locking-db ((db <kahua-db>) thunk)
+  (dynamic-wind
+      (cut lock-db db)
+      thunk
+      (cut unlock-db db)))
 (define-generic kahua-db-open)
 (define-generic kahua-db-close)
 (define-generic read-kahua-instance)
@@ -1024,7 +1034,7 @@
 		     (modified-instances-of db)))
 	 ))))
 
-(define-condition-type <with-db-error> <error>
+(define-condition-type <with-db-error> <kahua-error>
   with-db-error?
   (continuation  kahua-error-with-db))
 
@@ -1072,10 +1082,13 @@
 (define-method kahua-db-open ((path <string>))
   (kahua-db-open (make (select-db-class path) :path path)))
 
+(define-method write-kahua-instances-modified ((db <kahua-db>))
+  (for-each (cut write-kahua-instance db <>)
+	    (reverse! (modified-instances-of db))))
+
 (define (kahua-db-sync . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
-    (for-each (cut write-kahua-instance db <>)
-	      (reverse! (modified-instances-of db)))
+    (write-kahua-instances-modified db)
     (set! (modified-instances-of db) '())
     (kahua-db-write-id-counter db)))
 
@@ -1259,9 +1272,7 @@
 
 ;; for check and fix database consistency.
 
-(define-generic check-kahua-db-classcount)
-(define-generic check-kahua-db-idcount)
-(define-generic max-table-name-suffix)
-(define-generic max-kahua-key-from-idcount)
+(define-generic dbutil:check-kahua-db-classcount)
+(define-generic dbutil:check-kahua-db-idcount)
 
 (provide "kahua/persistence")

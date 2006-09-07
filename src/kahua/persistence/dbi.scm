@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.3 2006/08/02 04:24:19 bizenn Exp $
+;; $Id: dbi.scm,v 1.4 2006/09/07 02:54:55 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -15,38 +15,54 @@
 	  gauche.collection
 	  gauche.logger)
   (export <kahua-db-dbi>
-	  kahua-db-unique-id
-	  lock-db
-	  unlock-db
-	  kahua-db-open
+	  set-default-character-encoding!
 	  kahua-db-dbi-open
-	  kahua-db-write-id-counter
-	  kahua-db-close
-	  read-kahua-instance
-	  write-kahua-instance
-	  make-kahua-collection
-	  class->table-name
-	  class-table-next-suffix
 	  with-transaction
+	  serialize-table-locks
+	  lock-tables
+	  unlock-tables
+	  with-locking-tables
+	  table-should-be-locked?
 
-	  current-kahua-db-classcount
-	  fix-kahua-db-classcount
-	  create-kahua-db-classcount
-	  current-kahua-db-idcount
-	  fix-kahua-db-idcount
+	  *kahua-db-classes*
+	  create-kahua-db-classes
+	  select-kahua-db-classes
+	  select-all-kahua-db-classes
+	  insert-kahua-db-classes
+	  kahua-class->table-name*
+
+	  *kahua-db-idcount*
 	  create-kahua-db-idcount
+	  *kahua-db-classcount*
+	  class-table-next-suffix
+	  *kahua-class-table-format*
+	  create-kahua-class-table
+	  create-kahua-db-classcount
+	  register-to-table-map
+
+	  ;; Database Consistency Check and Fix.
+	  dbutil:current-kahua-db-classcount
+	  dbutil:fix-kahua-db-classcount
+	  dbutil:create-kahua-db-classcount
+	  dbutil:current-kahua-db-idcount
+	  dbutil:fix-kahua-db-idcount
+	  dbutil:create-kahua-db-idcount
+	  ;; Utility
+	  safe-execute
 	  ))
 
 (select-module kahua.persistence.dbi)
+
+;; Debug Facility
+;(define dbi-do% dbi-do)
+;(define (dbi-do conn sql opts . params)
+;  (format (current-error-port) "SQL: ~a\n" sql)
+;  (apply dbi-do% conn sql opts params))
 
 ;; DBI-based persistent store (optional)
 ;;  Currently, only one server per backend database type can be 
 ;;  used simultaneously, since a driver will be created as a
 ;;  singleton.
-;;  NB: DBI bridge is _temporary_.  The current implementation
-;;  isn't efficient, and also it has hazards when multiple
-;;  processes access to the same DB.  The data format in DB
-;;  will be changed in future in incompatible way.
 (define-class <kahua-db-dbi> (<kahua-db>)
   ((dsn        :init-value #f :accessor dsn-of)
    (user       :init-value #f :accessor user-of)
@@ -58,10 +74,6 @@
 (define (kahua-dbi-warn fname)
   (format (current-error-port)
 	  "** ~a should be overridden in concrete database driver module.\n" fname))
-
-(define-method dataval-type ((self <kahua-db-dbi>))
-  (kahua-dbi-warn "dataval-type")
-  "text")
 
 (define-method initialize ((db <kahua-db-dbi>) initargs)
   (next-method)
@@ -76,20 +88,40 @@
 
 (define-method with-transaction ((db <kahua-db-dbi>) proc)
   (let1 conn (connection-of db)
-    (guard (e (else (dbi-do conn "rollback" '(:pass-through #t))))
+    (guard (e (else
+	       (dbi-do conn "rollback" '(:pass-through #t))
+	       (raise e)))
       (dbi-do conn "start transaction" '(:pass-through #t))
       (begin0
 	(proc conn)
 	(dbi-do conn "commit" '(:pass-through #t))))))
 
-(define-method kahua-db-unique-id ((db <kahua-db-dbi>))
-  (kahua-dbi-warn "kahua-db-unique-id")
-  (begin0
-    (ref db 'id-counter)
-    (inc! (ref db 'id-counter))))
-
 (define-method lock-db ((db <kahua-db-dbi>)) #t)
 (define-method unlock-db ((db <kahua-db-dbi>)) #t)
+(define (serialize-table-locks specs)
+  (reverse!
+   (fold (lambda (e r)
+	   (let* ((e (if (pair? e)
+			 e
+			 (cons e :write)))
+		  (table (car e)))
+	     (cond ((assoc table r string=?) =>
+		    (lambda (old)
+		      (unless (eq? (cdr old) (cdr e))
+			(set-cdr! old :write))
+		      r))
+		   (else (cons e r)))))
+	 '()
+	 specs)))
+(define-generic lock-tables)
+(define-generic unlock-tables)
+(define-method with-locking-tables ((db <kahua-db>)
+				    thunk
+				    . tables)
+  (dynamic-wind
+      (cut apply lock-tables db tables)
+      thunk
+      (cut apply unlock-tables db tables)))
 
 (define-method kahua-db-open ((db <kahua-db-dbi>))
   (let1 conn (dbi-connect (dsn-of db)
@@ -98,78 +130,40 @@
     (set! (active? db) #t)
     (kahua-db-dbi-open db conn)))
 
-(define-constant *create-kahua-db-classes*
-  "create table kahua_db_classes (
-     class_name varchar(255) not null,
-     table_name varchar(255) not null,
-     constraint pk_kahua_db_classes primary key (class_name),
-     constraint uq_kahua_db_classes unique (table_name)
-  )")
-(define-constant *create-kahua-db-idcount*
-  "create table kahua_db_idcount (value integer)")
-(define-constant *initialize-kahua-db-idcount*
-  "insert into kahua_db_idcount values (?)")
-(define-constant *clear-kahua-db-idcount*
-  "delete from kahua_db_idcount")
+(define-generic set-default-character-encoding!)
 
-(define-constant *create-kahua-db-classcount*
-  "create table kahua_db_classcount (value integer)")
-(define-constant *initialize-kahua-db-classcount*
-  "insert into kahua_db_classcount values (?)")
-(define-constant *clear-kahua-db-classcount*
-  "delete from kahua_db_classcount")
+(define (safe-execute thunk)
+  (guard (e ((<dbi-exception> e) #f)
+	    (else (raise e)))
+    (thunk)))
 
 (define-method kahua-db-dbi-open ((db <kahua-db-dbi>) conn)
-  (define (safe-query query)
-    (guard (e ((<dbi-exception> e) #f)
-	      (else (raise e)))
-      (dbi-do conn query '(:pass-through #t))))
-
-  (define (query-idcount)
-    (and-let* ((r (safe-query "select value from kahua_db_idcount"))
-	       (p (map (cut dbi-get-value <> 0) r))
-	       ((not (null? p))))
-      (x->integer (car p))))
-
   (define (query-classtable)
-    (and-let* ((r (safe-query "select class_name, table_name from kahua_db_classes")))
+    (and-let* ((r (safe-execute (cut select-all-kahua-db-classes db))))
       (map (lambda (row)
-	     (cons (string->symbol (dbi-get-value row 0))
+	     (list (string->symbol (dbi-get-value row 0))
 		   (dbi-get-value row 1)))
 	   r)))
 
-  (kahua-dbi-warn "kahua-db-dbi-open")
   (set! (connection-of db) conn)
+  (set-default-character-encoding! db)
   ;; check table existence
-  (let1 z (query-idcount)
-    (unless z
-      ;; this is the first time we use db.
-      ;; TODO: error check
-      (for-each
-       (cut apply dbi-do conn <> '(:pass-through #t) <>)
-       `(,*create-kahua-db-classes*
-	 ,*create-kahua-db-idcount*
-	 ,*initialize-kahua-db-idcount*)
-       '(() (0) ()))
-      (let1 zz (query-idcount)
-	(unless zz
-	  (error "couldn't initialize database"))
-	(set! z zz)))
-    (set! (ref db 'id-counter) z)
-    (for-each (lambda (p)
-		(hash-table-put! (table-map-of db) (car p) (cdr p)))
-	      (query-classtable))
-    db))
+  (with-locking-db db
+    (lambda _
+      (for-each (pa$ apply register-to-table-map db)
+		(or (query-classtable)
+		    (begin
+		      (kahua-db-create db)
+		      (query-classtable))))))
+  db)
 
-(define-constant *update-kahua-db-idcount*
-  "update kahua_db_idcount set value = ?")
+(define-method kahua-db-create ((db <kahua-db-dbi>))
+  (safe-execute (cut create-kahua-db-classes db))
+  (safe-execute (cut create-kahua-db-classcount db))
+  (safe-execute (cut create-kahua-db-idcount db)))
 
-(define-method kahua-db-write-id-counter ((db <kahua-db-dbi>))
-  (kahua-dbi-warn "kahua-db-write-id-counter")
-  (dbi-do (connection-of db) *update-kahua-db-idcount* '() (ref db 'id-counter)))
-
-(define-method kahua-db-close ((db <kahua-db-dbi>) commit)
-  (if commit
+(define-method kahua-db-close ((db <kahua-db-dbi>) commit?)
+  (if commit?
       (kahua-db-sync db)
     (kahua-db-rollback db))
   (dbi-close (connection-of db))
@@ -177,61 +171,115 @@
   (set! (ref db 'modified-instances) '())
   (set! (active? db) #f))
 
-(define-method class-table-next-suffix ((db <kahua-db-dbi>))
-  (let1 r (dbi-do (connection-of db) "select count(*) from kahua_db_classes" '())
-    (car (map (cut dbi-get-value <> 0) r))))
+;;
+;; kahua_db_classes: Persistent class name <-> table name mapping.
+;;
+;; [Spec]
+;; Column Name	|	Type	|	Constraint
+;; ------------------------------------------------
+;; class_name	|	text	|	primary key
+;; table_name	|	text	|	unique
+(define-constant *kahua-db-classes* "kahua_db_classes")
 
-(define-constant *class-table-name*
-  "select table_name from kahua_db_classes where class_name=?")
-(define-constant (select-class-instance tabname)
-  (format "select dataval from ~a where keyval=?" tabname))
+;; You would like to override this in a concrete driver.
+(define-method create-kahua-db-classes ((db <kahua-db-dbi>))
+  (define *create-kahua-db-classes*
+    (format
+      "create table ~a (
+         class_name varchar(255) not null,
+         table_name varchar(255) not null,
+         constraint pk_~a primary key (class_name),
+         constraint uq_~a unique (table_name)
+       )"
+      *kahua-db-classes* *kahua-db-classes* *kahua-db-classes*))
+  (dbi-do (connection-of db) *create-kahua-db-classes* '(:pass-through #t)))
 
-(define-method class->table-name ((db <kahua-db-dbi>) (class <kahua-persistent-meta>))
-  (let ((cname  (class-name class))
-	(table-map (table-map-of db)))
-    (or (hash-table-get table-map cname #f)
-	(and-let* ((conn (connection-of db))
-		   (r (dbi-do conn *class-table-name* '() cname))
-		   (l (map (cut dbi-get-value <> 0) r))
-		   ((not (null? l)))
-		   (tabname (car l)))
-	  (hash-table-put! table-map cname tabname)
+;; Maybe you don't need to override this.
+(define-method select-kahua-db-classes ((db <kahua-db-dbi>) cname)
+  (define *select-kahua-db-classes*
+    (format "select table_name from ~a where class_name = ?" *kahua-db-classes*))
+  (and-let* ((l (map (cut dbi-get-value <> 0)
+		     (dbi-do (connection-of db) *select-kahua-db-classes* '() cname)))
+	     ((not (null? l))))
+    (car l)))
+
+;; Ditto.
+(define-method select-all-kahua-db-classes ((db <kahua-db-dbi>))
+  (define *select-all-kahua-db-classes*
+    (format "select class_name, table_name from ~a" *kahua-db-classes*))
+  (dbi-do (connection-of db) *select-all-kahua-db-classes* '(:pass-through #t)))
+
+;; Ditto.
+(define-method insert-kahua-db-classes ((db <kahua-db-dbi>)
+					(cname <symbol>)
+					(tname <string>))
+  (define *insert-kahua-db-classes*
+    (format "insert into ~a values (?, ?)" *kahua-db-classes*))
+  (dbi-do (connection-of db) *insert-kahua-db-classes* '() cname tname))
+
+;;
+;; kahua_db_idcount: ID counter for Object ID.
+;;
+;; It doesn't have to be a table. It may be a sequence.
+(define-constant *kahua-db-idcount* "kahua_db_idcount")
+(define-generic create-kahua-db-idcount)
+(define-generic initialize-kahua-db-idcount)
+
+;;
+;; kahua_db_classcount: counter for class table suffix number.
+;;
+(define-constant *kahua-db-classcount* "kahua_db_classcount")
+(define-generic class-table-next-suffix)
+(define-generic create-kahua-db-classcount)
+(define-generic initialize-kahua-db-classcount)
+(define-generic select-kahua-db-classcount)
+
+;;
+;; kahua_\d+: Table storing instances.
+;;
+(define-constant *kahua-class-table-format* "kahua_~d")
+(define-generic create-kahua-class-table)
+
+(define-method register-to-table-map ((db <kahua-db-dbi>)
+				      (cname <symbol>)
+				      (tabname <string>))
+  (hash-table-put! (table-map-of db) cname tabname))
+(define-method get-from-table-map ((db <kahua-db-dbi>)
+				   (cname <symbol>))
+  (hash-table-get (table-map-of db) cname #f))
+
+(define-method kahua-class->table-name ((db <kahua-db-dbi>)
+				 (class <kahua-persistent-meta>))
+  (let1 cname  (class-name class)
+    (or (get-from-table-map db cname)
+	(and-let* ((tabname (select-kahua-db-classes db cname)))
+	  (register-to-table-map db cname tabname)
 	  tabname))))
+
+(define-method kahua-class->table-name* ((db <kahua-db-dbi>)
+					 (class <kahua-persistent-meta>))
+  (with-transaction db
+    (lambda (conn)
+      (with-locking-tables db
+	(lambda ()
+	  (or (kahua-class->table-name db class)
+	      (create-kahua-class-table db class)))
+	*kahua-db-classes*))))
+
+;; You must override kahua-db-unique-id.
+(define-method kahua-db-write-id-counter ((db <kahua-db-dbi>)) #f)
 
 (define-method read-kahua-instance ((db <kahua-db-dbi>)
                                     (class <kahua-persistent-meta>)
                                     (key <string>))
+  (define (select-class-instance tabname)
+    (format "select dataval from ~a where keyval=?" tabname))
   (and-let* ((conn (connection-of db))
-	     (tab (class->table-name db class))
+	     (tab (kahua-class->table-name db class))
              (r (dbi-do conn (select-class-instance tab) '() key))
              (rv  (map (cut dbi-get-value <> 0) r))
              ((not (null? rv))))
     (call-with-input-string (car rv) read)))
-
-(define-method write-kahua-instance ((db <kahua-db-dbi>)
-                                     (obj <kahua-persistent-base>))
-  (define (table-name)
-    (let* ((class (class-of obj))
-	   (cname (class-name class))
-	   (conn (connection-of db)))
-      (or (class->table-name db class)
-          (let1 newtab (format "kahua_~a" (class-table-next-suffix db))
-            (dbi-do conn "insert into kahua_db_classes values (? , ?)" '() cname newtab)
-            (dbi-do conn #`"create table ,|newtab| (keyval varchar(255),, dataval ,(dataval-type db),, primary key (keyval))" '(:pass-through #t))
-            (push! (ref db 'table-map) (cons cname newtab))
-            newtab))))
-
-  (kahua-dbi-warn "write-kahua-instance")
-  (let* ((data (call-with-output-string (cut kahua-write obj <>)))
-         (key  (key-of obj))
-         (tab  (table-name)))
-    (if (ref obj '%floating-instance)
-        (dbi-do (connection-of db)
-		#`"insert into ,|tab| values (?,, ?)" '() key data)
-      (dbi-do (connection-of db)
-	      #`"update ,|tab| set dataval = ? where keyval = ?" '() data key))
-    (set! (ref obj '%floating-instance) #f)
-    ))
 
 (define-method kahua-persistent-instances ((db <kahua-db-dbi>) class keys filter-proc)
   (let ((cn (class-name class))
@@ -251,11 +299,34 @@
 	    (let1 v (call-with-input-string (dbi-get-value row 1) read)
 	      (set! (ref v '%floating-instance) #f)
 	      v))))
-    (or (and-let* ((tab (class->table-name db class))
+    (or (and-let* ((tab (kahua-class->table-name db class))
 		   (r (apply dbi-do conn (%select-instances tab (%make-where-in-clause keys))
 			     '() (or keys '()))))
 	  (filter-map1 (lambda (row) (filter-proc (%find-kahua-instance row))) r))
 	'())))
+
+(define-method write-kahua-instance ((db <kahua-db-dbi>)
+				     (obj <kahua-persistent-base>))
+  ;; You must override the method below.
+  (write-kahua-instance db obj (kahua-class->table-name* db (class-of obj))))
+
+(define-generic table-should-be-locked?)
+
+(define-method write-kahua-instances-modified ((db <kahua-db-dbi>))
+  (let* ((obj&table (map (lambda (obj)
+			   (list obj (kahua-class->table-name* db (class-of obj))))
+			 (reverse! (modified-instances-of db))))
+	 (tables (append! (filter-map (lambda (e)
+					(and (table-should-be-locked? db (car e))
+					     (cadr e)))
+				      obj&table)
+			  (map! (cut cons <> :read) (hash-table-values (table-map-of db))))))
+    (with-transaction db
+      (lambda _
+	(apply with-locking-tables db
+	       (lambda ()
+		 (for-each (pa$ apply write-kahua-instance db) obj&table))
+	       tables)))))
 
 ;;=================================================================
 ;; Database Consistency Check and Fix
@@ -270,33 +341,32 @@
 			(else -1)))
 		    r))))
 
-(define-method current-kahua-db-classcount ((db <kahua-db-dbi>))
+(define-method dbutil:current-kahua-db-classcount ((db <kahua-db-dbi>))
   (x->integer (car (map (cut dbi-get-value <> 0)
 			(dbi-do (connection-of db) "select value from kahua_db_classcount" '())))))
 
-(define-method fix-kahua-db-classcount ((db <kahua-db-dbi>) n)
+(define-method dbutil:fix-kahua-db-classcount ((db <kahua-db-dbi>) n)
   (dbi-do (connection-of db) "update kahua_db_classcount set value=?" '() n))
 
-(define-method create-kahua-db-classcount ((db <kahua-db-dbi>) n)
+(define-method dbutil:create-kahua-db-classcount ((db <kahua-db-dbi>) n)
   (let1 conn (connection-of db)
     (guard (e ((<dbi-exception> e) #t))
-      (dbi-do conn *create-kahua-db-classcount* '()))
-    (dbi-do conn *clear-kahua-db-classcount* '())
-    (dbi-do conn *initialize-kahua-db-classcount* '() n)))
+      (create-kahua-db-classcount db))
+    (initialize-kahua-db-classcount db n)))
 
-(define-method check-kahua-db-classcount ((db <kahua-db-dbi>) . maybe-do-fix?)
+(define-method dbutil:check-kahua-db-classcount ((db <kahua-db-dbi>) . maybe-do-fix?)
   (call/cc (lambda (ret)
 	     (let* ((do-fix? (get-optional maybe-do-fix? #f))
 		    (max-suffix (max-table-name-suffix db))
 		    (classcount (guard (e ((<dbi-exception> e)
 					   (cond (do-fix?
-						  (create-kahua-db-classcount db max-suffix)
+						  (dbutil:create-kahua-db-classcount db max-suffix)
 						  (ret 'FIXED))
 						 (ret 'NG))))
-				  (current-kahua-db-classcount db))))
+				  (dbutil:current-kahua-db-classcount db))))
 	       (or (and (>= classcount max-suffix) 'OK)
 		   (and do-fix?
-			(fix-kahua-db-classcount db max-suffix)
+			(dbutil:fix-kahua-db-classcount db max-suffix)
 			'FIXED)
 		   'NG)))))
 
@@ -324,33 +394,31 @@
 			    (else         r)))
 		     -1)))
 
-(define-method current-kahua-db-idcount ((db <kahua-db-dbi>))
+(define-method dbutil:current-kahua-db-idcount ((db <kahua-db-dbi>))
   (x->integer (car (map (cut dbi-get-value <> 0)
 			(dbi-do (connection-of db) "select value from kahua_db_idcount" '())))))
 
-(define-method fix-kahua-db-idcount ((db <kahua-db-dbi>) n)
+(define-method dbutil:fix-kahua-db-idcount ((db <kahua-db-dbi>) n)
   (dbi-do (connection-of db) "update kahua_db_idcount set value = ?" '() n))
 
-(define-method create-kahua-db-idcount ((db <kahua-db-dbi>) n)
+(define-method dbutil:create-kahua-db-idcount ((db <kahua-db-dbi>) n)
   (let1 conn (connection-of db)
-    (guard (e ((<dbi-exception> e) #t))	; ignore
-      (dbi-do conn *create-kahua-db-idcount* '()))
-    (dbi-do conn *clear-kahua-db-idcount* '())
-    (dbi-do conn *initialize-kahua-db-idcount* '() n)))
+    (safe-execute (cut create-kahua-db-idcount db))
+    (initialize-kahua-db-idcount db n)))
 
-(define-method check-kahua-db-idcount ((db <kahua-db-dbi>) . maybe-do-fix?)
+(define-method dbutil:check-kahua-db-idcount ((db <kahua-db-dbi>) . maybe-do-fix?)
   (call/cc (lambda (ret)
 	     (let* ((do-fix? (get-optional maybe-do-fix? #f))
 		    (max-id (max-kahua-key-from-idcount db))
 		    (idcount (guard (e ((<dbi-exception> e)
 					(cond (do-fix?
-					       (create-kahua-db-idcount db max-id)
+					       (dbutil:create-kahua-db-idcount db max-id)
 					       (ret 'FIXED))
 					      (else (ret 'NG)))))
-			       (current-kahua-db-idcount db))))
+			       (dbutil:current-kahua-db-idcount db))))
 	       (or (and (>= idcount max-id) 'OK)
 		   (and do-fix?
-			(fix-kahua-db-idcount db max-id)
+			(dbutil:fix-kahua-db-idcount db max-id)
 			'FIXED)
 		   'NG)))))
 
