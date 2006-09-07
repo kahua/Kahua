@@ -1,5 +1,11 @@
 2006-09-07  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* cgi/kahua.cgi.in: Fix a bug.
+	  If SERVER_NAME has port number, Location header value was
+	  irregular URI: http://hostname:port:port/path/path/path...
+	  Apache http server doesn't give port number to SERVER_NAME,
+	  but lighttpd does.
+
 	* src/kahua/persistence.scm, src/kahua/persistence/*.scm:
 	  Now lock tables in kahua-db-sync, not in each write-kahua-instance.
 
