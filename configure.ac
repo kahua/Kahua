@@ -3,10 +3,10 @@ dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-dnl $Id: configure.ac,v 1.36 2006/09/08 02:41:27 bizenn Exp $
+dnl $Id: configure.ac,v 1.37 2006/09/08 05:21:17 bizenn Exp $
 dnl
 AC_PREREQ(2.54)
-AC_INIT(kahua, 0.6, shiro@acm.org)
+AC_INIT(kahua, 0.6, info@kahua.org)
 AC_GAUCHE_INIT_EXT
 
 dnl Sets the default value of INSTALL_TYPE macro.
