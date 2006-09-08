@@ -13,10 +13,11 @@ TEXIS = kahua-ref.texi      \
 # Manual page destination.  Default @mandir@ doesn't include 'share'
 # in the path, so I redefine it---a user can still override it by
 # make mandir=wherever
-prefix  = @prefix@
-datadir = @datadir@
-mandir  = @mandir@
-infodir = @infodir@
+prefix		  = @prefix@
+datarootdir	  = @datarootdir@
+datadir		  = @datadir@
+mandir		  = @mandir@
+infodir		  = @infodir@
 
 DESTDIR =
 

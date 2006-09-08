@@ -1,5 +1,5 @@
 # Makefile for %%_PROJECT_NAME_%%
-# $Id: Makefile.in,v 1.2 2006/07/28 13:09:38 bizenn Exp $
+# $Id: Makefile.in,v 1.3 2006/08/13 07:18:48 cut-sea Exp $
 
 package	          = %%_PROJECT_NAME_%%
 kahua		  = kahua
@@ -9,6 +9,7 @@ exec_prefix       = @exec_prefix@
 bindir            = @bindir@
 sbindir           = @sbindir@
 libexecdir	  = @libexecdir@
+datarootdir	  = @datarootdir@
 datadir		  = @datadir@/$(kahua)
 sysconfdir        = @sysconfdir@/$(kahua)
 sharedstatedir    = @sharedstatedir@/$(kahua)

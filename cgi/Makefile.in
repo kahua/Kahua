@@ -3,7 +3,7 @@
 # The destination should be specified by --with-cgidir argument of configure
 # script.
 #
-# $Id: Makefile.in,v 1.12 2006/07/31 15:04:43 bizenn Exp $
+# $Id: Makefile.in,v 1.13 2006/09/08 05:40:54 bizenn Exp $
 #
 
 package	          = kahua
@@ -13,6 +13,7 @@ exec_prefix       = @exec_prefix@
 bindir            = @bindir@
 sbindir           = @sbindir@
 libexecdir	  = @libexecdir@
+datarootdir	  = @datarootdir@
 datadir		  = @datadir@/$(package)
 sysconfdir        = @sysconfdir@/$(package)
 sharedstatedir    = @sharedstatedir@/$(package)
