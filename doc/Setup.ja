@@ -1,32 +1,41 @@
-* Setup
+;; Setup  -*- coding: euc-jp -*-
+;;
+;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: Setup.ja,v 1.9 2006/09/08 04:39:14 bizenn Exp $
 
-* tarballからのビルドとインストール
+* Kahuaをセットアップする
+
 
 ** 準備
 
 *** Gauche のインストール
 
-0.8.7 以降のバージョンの、pthreadをサポートしたGaucheがインストール済み
-である必要があります。可能ならCVS HEADの使用をお薦めします(いくつか
-クリティカルなバグが修正されています)。
+Kahuaを動かすためには、0.8.7 以降のpthreadをサポートした
+[http://practical-scheme.net/gauche/index-j.html Gauche]
+がインストール済みである必要があります。
+0.8.8がリリースされるまでは、可能ならCVS HEADの使用をお薦めします
+(いくつかクリティカルなバグが修正されています)。
+{{{
+$ gosh -V
+Gauche scheme interpreter, version 0.8.7 [utf-8,pthreads]
+}}}
 
-    $ gosh -V
-    Gauche scheme interpreter, version 0.8.7 [utf-8,pthreads]
-
-適切なバージョンの Gauche がインストールされていなければ、インストール
-してください。
+適切なバージョンの Gauche がインストールされていなければ、
+インストールしてください。
 
 ** とりあえず試す
 
-*** ビルドとインストール
+*** tarballからのビルドとインストール
 
 とりあえずKahuaを体験してみたいのなら、自分のHOMEの下にインストールして
 しまうことをお薦めします。後述のようなパーミッションやユーザ/グループの
 設定が不要になります。
 {{{
-% tar xvzf Kahua-0.5.1.tgz
-% cd Kahua-0.5.1
-% ./configure --prefix=$HOME/kahua
+% tar xvzf Kahua-0.6.tgz
+% cd Kahua-0.6
+% ./configure --prefix=$HOME/kahua --with-staticdir=$HOME/public_html/kahua
 % make
 % make check
 % make install
@@ -36,24 +45,31 @@
 これで必要なものは全て ${HOME}/kahua の下にインストールされます。
 ${HOME}/kahua/bin にPATHを通しておくと便利でしょう。
 
+*** 起動する
+
 起動するには、
 {{{
 % ($HOME/kahua/bin/kahua-spvr --httpd localhost:8888 >>/tmp/kahua-error.log &)
 }}}
-これで localhost の8888ポートにアクセスできるようになります。
-ポート番号は非特権ポートから適当に決めて下さい。
-なお、ポート番号だけを指定した場合は、0.0.0.0(および可能なら[::])にサーバソケットが
-bindされます。http://localhost:8888/ にアクセスしてみましょう。
+ポート番号は非特権ポートから適当に決めて下さい。--httpd の引数として
+ポート番号だけを指定した場合は、0.0.0.0(および可能なら[::])にサーバ
+ソケットがbindされます。適切にフィルタリングをしていない場合は外部から
+アクセスできてしまうのでご注意ください。
+
+さぁ、ブラウザで http://localhost:8888/ にアクセスしてみましょう。
 サンプルアプリケーションのlambdabooksが表示されたら成功です。
 いろいろ遊んでみてください。
 
+
 ** きちんとインストールする
 
-*** /etc/group の調整
+*** /etc/group
 
 Kahuaサーバ用のグループ kahua を作成します。
 
-    # groupadd kahua
+{{{
+# groupadd kahua
+}}}
 
 このグループに以下のユーザを登録します。
 
@@ -61,68 +77,77 @@ Kahuaサーバ用のグループ kahua を作成します。
 - Kahuaサーバを管理するユーザ(たとえば hanako)
 - Kahua.cgi を起動するユーザ(たとえば www)
 
-    # usermod -G kahua taro
-    # usermod -G kahua hanako
-    # usermod -G kahua www
+{{{
+# usermod -G kahua taro
+# usermod -G kahua hanako
+# usermod -G kahua www
+}}}
 
 taro、hanako については、再ログインしたときから変更が有効になります。
 www については、HTTPサーバによって違う可能性がありますが、Apache の場合は
 httpd を再起動する必要があります。
 
+----
 
 ** ビルド
 
 *** 手順
 
-    $ tar xzvf Kahua-$VERSION.tgz
-    $ cd Kahua-$VERSION
-    $ ./configure --with-cgidir=$CGIDIR --with-cgilogdir=$CGILOGDIR
-    $ make
+{{{
+% tar xzvf Kahua-0.6.tgz
+% cd Kahua-0.6
+% ./configure --with-cgidir=$CGIDIR --with-cgilogdir=$CGILOGDIR
+% make
+}}}
 
 *** ./configureのオプション
 
-    --with-cgidir
+{{{
+ --with-cgidir
 
-        cgiスクリプトをインストールするディレクトリ。 httpdの設定
-        によって異なる。(cgiスクリプトのインストール先は、 make
-        install時にmake変数KAHUA_CGI_DIRによってオーバライドできる)。
+     cgiスクリプトをインストールするディレクトリ。 httpdの設定
+     によって異なる。(cgiスクリプトのインストール先は、 make
+     install時にmake変数KAHUA_CGI_DIRによってオーバライドできる)。
 
-    --with-cgilogdir
+ --with-cgilogdir
 
-        cgiスクリプトのログを出力するディレクトリ。指定したディレクトリは
-        kahua の cgiスクリプトがログファイルをオープンして書き込めるような
-        パーミッションになっていること．(cgi スクリプトのログの出力先は
-        make install 時に make 変数KAHUA_CGILOG_DIRによってオーバーライド
-        できる．)
+     cgiスクリプトのログを出力するディレクトリ。指定したディレクトリは
+     kahua の cgiスクリプトがログファイルをオープンして書き込めるような
+     パーミッションになっていること．(cgi スクリプトのログの出力先は
+     make install 時に make 変数KAHUA_CGILOG_DIRによってオーバーライド
+     できる．)
 
-    --prefix, --exec-prefix,...
+ --prefix, --exec-prefix,...
 
-        標準のconfigureオプションは、kahua関連のスクリプトファイルを
-        インストールする先を指定する。
+     標準のconfigureオプションは、kahua関連のスクリプトファイルを
+    インストールする先を指定する。
+}}}
 
-    --with-fastcgi
-
-        kahua.cgiに加え、FastCGI対応のkahua.fcgを生成します。
-
+----
 
 ** セルフテスト
 
 *** 手順
 
-    $ make check
+{{{
+% make check
+}}}
 
+----
 
 ** インストール
 
 *** 手順
 
-    $ su
-    # make install
-    # vi /etc/kahua.conf
-    # chgrp kahua $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR $KAHUA_CGILOGDIR
-    # chmod g+ws $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR
-    # chown $CGI_USER $KAHUA_CGILOG_DIR
-    # chmod 755 $KAHUA_CGILOG_DIR
+{{{
+% su
+# make install
+# vi /etc/kahua.conf
+# chgrp kahua $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR $KAHUA_CGILOGDIR
+# chmod g+ws $KAHUA_WORKDIR $KAHUA_SOCKBASE $KAHUA_DOCDIR
+# chown $CGI_USER $KAHUA_CGILOG_DIR
+# chmod 755 $KAHUA_CGILOG_DIR
+}}}
 
 *** インストールディレクトリ
 
@@ -138,6 +163,7 @@ httpd を再起動する必要があります。
 必要がある。各ディレクトリは$sysconfdir/kahua/kahua.confでカ
 スタマイズできる。 kahua.confの内容に関してはkahua.config参照。
 
+{{{
   $KAHUA_SOCKBASE
 
     ソケットを作成するディレクトリ。デフォルトは
@@ -152,19 +178,25 @@ httpd を再起動する必要があります。
 
     静的ドキュメントディレクトリ。デフォルトは
     /var/www/kahua
+}}}
 
 以下のディレクトリは、kahua.cgi がログを書き込むディレクトリである。
 したがって、このディレクトリは
 
+{{{
   $KAHUA_CGILOGDIR
 
     kahua.cgi がログを書き込むディレクトリ．デフォルトは
     $localstatedir/kahua/cgilog
+}}}
 
+----
 
 ** サンプルアプリケーションのインストール
 
-  $ make install-examples
+{{{
+% make install-examples
+}}}
 
 "lambdabooks", "wiki-iki", "login", "nqueen" "lazynqueen"
 "lambdacalcul" アプリケーションがインストールされる。
@@ -172,7 +204,8 @@ httpd を再起動する必要があります。
 kahua-spvrを起動して、それぞれkahua.cgi/lambdabooks,
 kahua.cgi/wiki-iki などを通じて Webブラウザからアクセス可能。
 
-
+----
+----
 * CVSからのビルド
 
 CVSからビルドするには、autoconf 2.54以降が必要。
@@ -180,6 +213,8 @@ CVSからビルドするには、autoconf 2.54以降が必要。
 CVSからチェックアウトしたソースにはconfigureスクリプトが含ま
 れない。
 
- % ./DIST gen
+{{{
+% ./DIST gen
+}}}
 
 でconfigureスクリプトを作成してからビルドすること。
