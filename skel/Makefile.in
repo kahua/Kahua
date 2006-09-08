@@ -1,5 +1,5 @@
 # Makefile for %%_PROJECT_NAME_%%
-# $Id: Makefile.in,v 1.3 2006/08/13 07:18:48 cut-sea Exp $
+# $Id: Makefile.in,v 1.4 2006/09/08 05:40:57 bizenn Exp $
 
 package	          = %%_PROJECT_NAME_%%
 kahua		  = kahua
@@ -44,13 +44,14 @@ KAHUACONFIG = -c $(sysconfdir)/kahua.conf
 SCRIPTS	= %%_PROJECT_NAME_%%-start %%_PROJECT_NAME_%%-stop
 
 SCRIPTFILES = %%_PROJECT_NAME_%%/%%_PROJECT_NAME_%%.kahua \
-              %%_PROJECT_NAME_%%/base.kahua \
+              %%_PROJECT_NAME_%%/auto-update-base.kahua \
               %%_PROJECT_NAME_%%/debug-support.kahua \
               %%_PROJECT_NAME_%%/default.kahua \
               %%_PROJECT_NAME_%%/page.kahua \
               %%_PROJECT_NAME_%%/parts-collection.kahua \
               %%_PROJECT_NAME_%%/pcont-page.kahua \
               %%_PROJECT_NAME_%%/session.kahua \
+              %%_PROJECT_NAME_%%/slot-acl-base.kahua \
               %%_PROJECT_NAME_%%/utility.kahua \
               %%_PROJECT_NAME_%%/validator.kahua \
 	      %%_PROJECT_NAME_%%/version.kahua

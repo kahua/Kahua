@@ -1,3 +1,10 @@
+2006-09-09  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* replace skel/proj/base.kahua
+	  to skel/proj/auto-update-base.kahua and skel/proj/slot-acl-base.kahua.
+	* <auto-update-base> and <slot-acl-base> is prototype
+	  of MOP base class collection.
+	
 2006-09-08  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 0.6 released.

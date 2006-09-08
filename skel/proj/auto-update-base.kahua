@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: base.kahua,v 1.3 2006/08/14 02:02:02 cut-sea Exp $
+;; $Id: auto-update-base.kahua,v 1.1 2006/09/08 14:50:24 cut-sea Exp $
 ;;
 
 ;
@@ -32,9 +32,9 @@
   :metaclass <auto-update-meta>)
 
 ;
-; <base>
+; <auto-update-base>
 ;
-(define-class <base> (<auto-update-mixin> <kahua-persistent-base>)
+(define-class <auto-update-base> (<auto-update-mixin> <kahua-persistent-base>)
   ((%ctime       :allocation :persistent :init-keyword :%ctime
 		 :init-form (time->seconds (date->time-utc (current-date)))
 		 :auto-update #f :accessor %ctime-of)
@@ -56,30 +56,39 @@
 		 :init-value #f :accessor delete-of :auto-update #t)
    ))
 
-(define-method dead? ((obj <base>))
+(define-method dead? ((obj <auto-update-base>))
   (delete-of obj))
 
-(define-method active? ((obj <base>))
+(define-method active? ((obj <auto-update-base>))
   (not (delete-of obj)))
 
 (define-method all-active-objects ((cls <kahua-persistent-meta>))
   (filter active? (make-kahua-collection cls)))
 
-(define-method key>=? ((x <base>) (y <base>))
+;; in future, remove below here.
+;;
+(use srfi-19)
+
+(define (date>=? . args)
+  (apply >= (map date->modified-julian-day args)))
+(define (date<=? . args)
+  (apply <= (map date->modified-julian-day args)))
+
+(define-method key>=? ((x <auto-update-base>) (y <auto-update-base>))
   (string>=? (key-of x) (key-of y)))
-(define-method key<=? ((x <base>) (y <base>))
+(define-method key<=? ((x <auto-update-base>) (y <auto-update-base>))
   (string<=? (key-of x) (key-of y)))
 (compare-set! key>=? key<=?)
 
-(define-method ctime>=? ((x <base>) (y <base>))
+(define-method ctime>=? ((x <auto-update-base>) (y <auto-update-base>))
   (date>=? (ctime-of x) (ctime-of y)))
-(define-method ctime<=? ((x <base>) (y <base>))
+(define-method ctime<=? ((x <auto-update-base>) (y <auto-update-base>))
   (date<=? (ctime-of x) (ctime-of y)))
 (compare-set! ctime>=? ctime<=?)
 
-(define-method mtime>=? ((x <base>) (y <base>))
+(define-method mtime>=? ((x <auto-update-base>) (y <auto-update-base>))
   (date>=? (mtime-of x) (mtime-of y)))
-(define-method mtime<=? ((x <base>) (y <base>))
+(define-method mtime<=? ((x <auto-update-base>) (y <auto-update-base>))
   (date<=? (mtime-of x) (mtime-of y)))
 (compare-set! mtime>=? mtime<=?)
 

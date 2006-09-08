@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: proj.kahua,v 1.4 2006/08/14 02:02:02 cut-sea Exp $
+;; $Id: proj.kahua,v 1.5 2006/08/14 05:46:52 cut-sea Exp $
 ;;
 
 ;; module (in plugins/%%_PROJECT_NAME_%%.scm)
@@ -37,20 +37,26 @@
 (load "%%_PROJECT_NAME_%%/pcont-page.kahua")
 
 ;; classes and methods
-(load "%%_PROJECT_NAME_%%/base.kahua")
+(load "%%_PROJECT_NAME_%%/auto-update-base.kahua")
+(load "%%_PROJECT_NAME_%%/slot-acl-base.kahua")
 
 ;; parts
 (load "%%_PROJECT_NAME_%%/parts-collection.kahua")
 
 ;; You should add loading files below here.
 
+;; test for <slot-acl-base>
+;;
+(define (accessable?) #t)
+
 ;
 ; class
 ;
-(define-class <item> (<base>)
+(define-class <item> (<auto-update-base> <slot-acl-base>)
   (
    (name     :allocation :persistent :init-keyword :name
-	     :init-value "" :accessor name-of :auto-update #t)
+	     :init-value "" :accessor name-of
+	     :auto-update #t :acl? (lambda () (accessable?)) :invisible-value "***")
    ))
 
 (define (all-active-items)
@@ -88,9 +94,9 @@
 	 (@@/ (cont %%posted))
 	 (table/
 	  (tr/ (th/ "Name")
-	       (th/ (input/ (@/ (type "text") (name "name") (value name)))))
+	       (th/ (input/ (@/ (type "text") (name "name") (value name))))))
 	  (input/ (@/ (type "submit") (name "commit") (value "Commit")))
-	  (a/cont/ (@@/ (cont return)) "Back"))))))))
+	  (a/cont/ (@@/ (cont return)) "Back")))))))
 
 (define (%item-list . args)
   (let-keywords* args ((return #f)
@@ -130,10 +136,10 @@
 			 (td/ (name-of i))
 			 (td/ (ymd-of (ctime-of i)))
 			 (td/ (ymd-of (mtime-of i)))))
-		  (list-ref* page sliced-items))
+		  (list-ref* page sliced-items)))
 	    (cond (return (a/cont/ (@@/ (cont return)) "Back"))
 		  (else invisible))
-	    ))))))))
+	    )))))))
 
 
 (define-entry (%%_PROJECT_NAME_%%)
