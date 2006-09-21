@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.57 2006/09/07 02:54:55 bizenn Exp $
+;; $Id: persistence.scm,v 1.58 2006/09/21 08:52:35 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -31,6 +31,7 @@
 	  kahua-db-create
           <with-db-error>
           current-db with-db kahua-db-sync kahua-db-rollback
+	  with-kahua-db-connection with-kahua-db-transaction
 	  kahua-db-purge-objs
           id->kahua-instance class&key->kahua-instance
           <kahua-collection>
@@ -46,9 +47,12 @@
 	  lock-db unlock-db with-locking-db
 	  kahua-db-open
 	  kahua-db-close
+	  start-kahua-db-transaction
+	  finish-kahua-db-transaction
+	  with-kahua-db-transaction
 	  read-kahua-instance
 	  write-kahua-instance
-	  write-kahua-instances-modified
+	  write-kahua-modified-instances
 	  kahua-db-write-id-counter
 	  make-kahua-collection
 
@@ -63,6 +67,7 @@
 
 (define-condition-type <kahua-persistence-error> <kahua-error> #f)
 
+;; Deprecated, and now no effect.
 (define kahua-check-transaction! (make-parameter #t))
 
 ;;=========================================================
@@ -1047,32 +1052,34 @@
 
 (define-syntax with-db
   (syntax-rules ()
-    ((with-db (db dbpath) . body)
-     (if (and (current-db)
-              (active? (current-db))
-              (or (boolean? dbpath)
-		  (equal? (ref (current-db) 'path) dbpath)))
-       (begin . body)
-       (let ((db (kahua-db-open dbpath)))
-         (parameterize ((current-db db))
-           (with-error-handler
-            (lambda (e)
-              (with-error-handler
-               (lambda (e2)
-                 (if (with-db-error? e)
-                     ((kahua-error-with-db e) #f)
-                   (raise e2)))
-               (lambda ()
-                 (kahua-db-close db #f)
-                 (if (with-db-error? e)
-                     ((kahua-error-with-db e) #f)
-                   (raise e)))))
-            (lambda ()
-              (inc! (ref db 'current-transaction-id))
-              ;;(kahua-meta-write-syncer)
-              (begin0 (begin . body)
-                (when (active? (current-db))
-                  (kahua-db-close db #t)))))))))))
+    ((_ (db dbpath) . body)
+     (if (already-db-opened? dbpath)
+	 (with-kahua-db-transaction (current-db) (lambda (db) . body))
+	 (with-kahua-db-connection dbpath
+	   (lambda (db)
+	     (with-kahua-db-transaction db (lambda (db) . body))))))))
+
+(define (already-db-opened? dbpath)
+  (and-let* ((db (current-db)))
+    (and (active? db)
+	 (or (boolean? dbpath)
+	     (equal? (path-of db) dbpath)))))
+
+(define (with-kahua-db-connection dbpath proc)
+  (let1 db (kahua-db-open dbpath)
+    (parameterize ((current-db db))
+      (guard (e (else
+		 (guard (e2 ((with-db-error? e) ((kahua-error-with-db e) #f))
+			    (else (raise e)))
+		   (kahua-db-close db #f)
+		   (if (with-db-error? e)
+		       ((kahua-error-with-db e) #f)
+		       (raise e)))))
+	(inc! (ref db 'current-transaction-id))
+	;;(kahua-meta-write-syncer)
+	(begin0 (proc db)
+		(when (active? db)
+		  (kahua-db-close db #t)))))))
 
 (define (kahua-db-purge-objs)
   (let ((db (current-db)))
@@ -1082,13 +1089,32 @@
 (define-method kahua-db-open ((path <string>))
   (kahua-db-open (make (select-db-class path) :path path)))
 
-(define-method write-kahua-instances-modified ((db <kahua-db>))
+(define-method start-kahua-db-transaction ((db <kahua-db>))
+  (inc! (ref db 'current-transaction-id))
+  (unless (lock-db db)
+    (error "kahua-db-open: couldn't obtain database lock: " db)))
+(define-method finish-kahua-db-transaction ((db <kahua-db>) commit?)
+  (unlock-db db))
+(define (with-kahua-db-transaction db proc)
+  (start-kahua-db-transaction db)
+  (guard (e (else
+	     (guard (e2 ((with-db-error? e) ((kahua-error-with-db e) #f))
+			(else (raise e)))
+	       (finish-kahua-db-transaction db #f)
+	       (if (with-db-error? e)
+		   ((kahua-error-with-db e) #f)
+		   (raise e)))))
+    (begin0
+      (proc db)
+      (finish-kahua-db-transaction db #t))))
+
+(define-method write-kahua-modified-instances ((db <kahua-db>))
   (for-each (cut write-kahua-instance db <>)
 	    (reverse! (modified-instances-of db))))
 
 (define (kahua-db-sync . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
-    (write-kahua-instances-modified db)
+    (write-kahua-modified-instances db)
     (set! (modified-instances-of db) '())
     (kahua-db-write-id-counter db)))
 
@@ -1109,7 +1135,8 @@
                   (set! (ref klass 'metainfo) #f)))))
         (read-kahua-instance obj)))
 
-    (for-each rollback-object (modified-instances-of db))))
+    (for-each rollback-object (modified-instances-of db))
+    (set! (modified-instances-of db) '())))
 
 ;; cache consistency management -----------------------------------
 (define (current-transaction-id)
@@ -1126,16 +1153,15 @@
                          (current-transaction-id)))
 
 (define (ensure-transaction o)
-  (when (kahua-check-transaction!)
-    (let1 klass (current-class-of o)
-      (unless (or (eq? klass <kahua-persistent-metainfo>)
-                  (not (slot-bound-using-class? klass o '%transaction-id))
-                  (current-transaction? o))
-        ;; First, we update %transaction-id slot to avoid infinit loop.
-        (update-transaction! o)
-        ;; read-kahua-instance syncs in-db and in-memory object.
-        (read-kahua-instance o)
-        ))))
+  (let1 klass (current-class-of o)
+    (unless (or (eq? klass <kahua-persistent-metainfo>)
+		(not (slot-bound-using-class? klass o '%transaction-id))
+		(current-transaction? o))
+      ;; First, we update %transaction-id slot to avoid infinit loop.
+      (update-transaction! o)
+      ;; read-kahua-instance syncs in-db and in-memory object.
+      (read-kahua-instance o)
+      )))
 
 (define (persistent-slot-syms class)
   (map car (filter (lambda (slot)

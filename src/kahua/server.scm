@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.75 2006/09/07 02:54:55 bizenn Exp $
+;; $Id: server.scm,v 1.76 2006/09/21 08:52:36 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1313,6 +1313,8 @@
 ;; (head/ (link/ (@/ (rel "stylesheet") (type "text/css")
 ;; 		     (href (kahua-self-uri-full "test.css")))))
 
+(define-constant *css-media-type* "text/css")
+
 (define (interp-css nodes context cont)
 
   (define (format-selector selector keyword name)
@@ -1358,12 +1360,14 @@
          context
        (cons `("extra-headers"
                ,(kahua-merge-headers
-                 headers '(("content-type" "text/css"))))
+                 headers `(("content-type" ,*css-media-type*))))
              context)))))
 
 (add-interp! 'css interp-css)
 
 (define-constant *json-media-type* "application/x-javascript")
+;; RFC4627, but most of implementations don't support this media type.
+;(define-constant *json-media-type* "application/json")
 
 (define-class <json-base> () ())
 (define-method x->json ((self <json-base>))

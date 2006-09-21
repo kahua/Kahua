@@ -1,3 +1,12 @@
+2006-09-21  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua-server.scm, src/kahua/persistence.scm,
+	  src/kahua/persistence/*.scm: Change
+	  Split with-db into with-kahua-db-connection and
+	  with-kahua-db-transaction.  Now worker process connects to
+	  database at its start up time, and does a transaction per
+	  request.
+
 2006-09-09  Katsutoshi Itoh  <cut-sea@kahua.org>
 
 	* replace skel/proj/base.kahua

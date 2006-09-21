@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.5 2006/09/07 04:20:34 bizenn Exp $
+;; $Id: dbi.scm,v 1.6 2006/09/21 08:52:36 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -17,7 +17,7 @@
   (export <kahua-db-dbi>
 	  set-default-character-encoding!
 	  kahua-db-dbi-open
-	  with-transaction
+	  with-dbi-transaction
 	  serialize-table-locks
 	  lock-tables
 	  unlock-tables
@@ -86,7 +86,7 @@
       (log-format "DBI(~a) setup: user ~a, options ~a" (m 1) (m 2) (m 4))
       )))
 
-(define-method with-transaction ((db <kahua-db-dbi>) proc)
+(define-method with-dbi-transaction ((db <kahua-db-dbi>) proc)
   (let1 conn (connection-of db)
     (guard (e (else
 	       (dbi-do conn "rollback" '(:pass-through #t))
@@ -163,13 +163,17 @@
   (safe-execute (cut create-kahua-db-idcount db)))
 
 (define-method kahua-db-close ((db <kahua-db-dbi>) commit?)
-  (if commit?
-      (kahua-db-sync db)
-    (kahua-db-rollback db))
   (dbi-close (connection-of db))
   (set! (connection-of db) #f)
-  (set! (ref db 'modified-instances) '())
   (set! (active? db) #f))
+
+(define-method start-kahua-db-transaction ((db <kahua-db-dbi>))
+  (next-method))
+(define-method finish-kahua-db-transaction ((db <kahua-db-dbi>) commit?)
+  (if commit?
+      (kahua-db-sync db)
+      (kahua-db-rollback db))
+  (next-method))
 
 ;;
 ;; kahua_db_classes: Persistent class name <-> table name mapping.
@@ -258,7 +262,7 @@
 
 (define-method kahua-class->table-name* ((db <kahua-db-dbi>)
 					 (class <kahua-persistent-meta>))
-  (with-transaction db
+  (with-dbi-transaction db
     (lambda (conn)
       (with-locking-tables db
 	(lambda ()
@@ -312,7 +316,7 @@
 
 (define-generic table-should-be-locked?)
 
-(define-method write-kahua-instances-modified ((db <kahua-db-dbi>))
+(define-method write-kahua-modified-instances ((db <kahua-db-dbi>))
   (and-let* ((obj&table (map (lambda (obj)
 			       (list obj (kahua-class->table-name* db (class-of obj))))
 			     (reverse! (modified-instances-of db))))
@@ -322,7 +326,7 @@
 						 (cadr e)))
 					  obj&table)
 			      (map! (cut cons <> :read) (hash-table-values (table-map-of db))))))
-    (with-transaction db
+    (with-dbi-transaction db
       (lambda _
 	(apply with-locking-tables db
 	       (lambda ()

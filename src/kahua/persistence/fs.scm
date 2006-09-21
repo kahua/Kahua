@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.8 2006/09/07 02:54:55 bizenn Exp $
+;; $Id: fs.scm,v 1.9 2006/09/21 08:52:36 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -99,12 +99,6 @@
   db)
 
 (define-method kahua-db-open ((db <kahua-db-fs>))
-  (define (read-id-counter db)
-    (let1 cnt (with-input-from-file (id-counter-path-of db) read)
-      (unless (number? cnt)
-	(error "kahua-db-open: number required but got as id-counter: " cnt))
-      cnt))
-
   (define (read-character-encoding db)
     (let1 cefile (character-encoding-path-of db)
       (if (file-is-regular? cefile)
@@ -122,20 +116,30 @@
   (unless (lock-db db)
     (error "kahua-db-open: couldn't obtain database lock: " db))
   (if (file-is-directory? (path-of db))
-      (begin
-	(set! (id-counter-of db) (read-id-counter db))
-	(set! (character-encoding-of db) (read-character-encoding db)))
+      (set! (character-encoding-of db) (read-character-encoding db))
       (kahua-db-create db))
   (set! (active? db) #t)
+  (unlock-db db)
   db)
 
-(define-method kahua-db-close ((db <kahua-db-fs>) commit)
-  (if commit
-      (kahua-db-sync db)
-    (kahua-db-rollback db))
-  (unlock-db db)
-  (set! (modified-instances-of db) '())
+(define-method kahua-db-close ((db <kahua-db-fs>) commit?)
   (set! (active? db) #f))
+
+(define-method start-kahua-db-transaction ((db <kahua-db-fs>))
+  (define (read-id-counter db)
+    (let1 cnt (with-input-from-file (id-counter-path-of db) read)
+      (unless (number? cnt)
+	(error "kahua-db-open: number required but got as id-counter: " cnt))
+      cnt))
+
+  (next-method)
+  (set! (id-counter-of db) (read-id-counter db)))
+
+(define-method finish-kahua-db-transaction ((db <kahua-db-fs>) commit?)
+  (if commit?
+      (kahua-db-sync db)
+      (kahua-db-rollback db))
+  (next-method))
 
 (define-method read-kahua-instance ((db <kahua-db-fs>)
                                     (class <kahua-persistent-meta>)

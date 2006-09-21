@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.5 2006/08/14 08:15:58 bizenn Exp $
+;; $Id: util.scm,v 1.6 2006/09/21 08:52:36 bizenn Exp $
 
 ;; This module contains generally useful routines, which don't belong to
 ;; a particular module.
@@ -31,6 +31,7 @@
 (select-module kahua.util)
 
 (define-condition-type <kahua-error> <error> kahua-error?)
+(define-condition-type <kahua-exception> <message-condition> kahua-exception?)
 
 ;; utility
 (define (ref-car cmp lis item . maybe-default)

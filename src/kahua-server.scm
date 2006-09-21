@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.16 2006/07/28 13:09:43 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.17 2006/09/21 08:52:35 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -100,19 +100,19 @@
 (define (handle-request header body reply-cont selector)
   (if (ping-request? header)
     (reply-cont #t #t)
-    (let1 dbname (database-name)
-      (with-sigmask SIG_BLOCK *TERMINATION-SIGNALS*
-	(lambda ()
-	  (let1 do-reply (with-db (db dbname)
+    (with-sigmask SIG_BLOCK *TERMINATION-SIGNALS*
+      (lambda ()
+	(let1 do-reply (with-kahua-db-transaction (current-db)
+			 (lambda (db)
 			   (run-hook (kahua-hook-before))
 			   (begin0
 			     (kahua-default-handler header body reply-cont default-handler
 						    :error-proc (kahua-error-proc)
 						    :eval-environment (current-module))
 			     (run-hook (kahua-hook-after))
-			     ))
-	    (do-reply))))
-      )))
+			     )))
+	  (do-reply))))
+      ))
 
 (define (default-handler) ((main-proc)))
 
@@ -129,26 +129,26 @@
   (let ((sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
         (selector (make <selector>)))
     (define (accept-handler fd flag)
-      (let* ((client (socket-accept sock))
-             (input  (socket-input-port client :buffered? #f))
-             (output (socket-output-port client)))
-        (guard (e
-                (#t (log-format
-                     "[server]: Read error occured in accept-handler: ~a" (ref e 'message))))
-               (let ((header (read input))
-                     (body   (read input)))
-                 (handle-request
-                  header body
-                  (lambda (r-header r-body)
-                    (guard (e
-                            (#t (log-format
-                                 "[server]: client closed connection")))
-                           (begin
-                             (write r-header output) (newline output)
-                             (write r-body output)   (newline output)
-                             (flush output)))
-                    (socket-close client))
-                  selector)))))
+      (let1 client (socket-accept sock)
+	(call-with-client-socket client
+	  (lambda (input output)
+	    (set! (port-buffering input) :none)
+	    (guard (e
+		    (#t (log-format
+			 "[server]: Read error occured in accept-handler: ~a" (ref e 'message))))
+	      (let ((header (read input))
+		    (body   (read input)))
+		(handle-request
+		 header body
+		 (lambda (r-header r-body)
+		   (guard (e
+			   (#t (log-format
+				"[server]: client closed connection")))
+		     (begin
+		       (write r-header output) (newline output)
+		       (write r-body output)   (newline output)
+		       (flush output))))
+		 selector)))))))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
@@ -156,12 +156,14 @@
     (run-kahua-hook-initial)
     (format #t "~a\n" worker-id)
     (selector-add! selector (socket-fd sock) accept-handler '(r))
-    (do () (#f)
-      (kahua-profiler-start profile)
-      (dotimes (_ 100)
-	(selector-select selector))
-      (kahua-profiler-flush profile)
-      )))
+    (with-kahua-db-connection (database-name)
+      (lambda (db)
+	(do () (#f)
+	  (kahua-profiler-start profile)
+	  (dotimes (_ 100)
+	    (selector-select selector))
+	  (kahua-profiler-flush profile)
+	  )))))
 
 (define *kahua-top-module* #f)
 
@@ -221,7 +223,10 @@
            (cleanup   (lambda ()
                         (log-format "[~a] exit" worker-name)
                         (when (is-a? sockaddr <sockaddr-un>)
-                          (sys-unlink (sockaddr-name sockaddr))))))
+                          (sys-unlink (sockaddr-name sockaddr)))
+			(and-let* ((db (current-db))
+				   ((active? db)))
+			  (kahua-db-close db #f)))))
       (begin0
 	(call/cc
 	 (lambda (bye)
