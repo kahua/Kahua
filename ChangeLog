@@ -1,5 +1,8 @@
 2006-09-21  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* src/persistence.scm: Change
+	  Now kahua-check-transaction! deprecated.
+
 	* src/kahua-server.scm, src/kahua/persistence.scm,
 	  src/kahua/persistence/*.scm: Change
 	  Split with-db into with-kahua-db-connection and
