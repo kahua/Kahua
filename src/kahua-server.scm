@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.17 2006/09/21 08:52:35 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.18 2006/09/25 09:15:43 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -102,16 +102,19 @@
     (reply-cont #t #t)
     (with-sigmask SIG_BLOCK *TERMINATION-SIGNALS*
       (lambda ()
-	(let1 do-reply (with-kahua-db-transaction (current-db)
-			 (lambda (db)
-			   (run-hook (kahua-hook-before))
-			   (begin0
-			     (kahua-default-handler header body reply-cont default-handler
-						    :error-proc (kahua-error-proc)
-						    :eval-environment (current-module))
-			     (run-hook (kahua-hook-after))
-			     )))
-	  (do-reply))))
+	(let1 db (current-db)
+	  (unless (kahua-db-ping db)
+	    (kahua-db-reopen db))
+	  (let1 do-reply (with-kahua-db-transaction db
+			   (lambda (db)
+			     (run-hook (kahua-hook-before))
+			     (begin0
+			       (kahua-default-handler header body reply-cont default-handler
+						      :error-proc (kahua-error-proc)
+						      :eval-environment (current-module))
+			       (run-hook (kahua-hook-after))
+			       )))
+	    (do-reply)))))
       ))
 
 (define (default-handler) ((main-proc)))

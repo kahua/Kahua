@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.7 2006/09/25 04:00:13 bizenn Exp $
+;; $Id: dbi.scm,v 1.8 2006/09/25 09:15:43 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -136,6 +136,17 @@
 			   :password (password-of db))
     (set! (active? db) #t)
     (kahua-db-dbi-open db conn)))
+
+(define-method kahua-db-reopen ((db <kahua-db-dbi>))
+  (define (hash-table-clear! ht)
+    (hash-table-for-each ht (lambda (k v) (hash-table-delete! ht k))))
+  (hash-table-clear! (table-map-of db))
+  (kahua-db-open db))
+
+(define-method kahua-db-ping ((db <kahua-db-dbi>))
+  (safe-execute (cut dbi-do (connection-of db)
+		     "select class_name from kahua_db_classes where class_name is NULL"
+		     '(pass-through #t))))
 
 (define-generic set-default-character-encoding!)
 

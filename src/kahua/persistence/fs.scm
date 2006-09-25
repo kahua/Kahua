@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.10 2006/09/25 04:00:13 bizenn Exp $
+;; $Id: fs.scm,v 1.11 2006/09/25 09:15:43 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -124,6 +124,12 @@
 
 (define-method kahua-db-close ((db <kahua-db-fs>) commit?)
   (set! (active? db) #f))
+
+(define-method kahua-db-reopen ((db <kahua-db-fs>))
+  db)
+
+(define-method kahua-db-ping ((db <kahua-db-fs>))
+  #t)
 
 (define-method start-kahua-db-transaction ((db <kahua-db-fs>))
   (define (read-id-counter db)

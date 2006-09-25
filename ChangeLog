@@ -1,5 +1,10 @@
 2006-09-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* src/kahua/persistence.scm, src/kahua/persistence/*.scm,
+	  src/kahua-server.scm: Change
+	  Now worker check database connection is alive before process client request.
+	  If the connection is dead, it tries to reopen connection.
+
 	* test/persistence.scm: Add
 	  tests for removing object.
 

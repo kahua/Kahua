@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.59 2006/09/25 04:00:12 bizenn Exp $
+;; $Id: persistence.scm,v 1.60 2006/09/25 09:15:43 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -47,6 +47,7 @@
 	  kahua-db-unique-id
 	  lock-db unlock-db with-locking-db
 	  kahua-db-open
+	  kahua-db-reopen
 	  kahua-db-close
 	  kahua-db-ping
 	  start-kahua-db-transaction
@@ -231,8 +232,11 @@
 (define (reset-modified-instance! db obj)
   (update! (modified-instances-of db) (cut delete obj <>)))
 
+(define (%removed-object? obj)
+  (and (kahua-persistent-base? obj) (removed? obj)))
+
 (define (%sanitize-object obj)
-  (if (and (kahua-persistent-base? obj) (removed? obj))
+  (if (%removed-object? obj)
       #f
       obj))
 
@@ -244,14 +248,17 @@
           (when (eq? aot :denied)
             (error "database not active")))
       (let* ((val (slot-ref-using-accessor o acc))
-	     (real (%sanitize-object (if (kahua-wrapper? val)
-					 (peel-wrapper val)
-					 val))))
-	(unless (eq? val real)
-	  (slot-set-using-accessor! o acc real)
-	  (unless real
-	    (add-modified-instance! (current-db) o)))
-	real))))
+	     (real (if (kahua-wrapper? val)
+		       (peel-wrapper val)
+		       val)))
+	(cond ((%removed-object? real)
+	       (slot-set-using-accessor! o acc #f)
+	       (add-modified-instance! (current-db) o)
+	       #f)
+	      ((not (eq? val real))
+	       (slot-set-using-accessor! o acc real)
+	       real)
+	      (else val))))))
 
 (define (make-kahua-setter acc slot)
   (let ((aot       (slot-definition-option slot :out-of-transaction :read-only))
@@ -1071,6 +1078,7 @@
 (define-generic kahua-db-open)
 (define-generic kahua-db-close)
 (define-generic kahua-db-ping)
+(define-generic kahua-db-reopen)
 (define-generic read-kahua-instance)
 (define-generic write-kahua-instance)
 (define-method remove-kahua-instance ((obj <kahua-persistent-base>))

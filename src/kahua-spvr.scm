@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.21 2006/09/01 06:20:50 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.22 2006/09/25 09:15:43 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -579,7 +579,7 @@
          (p     (run-piped-cmd cmd))
          (id    (read-line (process-output p)))
          (wno   (slot-ref self 'next-wno))
-	 (log-str (format "[work] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
+	 (log-str (format "[worker] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
     (slot-set! self 'logger (pa$ log-format log-str))
     (slot-set! self 'wid id)
     (slot-set! self 'wno wno)
