@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.6 2006/09/21 08:52:36 bizenn Exp $
+;; $Id: dbi.scm,v 1.7 2006/09/25 04:00:13 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -49,9 +49,16 @@
 	  dbutil:create-kahua-db-idcount
 	  ;; Utility
 	  safe-execute
+
+	  add-column-to-table
+	  drop-column-from-table
+	  add-index-to-table
+	  drop-index-from-table
 	  ))
 
 (select-module kahua.persistence.dbi)
+
+(define-condition-type <kahua-persistence-dbi-error> <kahua-error> #f)
 
 ;; Debug Facility
 ;(define dbi-do% dbi-do)
@@ -285,18 +292,34 @@
              ((not (null? rv))))
     (call-with-input-string (car rv) read)))
 
-(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class keys filter-proc)
+(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class keys filter-proc include-removed-object?)
   (let ((cn (class-name class))
 	(icache (ref db 'instance-by-key))
 	(conn (connection-of db)))
     (define (%select-instances tab where)
       (format "select keyval, dataval from ~a ~a" tab where))
-    (define (%make-where-in-clause keys)
-      (cond ((not keys) "")
-	    ((null? keys) "where keyval is NULL")
-	    (else
-	     (format "where keyval in (~a)"
-		     (string-join (map (lambda _ "?") keys) ",")))))
+    (define (%make-where-clause keys include-removed-object?)
+      (let* ((keys-cond (%make-keys-condition keys))
+	     (removed-cond (%make-removed-condition include-removed-object?)))
+	(if (or keys-cond removed-cond)
+	    (with-output-to-string
+	      (lambda ()
+		(display " where ")
+		(when keys-cond
+		  (display keys-cond)
+		  (when removed-cond
+		    (display " and ")))
+		(when removed-cond
+		  (display removed-cond))))
+	    "")))
+    (define (%make-keys-condition keys)
+      (cond ((not keys) #f)
+	    ((null? keys) "keyval is NULL")
+	    (else (format "keyval in (~a)" (string-join (map (lambda _ "?") keys) ",")))))
+    (define (%make-removed-condition include-removed-object?)
+      (if include-removed-object?
+	  #f
+	  "removed = 0"))
     (define (%find-kahua-instance row)
       (let1 k (dbi-get-value row 0)
 	(or (hash-table-get icache (cons cn k) #f)
@@ -304,9 +327,14 @@
 	      (set! (ref v '%floating-instance) #f)
 	      v))))
     (or (and-let* ((tab (kahua-class->table-name db class))
-		   (r (apply dbi-do conn (%select-instances tab (%make-where-in-clause keys))
+		   (r (apply dbi-do conn (%select-instances tab (%make-where-clause keys include-removed-object?))
 			     '() (or keys '()))))
-	  (filter-map1 (lambda (row) (filter-proc (%find-kahua-instance row))) r))
+	  (filter-map1 (lambda (row)
+			 (and-let* ((obj (%find-kahua-instance row))
+				    ((or include-removed-object?
+					 (not (removed? obj)))))
+			   (filter-proc obj)))
+		       r))
 	'())))
 
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
@@ -332,6 +360,51 @@
 	       (lambda ()
 		 (for-each (pa$ apply write-kahua-instance db) obj&table))
 	       tables)))))
+
+(define-method add-column-to-table ((db <kahua-db-dbi>)
+				    (table <string>)
+				    (colname <string>)
+				    (type <symbol>)
+				    . args)
+  (let-keywords* args
+      ((nullable? #t)
+       (default   #f))
+    (let1 conn (connection-of)
+      (dbi-do conn
+	      (with-output-to-string
+		(lambda ()
+		  (display "ALTER TABLE ")
+		  (display table)
+		  (display " ADD ")
+		  (display colname)
+		  (write-char #\space)
+		  (display type)
+		  (unless nullable? (display " NOT NULL"))
+		  (when default
+		    (cond ((string? default) (format #t " DEFAULT '~a'" (dbi-escape-sql conn default)))
+			  ((number? default) (format #t " DEFAULT ~d" default))
+			  ((eq? :NULL default) (display " DEFAULT NULL"))))))
+	      '(:pass-through #t)))))
+
+(define-method drop-column-from-table ((db <kahua-db-dbi>)
+				       (table <string>)
+				       (colname <string>))
+  (dbi-do (connection-of db) (format "alter table ~a drop ~a" table colname) '(pass-through #t)))
+
+(define-method add-index-to-table ((db <kahua-db-dbi>)
+				   (table <string>)
+				   (idx-name <string>)
+				   (unique?  <boolean>)
+				   . cols)
+  (unless (null? cols)
+    (let1 sql (format "create ~a index ~a on ~a (~a)"
+		      (if unique? 'unique "") idx-name table
+		      (string-join cols ","))
+      (dbi-do (connection-of db) sql '(:pass-through #t)))))
+(define-method drop-index-from-table ((db <kahua-db-dbi>)
+				      (table <string>)
+				      (idx-name <string>))
+  (dbi-do (connection-of db) (format "drop index ~a on ~a" idx-name table)))
 
 ;;=================================================================
 ;; Database Consistency Check and Fix
@@ -426,5 +499,29 @@
 			(dbutil:fix-kahua-db-idcount db max-id)
 			'FIXED)
 		   'NG)))))
+
+(define-method dbutil:add-removed-flag-column ((db <kahua-db-dbi>)
+					       (tabname <string>))
+  (dbi-do (connection-of db)
+	  (format "alter table ~a add removed smallint not null default 0" tabname)
+	  '(:pass-through #t)))
+
+(define-method dbutil:check-removed-flag-column ((db <kahua-db-dbi>)
+						 (tabname <string>) . maybe-do-fix?)
+  (let1 do-fix? (get-optional maybe-do-fix? #f)
+    (if (guard (e (else #f))
+	  (map identity (dbi-do (connection-of db)
+				(format "select removed from ~a where keyval = NULL" tabname)))
+	  #t)
+	'OK
+	(if do-fix?
+	    (and (dbutil:add-removed-flag-column db tabname) 'FIXED)
+	    'NG))))
+
+(define-method dbutil:check-removed-flag-column-for-all-tables ((db <kahua-db-dbi>) . maybe-do-fix?)
+  (let1 do-fix? (get-optional maybe-do-fix? #f)
+    (hash-table-map (table-map-of db)
+      (lambda (k v)
+	(list k v (dbutil:check-removed-flag-column db v do-fix?))))))
 
 (provide "kahua/persistence/dbi")

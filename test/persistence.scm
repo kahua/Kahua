@@ -2,7 +2,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.16 2006/08/02 04:33:20 bizenn Exp $
+;; $Id: persistence.scm,v 1.17 2006/09/25 04:00:13 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -1138,5 +1138,75 @@
        (with-clean-db (db *dbname*)
          (let ((obj (find-kahua-instance <big> "big")))
            (string-length (ref obj 'a)))))
+
+;;----------------------------------------------------------
+;; オブジェクトの削除
+(test-section "object deletion")
+
+;; Fist: before commit.
+(define *key* #f)
+(with-clean-db (db *dbname*)
+  (let* ((obj (car (map identity (make-kahua-collection <hogehoge>))))
+	 (key (key-of obj)))
+    (test* "before remove-kahua-instance" #f (removed? obj) eq?)
+    (test* "remove-kahua-instance" (undefined) (remove-kahua-instance obj) eq?)
+    (test* "after remove-kahua-instance" #t (removed? obj) eq?)
+    (test* "find-kahua-instance" #f (find-kahua-instance <hogehoge> key) eq?)
+    (test* "find-kahua-instance w/ #t" #t (and-let* ((o (find-kahua-instance <hogehoge> key #t)))
+					    (removed? o)) eq?)
+    (test* "make-kahua-collection" '() (map identity (make-kahua-collection <hogehoge>)) eq?)
+    (let1 l (map identity (make-kahua-collection <hogehoge> :include-removed-object? #t))
+      (test* "make-kahua-collection w/ :include-removed-object?" 1 (length l) =)
+      (test* "it\'s removed?" #t (removed? (car l)) eq?))
+    (set! *key* key)))
+
+;; Second: after commit;
+(with-clean-db (db *dbname*)
+  (let1 key *key*
+    (test* "find-kahua-instance" #f (find-kahua-instance <hogehoge> key) eq?)
+    (test* "find-kahua-instance w/ #t" #t (and-let* ((o (find-kahua-instance <hogehoge> key #t)))
+					    (removed? o)) eq?)
+    (test* "make-kahua-collection" '() (map identity (make-kahua-collection <hogehoge>)) eq?)
+    (let1 l (map identity (make-kahua-collection <hogehoge> :include-removed-object? #t))
+      (test* "make-kahua-collection w/ :include-removed-object?" 1 (length l) =)
+      (test* "it\'s removed?" #t (removed? (car l)) eq?)
+      )))
+
+;; Third: new object and remove it immediately
+(with-clean-db (db *dbname*)
+  (let* ((obj (make <hogehoge> :a 'aa))
+	 (key (key-of obj)))
+    (test* "before remove-kahua-instance" #f (removed? obj) eq?)
+    (test* "remove-kahua-instance" (undefined) (remove-kahua-instance obj) eq?)
+    (test* "after remove-kahua-instance" #t (removed? obj) eq?)
+    (test* "find-kahua-instance" #f (find-kahua-instance <hogehoge> key) eq?)
+    (test* "find-kahua-instance w/ #t" #t (and-let* ((o (find-kahua-instance <hogehoge> key #t)))
+					    (removed? o)) eq?)
+    (test* "make-kahua-collection" '() (map identity (make-kahua-collection <hogehoge>)) eq?)
+    (let1 l (map identity (make-kahua-collection <hogehoge> :include-removed-object? #t))
+      (test* "make-kahua-collection w/ :include-removed-object?" 2 (length l) =))
+    (kahua-db-rollback db)
+    (let1 l (map identity (make-kahua-collection <hogehoge> :include-removed-object? #t))
+      (test* "make-kahua-collection w/ :include-removed-object?" 1 (length l) =))
+    ))
+
+;; Forth: reference to other objects
+(with-clean-db (db *dbname*)
+  (let* ((l (map identity (make-kahua-collection <kahua-test>)))
+	 (obj (car l))
+	 (key (key-of obj)))
+    (test* "before remove-kahua-instance" #f (removed? (ref obj 'quick)) eq?)
+    (test* "length of kahua-collection" 2 (length l) =)
+    (test* "remove-kahua-instance" (undefined) (remove-kahua-instance (ref obj 'quick)) eq?)
+    (test* "after remove-kahua-instance" #f (ref obj 'quick) eq?)
+    (test* "length of kahua-collection" 1 (length (map identity (make-kahua-collection <kahua-test>))) =)
+    ))
+(with-clean-db (db *dbname*)
+  (let* ((l (map identity (make-kahua-collection <kahua-test>)))
+	 (obj (car l))
+	 (key (key-of obj)))
+    (test* "after remove-kahua-instance" #f (ref obj 'quick) eq?)
+    (test* "length of kahua-collection" 1 (length (map identity (make-kahua-collection <kahua-test>))) =)
+    ))
 
 (test-end)

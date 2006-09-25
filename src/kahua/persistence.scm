@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.58 2006/09/21 08:52:35 bizenn Exp $
+;; $Id: persistence.scm,v 1.59 2006/09/25 04:00:12 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -25,6 +25,7 @@
           kahua-persistent-classes-in-db
           kahua-persistent-class-generation
           kahua-persistent-class-definition
+	  removed?
 
 	  ;; Kahua Object Database
           <kahua-db>
@@ -47,6 +48,7 @@
 	  lock-db unlock-db with-locking-db
 	  kahua-db-open
 	  kahua-db-close
+	  kahua-db-ping
 	  start-kahua-db-transaction
 	  finish-kahua-db-transaction
 	  with-kahua-db-transaction
@@ -55,12 +57,15 @@
 	  write-kahua-modified-instances
 	  kahua-db-write-id-counter
 	  make-kahua-collection
+	  remove-kahua-instance
 
 	  kahua-persistent-instances
 
 	  ;; for Check and fix database consistency.
 	  dbutil:check-kahua-db-classcount
 	  dbutil:check-kahua-db-idcount
+	  dbutil:check-removed-flag-column
+	  dbutil:check-removed-flag-column-for-all-tables
           ))
 
 (select-module kahua.persistence)
@@ -226,6 +231,11 @@
 (define (reset-modified-instance! db obj)
   (update! (modified-instances-of db) (cut delete obj <>)))
 
+(define (%sanitize-object obj)
+  (if (and (kahua-persistent-base? obj) (removed? obj))
+      #f
+      obj))
+
 (define (make-kahua-getter acc class slot)
   (let ((aot (slot-definition-option slot :out-of-transaction :read-only)))
     (lambda (o)
@@ -233,18 +243,22 @@
           (ensure-transaction o)
           (when (eq? aot :denied)
             (error "database not active")))
-      (let1 val (slot-ref-using-accessor o acc)
-        (if (is-a? val <kahua-wrapper>)
-            (let1 real (peel-wrapper val)
-              (slot-set-using-accessor! o acc real)
-              real)
-            val)))))
+      (let* ((val (slot-ref-using-accessor o acc))
+	     (real (%sanitize-object (if (kahua-wrapper? val)
+					 (peel-wrapper val)
+					 val))))
+	(unless (eq? val real)
+	  (slot-set-using-accessor! o acc real)
+	  (unless real
+	    (add-modified-instance! (current-db) o)))
+	real))))
 
 (define (make-kahua-setter acc slot)
   (let ((aot       (slot-definition-option slot :out-of-transaction :read-only))
         (slot-name (car slot)))
     (lambda (o v)
-      (let1 db (current-db)
+      (let ((db (current-db))
+	    (v (%sanitize-object v)))
         (if db
             (begin
               (ensure-transaction o)
@@ -272,6 +286,9 @@
    (%kahua-persistent-base::id :init-keyword :%kahua-persistent-base::id
 			       :getter kahua-persistent-id
 			       :init-form (%kahua-db-unique-id) :final #t)
+   (%kahua-persistent-base::removed? :init-value #f
+				     :getter removed?
+				     :final #t) ; It's removed?
    ;; management data
    (%kahua-persistent-base::db :init-form (current-db) :final #t)  ; points back to db
    ;; alist of slot data which is in the DB but not in the current
@@ -288,10 +305,11 @@
    ;; it to be used to check in-db / in-memory consistency.
    (%in-transaction-cache :init-value '())
    ;; persistent key
-   (%persistent-key ;; :allocation :persistent
-                    :init-value #f)
-   )
+   (%persistent-key :init-value #f))
   :metaclass <kahua-persistent-meta>)
+
+(define (kahua-persistent-base? obj)
+  (is-a? obj <kahua-persistent-base>))
 
 ;; this method should be overriden by subclasses for convenience.
 (define-method key-of ((obj <kahua-persistent-base>))
@@ -390,6 +408,9 @@
    (key   :init-keyword :key)
    ))
 
+(define (kahua-proxy? obj)
+  (is-a? obj <kahua-proxy>))
+
 (define-method realize-kahua-proxy ((proxy <kahua-proxy>))
   (find-kahua-instance (ref proxy 'class) (ref proxy 'key)))
 
@@ -397,63 +418,88 @@
 ;;   write-kahua-instance calls kahua-write.
 
 ;; for now, we don't consider shared structure
-(define-method kahua-write ((obj <kahua-persistent-base>) port)
-  (define (save-slot s)
-    (display "(")
-    (display (car s))
-    (display " . ")
-    (serialize-value (cdr s))
-    (display ")\n"))
+(define (%save-slot s)
+  (write-char #\()
+  (display (car s))
+  (display " . ")
+  (serialize-value (cdr s))
+  (write-char #\))
+  (newline))
+
+;; kahua-object (version 1)
+(define (kahua-object-write obj port)
   (with-output-to-port port
     (lambda ()
-      (receive (generation vals hidden)
-          (export-slot-values obj)
-	(display "#,(kahua-object ( ")
+      (receive (generation vals hidden) (export-slot-values obj)
+	(display "#,(kahua-object (")
 	(display (class-name (class-of obj)))
-	(display " ")
+	(write-char #\space)
 	(display generation)
 	(display ") ")
 	(display (kahua-persistent-id obj))
-        (for-each save-slot
+        (for-each %save-slot
                   (if (null? hidden)
-                    vals
-                    (cons `(%hidden-slot-values . ,hidden) vals)))
+		      vals
+		      (cons `(%hidden-slot-values . ,hidden) vals)))
         (display ")\n")))))
+;; kahua-object (version 2: add removed flag)
+(define (kahua-object2-write obj port)
+  (with-output-to-port port
+    (lambda ()
+      (receive (generation vals hidden) (export-slot-values obj)
+	(display "#,(kahua-object2 (")
+	(display (class-name (class-of obj)))
+	(write-char #\space)
+	(display generation)
+	(display ") ")
+	(display (kahua-persistent-id obj))
+	(write-char #\space)
+	(write (removed? obj))
+	(newline)
+	(for-each %save-slot
+                  (if (null? hidden)
+		      vals
+		      (cons `(%hidden-slot-values . ,hidden) vals)))
+	(display ")\n")))))
+
+(define-method kahua-write ((obj <kahua-persistent-base>) port)
+  (kahua-object2-write obj port))
 
 ;; serialization
 (define (serialize-value v)
-  (cond
-   ((any (cut is-a? v <>)
-         (list <boolean> <number> <string> <symbol> <keyword>))
-    (write v) (display " "))
-   ((null? v) (display "()"))
-   ((pair? v)
-    (display "(")
-    (let loop ((v v))
-      (cond ((null? v))
-            ((pair? v) (serialize-value (car v)) (loop (cdr v)))
-            (else (display " . ") (serialize-value v))))
-    (display ")"))
-   ((vector? v)
-    (display "#(")
-    (for-each serialize-value v)
-    (display ")"))
-   ((is-a? v <kahua-persistent-base>)
-    (display "#,(kahua-proxy ")
-    (display (class-name (class-of v)))
-    (display " ")
-    (write (key-of v))
-    (display " )"))
-   ((is-a? v <kahua-proxy>)
-    (display "#,(kahua-proxy ")
-    (display (class-name (ref v 'class)))
-    (display " ")
-    (write (ref v 'key))
-    (display " )"))
-   ((is-a? v <kahua-wrapper>)
-    (serialize-value (ref v 'value)))
-   (else
-    (error "object not serializable:" v))))
+  (let1 v (%sanitize-object v)
+    (cond
+     ((any (cut is-a? v <>)
+	   (list <boolean> <number> <string> <symbol> <keyword>))
+      (write v) (display " "))
+     ((null? v) (display "()"))
+     ((pair? v)
+      (display "(")
+      (let loop ((v v))
+	(cond ((null? v))
+	      ((pair? v) (serialize-value (car v)) (loop (cdr v)))
+	      (else (display " . ") (serialize-value v))))
+      (display ")"))
+     ((vector? v)
+      (display "#(")
+      (for-each serialize-value v)
+      (display ")"))
+     ((kahua-persistent-base? v)
+      (display "#,(kahua-proxy ")
+      (display (class-name (class-of v)))
+      (display " ")
+      (write (key-of v))
+      (display " )"))
+     ((kahua-proxy? v)
+      (display "#,(kahua-proxy ")
+      (display (class-name (ref v 'class)))
+      (display " ")
+      (write (ref v 'key))
+      (display " )"))
+     ((kahua-wrapper? v)
+      (serialize-value (ref v 'value)))
+     (else
+      (error "object not serializable:" v)))))
 
 (define (kahua-serializable-object? v)
   (or (any (cut is-a? v <>)
@@ -480,36 +526,45 @@
 ;;   kahua-object and kahua-proxy, which triggers the following
 ;;   procedures.
 
-(define-reader-ctor 'kahua-object
-  (lambda (class-desc id . vals)
-    (let1 object (id->kahua-instance id)
-      ;; See notes on (initialize (<kahua-persistent-base>)) for
-      ;; the :%realization-slot-values argument.
-      (let* ((cname (if (pair? class-desc) (car class-desc) class-desc))
-             (class (find-kahua-class cname))
-             (generation (find-instance-generation class class-desc)))
-        (receive (slot-alist save-slots)
-            (import-slot-values class generation vals)
-          ;; when a in-memory object corresponding to id exisis,
-          ;; we should sync in-memory in-db object.
-          ;; Note:
-          ;;  if a in-memory object is obtained at current transaction,
-          ;;  read-kahua-instance dose not called. In other words, this
-          ;;  reader macro dose not called.
-          (if object
-              (begin
-                ((ref class 'read-syncer) object slot-alist)
-                object)
-              (begin
-                (make class :%kahua-persistent-base::id id
-                      :%realization-slot-values slot-alist
-                      :%hidden-slot-values save-slots
-                      :%persistent-generation generation))
-              ))))))
+;; kahua-object (1st version)
+(define (kahua-object-read class-desc id . vals)
+  (let1 object (id->kahua-instance id)
+    ;; See notes on (initialize (<kahua-persistent-base>)) for
+    ;; the :%realization-slot-values argument.
+    (let* ((cname (if (pair? class-desc) (car class-desc) class-desc))
+	   (class (find-kahua-class cname))
+	   (generation (find-instance-generation class class-desc)))
+      (receive (slot-alist save-slots)
+	  (import-slot-values class generation vals)
+	;; when a in-memory object corresponding to id exisis,
+	;; we should sync in-memory in-db object.
+	;; Note:
+	;;  if a in-memory object is obtained at current transaction,
+	;;  read-kahua-instance dose not called. In other words, this
+	;;  reader macro dose not called.
+	(if object
+	    (begin
+	      ((ref class 'read-syncer) object slot-alist)
+	      object)
+	    (begin
+	      (make class :%kahua-persistent-base::id id
+		    :%realization-slot-values slot-alist
+		    :%hidden-slot-values save-slots
+		    :%persistent-generation generation))
+	    )))))
+(define-reader-ctor 'kahua-object kahua-object-read)
 
-(define-reader-ctor 'kahua-proxy
-  (lambda (class-name key)
-    (make <kahua-proxy> :class (find-kahua-class class-name) :key key)))
+;; kahua-object2 (2nd version: add removed flag)
+(define (kahua-object2-read class-desc id removed? . vals)
+  (let1 obj (apply kahua-object-read class-desc id vals)
+    (slot-set! obj '%kahua-persistent-base::removed? removed?)
+    obj))
+(define-reader-ctor 'kahua-object2 kahua-object2-read)
+
+;; kahua-proxy
+(define (kahua-proxy-read cname key)
+  (make <kahua-proxy> :class (find-kahua-class cname) :key key))
+(define-reader-ctor 'kahua-proxy kahua-proxy-read)
 
 (define (find-instance-generation class class-desc)
   (if (eq? (class-name class) '<kahua-persistent-metainfo>)
@@ -1015,14 +1070,19 @@
       (cut unlock-db db)))
 (define-generic kahua-db-open)
 (define-generic kahua-db-close)
+(define-generic kahua-db-ping)
 (define-generic read-kahua-instance)
 (define-generic write-kahua-instance)
+(define-method remove-kahua-instance ((obj <kahua-persistent-base>))
+  (slot-set! obj '%kahua-persistent-base::removed? #t)
+  (touch-kahua-instance! obj))
 (define-generic kahua-db-write-id-counter)
 (define-generic kahua-persistent-instances)
 (define-method make-kahua-collection ((db <kahua-db>)
                                       class opts)
   (let-keywords* opts ((predicate #f)
-		       (keys #f))
+		       (keys #f)
+		       (include-removed-object? #f))
     (let ((icache (ref db 'instance-by-key))
 	  (cn (class-name class))
 	  (f (if predicate
@@ -1031,8 +1091,10 @@
       (make <kahua-collection>
 	:instances
 	(append!
-	 (kahua-persistent-instances db class keys f)
-	 (filter-map (lambda (i) (and (ref i '%floating-instance)
+	 (kahua-persistent-instances db class keys f include-removed-object?)
+	 (filter-map (lambda (i) (and (or include-removed-object?
+					  (not (removed? i)))
+				      (ref i '%floating-instance)
 				      (is-a? i class)
 				      (or (not keys) (member (key-of i) keys))
 				      (f i)))
@@ -1197,13 +1259,16 @@
   (hash-table-get (ref (current-db) 'instance-by-key)
                   (cons (class-name class) key) #f))
 
-(define (find-kahua-instance class key)
-  (let1 db (current-db)
+(define (find-kahua-instance class key . args)
+  (let ((db (current-db))
+	(sanitize (if (get-optional args #f)
+		      identity
+		      %sanitize-object)))
     (unless db (error "find-kahua-instance: No database is active"))
-    (or (class&key->kahua-instance class key)
-        (and-let* ((i (read-kahua-instance db class key)))
-          (set! (ref i '%floating-instance) #f)
-          i))))
+    (sanitize (or (class&key->kahua-instance class key)
+		  (and-let* ((i (read-kahua-instance db class key)))
+		    (set! (ref i '%floating-instance) #f)
+		    i)))))
 
 (define (key-of-using-instance obj)
   (ref obj '%floating-instance))
@@ -1300,5 +1365,7 @@
 
 (define-generic dbutil:check-kahua-db-classcount)
 (define-generic dbutil:check-kahua-db-idcount)
+(define-generic dbutil:check-removed-flag-column)
+(define-generic dbutil:check-removed-flag-column-for-all-tables)
 
 (provide "kahua/persistence")

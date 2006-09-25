@@ -1,6 +1,17 @@
+2006-09-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* test/persistence.scm: Add
+	  tests for removing object.
+
+	* src/kahua/persistence.scm, src/kahua/persistence/*.scm: Add
+	  Removed flag and remove-kahua-instance added.
+	  Now make-kahua-collection excludes object that have #t as
+	  removed flag, and find-kahua-instance return #f if it find
+	  removed object.
+
 2006-09-21  Tatsuya BIZENN  <bizenn@arthub.net>
 
-	* src/persistence.scm: Change
+	* src/kahua/persistence.scm: Change
 	  Now kahua-check-transaction! deprecated.
 
 	* src/kahua-server.scm, src/kahua/persistence.scm,

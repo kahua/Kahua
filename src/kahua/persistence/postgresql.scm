@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.3 2006/09/07 02:54:55 bizenn Exp $
+;; $Id: postgresql.scm,v 1.4 2006/09/25 04:00:13 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -84,9 +84,9 @@
 (define (lock-class-table tabname)
   (format "lock ~a in share row exclusive mode" tabname))
 (define (insert-class-instance tabname)
-  (format "insert into ~a values (?, ?)" tabname))
+  (format "insert into ~a (keyval, dataval) values (?, ?)" tabname))
 (define (update-class-instance tabname)
-  (format "update ~a set dataval = ? where keyval = ?" tabname))
+  (format "update ~a set dataval = ?, removed = ? where keyval = ?" tabname))
 
 (define-method kahua-db-unique-id ((db <kahua-db-postgresql>))
   (x->integer (car (map (cut dbi-get-value <> 0)
@@ -101,12 +101,14 @@
     (format "create table ~a (
                keyval  text not null,
                dataval text not null,
+               removed smallint not null default 0,
              constraint pk_~a primary key (keyval)
              )" tabname tabname))
   (let ((cname (class-name class))
 	(newtab (format *kahua-class-table-format* (class-table-next-suffix db))))
     (insert-kahua-db-classes db cname newtab)
     (dbi-do (connection-of db) (create-class-table-sql newtab) '(:pass-through #t))
+    (add-index-to-table db newtab (format "idx_rmd_~a" newtab) #f "removed")
     (register-to-table-map db cname newtab)
     newtab))
 
@@ -122,7 +124,7 @@
     (let1 conn (connection-of db)
       (if (ref obj '%floating-instance)
 	  (dbi-do conn (insert-class-instance tab) '() key data)
-	  (dbi-do conn (update-class-instance tab) '() data key)))
+	  (dbi-do conn (update-class-instance tab) '() data (if (removed? obj) 1 0) key)))
     (set! (ref obj '%floating-instance) #f)
     ))
 

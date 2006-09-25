@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.9 2006/09/21 08:52:36 bizenn Exp $
+;; $Id: fs.scm,v 1.10 2006/09/25 04:00:13 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -173,11 +173,15 @@
          (string-trim-both (x->string (class-name class)) #[<>])
          key))
 
-(define-method kahua-persistent-instances ((db <kahua-db-fs>) class keys filter-proc)
+(define-method kahua-persistent-instances ((db <kahua-db-fs>) class keys filter-proc include-removed-object?)
   (let ((cn (class-name class))
 	(icache (ref db 'instance-by-key)))
-    (filter-map (lambda (k) (filter-proc (or (hash-table-get icache (cons cn k) #f)
-					     (find-kahua-instance class k))))
+    (filter-map (lambda (k)
+		  (and-let* ((obj (or (hash-table-get icache (cons cn k) #f)
+				      (find-kahua-instance class k)))
+			     ((or include-removed-object?
+				  (not (removed? obj)))))
+		    (filter-proc obj)))
 		(or keys
 		    (if (file-is-directory? (data-path db class))
 			(directory-list (data-path db class) :children? #t)

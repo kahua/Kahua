@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.4 2006/09/21 08:52:36 bizenn Exp $
+;; $Id: mysql.scm,v 1.5 2006/09/25 04:00:13 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use srfi-1)
@@ -137,12 +137,14 @@
     (format "create table ~a (
                keyval varchar(255) binary not null,
                dataval longtext binary not null,
+               removed smallint not null default 0,
              constraint pk_~a primary key (keyval)
              ) type=~a" tabname tabname (table-type-of db)))
   (let ((cname (class-name class))
 	(newtab (format *kahua-class-table-format* (class-table-next-suffix db))))
     (insert-kahua-db-classes db cname newtab)
     (dbi-do (connection-of db) (create-class-table-sql newtab) '(:pass-through #t))
+    (add-index-to-table db newtab (format "idx_rmd_~a" newtab) #f "removed")
     (register-to-table-map db cname newtab)
     newtab))
 
@@ -153,19 +155,15 @@
 (define-method write-kahua-instance ((db <kahua-db-mysql>)
                                      (obj <kahua-persistent-base>)
 				     (tab <string>))
-  (define *insert-class-table-format* "insert into ~a values (?, ?)")
-  (define *update-class-table-format* "update ~a set dataval = ? where keyval = ?")
+  (define *insert-class-table-format* "insert into ~a (keyval, dataval) values (?, ?)")
+  (define *update-class-table-format* "update ~a set dataval = ?, removed = ? where keyval = ?")
   (let* ((conn (connection-of db))
 	 (data (call-with-output-string (pa$ kahua-write obj)))
 	 (key  (key-of obj)))
     (debug-write "~a: ~a: ~s\n" (if (ref obj '%floating-instance) 'INSERT 'UPDATE) key obj)
-					;    (with-locking-tables db
-					;      (lambda ()
     (if (ref obj '%floating-instance)
 	(dbi-do conn (format *insert-class-table-format* tab) '() key data)
-	(dbi-do conn (format *update-class-table-format* tab) '() data key))
-					;	)
-					;      tab)
+	(dbi-do conn (format *update-class-table-format* tab) '() data (if (removed? obj) 1 0) key))
     (set! (ref obj '%floating-instance) #f)
     ))
 
