@@ -1,5 +1,5 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
-;; $Id: user.scm,v 1.5 2006/01/08 12:34:43 shibata Exp $
+;; $Id: user.scm,v 1.6 2006/09/26 23:10:17 bizenn Exp $
 
 ;; test kahua.user
 
@@ -137,5 +137,13 @@
 		      (kahua-user-password-change-force user "urashima")
 		      (and-let* ((u (kahua-check-user "shiro" "urashima")))
 				(ref u 'login-name)))))
+
+(test* "remove-kahua-instance: before sync" #t
+       (with-db (db *dbname*)
+	 (let1 user (kahua-find-user "shiro")
+	   (remove-kahua-instance user)
+	   (removed? user))))
+
+(test* "remove-kahua-instance: after sync" #f (with-db (db *dbname*) (kahua-find-user "shiro")))
 
 (test-end)
