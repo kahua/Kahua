@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.76 2006/09/21 08:52:36 bizenn Exp $
+;; $Id: server.scm,v 1.77 2006/09/26 03:12:26 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -21,6 +21,7 @@
   (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.charconv)
+  (use gauche.logger)
   (use rfc.uri)
   (use util.list)
   (use util.match)
@@ -439,13 +440,42 @@
 ;;   object.   The application must call these procs within with-db's
 ;;   dynamic extent.
 
+(define (find-login-state dbpath)
+  (and-let* ((login-states (ref (kahua-context-ref "session-state") 'login-states)))
+    (find (lambda (e) (equal? (cdr e) dbpath)) login-states)))
+
+(define (check-login-state login-name dbpath)
+  (and-let* ((state (find-login-state dbpath))
+	     ((equal? (car state) login-name)))
+    state))
+
+(define (register-login-state login-name dbpath)
+  (let* ((login-states (or (ref (kahua-context-ref "session-state") 'login-states) '()))
+	 (entry (find (lambda (e) (equal? (cdr e) dbpath)) login-states)))
+    (set! (ref (kahua-context-ref "session-state") 'login-states)
+	  (cond (entry
+		 (if login-name
+		     (begin
+		       (set-car! entry login-name)
+		       login-states)
+		     (remove! (lambda (e) (equal? (cdr e) dbpath)) login-states)))
+		((string? login-name)
+		 (acons login-name dbpath login-states))
+		(else login-states)))))
+
 (define kahua-current-user
   (getter-with-setter
    (lambda ()
-     (and-let* ((logname (ref (kahua-context-ref "session-state") 'user)))
-       (kahua-find-user logname)))
-   (lambda (logname)
-     (set! (ref (kahua-context-ref "session-state") 'user) logname))))
+     (and-let* ((u (find-login-state (path-of (current-db)))))
+       (kahua-find-user (car u))))
+   (lambda (user)
+     (let1 u (cond ((is-a? user <kahua-user>) user)
+		   ((string? user) (kahua-find-user user))
+		   (else #f))
+       (if u
+	   (register-login-state (ref u 'login-name) (dbpath-of u))
+	   (register-login-state #f (path-of (current-db))))))
+   ))
 
 ;; KAHUA-CURRENT-USER-NAME
 ;; (setter KAHUA-CURRENT-USER-NAME) user
@@ -455,10 +485,8 @@
 
 (define kahua-current-user-name
   (getter-with-setter
-   (lambda ()
-     (ref (kahua-context-ref "session-state") 'user))
-   (lambda (logname)
-     (set! (ref (kahua-context-ref "session-state") 'user) logname))))
+   (lambda () (and-let* ((u (kahua-current-user))) (ref u 'login-name)))
+   (lambda (login-name) (set! (kahua-current-user) login-name))))
 
 ;; KAHUA-MERGE-HEADERS :: ([Headers],...) -> [Headers]
 ;;

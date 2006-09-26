@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.6 2006/03/11 08:31:04 shibata Exp $
+;; $Id: user.scm,v 1.7 2006/09/26 03:12:26 bizenn Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -14,7 +14,7 @@
   (use gauche.collection)
   (export <kahua-user> kahua-add-user kahua-check-user kahua-find-user
           kahua-user-password-change kahua-user-password-change-force
-	  kahua-user-has-role?
+	  kahua-user-has-role? dbpath-of inactive?
 	  ))
 (select-module kahua.user)
 
@@ -34,8 +34,11 @@
                   :init-keyword :password-hash :init-value #f)
    (role-alist    :allocation :persistent
                   :init-keyword :role-alist :init-value '())
-   (inactive      :allocation :persistent
+   (inactive      :allocation :persistent :accessor inactive?
                   :init-keyword :inactive :init-value #f)
+   (%kahua-user::dbpath :init-keyword :%kahua-user::dbpath
+			:init-form (path-of (current-db))
+			:getter dbpath-of :final #t)
    ))
 
 (define-method key-of ((self <kahua-user>))
@@ -58,9 +61,12 @@
 (define (kahua-check-user login-name password)
   (find (lambda (user)
           (and (equal? (ref user 'login-name) login-name)
-               (not (ref user 'inactive))
+	       (active? user)
                (match-passwd password (ref user 'password-hash))))
         (make-kahua-collection (kahua-current-user-class))))
+
+(define-method active? ((user <kahua-user>))
+  (not (inactive? user)))
 
 ;; user must be <kahua-user>.  caller must sync db.
 (define (kahua-user-password-change user old-password new-password)

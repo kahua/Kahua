@@ -1,3 +1,9 @@
+2006-09-26  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/user.scm, src/kahua/server.scm: Security Fix
+	  Now kahua-current-user store cons of login-name and dbpath
+	  to keyserver.  So user realm are separated per each database.
+
 2006-09-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* src/kahua/persistence.scm, src/kahua/persistence/*.scm,

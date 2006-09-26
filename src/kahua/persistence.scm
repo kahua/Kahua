@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.60 2006/09/25 09:15:43 bizenn Exp $
+;; $Id: persistence.scm,v 1.61 2006/09/26 03:12:26 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -18,7 +18,7 @@
 	  <kahua-persistent-meta>
 	  <kahua-persistent-base>
           <kahua-persistent-metainfo>
-	  kahua-persistent-id
+	  kahua-persistent-id path-of
           key-of find-kahua-class find-kahua-instance
           touch-kahua-instance!
           kahua-serializable-object?
