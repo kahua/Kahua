@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.77 2006/09/26 03:12:26 bizenn Exp $
+;; $Id: server.scm,v 1.78 2006/09/26 08:18:28 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -440,14 +440,12 @@
 ;;   object.   The application must call these procs within with-db's
 ;;   dynamic extent.
 
-(define (find-login-state dbpath)
+(define (find-login-state dbpath . maybe-include-anon?)
   (and-let* ((login-states (ref (kahua-context-ref "session-state") 'login-states)))
-    (find (lambda (e) (equal? (cdr e) dbpath)) login-states)))
-
-(define (check-login-state login-name dbpath)
-  (and-let* ((state (find-login-state dbpath))
-	     ((equal? (car state) login-name)))
-    state))
+    (or (find (lambda (e) (equal? (cdr e) dbpath)) login-states)
+	(and (get-optional maybe-include-anon? #f)
+	     dbpath
+	     (find (lambda (e) (not (cdr e))) login-states)))))
 
 (define (register-login-state login-name dbpath)
   (let* ((login-states (or (ref (kahua-context-ref "session-state") 'login-states) '()))
@@ -485,8 +483,13 @@
 
 (define kahua-current-user-name
   (getter-with-setter
-   (lambda () (and-let* ((u (kahua-current-user))) (ref u 'login-name)))
-   (lambda (login-name) (set! (kahua-current-user) login-name))))
+   (lambda ()
+     (and-let* ((u (find-login-state (and-let* ((db (current-db))) (path-of db)) #t)))
+       (car u)))
+   (lambda (login-name)
+     (if (current-db)
+	 (set! (kahua-current-user) login-name)
+	 (register-login-state login-name #f)))))
 
 ;; KAHUA-MERGE-HEADERS :: ([Headers],...) -> [Headers]
 ;;

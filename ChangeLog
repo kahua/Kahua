@@ -1,8 +1,18 @@
 2006-09-26  Tatsuya BIZENN  <bizenn@arthub.net>
 
-	* src/kahua/user.scm, src/kahua/server.scm: Security Fix
+	* src/kahua/user.scm, src/kahua/server.scm: **SECURITY FIX**
 	  Now kahua-current-user store cons of login-name and dbpath
 	  to keyserver.  So user realm are separated per each database.
+
+	  Now for non-privilege login (like kahua-web with non-member-edit
+	  option), you must do
+	    (parameterize ((current-db #f))
+	      (set! (kahua-current-user-name) nick-name))
+	  instead of just
+	    (set! (kahua-current-user-name) nick-name)
+	  And you must not use (kahua-current-user-name) to check the user
+	  now login as registed user.  You should use (kahua-current-user)
+	  for the purpose.
 
 2006-09-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
