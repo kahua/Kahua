@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.7 2006/09/26 03:12:26 bizenn Exp $
+;; $Id: user.scm,v 1.8 2006/09/26 23:09:57 bizenn Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -36,10 +36,10 @@
                   :init-keyword :role-alist :init-value '())
    (inactive      :allocation :persistent :accessor inactive?
                   :init-keyword :inactive :init-value #f)
-   (%kahua-user::dbpath :init-keyword :%kahua-user::dbpath
-			:init-form (path-of (current-db))
-			:getter dbpath-of :final #t)
    ))
+
+(define-method dbpath-of ((user <kahua-user>))
+  (path-of (ref user '%kahua-persistent-base::db)))
 
 (define-method key-of ((self <kahua-user>))
   (ref self 'login-name))

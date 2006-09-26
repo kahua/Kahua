@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.61 2006/09/26 03:12:26 bizenn Exp $
+;; $Id: persistence.scm,v 1.62 2006/09/26 23:09:57 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1082,6 +1082,7 @@
 (define-generic read-kahua-instance)
 (define-generic write-kahua-instance)
 (define-method remove-kahua-instance ((obj <kahua-persistent-base>))
+  (ensure-transaction obj)
   (slot-set! obj '%kahua-persistent-base::removed? #t)
   (touch-kahua-instance! obj))
 (define-generic kahua-db-write-id-counter)
@@ -1263,7 +1264,7 @@
 
 (define (class&key->kahua-instance class key)
   (unless (current-db)
-    (error "clas&key->kahua-instance: No db is active"))
+    (error "class&key->kahua-instance: No db is active"))
   (hash-table-get (ref (current-db) 'instance-by-key)
                   (cons (class-name class) key) #f))
 
