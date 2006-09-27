@@ -1,3 +1,9 @@
+2006-09-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/persistence/fs.scm: Fix
+	  Fix a bug that overwrite a existing instance silently
+	  with new object if its key is already used by a existing instance.
+
 2006-09-26  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* src/kahua/user.scm, src/kahua/server.scm: **SECURITY FIX**

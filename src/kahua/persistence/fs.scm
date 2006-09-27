@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.11 2006/09/25 09:15:43 bizenn Exp $
+;; $Id: fs.scm,v 1.12 2006/09/27 07:07:34 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -60,12 +60,10 @@
     (let1 out (if encoding
 		  (wrap-with-output-conversion out encoding)
 		  out)
-      (with-port-locking out
-	(lambda ()
-	  (guard (e ((else (sys-unlink tmp) (raise e))))
-	    (writer out)
-	    (close-output-port out)
-	    (sys-rename tmp file)))))))
+      (guard (e ((else (sys-unlink tmp) (raise e))))
+	(writer out)
+	(close-output-port out)
+	(sys-rename tmp file)))))
 
 (define-constant *lock-db-fs* (make <sys-flock> :type F_WRLCK))
 (define-constant *unlock-db-fs* (make <sys-flock> :type F_UNLCK))
@@ -86,6 +84,12 @@
     (close-output-port lock-port)
     (set! (lock-port-of db) #f)
     #t))
+
+(define (with-locking-output-file out thunk)
+  (dynamic-wind
+      (cut sys-fcntl out F_SETLKW *lock-db-fs*)
+      thunk
+      (cut sys-fcntl out F_SETLK *unlock-db-fs*)))
 
 (define-method kahua-db-create ((db <kahua-db-fs>))
   ;; There could be a race condition here, but it would be very
@@ -159,12 +163,22 @@
 
 (define-method write-kahua-instance ((db <kahua-db-fs>)
                                      (obj <kahua-persistent-base>))
-  (let* ((class-path  (data-path db (class-of obj))))
+  (let* ((class-path  (data-path db (class-of obj)))
+	 (file-path (build-path class-path (key-of obj)))
+	 (writer (lambda (out)
+		   (with-port-locking out (cut kahua-write obj out)))))
     (make-directory* class-path)
-    (%call-writer-to-file-safely (build-path class-path (key-of obj))
-				 (tmp-path-of db)
-                                 (pa$ kahua-write obj)
-				 (character-encoding-of db))
+    (if (ref obj '%floating-instance)
+	(guard (e (else (error <kahua-persistence-error>
+			       :message (format "duplicate key: ~s" (key-of obj)))))
+	  (call-with-output-file file-path
+	    writer
+	    :if-exists :error
+	    :encoding (character-encoding-of db)))
+	(%call-writer-to-file-safely file-path
+				     (tmp-path-of db)
+				     writer
+				     (character-encoding-of db)))
     (set! (ref obj '%floating-instance) #f)))
 
 (define-method kahua-db-write-id-counter ((db <kahua-db-fs>))
