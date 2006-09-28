@@ -1,12 +1,12 @@
-package           = kahua
+package	          = kahua
 SHELL             = @SHELL@
 prefix            = @prefix@
 exec_prefix       = @exec_prefix@
 bindir            = @bindir@
 sbindir           = @sbindir@
-libexecdir        = @libexecdir@
+libexecdir	  = @libexecdir@
 datarootdir	  = @datarootdir@
-datadir           = @datadir@/$(package)
+datadir		  = @datadir@/$(package)
 sysconfdir        = @sysconfdir@/$(package)
 sharedstatedir    = @sharedstatedir@/$(package)
 localstatedir     = @localstatedir@/$(package)
@@ -15,20 +15,22 @@ includedir        = @includedir@/$(package)
 oldincludedir     = @oldincludedir@/$(package)
 infodir           = @infodir@
 mandir            = @mandir@
+srcdir            = @srcdir@
+VPATH             = $(srcdir)
+top_builddir      = @top_builddir@
+top_srcdir        = @top_srcdir@
 
-srcdir      = @srcdir@
-VPATH       = $(srcdir)
-top_builddir = @top_builddir@
-top_srcdir   = @top_srcdir@
+KAHUA_USER_OPTION = @KAHUA_USER_OPTION@
+KAHUA_GROUP_OPTION= @KAHUA_GROUP_OPTION@
 
 DESTDIR  =
 
-INSTALL = @INSTALL@
-MKINSTDIR = $(top_srcdir)/mkinstalldirs
+GOSH		  = @GOSH@
+GAUCHE_CONFIG	  = @GAUCHE_CONFIG@
+INSTALL		  = @GAUCHE_INSTALL@
+MKINSTDIR	  = $(INSTALL) -d
 
 INSTALL_DIR = $(localstatedir)/plugins
-CREATE_DIR = $(INSTALL_DIR)
-
 
 PLUGINS = allow-module.scm sendmail.scm query.scm fileio.scm
 
@@ -42,10 +44,8 @@ check:
 clean:
 
 install:
-	$(MKINSTDIR) $(INSTALL_DIR) $(CREATE_DIR)
-	@for f in $(PLUGINS); do \
-	  $(INSTALL) -m 644 $$f $(INSTALL_DIR)/$$f; \
-	done
+	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0775 -d $(INSTALL_DIR)
+	$(INSTALL) -m 444 -T $(INSTALL_DIR) -S $(srcdir) $(PLUGINS)
 
 uninstall:
 	@cd $(INSTALL_DIR) && rm -f $(PLUGINS)

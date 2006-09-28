@@ -3,7 +3,7 @@ dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-dnl $Id: configure.ac,v 1.37 2006/09/08 05:21:17 bizenn Exp $
+dnl $Id: configure.ac,v 1.38 2006/09/28 05:50:05 bizenn Exp $
 dnl
 AC_PREREQ(2.54)
 AC_INIT(kahua, 0.6, info@kahua.org)
@@ -73,6 +73,42 @@ installed.  Default: $KAHUA_STATICDIR]),
     esac
   ])
 AC_SUBST(KAHUA_STATICDIR)
+
+KAHUA_USER_OPTION=
+AC_ARG_WITH(kahua-user,
+  AC_HELP_STRING([--with-kahua-user=USER],
+                 [User name execute kahua servers. Default: none]),
+  [
+    case "$with_kahua_user" in
+      yes|no)  KAHUA_USER_OPTION= ;;
+      *)       KAHUA_USER_OPTION="-o $with_kahua_user" ;;
+    esac
+  ])
+AC_SUBST(KAHUA_USER_OPTION)
+
+KAHUA_GROUP_OPTION=
+AC_ARG_WITH(kahua-group,
+  AC_HELP_STRING([--with-kahua-group=GROUP],
+                 [Group name execute kahua servers. Default: none]),
+  [
+    case "$with_kahua_group" in
+      yes|no) KAHUA_GROUP_OPTION= ;;
+      *)      KAHUA_GROUP_OPTION="-g $with_kahua_group" ;;
+    esac
+  ])
+AC_SUBST(KAHUA_GROUP_OPTION)
+
+CGI_USER_OPTION=
+AC_ARG_WITH(cgi-user,
+  AC_HELP_STRING([--with-cgi-user=USER],
+                 [User name execute kahua CGI. Default: none]),
+  [
+    case "$with_cgi_user" in
+      yes|no) CGI_USER_OPTION= ;;
+      *)      CGI_USER_OPTION="-o $with_cgi_user" ;;
+    esac
+  ])
+AC_SUBST(CGI_USER_OPTION)
 
 dnl Add more test
 

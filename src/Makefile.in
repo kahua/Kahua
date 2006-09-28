@@ -20,6 +20,9 @@ VPATH             = $(srcdir)
 top_builddir      = @top_builddir@
 top_srcdir        = @top_srcdir@
 
+KAHUA_USER_OPTION = @KAHUA_USER_OPTION@
+KAHUA_GROUP_OPTION= @KAHUA_GROUP_OPTION@
+
 DESTDIR           =
 
 GOSH                   = @GOSH@
@@ -145,18 +148,21 @@ clean:
 	rm -rf core *~ kahua/*~ $(GENERATED)
 	rm -rf $(TESTENV_DIR)
 
-# installation
-# NB: libexecdir is created for backward compatibility.  Eventually
-# we'll remove it.
 install: all
-	$(INSTALL) -m 770 -d $(SOCKET_BASE_DIR) $(sysconfdir) $(localstatedir) $(libexecdir) $(TMP_BASE_DIR)
-	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR) -S $(srcdir) $(SCMFILES)
-	$(INSTALL) -m 555 -T $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
+	$(INSTALL) -m 0755 -d $(sysconfdir) $(libexecdir)
+	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0775 -d $(localstatedir)
+	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0770 -d $(localstatedir)/checkout $(localstatedir)/logs
+	$(INSTALL) $(KAHUA_USER_OPTION) $(KAHUA_GROUP_OPTION) -m 0770 -d $(SOCKET_BASE_DIR) $(TMP_BASE_DIR)
+	@if test "$(KAHUA_STATICDIR)" != ""; then \
+	  $(INSTALL) $(KAHUA_GROUP_OPTION) -m 0775 -d $(KAHUA_STATICDIR); \
+        fi
+	$(INSTALL) -m 0444 -T $(SCM_INSTALL_DIR) -S $(srcdir) $(SCMFILES)
+	$(INSTALL) -m 0555 -T $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
 	@if test ! -f $(sysconfdir)/kahua.conf; then \
-	  $(INSTALL) -m 444 kahua.conf $(sysconfdir)/kahua.conf; \
+	  $(INSTALL) -m 0644 kahua.conf $(sysconfdir)/kahua.conf; \
 	fi
 	@if test ! -f $(localstatedir)/user.conf; then \
-	  $(INSTALL) -m 644 user.conf.sample $(localstatedir)/user.conf; \
+	  $(INSTALL) $(KAHUA_GROUP_OPTION) -m 0660 user.conf.sample $(localstatedir)/user.conf; \
 	fi
 	@if test ! -d $(sysconfdir)/skel; then \
 	  cp -R ../skel $(sysconfdir)/skel; \

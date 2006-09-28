@@ -1,3 +1,10 @@
+2006-09-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* configure.ac,src/Makefile.in,cgi/Makefile.in,plugins/Makefile.in:
+	  Now configure script takes --with-kahua-user/--with-kahua-group/
+	  --with-cgi-user option, and set up owner/group/permission of
+	  directories and files properly.
+
 2006-09-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* src/kahua/persistence/fs.scm: Fix
