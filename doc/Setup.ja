@@ -3,7 +3,7 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: Setup.ja,v 1.11 2006/09/28 05:50:07 bizenn Exp $
+;; $Id: Setup.ja,v 1.12 2006/09/28 07:01:52 bizenn Exp $
 
 * Kahuaをセットアップする
 
@@ -29,7 +29,7 @@ Gauche scheme interpreter, version 0.8.7 [utf-8,pthreads]
 
 ** とりあえず試す
 
-*** tarballからのビルドとインストール
+*** 自分のHOMEの下にインストール
 
 とりあえずKahuaを体験してみたいのなら、自分のHOMEの下にインストールして
 しまうことをお薦めします。後述のようなパーミッションやユーザ/グループの
@@ -44,34 +44,42 @@ Gauche scheme interpreter, version 0.8.7 [utf-8,pthreads]
 % make install-examples
 }}}
 
-これで必要なものは全て ${HOME}/kahua と ${HOME}/public_html/kahuaの下に
-インストールされます。${HOME}/kahua/bin にPATHを通しておくと便利でしょう。
-Kahua内蔵のHTTPdを使えば、ApacheなどのHTTPdを別途用意する必要はありません。
+これでKahuaを動かすのに必要なもの全てとサンプルアプリケーションとが、
+${HOME}/kahua と ${HOME}/public_html/kahuaの下にインストールされます。
+${HOME}/kahua/bin にPATHを通しておくと便利でしょう。
+また、Kahua内蔵のHTTPdを使えば、ApacheなどのWebサーバを別途用意する
+必要はありません。
 
-*** 起動する
+*** Kahuaを起動する
 
-起動するには、
+Kahuaを起動するには、以下のコマンドを実行します。
 {{{
 % ($HOME/kahua/bin/kahua-spvr --httpd localhost:8888 >>/tmp/kahua-error.log &)
 }}}
 ポート番号は非特権ポートから適当に決めて下さい。--httpd の引数として
 ポート番号だけを指定した場合は、0.0.0.0(および可能なら[::])にサーバ
 ソケットがbindされます。適切にフィルタリングをしていない場合は外部から
-アクセスできてしまうのでご注意ください。
+自由にアクセスできてしまうのでご注意ください。
 
-さぁ、ブラウザで http://localhost:8888/ にアクセスしてみましょう。
+ブラウザで http://localhost:8888/ にアクセスしてみましょう。
 サンプルアプリケーションのlambdabooksが表示されたら成功です。
-いろいろ遊んでみてください。なお、kahua-shell を使いたい場合には、
-後述の「開発ユーザを作成する」を参照してください。
+いろいろ遊んでみてください。サンプルアプリケーションのソースコードは
+$HOME/kahua/var/kahua/checkoutの下にアプリケーション名と同じ名前の
+ディレクトリごとに置かれています。なお、kahua-shell を使ってワーカ
+プロセスに接続したいときは、後述の「開発アカウントを作成する」を参照
+してください。
 
 ----
 
 ** きちんとインストールする
 
+システムの公共の場所にroot権限でKahuaをインストールする際には、
+多少の手順と、Kahuaの仕組みを少し覗いてみる必要があります。
+
 *** Kahuaの役割分担を理解する
 
-Kahuaでは、複数の役割を持ったプログラムが、それぞれの権限 (UNIXのユーザ)
-で動作します。
+Kahuaは、大きく3つに分類されるプロセス群が、それぞれの権限
+(UNIXユーザ)で、相互に通信しながら動作します。
 
 # Kahuaサーバ群(kahua-spvr、kahua-server、kahua-keyserv)
 # Kahuaブリッジ(kahua.cgi, kahua.fcg, kahua-httpd)
@@ -79,51 +87,52 @@ Kahuaでは、複数の役割を持ったプログラムが、それぞれの権限 (UNIXのユーザ)
 
 この3者は、同じUNIXドメインソケットを読み書きできる必要があります。
 また、Kahuaサーバ群とKahuaブリッジとは、同じ場所でテンポラリファイル
-の読み書きをする必要があります。
+の読み書きができる必要があります。
 
 *** グループ kahua を作成する
 
 3つの役割のプロセス同士がUNIXドメインソケットを通じてやり取りをする
 ためには、それぞれのプロセスの実行ユーザが同一のグループに属している
-必要があります。そのグループ ''kahua'' を新規に登録しましょう。
+必要があります。そのためのグループ ''kahua'' を新規に登録しましょう。
 root権限が必要です。
 {{{
 # groupadd kahua
 }}}
 
 OSによっては違うコマンドを使う必要があるかも知れません。
+OSのマニュアルを参照してください。
 
 *** ユーザ kahua を作成する
 
-Kahuaサーバ群は一体となって動きますが、セキュリティ上、他のプロセスとは
-違うユーザで動作する方が望ましいでしょう。ここでは、そのユーザを kahua
-として新規作成します。プライマリグループは上記で作成した kahua でいい
-でしょう。
+上記の3種類のプロセスのうち、Kahuaサーバ群は一体となって動きます。
+セキュリティ上、Kahuaサーバ群は独自のユーザ権限の下で動かすことが
+望ましいでしょう。ここでは、そのユーザを ''kahua'' として新規に作成します。
+プライマリグループは上記で作成したグループ kahua でいいでしょう。
 {{{
 # useradd -g kahua kahua
 }}}
 
-*** グループ kahua にユーザを登録する
+*** グループ kahua に他のユーザを登録する
 
 次に、Kahuaブリッジの実行ユーザとKahua管理者/開発者であるユーザをkahua
 グループに登録しましょう。
 
 Kahuaブリッジのうち、kahua.cgiやkahua.fcgは、通常CGIスクリプトを実行する
 Webサーバと同じ権限で動作します(ここではsuEXECは使っていないものとします)。
-Webサーバの実行ユーザを www だとすると、
+Webサーバの実行ユーザが www だとすると、
 {{{
 # usermod -G kahua www
 }}}
-を実行します。この変更をWebサーバの動作に反映させるには、
-いったんWebサーバを再起動する必要があります。
+を実行します。この変更をWebサーバの動作に反映させるには、いったんWebサーバを
+再起動する必要があります。なお、Kahua内蔵のHTTPdを使用し、外部のWebサーバを
+使用しない場合はこの設定は不要です。
 
-Kahua管理者/開発者は、あなた自身(+他の誰か)のログインユーザでしょう。
-例えばあなたが taro だとすると、
+次に、Kahua管理者/開発者について考えます。これはおそらく、あなた自身
+(+他の誰か)のログインユーザでしょう。例えばあなたが taro だとすると、
 {{{
 # usermod -G kahua taro
 }}}
-を実行することになります。これも、反映させるにはログインし
-直さなければならないでしょう。
+で kahua グループに taro を追加することができます。
 
 *** ビルドする
 
@@ -134,6 +143,7 @@ Kahua管理者/開発者は、あなた自身(+他の誰か)のログインユーザでしょう。
 % tar xzvf Kahua-0.7.tgz
 % cd Kahua-0.7
 % ./configure \
+    --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
     --prefix=/usr/local/kahua \
     --sysconfdir=/usr/local/etc \
     --localstatedir=/var/local \
@@ -157,6 +167,20 @@ configureのオプションの詳細については、
 について解説します。
 
 {{{
+ --with-kahua-user
+
+     Kahuaサーバ群を動かすためのユーザ名。デフォルトは指定なし。
+
+ --with-kahua-group
+
+     Kahuaサーバ群を動かすユーザ、Kahua管理者/開発者、Kahuaブリッジの
+     実行ユーザが所属しなければならないグループ名。デフォルトは指定なし。
+
+ --with-cgi-user
+
+     Kahuaブリッジ(kahua.cgi/kahua.fcg)の実行ユーザ名。通常はCGIを起動
+     するWebサーバの実行ユーザになる。デフォルトは指定なし。
+
  --with-cgidir
 
      KahuaブリッジであるCGIスクリプトのインストール先となるディレクトリ。
@@ -202,50 +226,22 @@ configureのオプションの詳細については、
 # make install
 }}}
 
-*** パーミッションの調整
+*** サンプルアプリケーションのインストール
 
-「Kahuaの役割分担を理解する」でも説明した通り、Kahuaでは、違うユーザ権限
-で実行される複数のプロセスが相互に通信を行います。そのために、いくつかの
-ディレクトリやファイルのオーナー/グループやパーミッションを調整する
-必要があります。
-
-**** sockbase
-
-Kahuaのプロセス同士が通信に使用するUNIXドメインソケットが作られる
-ディレクトリです。kahuaグループに所属する全てのユーザが読み書き
-できる必要があります。${prefix} は configure に与えた --prefix の
-値(デフォルトは/usr/local)だとすると、
+サンプルアプリケーションをインストールする際は root ではなく、Kahua
+管理者/開発者の権限で行います。
 {{{
-# chgrp -R kahua ${prefix}/tmp/kahua
-# chmod -R 0770 ${prefix}/tmp/kahua
+% make install-examples
 }}}
-なおこのディレクトリについては、設定ファイル(kahua.conf)で変更する
-ことができます。
-
-**** working-directory
-
-Kahuaアプリケーションのソースファイル、Kahuaオブジェクトデータベースの
-ファイル群、テンポラリディレクトリなどが置かれる。ここも、kahuaグルー
-プのメンバは読み書きできなければなりません。${localstatedir} は configure
-に与えた --localstatedir の値(デフォルトは ${prefix}/var)だとすると、
+この後、サンプルとしてインストールされたデータベースディレクトリの
+オーナー/グループ/パーミッションを以下のように変更します。上記の
+configureオプションでビルドをしたのであれば、データベースディレクトリ
+は /usr/local/kahua/var/kahua/db になります。
 {{{
-# chgrp -R kahua ${localstatedir}/kahua
-# chmod -R g+w ${localstatedir}/kahua
+% su
+# chown -R kahua:kahua /usr/local/kahua/var/kahua/db*
 }}}
-なおこのディレクトリについても、設定ファイル(kahua.conf)で変更する
-ことができます。
-
-**** cgilogdir
-
-KahuaブリッジであるCGIスクリプトがログを吐くディレクトリ。デフォルト
-のままであれば、${working-directory}/cgilog なので、上記の設定時に
-CGIスクリプトから書き込みができるようになりますが、別のディレクトリ
-階層に設定した場合には、CGIスクリプトの実行ユーザが書き込めるように
-する必要があります(kahuaグループのメンバが書き込める必要はありません)。
-{{{
-# chown -R www ${cgilogdir}
-# chmod -R +w ${cgilogdir}
-}}}
+最後の*(アスタリスク)をお忘れなく。
 
 *** Kahuaサーバ群の起動
 
@@ -267,7 +263,7 @@ Kahuaサーバ群をkahuaユーザ権限で起動しましょう。
 のようにすればいいでしょう。
 
 現在のKahuaには、各種OSのrcスクリプト(init.dスクリプト)にこのような
-起動コマンドを登録仕組みは(まだ)ありません。上記のコマンドラインを
+起動コマンドを登録する仕組みは(まだ)ありません。上記のコマンドラインを
 参考に作成するか、daemontools を使うとよいでしょう。
 
 ----
@@ -301,7 +297,7 @@ done
 spvr> lsuser
 ("steel" "sussman" "taro")
 spvr>
-----
+}}}
 となるでしょう。steel、sussmanというのはサンプルとして登録されているユーザ
 なので、削除してしまってかまいません。
 {{{
