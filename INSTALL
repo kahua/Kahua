@@ -1,7 +1,7 @@
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
-;; $Id: INSTALL,v 1.6 2006/09/07 14:16:31 bizenn Exp $
+;; $Id: INSTALL,v 1.7 2006/09/28 01:55:25 bizenn Exp $
 
 * Setup Kahua
 
@@ -28,8 +28,8 @@ recommended.  The reason is that you don't need to care about
 permissions and user/group settings.
 
 {{{
-% tar xvzf Kahua-0.6.tgz
-% cd Kahua-0.6
+% tar xvzf Kahua-0.7.tgz
+% cd Kahua-0.7
 % ./configure --prefix=$HOME/kahua --with-staticdir=$HOME/public_html/kahua
 % make
 % make check
