@@ -1,9 +1,16 @@
-kahua-keyserv
+;; -*- coding: euc-jp -*-
+;; This document is written in WiLiKi format.
+;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
+;;
+;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: kahua-keyserv.ja,v 1.2 2006/09/29 06:06:09 bizenn Exp $
 
-kahua-keyserv [-c conf-file] [-user user]
+* kahua-keyserv [-c conf-file]
 
-State session idを管理するためのサーバ。通常はkahua-spvrによ
-り立ち上げられる。
+State session IDに結びつけられたセッション情報を保存、管理するためのサーバ。
+通常は [[kahua-spvr]] によって起動される。
 
-同じkahua-spvrの配下にあるkahua-serverは、ログイン情報等、
+同じ [[kahua-spvr]] から起動された [[kahua-server]] は、ログイン状態などの
 state sessionに結びつけられた情報をこのサーバに保存する。

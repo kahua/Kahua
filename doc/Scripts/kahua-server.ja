@@ -1,26 +1,34 @@
-kahua-server
+;; -*- coding: euc-jp -*-
+;; This document is written in WiLiKi format.
+;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
+;;
+;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: kahua-server.ja,v 1.2 2006/09/29 06:03:09 bizenn Exp $
 
-kahua-server [-c conf-file][-user user][-k keyserv] app args
-...
+* kahua-server [-c conf-file] [-k keyserv] app [args ...]
 
-アプリケーションサーバappをスタートするスクリプト。アプリケー
-ションサーバ本体は app/app.kahua に実装されている。
+アプリケーションappをワーカプロセスとして起動するスクリプト。
+ロードされるアプリケーション本体は $(working-directory)/checkout/app/app.kahua
+というスクリプトになる。
 
-通常のオペレーションではkahua-spvrがkahua-serverをspawnするの
-で、ユーザが直接起動する必要はない。
+通常、[[kahua-spvr]] が適切な引数とともに kahua-server を起動、管理するので、
+ユーザが直接起動する必要はない。
 
-kahua-serverは起動されるとサーバソケットを開き、リクエスト待
-ちループに入る。
+kahua-serverは起動されるとサーバソケットを開き、クライアントからのリクエスト
+待ちループに入る。
 
-オプション
+** 起動オプション
 
-conf-fileはkahua-spvrと同じく、設定ファイルのパスを指定する。
+<<<
+ -c conf-file
+    conf-fileには設定ファイルのパスを指定する。通常起動元の[[kahua-spvr]]に
+    指定されたconf-fileが、そのまま引き継がれて指定される。
 
-user はユーザ専用モードで起動している kahua-spvr に接続するた
-めのオプション。ユーザ専用モード参照。
-
-keyservはkahua-keyservのworker id。kahua-spvrはkahua-keyserv
-を立ち上げ、そのidをkahua-serverを起動するたびにこのオプショ
-ン経由で渡す。このオプションが与えられた場合、kahua-serverは
-state session idを指定されたkahua-keyservに保存する。
-
+ -k keyserv
+    keyserv は [[kahua-keyserv]] のワーカID。[[kahua-spvr]] は自らの起動時に
+    まず [[kahua-keyserv]] を起動し、以降 kahua-server を起動する際にこの
+    オプション経由でそのワーカIDを渡す。kahua-server は、セッション情報を
+    保存するために [[kahua-keyserv]] と通信を行う。
+>>>
