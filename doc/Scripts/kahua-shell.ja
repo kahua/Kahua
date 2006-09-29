@@ -1,45 +1,72 @@
-kahua-shell
+;; -*- coding: euc-jp -*-
+;; This document is written in WiLiKi format.
+;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
+;;
+;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: kahua-shell.ja,v 1.2 2006/09/29 06:41:53 bizenn Exp $
 
-kahua-shell [-c conffile] [-user username]
+* kahua-shell [-c conffile]
 
-立ち上がっているkahua-serverに接続し、サンドボックス環境をイ
-ンタラクティブにコントロールするためのスクリプト。
+動作中のワーカプロセス([[kahua-server]])に接続し、アプリケーションが稼働する
+サンドボックス環境に対してインタラクティブに Scheme 式を発行するための
+フロントエンドスクリプト。Kahuaアプリケーション開発者がコマンドラインから
+起動するか、もしくはEmacs内から起動する。
 
-起動すると認証プロンプトが出る。ここでuser.confに登録されてい
-る開発者アカウントの名前とパスワードを入力する。次にワーカー
-(アプリケーション)を選択する。選択するとプロンプトが出る。
+kahua-shellを起動すると、最初に認証プロンプトが出る。[[kahua-admin]] で
+作成、登録した開発者アカウントのユーザ名とパスワードを入力する。次に、
+接続するワーカプロセスを、表示されている一覧からワーカ番号(wno)で選択する。
+選択するとプロンプトが出る。
 
-このプロンプトにS式を書くと接続先のkahua-serverのサンドボック
-ス環境(*.kahuaの環境)で評価される。
+<<<
+ % /usr/local/kahua/bin/kahua-shell
+ Welcome to Kahua.
+ username: taro
+ password: 
+ wno type         since        wid
+   0 kahua-web    Sep 28 16:20 h52:5jxo6
+   1 kahua-web    Sep 28 16:20 h53:5mphi
+   2 kagoiri-musume Sep 28 16:20 h54:eta8
+   3 kagoiri-musume Sep 28 16:20 h55:gpxc
+ select wno> 0
 
-終了するにはEOF (^D) をタイプ。
+ kahua-web(h52:5jxo6)> 
+>>>
 
-オプション
+このプロンプトに対して Scheme 式を入力すると、接続中のワーカプロセス
+([[kahua-server]]) のサンドボックス環境(*.kahuaが実行される環境)内で
+評価される。
 
--c kahua.conf を指定する。
+<<<
+ kahua-web(h52:5jxo6)> (map (cut ref <> 'login-name) (make-kahua-collection <kahua-user>))
+ ("admin" "taro")
+ kahua-web(h52:5jxo6)> 
+>>>
 
--user ユーザ専用モードで起動しているサーバに接続するときに使
-い、ユーザ名を指定する。ここで指定するユーザ名は自分のアカウ
-ントでなければならない。認証時にはここで指定したユーザ名が使
-われ、パスワード入力プロンプトだけが表示される。
+終了するにはEOF(Ctrl-D)をタイプする。
 
-Emacs Lisp の設定
+** 起動オプション
 
-1. Kahua/emacs/ にある kahua.el と kahua-shell.el を Emacs の
-load-path にあるディレクトリに置く。
+<<<
+ -c conf-file
+    設定ファイルのパスを指定する。
+>>>
 
-2. Emacs 起動時にロードしたいなら .emacs に (require 'kahua)
-を記述する。Emacs が起動したあとにロードするなら *scratch* バ
-ッファで(require 'kahua) を実行する。
+** Emacsからkahua-shellを使う。
 
-3. kahua をロードすると 2つのコマンドが使える。
+# Kahuaソースツリーの emacs ディレクトリにある kahua.el と kahua-shell.el を Emacs の
+load-path が通ったディレクトリに置く。
+# Emacs 起動時にロードしたいなら .emacs に ''(require 'kahua)'' を記述する。
+Emacs が起動したあとにロードするなら *scratch* バッファで ''(require 'kahua)''
+を実行する。
+# あらかじめ [[kahua-admin]] や kahua-shell が置かれたディレクトリを
+PATHに追加しておくか、exec-path に追加しておく。
+# kahua.el をロードすると 2つのコマンドが使えるようになる。
+- M-x run-kahua : [[kahua-admin]] を起動する。
+- M-x run-kahua-shell : リモートホストに ssh で接続し
+kahua-shellを起動する。hostnameを聞いてきたところで単にEnterキーを押せば、
+ローカルのkahua-shellを使用する。
 
- ・ M-x run-kahua : kahua-admin を起動し、バッファを Inferior
-    Schemeモードにする。
-
- ・ M-x run-kahua-shell : リモートホストに ssh で接続し
-    kahua-shellを起動する。バッファを Inferior Scheme モード
-    にする。
-
-4. カスタマイズ用変数が用意してある。M-x customize-group
-kahua でデフォルトの接続ホスト名やユーザ名等を設定できる。
+なお、run-kahua-shellの挙動を変更するためのカスタマイズ用変数が用意されており、
+M-x customize-group kahua でデフォルトの接続ホスト名やユーザ名等を設定できる。
