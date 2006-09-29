@@ -5,7 +5,7 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-admin.ja,v 1.5 2006/09/29 05:14:46 bizenn Exp $
+;; $Id: kahua-admin.ja,v 1.6 2006/09/29 05:25:39 bizenn Exp $
 
 * kahua-admin [-c conf-file]
 
@@ -14,9 +14,9 @@
 
 起動すると、まずkahua-spvrに接続する。kahua-spvrに接続中であることを
 表すために、プロンプトとして
-{{{
-spvr>
-}}}
+<<<
+ spvr>
+>>>
 が表示される。
 
 kahua-adminを終了するには、EOF(Ctrl-D)をタイプする。
@@ -25,30 +25,26 @@ kahua-adminを終了するには、EOF(Ctrl-D)をタイプする。
 
 ** 起動オプション
 
-{{{
+<<<
  -c conf-file
-
     参照する設定ファイル名を指定する。デフォルトでは
     $(sysconfdir)/kahua/kahua.conf(Setupの際にconfigureスクリプトに
     なにも指定していなければ、/usr/local/etc/kahua/kahua.conf)を探し
     に行く。以下 $(working-directory) で参照するのは、このファイルで
     :working-directory として指定されている値を指す。
-}}}
+>>>
 
 ** kahua-spvrに対するコマンド
 
 プロンプト"spvr>" に対しては、以下のコマンドを与えることができる。
 
-{{{
+<<<
  help
-
     kahua-spvr で使えるコマンドの一覧を表示する。
 
  ls
-
     その kahua-spvr の配下で稼働しているワーカプロセス(アプリケーション)
     の一覧を表示する。
-
       spvr> ls
       wno   pid type         since        wid
         0 21434 lambdabooks  Sep 27 16:19 gje:2ft3z
@@ -56,56 +52,40 @@ kahua-adminを終了するには、EOF(Ctrl-D)をタイプする。
         2 11683 login        Sep 27 16:19 90j:5hwlk
 
  run <type>
-
     <type>で指定されるタイプのワーカサーバプロセスを新たに1つ起動する。
 
  kill <wno>
  kill <type>
  kill *
-
     指定されたワーカプロセスアプリケーションサーバプロセスを終了させる。
-
     <wno>
-
       lsコマンドが表示する wno 欄の番号を整数で指定する。
-
     <type>
-
       ワーカタイプを指定する。該当するタイプのワーカプロセスは全て終了
       する。
-
     *
-
       全てのワーカプロセスを終了させる。
 
  restart <wno>
  restart <type>
  restart *
-
     指定されるワーカプロセスを再起動する。引数の意味はコマンド kill の
     それと同じ。
 
  connect <wno>
-
     <wno>で指定されるワーカプロセスに接続する。
-
     ワーカプロセスに接続すると、プロンプトがワーカIDに変更される。
-
       spvr> connect 3
       lambdabooks(3v:5u3ni)> 
 
  types
-
     kahua-spvrが知っている(つまり$(working-directory)/app-serversファイルに
     記載されている)ワーカタイプの一覧をリスト形式で出力する。
-
       spvr> types
       (lambdabooks wiki-iki login foldlist lambdacalcul nqueen lazy-nqueen)
-
     この一覧には、今起動していないワーカタイプも含まれる。
 
  reload
-
     $(working-directory)/app-serversファイルを（あれば）再読み込みする。
     この際、app-serversファイル内で :run-by-default が1以上に設定されている
     ワーカタイプについては、その数以上のワーカプロセスが起動しているかどう
@@ -114,28 +94,22 @@ kahua-adminを終了するには、EOF(Ctrl-D)をタイプする。
     を参照。
 
  lsuser
-
     登録された開発者アカウントをリスト形式で一覧表示する。
-
       spvr> lsuser
       ("steel" "sussman" "pochi" "tama")
 
  adduser <name> <password> [<role> ...]
-
     新しい開発者アカウントを作成する。<name>は3文字以上、<password>は4文字
     以上でなければならない。<role>が指定された場合は、アカウント<name>は
     <role>に属した状態で作成される。
 
  deluser <name>
-
     開発者アカウント<name>を削除する。
 
  moduser password <name> <new-password>
-
     開発者<name>のパスワードを<new-password>に変更する。
 
  plugin [<wno>]
-
     <wno>で指定されるワーカプロセスが初期化したプラグインを
     一覧表示する。<wno>を省略した場合は一番小さいワーカ番号
     が使用される。基本的に全てのワーカプロセスは同じプラグイン
@@ -143,33 +117,25 @@ kahua-adminを終了するには、EOF(Ctrl-D)をタイプする。
     ンドを使った場合は変わる可能性がある。
 
  plugin reload <wno>
-
     プラグインを再読み込みし、起動しているアプリケーションの
     プラグイン用モジュールを初期化する。これによって、起動後に
     インストールされたプラグインを読み込むことができる。
 
  shutdown
-
     kahua-spvrを終了させる。kahua-spvr が起動した全てのワーカ
     プロセス、キーサーバもいっしょに終了する。
 
  update <wno> [<file> ...]
  update <type> [<file> ...]
-
     <wno> または <type> で指定したワーカのエントリポイントとなる
     スクリプトを再読み込みする。例えば、指定したワーカのワーカタイプ
     が lambdabooks なら、
-
       $(working-directory)/checkout/lambdabooks/lambdabooks.kahua
-
     を再読み込みする。
-
     <file>を指定した場合には、
-
       $(working-directory)/checkout/<file>
-
     をそのワーカが load する。<file>は複数指定することができる。
-}}}
+>>>
 
 ** ワーカプロセスに対するコマンド
 
@@ -186,7 +152,7 @@ kahua-adminを終了するには、EOF(Ctrl-D)をタイプする。
 プロセスとの接続を切断し、kahua-spvrプロンプトに戻る。
 (spvrのプロンプトが二つ出るのは、disconnectの後のnewlineが
 spvrプロンプトに戻ってから読まれるため)。
-{{{
-lambdabooks(mi0:5xd09)> disconnect
-spvr> spvr> 
-}}}
+<<<
+ lambdabooks(mi0:5xd09)> disconnect
+ spvr> spvr> 
+>>>
