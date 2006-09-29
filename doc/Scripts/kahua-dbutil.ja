@@ -5,7 +5,7 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-dbutil.ja,v 1.2 2006/09/29 04:12:01 bizenn Exp $
+;; $Id: kahua-dbutil.ja,v 1.3 2006/09/29 06:43:41 bizenn Exp $
 
 * kahua-dbutil {check|fix} database-path
 
@@ -18,17 +18,15 @@ KahuaオブジェクトデータベースのRDBMSへの格納方法は、0.5と0.7で
 ベースを使用する場合、まずはこのユーティリティスクリプトを使って
 データベースを修復(変換)する必要がある。
 
-{{{
+<<<
  check
-
     内部カウンタkahua_db_idcountとkahua_db_classcountの整合性および
     削除フラグカラムの有無を調べて標準出力に報告する。修復(変換)は
     行わない。
 
  fix
-
     内部カウンタkahua_db_idcountとkahua_db_classcountの整合性を
     確認し、整合性が取れていない場合は既存のデータ(インスタンス)
     と整合性が取れるように修復を行う。また、削除フラグカラムが
     存在しない場合にはカラムの追加とインデックスの作成を行う。
-}}}
+>>>
