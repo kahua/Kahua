@@ -5,7 +5,7 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-admin.ja,v 1.4 2006/09/29 05:13:04 bizenn Exp $
+;; $Id: kahua-admin.ja,v 1.5 2006/09/29 05:14:46 bizenn Exp $
 
 * kahua-admin [-c conf-file]
 
@@ -33,6 +33,7 @@ kahua-adminを終了するには、EOF(Ctrl-D)をタイプする。
     なにも指定していなければ、/usr/local/etc/kahua/kahua.conf)を探し
     に行く。以下 $(working-directory) で参照するのは、このファイルで
     :working-directory として指定されている値を指す。
+}}}
 
 ** kahua-spvrに対するコマンド
 
