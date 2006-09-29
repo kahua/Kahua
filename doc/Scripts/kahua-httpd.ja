@@ -5,44 +5,34 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-httpd.ja,v 1.2 2006/09/29 04:12:01 bizenn Exp $
+;; $Id: kahua-httpd.ja,v 1.3 2006/09/29 05:52:49 bizenn Exp $
 
-* kahua-httpd [-c conf-file] [--user username] [--runas user:group] [-l logfile] [-t threads] [-p port] host[:port] ...
+* kahua-httpd [-c conf-file] [--runas user:group] [-l logfile] [-t threads] [-p port] host[:port] ...
 
-簡易 HTTPd である。kahua-spvr -H によってkahua-spvr配下で動かすことも、
-単独で起動することも可能である。
+Kahua付属の簡易 HTTPd である。[[kahua-spvr]] に -H オプションをつけて
+[[kahua-spvr]] から起動することも、単独で起動することも可能である。
 
-{{{
- --user ユーザ名
-
-    kahua-httpdを起動するkahua-spvrに--userオプションが指定されていると
-    このオプションを渡してkahua-httpdが起動される。
-
+<<<
  --runas user:group
-
     サーバソケットを開いた後、指定されたuser、groupにそれぞれsetuid(2)、
-    setgid(2)する。特権ポートをlisten(2)する際、root権限が必要となるため、
-    このオプションを指定し、必要な作業を終えた後は権限を落とすことが
-    望ましい。
+    setgid(2)する。このオプションは、WWWの標準ポート(80)のような特権
+    ポートを使用する場合、root権限で起動後してサーバポートを開いた後で
+    root特権を放棄するために使われる。
 
- -l ログファイル名
-
-    ログファイルを指定する。省略した場合は標準エラー出力を使用するが、
-    kahua-spvrから起動された場合は $working-directory/logs/kahua-httpd.log
-    を使用する。
+ -l log-file
+    ログファイルを指定する。単独で起動した場合、このオプションを省略すると
+    標準エラー出力にログを出力するが、[[kahua-spvr]] から起動された場合は
+    $(working-directory)/logs/kahua-httpd.log に出力する。
 
  -t スレッド数
-
     スレッドプールであらかじめ起動するスレッドの数を指定する。デフォルトは10。
 
  -p port
-
     デフォルトでlisten(2)するポート番号を指定する。デフォルトは80。
 
  host[:port]
-
     listen(2)するアドレスとポートを指定する。ポートが省略された場合は
     -pで指定したポートを、それも省略されている場合は80番を使用する。
     hostはIPアドレスもしくは有効なホスト名を指定する。省略した場合は
     0.0.0.0および::(IPv6が有効な場合)を使用する。
-}}}
+>>>
