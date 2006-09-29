@@ -1,7 +1,7 @@
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
-;; $Id: INSTALL,v 1.7 2006/09/28 01:55:25 bizenn Exp $
+;; $Id: INSTALL,v 1.8 2006/09/29 04:11:52 bizenn Exp $
 
 * Setup Kahua
 
@@ -10,10 +10,12 @@
 *** Installing Gauche
 
 To use Kahua, you need Gauche 0.8.7 or later that supports pthread.
-CVS-HEAD version is recomended because critical bug was fixed.
-
+Until release of Gauche 0.8.8, CVS HEAD version is recomended
+because some critical bugs was fixed.
+{{{
 $ gosh -V
 Gauche scheme interpreter, version 0.8.7 [utf-8,pthreads]
+}}}
 
 If you have not installed proper version of Gauche, please install new
 version.
@@ -55,161 +57,195 @@ You will see and use  one of sample application,"lambdabooks".
 
 
 ----
-----
-* Proper Installation procedure
 
-** Short Summary
+** Proper Installation procedure
 
+If you'd like to install Kahua as root into system area,
+you should know about Kahua a little more, and need
+several steps.
+
+*** Users and Processes in Kahua
+
+In Kahua system, there are 3 categories processes,
+they run under different user privilege and communicate with
+each other.
+
+# Kahua Servers(Process: kahua-spvr, kahua-server, kahua-keyserv)
+# Kahua Bridges(Process: kahua.cgi, kahua.fcg, kahua-httpd)
+# Kahua Administrator and Application Developer
+  (Real users use kahua-admin and kahua-user)
+
+All of them must be able to read and write the same UNIX domain
+socket.  And Kahua Servers and Kahua Bridges must be able to
+read and write temporary files under the same directory.
+
+*** Create group "kahua"
+
+You should create a new group, and add all above users to it,
+so that all Kahua processes communicate with each other via
+the same UNIX domain socket.
 {{{
-% ./configure --with-cgidir=$(KAHUA_CGIDIR) \
-  	      --with-cgilogdir=$(KAHUA_CGILOGDIR) \
- 	      --with-staticdir=$(KAHUA_STATICDIR)
+# groupadd kahua
+}}}
+
+Some operating system have some different command to do the
+same task.  Please see your system manuals.
+
+*** Create user "kahua"
+
+You should run Kahua Servers(kahua-spvr and scripts invoked by it)
+under a UNIX user privilege only for them.  Now we assume the user
+is "kahua".
+{{{
+# useradd -g kahua kahua
+}}}
+
+*** Add other users to group "kahua"
+
+Now you should add the user under which Kahua Bridges run and
+Kahua administorators and application developers (they are real users)
+to group "kahua" created above.
+
+Kahua Bridge CGI scripts (kahua.cgi/kahua.fcg) are generally
+invoked by Web server(like Apache httpd or lighttpd).  We assume that
+the Web server runs as user "www" (and you don't use suEXEC).
+{{{
+# usermod -G kahua www
+}}}
+You may restart the Web server to reflect this change.
+
+Kahua administrators and application developers should be added
+to group "kahua" in the same way.
+{{{
+# usermod -G kahua taro
+# usermod -G kahua hanako
+}}}
+and so on.
+
+*** Configuration and building
+
+Kahua is made up of almost pure Scheme(Gauche) scripts and rare shell
+scripts, but you should do configuration carefully.
+
+This is configuration and building process on a real site.
+{{{
+% tar xzvf Kahua-0.7.tgz
+% cd Kahua-0.7
+% ./configure \
+    --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
+    --prefix=/usr/local/kahua \
+    --sysconfdir=/usr/local/etc \
+    --localstatedir=/var/local \
+    --with-cgidir=/var/local/www/cgi-bin \
+    --with-cgilogdir=/var/log/kahua/cgi \
+    --with-staticdir=/var/local/www/htdocs/kahua-data \
+    --with-fastcgi=yes
 % make
+}}}
+You can use GNU make or BSD make.  If you fail with BSD make, Please
+try GNU make and report us what is wrong with BSD make.
+
+**** configure options
+
+Please see message of
+{{{
+% ./configure --help
+}}}
+but we describe some important options.
+{{{
+ --with-kahua-user
+
+     User name under which Kahua Servers run.  Default: not specified.
+
+ --with-kahua-group
+
+     Group name that all users related to Kahua System must belong to.
+     Default: not specified.
+
+ --with-cgi-user
+
+     User name under which Kahua Bridge CGI scripts(kahua.cgi/kahua.fcg)
+     run. Generally it is the same user under which the Web server run.
+     Default: not specified.
+
+ --with-cgidir
+
+     Directory path where Kahua Bridge CGI scripts are installed.
+     It depend on your Web server configuration.
+     Default: ${libexecdir}/kahua
+
+ --with-cgilogdir
+
+     Directory path where Kahua Bridge CGI scripts write log
+     files out.  Default: ${localstatedir}/kahua/cgilog
+
+ --prefix, --exec-prefix, ...
+
+     Configure standard options.  Generally you'd like to set --prefix,
+     --localstatedir, --sysconfdir and so on.  Kahua applications,
+     Kahua databases, log directories are normally deployed under
+     ${localstatedir}/kahua, and the configuration file is
+     ${sysconfdir}/etc/kahua.conf.
+
+ --with-staticdir
+
+     Kahua Servers and kahua-httpd search static contents(image files,
+     CSS files, etc...) under this directory. Default: /var/www/kahua
+
+ --with-fastcgi
+
+     Install kahua.fcg, a Kahua Bridge FastCGI script.  You must
+     install Gauche-fastcgi extension in advance.  Default: no
+}}}
+
+*** Self check
+
+Just do this:
+{{{
 % make check
+}}}
+
+*** Installation
+
+You execute this command as root.
+{{{
 % su
 # make install
-# vi $(CONFFILE)
-# chgrp -R $(KAHUA_GROUP) $(KAHUA_DIRS) $(KAHUA_CGILOGDIR)
-# chmod -R g+ws $(KAHUA_DIRS)
-# chmod 755 $(KAHUA_CGILOGDIR)
-# exit
-% make install-examples
-% vi $(KAHUA_WORK_DIR)/app-servers
-% (kahua-spvr > /dev/null 2>&1) &
 }}}
 
-You have to have $(KAHUA_GROUP) in /etc/group and the user id which will
-run kahua.cgi have to be include in the line.
-
-** Step by step
-
-----
-*** [Step 1] Configuration and make
-
-{{{
-% ./configure --with-cgidir=$(KAHUA_CGIDIR) \
-  	      --with-cgilogdir=$(KAHUA_CGILOGDIR) \
- 	      --with-staticdir=$(KAHUA_STATICDIR)
-% make
-}}}
-
-You need to give a directory name where cgi scripts should be installed
-by --with-cgidir option.  If the option is omitted, $prefix/libexec/kahua
-is used.  But it should differ by your httpd settings, so make sure
-your httpd recognizes the files under that directory as cgi scripts.
-
-Optionally, you can give --with-cgidir=no (or --without-cgidir) to
-prevent 'make' from installing cgi scripts automatically.  In such
-a case, you need to copy scripts under cgi/ manually to the
-desired location.
-
-You need to give also a directory name where cgi scripts should log 
-by --with-cgilogdir option.  If the option is omitted, 
-$prefix/var/kahua/cgilog is used. 
-
-If you want to use FastCGI, you should specify --with-fastcgi option.
-This option makes kahua.fcg script as well as kahua.cgi.
-
-You need to give also a directory name where static document files should be
-installed by --with-staticdir option.  If the option is omitted, 
-/var/www/kahua is used. 
-
-You can run a self test by 'make check'.
-
-  % make check
-
-
-----
-*** [Step 2] Installation
-
-Installation process writes to several locations.   You have to
-have permissions to do so.
-
-{{{
-  $(prefix)/tmp/kahua    : This directory is created for Unix domain sockets
-                           kahua servers will use.  You can specify it
-                           in the kahua.conf file which by default installed
-                           in $(sysconfdir)/kahua
-  $(localstatedir)/kahua : This directory is created for kahua to save various
-                           informations, including database.
-  $(KAHUA_CGIDIR)        : CGI scripts will be copied to the directory
-                           given to --with-cgidir configure option.
-  $(KAHUA_STATICDIR)     : Static document files will be copied to the directory
-                           given to --with-staticdir configure option.
-  $(sysconfdir)/kahua    : kahua.conf will be copied in this location.
-  $(bindir)/kahua        : Kahua commands (shell scripts) will be copied to
-                           this location.
-  $(libexecdir)/kahua    : Kahua executables called by kahua commands will be
-                           copied to this location.
-  $(libdir)/kahua        : Kahua modules will be copied to this location.
-}}}
-
-"make install" will do the job.
-
-
-----
-*** [Step 3] Setting up
-
-Check the file $(sysconfdir)/kahua.conf and edit it if necessary.
-
-During its normal operation, the Kahua system needs to write
-to the following directories:
-
-- socket directory (specified by :sockbase in kahua.conf;
-  the default is $(prefix)/tmp/kahua)
-
-- working directory (specified by :working-directory
-  in kahua.conf; the default is $(localstatedir)/kahua)
-
-- document directory (specified by :static-document-path
-  in kahua.conf; the default is /var/www/kahua)
-  This directory is not created by 'make install'.
-  You need to make sure creating this directory.
-
-The write permissions of these directories should be open
-to the user/group who runs Kahua servers.  One strategy is
-to create a group 'kahua' and chgrp those directories,
-then put the users that adminsters Kahua servers to the
-group.
-
-And the write permissions of the directory where kahua.cgi logs
-should be open group who runs kahua.cgi.  One strategy is
-to make user that runs kahua.cgi belong the kahua group and chgrp
-the directory.
-
-
-----
-*** [Step 4] Running Examples
-
-Run "make install-examples" to install an example application
-servers, "lambdabooks", "wiki-iki", "login", "nqueen" "lazy-nqueen", and
-"lambdacalcul".
-
+If you'd like to install sample applications,
+you should execute this command as a Kahua developer(not root).
 {{{
 % make install-examples
 }}}
-
-Check $(localstatedir)/kahua/app-servers file and make sure
-it contains the following line.  By default, unless you have
-already created app-servers file, "make install-examples"
-copies a sample app-servers file that contains the following
-entry.
-
+And you must fix owner/group of the sample database like this:
 {{{
-(
-  (lambdabooks   :arguments () :run-by-default 1)
-  (wiki-iki      :arguments () :run-by-default 1)
-  (login         :arguments () :run-by-default 1)
-)
+% su
+# chown -R kahua:kahua /usr/local/kahua/var/kahua/db*
+}}}
+You need * tail of above command line.  Don't forget it.
+
+*** Start Kahua Servers
+
+Congratulations!  Now you can start Kahua Servers.
+Kahua Servers should be invoked under "kahua" user privilege.
+{{{
+# su kahua -c ${prefix}/bin/kahua-spvr
+}}}
+This command invoke kahua-spvr, Kahua Supervisor command, and
+it invoke kahua workers(kahua-server) and a key server(kahua-keyserv).
+If you want to use it with Kahua Web Server(kahua-httpd), you
+just do this:
+{{{
+# su kahua -c ${prefix}/bin/kahua-spvr --httpd localhost:8888
+}}}
+If you want that Kahua Servers run as background processes,
+you just do like this:
+{{{
+# su kahua -c "(${prefix}/bin/kahua-spvr >>${localstatedir}/kahua/logs/kahua-error.log 2>&1 &)"
 }}}
 
-And run Kahua main server.
-
-{{{
-% (kahua-spvr > /dev/null 2>&1) &
-}}}
-
-You can access the site via kahua-elua.cgi CGI script from
-your browser, for example, by specifying kahua.cgi/lambdabooks as URI
-to connect to the demo server.
+Kahua System doesn't yet have any mechanism that register their startup
+scripts to operating system.  You must create them by hand, or you can
+use "daemontools" to manage Kahua Servers processes.
 

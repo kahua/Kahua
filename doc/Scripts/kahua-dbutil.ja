@@ -1,23 +1,34 @@
-kahua-dbutil
+;; -*- coding: euc-jp -*-
+;; This document is written in WiLiKi format.
+;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
+;;
+;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: kahua-dbutil.ja,v 1.2 2006/09/29 04:12:01 bizenn Exp $
 
-kahua-dbutil {check|fix} database-name
+* kahua-dbutil {check|fix} database-path
 
 将来的にはKahuaオブジェクトデータベースの整合性チェックと修復、
 データの操作全般を行うユーティリティとなる予定だが、現状では
 データベースの内部カウンタの整合性の確認と修復を行う。
 
-KahuaオブジェクトデータベースのRDBMSへの格納方法は、0.5から変更
-されたため、0.4.1以前で使用していたデータベースを0.5以降で使用す
-る場合、まずは個のユーティリティスクリプトを使ってデータベースを
-修復(変換)する必要がある。
+KahuaオブジェクトデータベースのRDBMSへの格納方法は、0.5と0.7で
+変更されたため、それ以前のバージョンのKahuaで使用していたデータ
+ベースを使用する場合、まずはこのユーティリティスクリプトを使って
+データベースを修復(変換)する必要がある。
 
-check
-内部カウンタkahua_db_idcountとkahua_db_classcountの整合性が
-取れているかどうかを確認して結果を標準出力に表示する。修復は
-行わない。
+{{{
+ check
 
-fix
-内部カウンタkahua_db_idcountとkahua_db_classcountの整合性を
-確認し、整合性が取れていない場合は既存のデータ(インスタンス)
-と整合性が取れるように修復を行う。0.4.1以前のデータベース形式
-を0.5以降の形に変換するのにもこのコマンドを使用する。
+    内部カウンタkahua_db_idcountとkahua_db_classcountの整合性および
+    削除フラグカラムの有無を調べて標準出力に報告する。修復(変換)は
+    行わない。
+
+ fix
+
+    内部カウンタkahua_db_idcountとkahua_db_classcountの整合性を
+    確認し、整合性が取れていない場合は既存のデータ(インスタンス)
+    と整合性が取れるように修復を行う。また、削除フラグカラムが
+    存在しない場合にはカラムの追加とインデックスの作成を行う。
+}}}

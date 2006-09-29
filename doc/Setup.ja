@@ -3,10 +3,12 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: Setup.ja,v 1.12 2006/09/28 07:01:52 bizenn Exp $
+;; $Id: Setup.ja,v 1.13 2006/09/29 04:12:01 bizenn Exp $
 
 * Kahuaをセットアップする
 
+
+##(toc)
 
 ** 準備
 
@@ -225,8 +227,6 @@ configureのオプションの詳細については、
 % su
 # make install
 }}}
-
-*** サンプルアプリケーションのインストール
 
 サンプルアプリケーションをインストールする際は root ではなく、Kahua
 管理者/開発者の権限で行います。
