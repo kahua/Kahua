@@ -1,165 +1,190 @@
-kahua-admin
+;; -*- coding: euc-jp -*-
+;; This document is written in WiLiKi format.
+;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
+;;
+;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: kahua-admin.ja,v 1.2 2006/09/29 05:02:38 bizenn Exp $
 
-kahua-admin [-c conf-file] [-user username]
+* kahua-admin [-c conf-file]
 
-立ち上がっているkahua-spvrおよびアプリケーションサーバをイン
-タラクティブにコントロールするためのスクリプト。
+動作中のスーパバイザ(kahua-spvr)およびワーカプロセス(アプリケーション)を
+インタラクティブに制御するためのフロントエンドスクリプト。
 
-起動するとまずkahua-spvrに接続し、プロンプト"spvr>"が出る。終
-了するにはEOF (^D) をタイプ。
+起動すると、まずkahua-spvrに接続する。kahua-spvrに接続中であることを
+表すために、プロンプトとして
+{{{
+spvr>
+}}}
+が表示される。
+
+kahua-adminを終了するには、EOF(Ctrl-D)をタイプする。
 
 プロンプトは、現在接続中の相手に応じて変化する。
 
-オプション
+** 起動オプション
 
 -c conf-file
 
-conf-fileは設定ファイル名を指定する。デフォルトでは
-$sysconfdir/kahua/kahua.conf(Setupの際にconfigureスクリプトに
-なにも指定しなければ、/usr/local/etc/kahua/kahua.conf)を探し
-に行くが、無かったら適当なデフォルト値を使うので別にファイル
-が無くても良い。以下 $(working-directory) で参照するのは、こ
-のファイルで指定した working-directory のこと。
+参照する設定ファイル名を指定する。デフォルトでは
+$(sysconfdir)/kahua/kahua.conf(Setupの際にconfigureスクリプトに
+なにも指定していなければ、/usr/local/etc/kahua/kahua.conf)を探し
+に行く。以下 $(working-directory) で参照するのは、このファイルで
+:working-directory として指定されている値を指す。
 
--user ユーザ名
+** kahua-spvrに対するコマンド
 
-ユーザ専用モードで起動している kahua-spvr に接続するためのオ
-プション。ユーザ専用モード参照。
+プロンプト"spvr>" に対しては、以下のコマンドを与えることができる。
 
-kahua-spvrに対するコマンド
+{{{
+ help
 
-プロンプト"spvr>" に対しては、次のコマンドを与えることができ
-る。
+    kahua-spvr で使えるコマンドの一覧を表示する。
 
-help
+ ls
 
-kahua-spvr で使えるコマンドの一覧を表示する。
+    その kahua-spvr の配下で稼働しているワーカプロセス(アプリケーション)
+    の一覧を表示する。
 
-ls
+      spvr> ls
+      wno   pid type         since        wid
+        0 21434 lambdabooks  Sep 27 16:19 gje:2ft3z
+        1 17371 wiki-iki     Sep 27 16:19 dej:inai
+        2 11683 login        Sep 27 16:19 90j:5hwlk
 
-kahua-spvrが立ち上げているアプリケーションサーバのリストを表
-示する。
+ run <type>
 
-spvr> ls
-wno   pid type         since        wid
-  0 13188 lambdabooks  Jan 23 13:32 lambdabooks:a6c:3357v
-  1 13189 wiki-iki     Jan 23 13:32 wiki-iki:a6d:1l51q
- 40 10553 kahua-web    Jan 25 04:36 kahua-web:855:t9ee
+    <type>で指定されるタイプのワーカサーバプロセスを新たに1つ起動する。
 
-run type
+ kill <wno>
+ kill <type>
+ kill *
 
-typeで指定されるタイプのアプリケーションサーバプロセスを新た
-に走らせる。
+    指定されたワーカプロセスアプリケーションサーバプロセスを終了させる。
 
-kill number | kill type | kill *
+    <wno>
 
-指定されるアプリケーションサーバプロセスを終了させる。
+      lsコマンドが表示する wno 欄の番号を整数で指定する。
 
-number
+    <type>
 
-    lsコマンドで表示されるwnoの欄の番号を整数で指定。
+      ワーカタイプを指定する。該当するタイプのワーカプロセスは全て終了
+      する。
 
-type
+    *
 
-    タイプを指定。該当するタイプのアプリケーションサーバプロ
-    セスは全てkillされる。
+      全てのワーカプロセスを終了させる。
 
-*
+ restart <wno>
+ restart <type>
+ restart *
 
-    全てのアプリケーションサーバプロセスを終了させる。
+    指定されるワーカプロセスを再起動する。引数の意味はコマンド kill の
+    それと同じ。
 
-restart number | restart type | restart *
+ connect <wno>
 
-指定されるアプリケーションサーバプロセスを再起動する。引数の
-意味はkillと同じ。
+    <wno>で指定されるワーカプロセスに接続する。
 
-connect wno
+    ワーカプロセスに接続すると、プロンプトがワーカIDに変更される。
 
-wnoで指定されるアプリケーションサーバに接続する。wnoは lsコマ
-ンドの第一カラムに示される番号。
+      spvr> connect 3
+      lambdabooks(3v:5u3ni)> 
 
-アプリケーションサーバに接続すると、プロンプトがアプリケーシ
-ョンサーバIDに変わる。
+ types
 
-spvr> connect 1
-ekahi:20554:7161209>
+    kahua-spvrが知っている(つまり$(working-directory)/app-serversファイルに
+    記載されている)ワーカタイプの一覧をリスト形式で出力する。
 
-types
+      spvr> types
+      (lambdabooks wiki-iki login foldlist lambdacalcul nqueen lazy-nqueen)
 
-kahua-spvrが知っているアプリケーションサーバのタイプのリスト
-を表示する。
+    この一覧には、今起動していないワーカタイプも含まれる。
 
-reload
+ reload
 
-$(working-directory)/app-serversファイルを（あれば）再読み込
-みする。 app-serversファイルに関してはkahua-spvr参照。
+    $(working-directory)/app-serversファイルを（あれば）再読み込みする。
+    この際、app-serversファイル内で :run-by-default が1以上に設定されている
+    ワーカタイプについては、その数以上のワーカプロセスが起動しているかどう
+    かを確認し、起動しているワーカプロセス数が少ない場合は、足りない分の
+    プロセスを新たに起動する。app-serversファイルについては[[kahua-spvr]]
+    を参照。
 
-:run-by-default で指定したサーバ数以上のサーバプロセスを起動
-する。
+ lsuser
 
-lsuser
+    登録された開発者アカウントをリスト形式で一覧表示する。
 
-登録された開発者アカウントを表示する。
+      spvr> lsuser
+      ("steel" "sussman" "pochi" "tama")
 
-adduser name password [role] ...
+ adduser <name> <password> [<role> ...]
 
-新しい開発者アカウントを登録する。nameは3文字以上、passwordは
-4文字以上入力しなければならない。
+    新しい開発者アカウントを作成する。<name>は3文字以上、<password>は4文字
+    以上でなければならない。<role>が指定された場合は、アカウント<name>は
+    <role>に属した状態で作成される。
 
-deluser name
+ deluser <name>
 
-開発者nameのアカウントを削除する。
+    開発者アカウント<name>を削除する。
 
-moduser password name new-password
+ moduser password <name> <new-password>
 
-開発者nameのパスワードを変更する。
+    開発者<name>のパスワードを<new-password>に変更する。
 
-plugin [wno]
+ plugin [<wno>]
 
-起動しているアプリケーションの初期化したプラグインを一覧表示
-する。wnoには ls で表示される wno 番号を指定する。指定しない
-場合は wno の一番小さいものが使われる。ほとんどの場合、どのア
-プリケーションでも初期化されているプラグインは同じであるが、
-次に説明する reload を使った場合は変わる可能性がある。
+    <wno>で指定されるワーカプロセスが初期化したプラグインを
+    一覧表示する。<wno>を省略した場合は一番小さいワーカ番号
+    が使用される。基本的に全てのワーカプロセスは同じプラグイン
+    を初期化しているはずだが、次に説明する reload plugin コマ
+    ンドを使った場合は変わる可能性がある。
 
-plugin reload wno
+ plugin reload <wno>
 
-プラグインを再読み込みし、起動しているアプリケーションのプラ
-グイン用モジュールを初期化する。これによって、起動後にインス
-トールされたプラグインを読み込むことができる。
+    プラグインを再読み込みし、起動しているアプリケーションの
+    プラグイン用モジュールを初期化する。これによって、起動後に
+    インストールされたプラグインを読み込むことができる。
 
-wno には ls で表示される wno 番号を指定する。
+ shutdown
 
-shutdown
+    kahua-spvrを終了させる。kahua-spvr が起動した全てのワーカ
+    プロセス、キーサーバもいっしょに終了する。
 
-kahua-spvrを終了させる。kahua-spvr配下のアプリケーションサー
-バも全て終了する。
+ update <wno> [<file> ...]
+ update <type> [<file> ...]
 
-update wno or wtype . files
+    <wno> または <type> で指定したワーカのエントリポイントとなる
+    スクリプトを再読み込みする。例えば、指定したワーカのワーカタイプ
+    が lambdabooks なら、
 
-wno または wtype で指定したサーバ（typeとする）のスクリプトを
-再読み込みする。具体的には、
-$(working-directory)/checkout/type/type.kahua を再読み込みす
-る。
+      $(working-directory)/checkout/lambdabooks/lambdabooks.kahua
 
-files が指定してあった場合、
-$(working-directory)/checkout/file, ... をそのサーバが load
-する。
+    を再読み込みする。
 
-アプリケーションサーバに対するコマンド
+    <file>を指定した場合には、
 
-アプリケーションサーバに対しては、通常のScheme repl
-(read-eval-print-loop) のように使うことができる。プロンプトに
-対してタイプしたS式はアプリケーションサーバに送られ、そこで
-evalされた結果が表示される。
+      $(working-directory)/checkout/<file>
 
-式が評価されるモジュールはアプリケーションサーバの作り方によ
-って異なる。デフォルトではuserモジュール。
+    をそのワーカが load する。<file>は複数指定することができる。
+}}}
 
-唯一の特殊コマンドは"disconnect" で、これをタイプすると
-kahua-spvrプロンプトに戻る。(spvrのプロンプトが二つ出るのは、
-disconnectの後のnewlineが spvrプロンプトに戻ってから読まれる
-ため)。
+ワーカプロセスに対するコマンド
 
-lambdabooks:20554:7161209> disconnect
-spvr> spvr>
+前述した connect コマンドを使ってワーカプロセスに接続すると、
+そのワーカプロセスに通常の Scheme 式を評価させることができる。
+つまり、プロンプトに対して Scheme 式を入力すると、その式は
+ワーカプロセスに送信され、通常の repl (read-eval-print-loop)
+同様に評価した値がワーカから送り返されて表示される。
+
+式が評価されるモジュールはアプリケーションの作りによって異なるが、
+デフォルトでは user モジュールとなる。
+
+唯一の特殊コマンドは"disconnect" で、これをタイプするとワーカ
+プロセスとの接続を切断し、kahua-spvrプロンプトに戻る。
+(spvrのプロンプトが二つ出るのは、disconnectの後のnewlineが
+spvrプロンプトに戻ってから読まれるため)。
+{{{
+lambdabooks(mi0:5xd09)> disconnect
+spvr> spvr> 
+}}}
