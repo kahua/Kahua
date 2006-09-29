@@ -1,41 +1,45 @@
-kahua-install
+;; -*- coding: euc-jp -*-
+;; This document is written in WiLiKi format.
+;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
+;;
+;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: kahua-install.ja,v 1.2 2006/09/29 06:19:12 bizenn Exp $
 
-kahua-install [-c conf-file][-U][-t material-type][-r
-rename][--no-overwrite] file ...
+* kahua-install [-c conf-file] [-U] [-t material-type] [-r rename] [--no-overwrite] file [...]
 
-Kahuaのアプリケーションサーバ関連のマテリアルを、現在のコンフ
-ィグレーションに従った箇所にインストールするためのスクリプ
-ト。
+file を現在の設定ファイルの内容に従った箇所にKahuaアプリケーションの
+マテリアルとしてインストールするためのスクリプト。
 
-conf-file にはkahua-spvr等と共通のコンフィグレーションファイ
-ルを指定する (kahua.config参照)。
+<<<
+ -c conf-file
+    conf-fileは [[kahua-spvr]] などと共通の設定ファイルのパスを指定する
+    ([[../Modules/kahua.config]]参照)。
 
-material-type には、"static", "script", "base", "plugin" のい
-ずれかを指定する。
+ -t material-type
+    material-type には、"static", "script", "base", "plugin" のいずれかを
+    指定する。
+      static
+        file は設定ファイルで指定される static-document-path 以下にイン
+        ストールされる
+      script
+        fileは設定ファイルで指定される $(working-directory)/checkout の
+	下にインストールされる
+      base
+        fileは$(working-directory)直下にインストールされる
+      plugin
+        fileは$(working-directory)/plugins にインストールされる
 
-static
+ -r rename
+    オプションが与えられると、インストールされたファイル名が"'rename''へ
+    と変更される。
 
-    file はコンフィグレーションで指定される
-    static-document-path以下にインストールされる
+ --no-overwrite
+    このオプションが与えられている場合、既に指定のファイルが指定の場所に
+    存在する場合はインストールを行わない。
 
-script
-
-    fileはコンフィグレーションで指定される
-    $(working-directory)/checkout 以下にインストールされる
-
-base
-
-    fileは$(working-directory)直下にインストールされる
-
-plugin
-
-    fileは$(working-directory)/plugins にインストールされる
-
--r rename オプションが与えられると、インストールされたファイ
-ル名が"'rename''へと変更される。
-
---no-overwriteオプションが与えられている場合、既に指定のファ
-イルが指定の場所に存在すれば、インストールを行わない。
-
--U オプション(uninstall)が指定された場合、既にインストールさ
-れているファイルを取り除く。
+ -U
+    このオプションが指定された場合、既にインストールされているファイルを
+    取り除く。
+>>>
