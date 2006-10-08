@@ -19,6 +19,11 @@
 	    <site-bundle-root>/static/
 	    <site-bundle-root>/tmp/
 
+	  All command scripts recognize -S <path-to-site> command line option,
+	  and if -S option not specified and environment variable
+	  "KAHUA_DEFAULT_SITE" exists, the command use value of "KAHUA_DEFAULT_SITE"
+	  as site bundle path.
+
 2006-09-29  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 0.7 released.
