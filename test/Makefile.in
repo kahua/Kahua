@@ -31,7 +31,7 @@ SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
 	spvr.scm httpd.scm test-xml.scm user.scm wiki-iki.scm \
 	worker.scm query.scm rollback.scm entry-method.scm redirectcont.scm
 
-SCMFILES2 = shell.scm usermode.scm
+SCMFILES2 = shell.scm
 
 KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
 	hello-world-st.kahua hello-world.kahua lister-st.kahua lister.kahua \
@@ -141,9 +141,6 @@ developer:
 
 shell:
 	@gosh -I../src ./shell.scm >> test.log
-
-usermode:
-	@gosh -I../src ./usermode.scm >> test.log
 
 sandbox:
 	@gosh -I../src ./sandbox.scm >> test.log

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.24 2006/10/08 06:00:12 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.25 2006/10/08 07:13:27 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -793,7 +793,6 @@
        (listener  "i|interactive")
        (sockbase  "s|sockbase=s")  ;; overrides conf file settings
        (logfile   "l|logfile=s")  ;; overrides conf file settings
-       (user      "user=s")
        (gosh      "gosh=s")  ;; wrapper script adds this.
        (httpd     "H|httpd=s") ;; standalone httpd mode
        (help      "h|help" => usage)
@@ -803,8 +802,8 @@
                                         ; always the first one, since the
                                         ; wrapper script adds it.
       ;; initialization
-      (kahua-common-init site conf-file user) ; this must come after getting lib-path
-					      ; since kahua-init adds to *load-path*
+      (kahua-common-init site conf-file) ; this must come after getting lib-path
+					 ; since kahua-init adds to *load-path*
       (when sockbase (set! (kahua-sockbase) sockbase))
       (write-pid-file (kahua-spvr-pidpath))
       (cond ((equal? logfile "-") (log-open #t :prefix "~Y ~T ~P[~$]: "))

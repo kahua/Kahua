@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-config.scm,v 1.4 2006/10/08 06:00:12 bizenn Exp $
+;; $Id: kahua-config.scm,v 1.5 2006/10/08 07:13:27 bizenn Exp $
 (use gauche.parseopt)
 (use kahua.config)
 
@@ -17,7 +17,7 @@
        (conf-file "c=s")
        (gosh      "gosh=s")
        (help      "h|help" => usage) . args)
-    (kahua-common-init site conf-file #f)
+    (kahua-common-init site conf-file)
     (let* ((conf (kahua-config))
 	   (klass (class-of conf))
 	   (slots (map car (ref klass 'slots)))

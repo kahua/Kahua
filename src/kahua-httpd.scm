@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.13 2006/10/08 06:00:12 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.14 2006/10/08 07:13:27 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -428,8 +428,7 @@ Options:
 " (current-error-port))
     (exit 1))
   (let-args (cdr args)
-      ((user      "user=s")
-       (gosh      "gosh=s")		; DUMMY, not used.
+      ((gosh      "gosh=s")		; DUMMY, not used.
        (runas     "runas=s")
        (site      "S|site=s")
        (conf-file "c|conf-file=s")
@@ -439,7 +438,7 @@ Options:
        (help      "h|help" => usage)
        (else _ (error "Unknown option.  Try --help for the usage."))
        . hosts)
-    (kahua-common-init site conf-file user)
+    (kahua-common-init site conf-file)
     (log-open logfile :prefix log-prefix)
     (log-format "Start with ~d threads" thnum)
     (for-each (pa$ log-format  "listen: ~s") hosts)

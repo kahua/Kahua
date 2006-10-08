@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-install.scm,v 1.4 2006/10/08 06:00:12 bizenn Exp $
+;; $Id: kahua-install.scm,v 1.5 2006/10/08 07:13:27 bizenn Exp $
 
 ;; Installs Kahua's application server materials according to
 ;; the kahua.conf configuration settings.
@@ -41,7 +41,7 @@
     (unless (member material-type
                     '("script" "static" "base" "plugin")) (usage))
     (when (and rename (not (= (length files) 1))) (usage))
-    (kahua-common-init site conf-file #f)
+    (kahua-common-init site conf-file)
     (if dirs?
       (install-dirs uninstall?)
       (if uninstall?

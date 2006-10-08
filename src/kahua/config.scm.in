@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm.in,v 1.12 2006/10/08 06:00:16 bizenn Exp $
+;; $Id: config.scm.in,v 1.13 2006/10/08 07:13:27 bizenn Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -211,15 +211,12 @@
 ;; kahua-init [conf-file] [skip-check?]
 ;; if "skip-check?" is #t, read kahua.conf only(not check 
 (define (kahua-init cfile . args)
-  (let-keywords* args
-      ((user #f)
-       (skip-check? #f))
+  (let-keywords* args ((skip-check? #f))
     (let1 cfile (or cfile *kahua-conf-default*)
       (if (file-is-readable? cfile)
 	  (let1 c (kahua-config)
 	    (initialize c (list* :config-file cfile (or (read-config cfile) '())))
 	    ;; Deprecated...
-	    (when user (kahua-custom-init user))
 	    (unless skip-check? (sanity-check c)))
 	  (errorf "configuration file ~a is not readable." cfile))))
   ;; Include working directory to *load-path*.
@@ -227,28 +224,6 @@
   ;; work at compile time.
   (push! *load-path* (kahua-application-directory))
   (kahua-config))
-
-;; Now deprecated
-(define (kahua-custom-init user)
-  (let* ((custom-file
-	  (build-path (kahua-working-directory) "user" user "custom.conf"))
-	 (kahua-custom (eval (call-with-input-file custom-file read)
-			     (find-module 'kahua.config)))
-	 (sockbase (build-path (kahua-sockbase) "user" user)))
-    (slot-set! kahua-custom 'sockbase sockbase)
-    (slot-set! kahua-custom 'user-mode user)
-    (for-each (lambda (s) (set! (ref (kahua-config) s) (ref kahua-custom s)))
-	      '(sockbase
-		user-mode
-		working-directory
-		static-document-path
-		static-document-url
-		timeout-mins
-		ping-timeout-sec
-		ping-interval-sec
-		auto-restart
-		secure-sandbox
-		spvr-concurrency))))
 
 ;; Accessor functions
 
@@ -442,10 +417,10 @@
       (push! *load-path* (kahua-application-directory))
       c)))
 
-(define (kahua-common-init site conf-file user)
+(define (kahua-common-init site conf-file)
   (or (and-let* ((site (or site (sys-getenv "KAHUA_DEFAULT_SITE"))))
 	(kahua-site-init site))
-      (kahua-init conf-file :user user)))
+      (kahua-init conf-file)))
 
 (provide "kahua/config")
 

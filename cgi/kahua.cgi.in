@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.42 2006/09/07 08:28:58 bizenn Exp $
+;; $Id: kahua.cgi.in,v 1.43 2006/10/08 07:13:27 bizenn Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -30,8 +30,6 @@
 (use www.cgi)
 (use util.list)
 (use rfc.cookie)
-(use rfc.base64)
-(use rfc.sha1)
 (use text.tree)
 (use text.html-lite)
 (use kahua.util)
@@ -97,25 +95,15 @@
 	      (assoc-set! header "content-type" *default-content-type*))
 	  body)))
 
-;; load kahua.conf with "user" argument when PATH_INFO has ~user component.
-(define (load-user-config user-dir)
-  ;; use default kahua conf file.
-  (kahua-init #f :user (string-drop user-dir 1))
-  (set! *bridge-option* (string-append "/" user-dir))
-;  (set! *sockbase* (ref (kahua-config) 'sockbase))
-  )
-
 ;; retrieve PATH_INFO, with processing ~user component.
 ;; returns #f if there's no PATH_INFO.
 (define (get-path-info)
   (and-let* ((p (cgi-get-metavariable "PATH_INFO"))
-             (l (cdr (string-split p #\/))))
-    (when (and (pair? l) (#/^~.+/ (car l)))
-      (load-user-config (car l))
-      (set! l (cdr l)))
-    (and (pair? l)
-         (not (equal? (car l) ""))
-         (filter (compose not string-null?) l))))
+             (l (cdr (string-split p #\/)))
+	     ((pair? l))
+	     (string-not-null? (compose not string-null?))
+	     ((string-not-null? (car l))))
+    (filter string-not-null? l)))
 
 ;; determine dispatch destination.
 ;; returns: (worker-type cont-gsid path-info)
@@ -214,7 +202,7 @@
       (send-http-header out (car sexp))
       (display "\r\n" out)
       (send-http-body out (cgi-output-character-encoding) (cadr sexp))))
-  (kahua-init #f)
+  (kahua-common-init #f #f)
   (log-open *LOG-PATH* :prefix *LOG-PREFIX*)
   (call/cc
    (lambda (bye)

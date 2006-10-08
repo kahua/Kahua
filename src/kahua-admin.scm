@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.scm,v 1.6 2006/10/08 06:00:12 bizenn Exp $
+;; $Id: kahua-admin.scm,v 1.7 2006/10/08 07:13:27 bizenn Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -258,13 +258,12 @@
   (let-args (cdr args)
       ((site "S=s")
        (conf-file "c=s")
-       (user      "user=s")
        (gosh      "gosh=s")  ;; wrapper script adds this.  ignore.
        (help      "h|help" => (cut usage))
        . args)
     (set-signal-handler! SIGINT  (lambda _ (exit 0)))
     (set-signal-handler! SIGTERM (lambda _ (exit 0)))
-    (kahua-common-init site conf-file user)
+    (kahua-common-init site conf-file)
     (cond
      ((null? args) ;; interactive mode
       (let loop ((command-processor spvr-command-processor))
@@ -275,7 +274,7 @@
       (exit 0)))))
 
 (define (usage)
-  (print "kahua-admin [-S=site] [-c=conf-file] [-user=user] [command ...]")
+  (print "kahua-admin [-S=site] [-c=conf-file] [command ...]")
   (exit 0))
 
 ;; Local variables:
