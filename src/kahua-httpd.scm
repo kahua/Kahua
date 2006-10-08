@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.12 2006/10/08 01:36:16 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.13 2006/10/08 06:00:12 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -439,9 +439,7 @@ Options:
        (help      "h|help" => usage)
        (else _ (error "Unknown option.  Try --help for the usage."))
        . hosts)
-    (if site
-	(kahua-site-init site)
-	(kahua-init conf-file :user user))
+    (kahua-common-init site conf-file user)
     (log-open logfile :prefix log-prefix)
     (log-format "Start with ~d threads" thnum)
     (for-each (pa$ log-format  "listen: ~s") hosts)

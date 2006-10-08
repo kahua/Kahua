@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.19 2006/10/08 01:36:16 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.20 2006/10/08 06:00:12 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -213,9 +213,7 @@
     (unless (pair? mods)
       (error "usage: kahua-server [-S <site>] [-c <conf>] [-user <user>] [-k <keyserv-id>] [-default-db <default-db-path>] [-profile <profile-out>] <app-server> <args> ..." mods))
     (set! *kahua-top-module* (car mods))
-    (if site
-	(kahua-site-init site)
-	(kahua-init conf-file :user user))
+    (kahua-common-init site conf-file user)
     (set! kahua-app-server (kahua-application-environment))
     (primary-database-name db)
     (initialize-plugins)

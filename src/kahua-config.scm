@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-config.scm,v 1.3 2006/10/08 01:36:16 bizenn Exp $
+;; $Id: kahua-config.scm,v 1.4 2006/10/08 06:00:12 bizenn Exp $
 (use gauche.parseopt)
 (use kahua.config)
 
@@ -16,11 +16,8 @@
       ((site "S=s")
        (conf-file "c=s")
        (gosh      "gosh=s")
-       (help      "h|help"))
-    (if site
-	(kahua-site-init site)
-	(kahua-init conf-file))
-    (when help (usage))
+       (help      "h|help" => usage) . args)
+    (kahua-common-init site conf-file #f)
     (let* ((conf (kahua-config))
 	   (klass (class-of conf))
 	   (slots (map car (ref klass 'slots)))
@@ -28,13 +25,14 @@
 			(string-length (x->string s)))
 		      slots))
 	   (max-len (apply max lens)))
-      (cond ((null? (cdddr args))
+      (cond ((null? args)
 	     (for-each (lambda (slot len)
 			 (format #t "~a:" slot)
 			 (display (make-string (- (+ max-len 4) len) #\sp))
 			 (format #t "~a~%" (ref conf slot)))
 		       slots lens))
-	    (else (let1 slot (string->symbol (cadddr args))
+	    (else
+	     (let1 slot (string->symbol (car args))
 		    (format #t "~a~%" (ref conf slot))))))))
 
 (define (usage conf-file)

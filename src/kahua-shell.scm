@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-shell.scm,v 1.5 2006/10/08 01:36:16 bizenn Exp $
+;; $Id: kahua-shell.scm,v 1.6 2006/10/08 06:00:12 bizenn Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -170,9 +170,7 @@
     (set-signal-handler! SIGINT  (lambda _ (exit 0)))
     (set-signal-handler! SIGHUP  (lambda _ (exit 0)))
     (set-signal-handler! SIGTERM (lambda _ (exit 0)))
-    (if site
-	(kahua-site-init site)
-	(kahua-init conf-file :user user))
+    (kahua-common-init site conf-file user)
     (let loop ((command-processor login-processor))
       (loop (command-processor)))))
 

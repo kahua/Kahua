@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.5 2006/10/08 01:36:16 bizenn Exp $
+;; $Id: kahua-package.scm,v 1.6 2006/10/08 06:00:12 bizenn Exp $
 (use srfi-13)
 
 (use file.util)
@@ -165,7 +165,7 @@
 
 (define (dispatch-command cmd . args)
   (cond ((assoc cmd *command-table*) => (lambda (e) ((cadr e) args)))
-	(else (usage (cons cmd args)))))
+	(else (usage))))
 
 (define (main args)
   (let-args (cdr args) ((conf-file "c|conf-file=s")
@@ -173,13 +173,12 @@
 		  (gosh "gosh=s")
 		  . restargs)
     (if (< (length restargs) 2)
-	(usage restargs)
+	(usage)
 	(apply dispatch-command restargs))))
 
-(define (usage args)
+(define (usage)
   (with-output-to-port (current-error-port)
     (lambda ()
-      (format #t "~s\n" args)
       (display "Usage: kahua-package <command> [<options>] <args>...\n")
       (display "Commans:\n")
       (for-each (lambda (e) (format #t "  ~a\n" (list-ref e 2))) *command-table*)))

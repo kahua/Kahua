@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.23 2006/10/08 01:36:16 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.24 2006/10/08 06:00:12 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -803,10 +803,8 @@
                                         ; always the first one, since the
                                         ; wrapper script adds it.
       ;; initialization
-      (if site
-	  (kahua-site-init site)
-	  (kahua-init conf-file :user user)) ; this must come after getting lib-path
-                                             ; since kahua-init adds to *load-path*
+      (kahua-common-init site conf-file user) ; this must come after getting lib-path
+					      ; since kahua-init adds to *load-path*
       (when sockbase (set! (kahua-sockbase) sockbase))
       (write-pid-file (kahua-spvr-pidpath))
       (cond ((equal? logfile "-") (log-open #t :prefix "~Y ~T ~P[~$]: "))

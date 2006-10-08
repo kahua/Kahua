@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.7 2006/10/08 01:36:16 bizenn Exp $
+;; $Id: util.scm,v 1.8 2006/10/08 06:00:16 bizenn Exp $
 
 ;; This module contains generally useful routines, which don't belong to
 ;; a particular module.
@@ -16,6 +16,8 @@
   (use util.list)
   (use gauche.collection)
   (use gauche.sequence)
+  (use gauche.parseopt)
+  (use kahua.config)
   (export kahua-error-string
 	  <kahua-error>
 	  kahua-error?
