@@ -1,5 +1,7 @@
 2006-10-08  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Drop cvs command support from kahua-admin command.
+
 	* Drop user mode support.
 	  You should use site bundle support instead of it.
 

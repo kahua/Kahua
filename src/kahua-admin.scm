@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.scm,v 1.7 2006/10/08 07:13:27 bizenn Exp $
+;; $Id: kahua-admin.scm,v 1.8 2006/10/08 07:32:11 bizenn Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -42,9 +42,7 @@
   (case (car cmd)
     ((help)
      (let ((spvr-help (send-command #f cmd))
-           (admin-help '(connect cvs
-                                 adduser deluser lsuser moduser
-                                 plugin)))
+           (admin-help '(connect adduser deluser lsuser moduser plugin)))
        (write (append spvr-help admin-help)) (newline)
        spvr-command-processor))
     ((connect)
