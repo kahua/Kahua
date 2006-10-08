@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.6 2006/09/21 08:52:36 bizenn Exp $
+;; $Id: util.scm,v 1.7 2006/10/08 01:36:16 bizenn Exp $
 
 ;; This module contains generally useful routines, which don't belong to
 ;; a particular module.
@@ -27,7 +27,11 @@
 	  http-date->date
 	  time->rfc1123-string
 	  date->rfc1123-string
-	  setuidgid!))
+	  setuidgid!
+	  write-pid-file
+	  read-pid-file
+	  check-pid
+	  ))
 (select-module kahua.util)
 
 (define-condition-type <kahua-error> <error> kahua-error?)
@@ -144,5 +148,20 @@
 			(ref pw 'gid))))
       (sys-setgid gid)
       (sys-setuid uid))))
+
+(define (check-pid pid)
+  (guard (e (else #f))
+    (sys-kill pid 0)
+    #t))
+
+(define (read-pid-file path)
+  (with-input-from-file path read :if-does-not-exist #f))
+
+(define (write-pid-file path)
+  (and-let* ((pid (read-pid-file path)))
+    (when (check-pid pid)
+      (error <kahua-error> :message (format "Process #~d on PID file ~s" pid path)))
+    (sys-unlink path))
+  (with-output-to-file path (cut write (sys-getpid)) :if-exists :error))
 
 (provide "kahua/util")

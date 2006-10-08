@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.6 2006/07/28 13:09:43 bizenn Exp $
+;; $Id: kahua-keyserv.scm,v 1.7 2006/10/08 01:36:16 bizenn Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -57,12 +57,13 @@
 (define *default-sigmask* #f)
 
 (define (main args)
-  (let-args (cdr args) ((conf-file "c=s")
+  (let-args (cdr args) ((site "S=s")
+			(conf-file "c=s")
                         (user "user=s"))
-    (kahua-init conf-file :user user)
-    (sys-unlink (kahua-keyserv-pidpath))
-    (with-output-to-file (kahua-keyserv-pidpath)
-      (lambda () (write (sys-getpid))))
+    (if site
+	(kahua-site-init site)
+	(kahua-init conf-file :user user))
+    (write-pid-file (kahua-keyserv-pidpath))
     (log-open (kahua-logpath "kahua-keyserv.log") :prefix "~Y ~T ~P[~$]: ")
     (random-source-randomize! default-random-source)
     (let* ((wid (make-worker-id "%keyserv"))

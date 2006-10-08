@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.4 2006/09/08 14:50:37 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.5 2006/10/08 01:36:16 bizenn Exp $
 (use srfi-13)
 
 (use file.util)
@@ -83,7 +83,9 @@
 		(cond ((eof-object? ln) 'done)
 		      (else (display (replace ln proj creator mail) out)
 			    (newline out)
-			    (lp (read-line in))))))))))
+			    (lp (read-line in))))))
+	    :encoding 'euc-jp))		; FIXME!!
+	:encoding 'euc-jp))		; FIXME!!
     (sys-mkdir proj #o755)
     (sys-chdir proj)
     (for-each (lambda (pair)
@@ -142,28 +144,44 @@
 ; main
 ;
 
-(define (main args)
-  (define (get-opts arg)
-    (or (member "gen" arg)
-	(member "generate" arg)
-	))
-  (let-args (cdr args)
-    ((conf-file "c=s")
-     (gosh      "gosh=s"))
-    (let-args (cddddr args)
-	((proj      "p=s")
-	 (creator   "u=s")
-	 (mail      "m=s"))
-      (kahua-init conf-file)
-      (let* ((conf (kahua-config))
-	     (file (ref conf 'conf-file))
-	     (skel (build-path (sys-dirname file) "skel")))
-	(match (cdddr args)
-	  (("gen" . _) (generate skel proj creator mail))
-	  (("generate" . _) (generate skel proj creator mail))
-	  (else (usage)))))))
+(define (create-site args)
+  (let-args args ((shared "shared")
+		  (private "private")
+		  (owner "o|owner=s")
+		  (group "g|group=s")
+		  . sites)
+    (for-each (cut kahua-site-create <> :owner owner :group group :shared? shared) sites)))
 
-(define (usage)
-  (print "kahua-package generate [-p=project] [-c=creator] [-m=mail@addr]")
-  (exit 0))
+(define (generate-skel args)
+  (let-args args ((creator "creator")
+		  (mail "mail")
+		  . projects)
+    (let1 skel (build-path (kahua-etc-directory) "skel") ; FIXME!!
+      (for-each (cut generate skel <> creator mail) projects))))
+
+(define *command-table*
+  `(("create" ,create-site "create [-shared|-private] [-owner=<owner>] [-group=<group>] <site-to-path>")
+    ("generate" ,generate-skel "generate [-creator=<creator>] [-mail=<mail@addr>] <project> ...")))
+
+(define (dispatch-command cmd . args)
+  (cond ((assoc cmd *command-table*) => (lambda (e) ((cadr e) args)))
+	(else (usage (cons cmd args)))))
+
+(define (main args)
+  (let-args (cdr args) ((conf-file "c|conf-file=s")
+		  (site "S|site=s")
+		  (gosh "gosh=s")
+		  . restargs)
+    (if (< (length restargs) 2)
+	(usage restargs)
+	(apply dispatch-command restargs))))
+
+(define (usage args)
+  (with-output-to-port (current-error-port)
+    (lambda ()
+      (format #t "~s\n" args)
+      (display "Usage: kahua-package <command> [<options>] <args>...\n")
+      (display "Commans:\n")
+      (for-each (lambda (e) (format #t "  ~a\n" (list-ref e 2))) *command-table*)))
+  (exit 1))
 

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.scm,v 1.4 2005/08/06 04:47:58 cut-sea Exp $
+;; $Id: kahua-admin.scm,v 1.5 2006/10/08 01:36:16 bizenn Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -51,11 +51,6 @@
      (if (= (length cmd) 2)
        (connect-worker (cadr cmd))
        (begin (display "Usage: connect <worker-number>\n")
-              spvr-command-processor)))
-    ((cvs)
-     (if (> (length cmd) 2)
-       (apply cvs-command (cdr cmd))
-       (begin (display "Usage: cvs update <worker-type/number>\n")
               spvr-command-processor)))
     ((update)
      (if (> (length cmd) 1)
@@ -201,29 +196,6 @@
 		    targets))
     spvr-command-processor))
 
-;; Deal with cvs command ------------------------------------
-
-(define (cvs-command cmd-type . wtype)
-  (let1 cdir (apply build-path (ref (kahua-config) 'working-directory)
-		    "checkout"
-		    (if (pair? wtype) 
-			(list (symbol->string (car wtype)))
-			'()))
-	(case cmd-type
-	  ((update)
-	   (if (file-is-directory? cdir)
-	       (begin
-		 (run-process "cvs" "-d" (ref (kahua-config) 'repository)
-			      "update" "-PAd" cdir
-			      :wait #t)
-		 (if (pair? wtype)
-		     (update-worker-files (car wtype))
-		     (update-worker-files #f)))
-	       (display "unknown type or has not checkouted\n")))
-	  (else
-	   (display "unknown cvs command. Usage: update worker-type\n")))
-	spvr-command-processor))
-
 ;; Deal with plugin command ------------------------------------
 
 (define (plugin-command cmd)
@@ -284,14 +256,17 @@
 ;; Entry -------------------------------------------------------
 (define (main args)
   (let-args (cdr args)
-      ((conf-file "c=s")
+      ((site "S=s")
+       (conf-file "c=s")
        (user      "user=s")
        (gosh      "gosh=s")  ;; wrapper script adds this.  ignore.
        (help      "h|help" => (cut usage))
        . args)
     (set-signal-handler! SIGINT  (lambda _ (exit 0)))
     (set-signal-handler! SIGTERM (lambda _ (exit 0)))
-    (kahua-init conf-file :user user)
+    (if site
+	(kahua-site-init site)
+	(kahua-init conf-file :user user))
     (cond
      ((null? args) ;; interactive mode
       (let loop ((command-processor spvr-command-processor))
@@ -302,7 +277,7 @@
       (exit 0)))))
 
 (define (usage)
-  (print "kahua-admin [-c=conf-file] [-user=user] [command ...]")
+  (print "kahua-admin [-S=site] [-c=conf-file] [-user=user] [command ...]")
   (exit 0))
 
 ;; Local variables:

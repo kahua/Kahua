@@ -6,7 +6,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: http.scm,v 1.3 2006/09/01 06:21:03 bizenn Exp $
+;; $Id: http.scm,v 1.4 2006/10/08 01:36:20 bizenn Exp $
 (define-module kahua.protocol.http
   (use srfi-1)
   (use srfi-13)
@@ -14,6 +14,7 @@
   (use rfc.cookie)
   (use rfc.uri)
   (use util.list)
+  (use util.match)
   (use text.html-lite)
   (use text.tree)
   (use gauche.charconv)
@@ -26,6 +27,7 @@
 	  path-info->abs-path
 	  normalize-path
 	  rel-path-info
+	  parse-path-info
 	  unsupported-method?
 	  abs-uri
 	  kahua-header->http-header
@@ -49,6 +51,7 @@
 (define (http-date t)
   (time->rfc1123-string t))
 
+;; This function assumes path is already applied uri-decode-string.
 (define (path->path-info path)
   (define (simplify-path-info path-info)
     (reverse!
@@ -78,6 +81,52 @@
 	  ((null? p) #f)
 	  ((string=? (car p) (car b)) (loop (cdr p) (cdr b)))
 	  (else #f))))
+
+;; path-info list -> scheme host port worker args
+;;
+;; Elements of path-info must be decoded.
+;;
+;; e.g.
+;;   () => #f #f #f #f ()
+;;   ("worker") => #f #f #f "worker" ()
+;;   ("worker" "arg1" ...) => #f #f #f "worker" ("arg1" ...)
+;;   ("--vh--http:www.kahua.org:80" "--" "worker" "arg1" ...)
+;;     => http "www.kahua.org" 80 "worker" ("arg1" ...)
+;;   ("worker" "--vh--https:karetta.jp:443 "--" "arg1" ...)
+;;     => https "karetta.jp" 443 "worker" ("arg1" ...)
+;;
+;; This function requires Gauche CVS 2006-09-29 or later.
+;; Earlier version Gauche's util.match has a bug that
+;; cannot handle returning multiple values properly.
+;;
+(define (parse-path-info path-info)
+  (define (vhosting str)
+    (and-let* ((m (#/^--vh--/ str))) (rxmatch-after m)))
+  (define (parse-vhost vhost fail-cont)
+    (and-let* ((m (#/^(https?):/ vhost))
+	       (scheme (string->symbol (m 1)))
+	       (host (rxmatch-after m)))
+      (rxmatch-case host
+	(#/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/ ; IPv4 address w/ port
+	    (#f h p) (values scheme h (x->integer p)))
+	(#/^\[([0-9A-Fa-f:]+)\]:(\d+)$/                  ; IPv6 address w/ port
+	      (#f h p) (values scheme h (x->integer p)))
+	(#/^([-a-zA-Z0-9.]+):(\d+)$/                     ; Host name
+	    (#f h p) (values scheme h (x->integer p)))
+	(else (fail-cont)))))
+
+  (guard (e (else (if (null? path-info)
+		      (values #f #f #f #f '())
+		      (values #f #f #f (car path-info) (cdr path-info)))))
+    (match path-info
+      (((= vhosting vhost) "--" worker . args) (=> next)
+       (receive (scheme host port) (parse-vhost vhost next)
+	 (values scheme host port worker args)))
+      ((worker (= vhosting vhost) "--" . args) (=> next)
+       (receive (scheme host port) (parse-vhost vhost next)
+	 (values scheme host port worker args)))
+      ((worker . args) (values #f #f #f worker args))
+      (()              (values #f #f #f #f '())))))
 
 ;; Now support method GET, HEAD, POST only.
 (define (unsupported-method? method)

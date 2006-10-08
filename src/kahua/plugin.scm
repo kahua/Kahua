@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: plugin.scm,v 1.5 2005/08/17 06:02:34 cut-sea Exp $
+;; $Id: plugin.scm,v 1.6 2006/10/08 01:36:16 bizenn Exp $
 
 (define-module kahua.plugin
   (use srfi-1)
@@ -148,8 +148,7 @@
 
 ;; load all plugin file.
 (define (initialize-plugins)
-  (let* ((plugin-dir (build-path (ref (kahua-config) 'working-directory)
-                                 "plugins"))
+  (let* ((plugin-dir (kahua-plugin-directory))
          (plugin-files (directory-list plugin-dir 
                         :filter (lambda (n) (string-suffix? ".scm" n)))))
     (set! *plugins* (make-hash-table 'string=?))
@@ -159,13 +158,8 @@
 
 ;; refresh a target plugin.
 (define (refresh-plugin filename)
-  (let* ((workdir (ref (kahua-config) 'working-directory))
-         (plugin (if (absolute-path? workdir)
-                   (build-path workdir "plugins" filename)
-                   (build-path (current-directory) workdir
-                               "plugins" filename))))
-    (load plugin :environment (get-sandbox-module (string->symbol plugin)))
-    ))
+  (let1 plugin (sys-normalize-pathname (build-path (kahua-plugin-directory) filename) :absolute #t)
+    (load plugin :environment (get-sandbox-module (string->symbol plugin)))))
 
 (define (all-plugins)
   (hash-table-map *plugins* (lambda (name p) (cons name (ref p 'version)))))

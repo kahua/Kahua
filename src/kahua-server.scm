@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.18 2006/09/25 09:15:43 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.19 2006/10/08 01:36:16 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -86,8 +86,8 @@
               (make-hook-action delete-hook! place thunk)))))
 
 (define (database-name)
-  (or (primary-database-name)
-      (build-path (ref (kahua-config) 'working-directory) "db")))
+  (kahua-dbpath (or (primary-database-name)
+		    (kahua-default-database-name))))
 
 (define (run-kahua-hook-initial)
   (let1 dbname (database-name)
@@ -203,16 +203,19 @@
       (profiler-reset))))
 
 (define (kahua-server-main args)
-  (let-args (cdr args) ((conf-file "c=s" #f)
+  (let-args (cdr args) ((site "S=s" #f)
+			(conf-file "c=s" #f)
                         (user "user=s" #f)
                         (keyserv "k=s" #f)
 			(db "default-db=s" #f)
 			(prof "profile=s" #f)
                         . mods)
     (unless (pair? mods)
-      (error "usage: kahua-server [-c <conf>] [-user <user>] [-k <keyserv-id>] [-default-db <default-db-path>] [-profile <profile-out>] <app-server> <args> ..." mods))
+      (error "usage: kahua-server [-S <site>] [-c <conf>] [-user <user>] [-k <keyserv-id>] [-default-db <default-db-path>] [-profile <profile-out>] <app-server> <args> ..." mods))
     (set! *kahua-top-module* (car mods))
-    (kahua-init conf-file :user user)
+    (if site
+	(kahua-site-init site)
+	(kahua-init conf-file :user user))
     (set! kahua-app-server (kahua-application-environment))
     (primary-database-name db)
     (initialize-plugins)

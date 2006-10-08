@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.22 2006/09/25 09:15:43 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.23 2006/10/08 01:36:16 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -251,17 +251,19 @@
 	(thunk)
 	(with-locking (car args) (lambda () (doit (cdr args)))))))
 
+(define (config-options)
+  (cond ((kahua-site-root) => (lambda (s) (list (list "-S" s))))
+	(else
+	 (cond-list ((kahua-config-file) => (pa$ list "-c"))
+		    ((ref (kahua-config) 'user-mode) => (pa$ list "-user"))))))
+
 ;;;=================================================================
 ;;; Keyserv management
 ;;;
 
 (define (start-keyserv spvr)
-  (let* ((cmd (script-command spvr "kahua-keyserv.scm"
-                              (cond-list
-                               ((kahua-config-file)
-                                => (cut list "-c" <>))
-                               ((ref (kahua-config) 'user-mode)
-                                => (cut list "-user" <>)))))
+  (let* ((s (kahua-site-root))
+	 (cmd (script-command spvr "kahua-keyserv.scm" (config-options)))
          (kserv (run-piped-cmd cmd))
          (kserv-id (read-line (process-output kserv))))
     (set! (ref spvr 'keyserv)
@@ -281,16 +283,13 @@
 
 (define (start-httpd spvr spec)
   (let* ((m (#/^\d+$/ spec))
+	 (s (kahua-site-root))
 	 (cmd (script-command spvr "kahua-httpd.scm"
-			      (cond-list
-			       ((kahua-config-file)
-				=> (pa$ list "-c"))
-			       ((ref (kahua-config) 'user-mode)
-				=> (pa$ list "-user"))
-			       (#t (list "-l" (kahua-logpath "kahua-httpd.log")))
-			       ((and m (m 0))
-				=> (pa$ list "-p"))
-			       ((not m) (list spec)))))
+			      (append (config-options)
+				      `(("-l" ,(kahua-logpath "kahua-httpd.log")))
+				      (if m
+					  `(("-p" ,(m 0)))
+					  `((,spec))))))
 	 (httpd (run-piped-cmd cmd)))
     (set! (ref spvr 'httpd) httpd)
     (close-input-port (process-output httpd))))
@@ -312,19 +311,17 @@
 		  ((args :arguments '())
 		   (profile :profile #f)
 		   (dbname :default-database-name #f))
-		(let1 user (ref (kahua-config) 'user-mode)
+		(let1 s (kahua-site-root)
 		  (script-command
 		   spvr
 		   "kahua-server.scm"
-		   (cond-list
-		    ((kahua-config-file) => (cut list "-c" <>))
-		    ((ref (kahua-config) 'user-mode) => (cut list "-user" <>))
-		    ((ref spvr 'keyserv) => (lambda (k) `("-k" ,(ref k 'id))))
-		    (profile => (cut list "-profile" <>))
-		    (dbname => (cut list "-default-db" <>))
-		    (#t (cons (let1 type (symbol->string worker-type)
-				(string-append type "/" type ".kahua"))
-			      args))))))))
+		   (append (config-options)
+			   (cond-list ((ref spvr 'keyserv) => (lambda (k) `("-k" ,(ref k 'id))))
+				      (profile => (cut list "-profile" <>))
+				      (dbname => (cut list "-default-db" <>))
+				      (#t (cons (let1 type (symbol->string worker-type)
+						  (string-append type "/" type ".kahua"))
+						args)))))))))
         (else (spvr-errorf <spvr-unknown-worker-type>
                           "unknown worker type: ~a" worker-type))))
 
@@ -335,9 +332,7 @@
 			    (> rbd 0)))
 			lis)))
       (car w)))
-  (let1 app-map
-      (build-path (ref (instance-of <kahua-config>) 'working-directory)
-                  "app-servers")
+  (let1 app-map (kahua-app-servers)
     (define (check-entries lis) ;; check vailidy of app-servers entries
       (and (list? lis)
            (every (lambda (ent)
@@ -793,7 +788,8 @@
 
 (define (main args)
   (let-args (cdr args)
-      ((conf-file "c|conf-file=s")
+      ((site      "S|site=s")
+       (conf-file "c|conf-file=s")
        (listener  "i|interactive")
        (sockbase  "s|sockbase=s")  ;; overrides conf file settings
        (logfile   "l|logfile=s")  ;; overrides conf file settings
@@ -807,11 +803,12 @@
                                         ; always the first one, since the
                                         ; wrapper script adds it.
       ;; initialization
-      (kahua-init conf-file :user user) ; this must come after getting lib-path
-                                        ; since kahua-init adds to *load-path*
-      (sys-unlink (kahua-pidpath))
-      (with-output-to-file (kahua-pidpath) (lambda () (write (sys-getpid))))
+      (if site
+	  (kahua-site-init site)
+	  (kahua-init conf-file :user user)) ; this must come after getting lib-path
+                                             ; since kahua-init adds to *load-path*
       (when sockbase (set! (kahua-sockbase) sockbase))
+      (write-pid-file (kahua-spvr-pidpath))
       (cond ((equal? logfile "-") (log-open #t :prefix "~Y ~T ~P[~$]: "))
             (logfile (log-open logfile :prefix "~Y ~T ~P[~$]: "))
             (else    (log-open (kahua-logpath "kahua-spvr.log")
@@ -856,7 +853,7 @@
 	  (stop-httpd spvr)
 	  (stop-keyserv spvr)
 	  (log-format "[spvr] exitting")
-	  (sys-unlink (kahua-pidpath))
+	  (sys-unlink (kahua-spvr-pidpath))
 	  ret)
 	))))
 

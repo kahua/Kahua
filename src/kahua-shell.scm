@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-shell.scm,v 1.4 2005/12/22 11:26:54 shibata Exp $
+;; $Id: kahua-shell.scm,v 1.5 2006/10/08 01:36:16 bizenn Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -162,14 +162,17 @@
 ;; Entry -------------------------------------------------------
 (define (main args)
   (let-args (cdr args)
-      ((conf-file "c=s")
+      ((site "S=s")
+       (conf-file "c=s")
        (user      "user=s")
        (gosh      "gosh=s")  ;; wrapper script adds this.  ignore.
        )
     (set-signal-handler! SIGINT  (lambda _ (exit 0)))
     (set-signal-handler! SIGHUP  (lambda _ (exit 0)))
     (set-signal-handler! SIGTERM (lambda _ (exit 0)))
-    (kahua-init conf-file :user user)
+    (if site
+	(kahua-site-init site)
+	(kahua-init conf-file :user user))
     (let loop ((command-processor login-processor))
       (loop (command-processor)))))
 

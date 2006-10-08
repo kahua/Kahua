@@ -1,3 +1,24 @@
+2006-10-08  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Site bundle supported.
+	  Site bundle is a directory structure including working directory,
+	  application directory, plugin directory, and sockbase and etc and
+	  tmp directory. Now a kahua-spvr process run on a site bundle.
+
+	  Site Bundle default directory structure:
+	    <site-bundle-root>/
+	    <site-bundle-root>/app/
+	    <site-bundle-root>/app-servers
+	    <site-bundle-root>/database/
+	    <site-bundle-root>/etc/
+	    <site-bundle-root>/etc/kahua.conf
+	    <site-bundle-root>/etc/user.conf
+	    <site-bundle-root>/logs/
+	    <site-bundle-root>/plugins/
+	    <site-bundle-root>/socket/
+	    <site-bundle-root>/static/
+	    <site-bundle-root>/tmp/
+
 2006-09-29  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 0.7 released.

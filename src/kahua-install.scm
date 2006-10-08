@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-install.scm,v 1.2 2004/10/19 02:37:33 shiro Exp $
+;; $Id: kahua-install.scm,v 1.3 2006/10/08 01:36:16 bizenn Exp $
 
 ;; Installs Kahua's application server materials according to
 ;; the kahua.conf configuration settings.
@@ -29,7 +29,8 @@
 
 (define (main args)
   (let-args (cdr args)
-      ((conf-file "c=s")
+      ((site "S=s")
+       (conf-file "c=s")
        (material-type "t=s" "static")
        (rename    "r=s")
        (uninstall? "U")
@@ -40,7 +41,9 @@
     (unless (member material-type
                     '("script" "static" "base" "plugin")) (usage))
     (when (and rename (not (= (length files) 1))) (usage))
-    (kahua-init conf-file)
+    (if site
+	(kahua-site-init site)
+	(kahua-init conf-file))
     (if dirs?
       (install-dirs uninstall?)
       (if uninstall?
@@ -85,7 +88,7 @@
 ;; pretty dangerous operation.
 (define (install-dirs uninstall?)
   (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
-         (dirs (list* (ref (kahua-config) 'working-directory)
+         (dirs (list* (kahua-working-directory)
                       (kahua-static-document-path "")
                       (if (is-a? sockaddr <sockaddr-un>)
                         (list (sys-dirname (sockaddr-name sockaddr)))
@@ -95,11 +98,11 @@
 
 (define (target-path material-type file)
   (cond ((equal? material-type "script")
-         (build-path (ref (kahua-config) 'working-directory) "checkout" file))
+         (build-path (kahua-application-directory) file))
         ((equal? material-type "base")
-         (build-path (ref (kahua-config) 'working-directory) file))
+         (build-path (kahua-working-directory) file))
         ((equal? material-type "plugin")
-         (build-path (ref (kahua-config) 'working-directory) "plugins" file))
+         (build-path (kahua-plugin-directory) file))
         ((equal? material-type "static")
          (kahua-static-document-path file))
         (else

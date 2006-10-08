@@ -50,7 +50,7 @@ TESTS = test-xml persistence rollback entry-method \
         server kahua-dbm worker redirectcont \
 	define-method-rule kahua-call-with-current-context \
 	lambdabooks wiki-iki nqueen foldlist \
-	spvr httpd admin developer shell usermode sandbox plugin query
+	spvr httpd admin developer shell sandbox plugin query
 
 CONFIG_GENERATED = Makefile
 

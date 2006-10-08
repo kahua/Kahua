@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.11 2006/09/01 06:20:50 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.12 2006/10/08 01:36:16 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -60,10 +60,6 @@
     (else     #f)))
 
 (define-condition-type <kahua-http-error> <kahua-error> http-error?)
-
-(define (kahua-tmpbase)
-  (build-path (ref (kahua-config) 'working-directory)
-	      "tmp" "kahua-"))
 
 ;; MIME Type.
 (define-constant *MIME-TYPES* '(("jpg"  . "image/jpeg")
@@ -435,6 +431,7 @@ Options:
       ((user      "user=s")
        (gosh      "gosh=s")		; DUMMY, not used.
        (runas     "runas=s")
+       (site      "S|site=s")
        (conf-file "c|conf-file=s")
        (logfile   "l|logfile=s" #t)
        (port      "p|port=i" 80)
@@ -442,7 +439,9 @@ Options:
        (help      "h|help" => usage)
        (else _ (error "Unknown option.  Try --help for the usage."))
        . hosts)
-    (kahua-init conf-file :user user)
+    (if site
+	(kahua-site-init site)
+	(kahua-init conf-file :user user))
     (log-open logfile :prefix log-prefix)
     (log-format "Start with ~d threads" thnum)
     (for-each (pa$ log-format  "listen: ~s") hosts)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-config.scm,v 1.2 2006/07/28 13:09:43 bizenn Exp $
+;; $Id: kahua-config.scm,v 1.3 2006/10/08 01:36:16 bizenn Exp $
 (use gauche.parseopt)
 (use kahua.config)
 
@@ -13,11 +13,14 @@
 ;
 (define (main args)
   (let-args (cdr args)
-      ((conf-file "c=s")
+      ((site "S=s")
+       (conf-file "c=s")
        (gosh      "gosh=s")
        (help      "h|help"))
-    (if help (usage conf-file))
-    (kahua-init conf-file)
+    (if site
+	(kahua-site-init site)
+	(kahua-init conf-file))
+    (when help (usage))
     (let* ((conf (kahua-config))
 	   (klass (class-of conf))
 	   (slots (map car (ref klass 'slots)))
@@ -35,7 +38,6 @@
 		    (format #t "~a~%" (ref conf slot))))))))
 
 (define (usage conf-file)
-  (kahua-init conf-file)
   (let1 conf (kahua-config)
     (format #t "kahua-config [option]~%")
     (for-each (lambda (slot)
