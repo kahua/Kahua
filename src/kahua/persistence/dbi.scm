@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.8 2006/09/25 09:15:43 bizenn Exp $
+;; $Id: dbi.scm,v 1.9 2006/10/20 07:36:28 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -39,6 +39,8 @@
 	  create-kahua-class-table
 	  create-kahua-db-classcount
 	  register-to-table-map
+
+	  kahua-db-dbi-build-dsn
 
 	  ;; Database Consistency Check and Fix.
 	  dbutil:current-kahua-db-classcount
@@ -83,15 +85,23 @@
 	  "** ~a should be overridden in concrete database driver module.\n" fname))
 
 (define-method initialize ((db <kahua-db-dbi>) initargs)
+  (define (kahua-db-dbi-parse-path path)
+    (rxmatch-if (#/(.*?):(?:([^:]+)(?::([^:]*)(?::(.*))?)?)?/ path)
+	(#f driver user password options)
+      (values driver (or user "") (or password "") (or options ""))
+      (values #f #f #f #f)))
+
   (next-method)
   (unless (dsn-of db)
-    (let1 m (#/(.*?):(?:([^:]+)(?::([^:]*)(?::(.*))?)?)?/ (ref db 'path))
-      (unless m (errorf "unsupported database driver path: ~a" (ref db 'path)))
-      (set! (dsn-of db) (format "dbi:~a:~a" (m 1) (m 4)))
-      (set! (user-of db)     (m 2))
-      (set! (password-of db) (m 3))
-      (log-format "DBI(~a) setup: user ~a, options ~a" (m 1) (m 2) (m 4))
-      )))
+    (receive (d u p o) (kahua-db-dbi-parse-path (path-of db))
+      (unless d (errorf "unsupported database driver path: ~a" (path-of db)))
+      (set! (dsn-of db) (kahua-db-dbi-build-dsn db d o))
+      (set! (user-of db) u)
+      (set! (password-of db) p)
+      (log-format "DBI(~a): user ~a" (dsn-of db) u))))
+
+(define-method kahua-db-dbi-build-dsn ((db <kahua-db-dbi>) driver options)
+  (format "dbi:~a:~a" driver options))
 
 (define-method with-dbi-transaction ((db <kahua-db-dbi>) proc)
   (let1 conn (connection-of db)
@@ -421,44 +431,8 @@
 ;; Database Consistency Check and Fix
 ;;
 
-(define-method max-table-name-suffix ((db <kahua-db-dbi>))
-  (let* ((conn (connection-of db))
-	 (r (dbi-do conn "select table_name from kahua_db_classes" '())))
-    (apply max (map (lambda (row)
-		      (rxmatch-case (dbi-get-value row 0)
-			(#/^kahua_(\d+)$/ (#f d) (x->integer d))
-			(else -1)))
-		    r))))
-
-(define-method dbutil:current-kahua-db-classcount ((db <kahua-db-dbi>))
-  (x->integer (car (map (cut dbi-get-value <> 0)
-			(dbi-do (connection-of db) "select value from kahua_db_classcount" '())))))
-
-(define-method dbutil:fix-kahua-db-classcount ((db <kahua-db-dbi>) n)
-  (dbi-do (connection-of db) "update kahua_db_classcount set value=?" '() n))
-
-(define-method dbutil:create-kahua-db-classcount ((db <kahua-db-dbi>) n)
-  (let1 conn (connection-of db)
-    (guard (e ((<dbi-exception> e) #t))
-      (create-kahua-db-classcount db))
-    (initialize-kahua-db-classcount db n)))
-
-(define-method dbutil:check-kahua-db-classcount ((db <kahua-db-dbi>) . maybe-do-fix?)
-  (call/cc (lambda (ret)
-	     (let* ((do-fix? (get-optional maybe-do-fix? #f))
-		    (max-suffix (max-table-name-suffix db))
-		    (classcount (guard (e ((<dbi-exception> e)
-					   (cond (do-fix?
-						  (dbutil:create-kahua-db-classcount db max-suffix)
-						  (ret 'FIXED))
-						 (ret 'NG))))
-				  (dbutil:current-kahua-db-classcount db))))
-	       (or (and (>= classcount max-suffix) 'OK)
-		   (and do-fix?
-			(dbutil:fix-kahua-db-classcount db max-suffix)
-			'FIXED)
-		   'NG)))))
-
+;; Object ID counter(kahua_db_idcount)
+;;
 (define-method load-all-kahua-tables ((db <kahua-db-dbi>) ht)
   (define-method enumerate-kahua-class-table ((db <kahua-db-dbi>))
     (map (lambda (row)
@@ -511,28 +485,81 @@
 			'FIXED)
 		   'NG)))))
 
-(define-method dbutil:add-removed-flag-column ((db <kahua-db-dbi>)
-					       (tabname <string>))
-  (dbi-do (connection-of db)
-	  (format "alter table ~a add removed smallint not null default 0" tabname)
-	  '(:pass-through #t)))
+(define-method dbutil:check-id-counter ((db <kahua-db-dbi>) do-fix?)
+  (dbutil:check-kahua-db-idcount db do-fix?))
 
-(define-method dbutil:check-removed-flag-column ((db <kahua-db-dbi>)
-						 (tabname <string>) . maybe-do-fix?)
-  (let1 do-fix? (get-optional maybe-do-fix? #f)
-    (if (guard (e (else #f))
-	  (map identity (dbi-do (connection-of db)
-				(format "select removed from ~a where keyval = NULL" tabname)))
-	  #t)
-	'OK
-	(if do-fix?
-	    (and (dbutil:add-removed-flag-column db tabname) 'FIXED)
-	    'NG))))
+;; Class counter(kahua_db_classcount)
+;;
+(define-method max-table-name-suffix ((db <kahua-db-dbi>))
+  (let* ((conn (connection-of db))
+	 (r (dbi-do conn "select table_name from kahua_db_classes" '())))
+    (apply max (map (lambda (row)
+		      (rxmatch-case (dbi-get-value row 0)
+			(#/^kahua_(\d+)$/ (#f d) (x->integer d))
+			(else -1)))
+		    r))))
 
-(define-method dbutil:check-removed-flag-column-for-all-tables ((db <kahua-db-dbi>) . maybe-do-fix?)
-  (let1 do-fix? (get-optional maybe-do-fix? #f)
-    (hash-table-map (table-map-of db)
-      (lambda (k v)
-	(list k v (dbutil:check-removed-flag-column db v do-fix?))))))
+(define-method dbutil:current-kahua-db-classcount ((db <kahua-db-dbi>))
+  (x->integer (car (map (cut dbi-get-value <> 0)
+			(dbi-do (connection-of db) "select value from kahua_db_classcount" '())))))
+
+(define-method dbutil:fix-kahua-db-classcount ((db <kahua-db-dbi>) n)
+  (dbi-do (connection-of db) "update kahua_db_classcount set value=?" '() n))
+
+(define-method dbutil:create-kahua-db-classcount ((db <kahua-db-dbi>) n)
+  (let1 conn (connection-of db)
+    (guard (e ((<dbi-exception> e) #t))
+      (create-kahua-db-classcount db))
+    (initialize-kahua-db-classcount db n)))
+
+(define-method dbutil:check-kahua-db-classcount ((db <kahua-db-dbi>) . maybe-do-fix?)
+  (call/cc (lambda (ret)
+	     (let* ((do-fix? (get-optional maybe-do-fix? #f))
+		    (max-suffix (max-table-name-suffix db))
+		    (classcount (guard (e ((<dbi-exception> e)
+					   (cond (do-fix?
+						  (dbutil:create-kahua-db-classcount db max-suffix)
+						  (ret 'FIXED))
+						 (ret 'NG))))
+				  (dbutil:current-kahua-db-classcount db))))
+	       (or (and (>= classcount max-suffix) 'OK)
+		   (and do-fix?
+			(dbutil:fix-kahua-db-classcount db max-suffix)
+			'FIXED)
+		   'NG)))))
+
+(define-method dbutil:check-class-counter ((db <kahua-db-dbi>) do-fix?)
+  (dbutil:check-kahua-db-classcount db do-fix?))
+
+;; Removed flag column (named "removed") on each class table.
+;;
+(define-method dbutil:check-removed-flag-facility ((db <kahua-db-dbi>) do-fix?)
+  (define (check-removed-flag-column cn r)
+    (let ((tabname (hash-table-get (table-map-of db) cn))
+	  (conn (connection-of db)))
+      (if (guard (e (else #f))
+	    (map identity (dbi-do conn (format "select removed from ~a where keyval = NULL" tabname))))
+	  r
+	  (or (and do-fix? (add-removed-flag-column conn tabname) 'FIXED)
+	      'NG))))
+  (define (add-removed-flag-column conn tabname)
+    (dbi-do conn (format "alter table ~a add removed smallint not null default 0" tabname)
+	    '(:pass-through #t)))
+  (dbutil:persistent-classes-fold db check-removed-flag-column 'OK))
+
+(define-constant *proc-table*
+  `((,dbutil:check-id-counter . "Checking kahua_db_idcount... ")
+    (,dbutil:check-class-counter . "Checking kahua_db_classcount... ")
+    (,dbutil:check-removed-flag-facility . "Checking removed flags... ")
+    ))
+
+(define-method dbutil:check&fix-database ((db <kahua-db-dbi>) writer do-fix?)
+  (for-each (lambda (e)
+	      (let ((do-check (car e))
+		    (msg-prefix (cdr e)))
+		(writer msg-prefix)
+		(writer (do-check db do-fix?))
+		(writer "\n")))
+	    *proc-table*))
 
 (provide "kahua/persistence/dbi")

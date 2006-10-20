@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.62 2006/09/26 23:09:57 bizenn Exp $
+;; $Id: persistence.scm,v 1.63 2006/10/20 07:36:28 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -67,6 +67,11 @@
 	  dbutil:check-kahua-db-idcount
 	  dbutil:check-removed-flag-column
 	  dbutil:check-removed-flag-column-for-all-tables
+	  dbutil:check-alive-directory
+
+	  dbutil:with-dummy-reader-ctor
+	  dbutil:persistent-classes-fold
+	  dbutil:check&fix-database
           ))
 
 (select-module kahua.persistence)
@@ -121,7 +126,7 @@
 (define (kahua-read-syncer in-memory in-db-slots)
   ;; we shuold update transaction-id of in-memory object at last,
   ;; but to avoid inifinite loop, we update it here.
-  (let1 class (class-of in-memory)
+  (let1 class (current-class-of in-memory)
     (let* ((db (current-db))
 	   (already-modified? (modified-instance? db in-memory)))
       (for-each (lambda (slot)
@@ -248,7 +253,8 @@
           (when (eq? aot :denied)
             (error "database not active")))
       (let* ((val (slot-ref-using-accessor o acc))
-	     (real (if (kahua-wrapper? val)
+	     (real (if (and (kahua-wrapper? val)
+			    (not (assq o (instance-changing-class-stack))))
 		       (peel-wrapper val)
 		       val)))
 	(cond ((%removed-object? real)
@@ -340,16 +346,16 @@
 ;;   method to initialize object.
 
 (define-method persistent-initialize ((obj <kahua-persistent-base>) initargs)
-  (slot-set! obj '%persistent-key (key-of obj)))
+  obj)					; DUMMY
 
 (define-method initialize ((obj <kahua-persistent-base>) initargs)
   (next-method)
   (let ((db (current-db))
         (id (kahua-persistent-id obj))
-        (rsv (get-keyword :%realization-slot-values initargs #f)))
+        (rsv (get-keyword :%realization-slot-values initargs #f))
+	(class (class-of obj)))
     (when (id->kahua-instance id)
-      (errorf "instance with same ID (~s) is active (class ~s)"
-              id (class-of obj)))
+      (errorf "instance with same ID (~s) is active (class ~s)" id class))
     
     (update-transaction! obj)
     
@@ -357,21 +363,22 @@
         (begin
           ;; we are realizing an instance from the saved one
           (dolist (p rsv)
-            (when (assq (car p) (class-slots (class-of obj)))
+            (when (assq (car p) (class-slots class))
               ;; loop!
               (slot-set! obj (car p) (make <kahua-wrapper> :value (cdr p)))))
           ;; obj is marked dirty because of the above setup.
           ;; we revert it to clean.  it is ugly, but it's the easiest
           ;; way to prevent obj from being marked dirty inadvertently.
           (reset-modified-instance! db obj))
-      ;; initialize persistent object for the first time.
-      (persistent-initialize obj initargs))
+	;; initialize persistent object for the first time.
+	(persistent-initialize obj initargs))
 
-    (hash-table-put! (ref db 'instance-by-id) id obj)
-    (hash-table-put! (ref db 'instance-by-key)
-                     (cons (class-name (class-of obj))
-                           (key-of obj))
-                     obj)))
+    (let1 key (key-of obj)
+      (slot-set! obj '%persistent-key key)
+      (hash-table-put! (ref db 'instance-by-id) id obj)
+      (hash-table-put! (ref db 'instance-by-key)
+		       (cons (class-name class) key) obj)))
+  obj)
 
 (define (find-kahua-class name)
   (or (assq-ref (class-slot-ref <kahua-persistent-meta> 'class-alist) name)
@@ -564,7 +571,8 @@
 ;; kahua-object2 (2nd version: add removed flag)
 (define (kahua-object2-read class-desc id removed? . vals)
   (let1 obj (apply kahua-object-read class-desc id vals)
-    (slot-set! obj '%kahua-persistent-base::removed? removed?)
+    (slot-set-using-class! (current-class-of obj) obj
+			   '%kahua-persistent-base::removed? removed?)
     obj))
 (define-reader-ctor 'kahua-object2 kahua-object2-read)
 
@@ -1045,7 +1053,7 @@
 
 ;; Depending on path, select appropriate subclass of <kahua-db>.
 (define (select-db-class path)
-  (cond ((#/^(\w*?):/ path)
+  (cond ((#/^(\w+):/ path)
          => (lambda (m)
               (let1 dbtype (m 1)
 		(guard (e (else (errorf "unknown external database driver: ~s: ~a"
@@ -1338,6 +1346,12 @@
             => (lambda (p) ((cdr p) #f)))
            ;; change-class is called recursively.  abort change-class protocol.
            (else
+	    (unless (or (eq? new-class <kahua-persistent-base>)
+			(not (slot-bound-using-class? old-class obj '%transaction-id))
+			(current-transaction? obj))
+	      (and-let* ((key (slot-ref-using-class old-class obj '%persistent-key)))
+		(update-transaction! obj)
+		(read-kahua-instance (current-db) old-class key)))
             (filter-map
              (lambda (slot)
                (let1 slot-name (slot-definition-name slot)
@@ -1357,18 +1371,19 @@
     ;; change-class
     (next-method)
     (unless (eq? (class-name old-class)
-                 (class-name new-class))
+		 (class-name new-class))
       (ensure-metainfo new-class)
-      (slot-set-using-class! new-class obj '%kahua-persistent-base::id (%kahua-db-unique-id))
-      (slot-set-using-class! new-class obj '%persistent-generation 0)
-      (slot-set-using-class! new-class obj '%floating-instance #t))
+      (slot-set! obj '%kahua-persistent-base::id (%kahua-db-unique-id))
+      (slot-set! obj '%persistent-generation 0)
+      (slot-set! obj '%floating-instance #t))
     ;; restore persistent slots value.
     (add-modified-instance! (current-db) obj)
     (dolist (slot carry-over-slots)
       (if (pair? slot)
           (slot-set! obj (car slot) (cdr slot))
-        (let ((acc (class-slot-accessor new-class slot)))
-          (slot-initialize-using-accessor! obj acc '()))))))
+	  (let ((acc (class-slot-accessor new-class slot)))
+	    (slot-initialize-using-accessor! obj acc '()))))
+    obj))
 
 ;; for check and fix database consistency.
 
@@ -1376,5 +1391,56 @@
 (define-generic dbutil:check-kahua-db-idcount)
 (define-generic dbutil:check-removed-flag-column)
 (define-generic dbutil:check-removed-flag-column-for-all-tables)
+(define-generic dbutil:check-alive-directory)
+
+(define-generic dbutil:check&fix-database)
+
+;;
+;; Dummy Reader Constructor for database maintainance
+;;
+(define-class <dbutil:dummy-persistent-class> ()
+  ((id :init-keyword :id)
+   (removed? :init-keyword :removed? :init-value #f)
+   (class-name :init-keyword :class-name)
+   (generation :init-keyword :generation :init-value 0)
+   (slot-values :init-keyword :slot-values)))
+(define-class <dbutil:dummy-proxy-class> ()
+  ((key :init-keyword :key)
+   (class-name :init-keyword :class-name)))
+
+(define (kahua-object-dummy-read class-desc id . vals)
+  (receive (cn gen) (if (pair? class-desc)
+			(apply values class-desc)
+			(values class-desc 0))
+    (make <dbutil:dummy-persistent-class>
+      :id id :class-name cn :generation gen :slot-values vals)))
+(define (kahua-object2-dummy-read class-desc id removed? . vals)
+  (let1 obj (apply kahua-object-dummy-read class-desc id vals)
+    (slot-set! obj 'removed? removed?)
+    obj))
+(define (kahua-proxy-dummy-read cname key)
+  (make <dbutil:dummy-proxy-class> :key key :class-name cname))
+
+(define (dbutil:switch-to-dummy-reader-ctor)
+  (define-reader-ctor 'kahua-object kahua-object-dummy-read)
+  (define-reader-ctor 'kahua-object2 kahua-object2-dummy-read)
+  (define-reader-ctor 'kahua-proxy kahua-proxy-dummy-read))
+(define (dbutil:restore-reader-ctor)
+  (define-reader-ctor 'kahua-object kahua-object-read)
+  (define-reader-ctor 'kahua-object2 kahua-object2-read)
+  (define-reader-ctor 'kahua-proxy kahua-proxy-read))
+
+(define (dbutil:with-dummy-reader-ctor thunk)
+  (dynamic-wind
+      dbutil:switch-to-dummy-reader-ctor
+      thunk
+      dbutil:restore-reader-ctor))
+
+(define-method dbutil:persistent-classes-fold ((db <kahua-db>) proc knil)
+  (let1 classes (map (cut ref <> 'name) (make-kahua-collection db <kahua-persistent-metainfo>
+							       '(:include-removed-object? #t)))
+    (dbutil:with-dummy-reader-ctor
+     (lambda ()
+       (fold proc knil (cons '<kahua-persistent-metainfo> classes))))))
 
 (provide "kahua/persistence")

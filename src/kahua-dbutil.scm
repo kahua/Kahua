@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-dbutil.scm,v 1.4 2006/09/25 04:00:12 bizenn Exp $
+;; $Id: kahua-dbutil.scm,v 1.5 2006/10/20 07:36:28 bizenn Exp $
 
 (use gauche.parseopt)
 (use kahua.persistence)
@@ -23,15 +23,8 @@
 			  ((string=? cmd "fix" )  #t)
 			  (else (usage))))
 	   (dbname (cadr args)))
-      (if (or (#/^mysql/ dbname) (#/^pg/ dbname) (#/^postgresql/ dbname))
-	  (with-db (db dbname)
-	    (msg "==Start checking: ~s==\n" db)
-	    (msg "Checking kahua_db_idcount...~a\n" (dbutil:check-kahua-db-idcount db do-fix?))
-	    (msg "Checking kahua_db_classcount...~a\n" (dbutil:check-kahua-db-classcount db do-fix?))
-	    (msg "Checking removed flag of Kahua class tables:\n")
-	    (for-each (lambda (l)
-			(apply msg "  ~a => ~a: ~a\n" l))
-		      (dbutil:check-removed-flag-column-for-all-tables db do-fix?))
-	    (msg "==Done==\n"))
-	  (format (current-error-port) "Sorry, ~s database not yet supported.\n"))
+      (msg "==Start checking: ~s==\n" dbname)
+      (with-db (db dbname)
+	(dbutil:check&fix-database db display do-fix?))
+      (msg "==Done==\n")
       0)))

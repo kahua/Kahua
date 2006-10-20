@@ -2,7 +2,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.17 2006/09/25 04:00:13 bizenn Exp $
+;; $Id: persistence.scm,v 1.18 2006/10/20 07:36:36 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -249,12 +249,12 @@
 
 ;;   インスタンスが新しいクラスに対応してアップデートされることを確認する。
 (test* "updating instance for new class" #t
-       (with-clean-db (db *dbname*)
+       (with-db (db *dbname*)
          (eq? (ref (get-test-obj 1) 'quick)
               (ref (get-test-obj 1) 'quock))))
 
 (test* "updating instance for new class" '(#t #t)
-       (with-clean-db (db *dbname*)
+       (with-db (db *dbname*)
          (list (equal? (list-slots (ref (get-test-obj 1) 'quock))
                        (list-slots (get-test-obj 2)))
                (equal? (list-slots (ref (get-test-obj 2) 'quock))
@@ -1070,7 +1070,7 @@
    (key :init-value "c" :accessor key-of)))
 
 (test* "find redefined instance(2)" '(#t 0 10)
-       (with-clean-db (db *dbname*)
+       (with-db (db *dbname*)
                 (let1 obj (find-kahua-instance <redefine-C> "c")
            (list (eq? *id* (kahua-persistent-id obj))
                  (ref obj 'base)

@@ -1,3 +1,17 @@
+2006-10-20  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix a bug: class redefinition did not work on some
+	  situations.
+
+	* Add support to kahua-dbutil that check and fix fsdb.
+	  You must do:
+	  % kahua-dbutil fix path-to-db
+	  in order to use current version of Kahua.
+
+	* Add %%alive directory under each class directory.
+	  It holds symlinks to alive(not removed) instance files.
+	  So now fsdb is not compatible with a past one.
+
 2006-10-08  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Drop cvs command support from kahua-admin command.

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.4 2006/09/25 04:00:13 bizenn Exp $
+;; $Id: postgresql.scm,v 1.5 2006/10/20 07:36:28 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -13,6 +13,9 @@
 (select-module kahua.persistence.postgresql)
 
 (define-class <kahua-db-postgresql> (<kahua-db-dbi>) ())
+
+(define-method kahua-db-dbi-build-dsn ((db <kahua-db-postgresql>) driver options)
+  (format "dbi:pg:~a" options))
 
 (define-method set-default-character-encoding! ((db <kahua-db-postgresql>))
   (and-let* ((client-encoding (case (gauche-character-encoding)
