@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.63 2006/10/20 07:36:28 bizenn Exp $
+;; $Id: persistence.scm,v 1.64 2006/10/24 06:14:52 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -19,7 +19,9 @@
 	  <kahua-persistent-base>
           <kahua-persistent-metainfo>
 	  kahua-persistent-id path-of
-          key-of find-kahua-class find-kahua-instance
+          key-of find-kahua-class
+	  kahua-instance
+	  find-kahua-instance
           touch-kahua-instance!
           kahua-serializable-object?
           kahua-persistent-classes-in-db
@@ -54,6 +56,7 @@
 	  finish-kahua-db-transaction
 	  with-kahua-db-transaction
 	  read-kahua-instance
+	  read-kahua-instance-by-id
 	  write-kahua-instance
 	  write-kahua-modified-instances
 	  kahua-db-write-id-counter
@@ -1276,14 +1279,29 @@
   (hash-table-get (ref (current-db) 'instance-by-key)
                   (cons (class-name class) key) #f))
 
-(define (find-kahua-instance class key . args)
+;; Temporary Names
+;; FIXME!!
+(define-generic read-kahua-instance-by-id)
+(define (kahua-instance class id . args)
   (let ((db (current-db))
 	(sanitize (if (get-optional args #f)
 		      identity
 		      %sanitize-object)))
+    (unless db (error "kahua-instance: No database is active"))
+    (sanitize (or (id->kahua-instance id)
+		  (and-let* ((i (read-kahua-instance-by-id db class id)))
+		    (set! (ref i '%floating-instance) #f)
+		    i)))))
+
+(define (find-kahua-instance class key . args)
+  (let* ((db (current-db))
+	 (include-removed-object? (get-optional args #f))
+	 (sanitize (if include-removed-object?
+		       identity
+		       %sanitize-object)))
     (unless db (error "find-kahua-instance: No database is active"))
     (sanitize (or (class&key->kahua-instance class key)
-		  (and-let* ((i (read-kahua-instance db class key)))
+		  (and-let* ((i (read-kahua-instance db class key include-removed-object?)))
 		    (set! (ref i '%floating-instance) #f)
 		    i)))))
 

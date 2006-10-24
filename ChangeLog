@@ -1,3 +1,12 @@
+2006-10-24  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change plugins/fileio.scm:
+	  Now open-uploaded-file can take keyword arguments like
+	  open-input-file.
+
+	* Add kahua.persistent.efs (Extended File System database).
+	  Use "efs:path-to-db".
+
 2006-10-20  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix a bug: class redefinition did not work on some

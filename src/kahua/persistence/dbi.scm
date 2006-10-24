@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.9 2006/10/20 07:36:28 bizenn Exp $
+;; $Id: dbi.scm,v 1.10 2006/10/24 06:14:53 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -303,7 +303,7 @@
 
 (define-method read-kahua-instance ((db <kahua-db-dbi>)
                                     (class <kahua-persistent-meta>)
-                                    (key <string>))
+                                    (key <string>) . opts)
   (define (select-class-instance tabname)
     (format "select dataval from ~a where keyval=?" tabname))
   (and-let* ((conn (connection-of db))

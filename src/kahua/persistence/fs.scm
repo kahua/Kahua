@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.13 2006/10/20 07:36:28 bizenn Exp $
+;; $Id: fs.scm,v 1.14 2006/10/24 06:14:53 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -208,7 +208,7 @@
 
 (define-method read-kahua-instance ((db <kahua-db-fs>)
                                     (class <kahua-persistent-meta>)
-                                    (key <string>))
+                                    (key <string>) . opts)
   (let1 path (data-path db (class-name class) key)
     (and (file-exists? path)
          (call-with-input-file path

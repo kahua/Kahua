@@ -2,7 +2,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.18 2006/10/20 07:36:36 bizenn Exp $
+;; $Id: persistence.scm,v 1.19 2006/10/24 06:14:53 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -12,11 +12,15 @@
 ;; A hook to use this file for both stand-alone test and
 ;; DBI-backed-up test.
 (define *dbname*
-  (if (global-variable-bound? (current-module) '*dbname*)
-    (begin (test-start #`"persistence/dbi (,*dbname*)")
-           *dbname*)
-    (begin (test-start "persistence")
-           (build-path (sys-getcwd) "_tmp"))))
+  (cond ((global-variable-bound? (current-module) '*dbname*)
+	 (rxmatch-if (#/^(\w+):/ *dbname*) (#f driver)
+	   (test-start #`"persistence/,|driver| (,|*dbname*|)")
+	   (test-start #`"persistence/fs (,|*dbname*|)"))
+	 *dbname*)
+	(else
+	 (let1 name "_tmp"
+	   (test-start #`"persistence/fs (,|name|)")
+	   name))))
 (sys-system #`"rm -rf ,*dbname*")
 
 (define-syntax with-clean-db
@@ -38,30 +42,35 @@
 
 ;;  存在しないデータベース名を与えてデータベースをオープンし、
 ;;  データベースが正しく作成されることを確認する。
-(test* "creating database" '(#t #t #t)
+(test* "creating database" '(#t #t #t #t)
        (with-db (db *dbname*)
          (cons (is-a? db <kahua-db>)
 	       (case (class-name (class-of db))
-		 ((<kahua-db-fs>)
+		 ((<kahua-db-fs> <kahua-db-efs>)
 		  (list
-		   (file-is-directory? *dbname*)
-		   (file-exists? (build-path *dbname* "id-counter"))))
+		   (file-is-directory? (ref db 'real-path))
+		   (file-is-regular? (ref db 'id-counter-path))
+		   (file-is-regular? (ref db 'character-encoding-path))))
                  ((<kahua-db-mysql>)
 		  (list
 		   (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
-		   (and (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_idcount"))
-				   (p (map (cut dbi-get-value <> 0) r)))
-			  (and (not (null? p))
-			       (integer? (x->integer (car p))))))
-		   ))
+		   (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_idcount"))
+			      (p (map (cut dbi-get-value <> 0) r)))
+		     (and (pair? p) (integer? (x->integer (car p)))))
+		   (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_classcount"))
+			      (p (map (cut dbi-get-value <> 0) r)))
+		     (and (pair? p) (integer? (x->integer (car p)))))))
 		 ((<kahua-db-postgresql>)
 		  (list
 		   (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
-		   (and (and-let* ((r (dbi-do (ref db 'connection) "select count(*) from pg_class where relname='kahua_db_idcount' and relkind='S'"))
-				   (p (map (cut dbi-get-value <> 0) r)))
-			  (and (not (null? p))
-			       (= (x->integer (car p)) 1))))
-		   )))
+		   (and-let* ((r (dbi-do (ref db 'connection)
+					 "select count(*) from pg_class where relname='kahua_db_idcount' and relkind='S'"))
+			      (p (map (cut dbi-get-value <> 0) r)))
+		     (and (pair? p) (= (x->integer (car p)) 1)))
+		   (and-let* ((r (dbi-do (ref db 'connection)
+					 "select count(*) from pg_class where relname='kahua_db_classcount' and relkind='S'"))
+			      (p (map (cut dbi-get-value <> 0) r)))
+		     (and (pair? p) (= (x->integer (car p)) 1))))))
 	       )))
 
 ;;  データベースがwith-dbの動的スコープ中で有効であり、
@@ -1158,7 +1167,8 @@
     (let1 l (map identity (make-kahua-collection <hogehoge> :include-removed-object? #t))
       (test* "make-kahua-collection w/ :include-removed-object?" 1 (length l) =)
       (test* "it\'s removed?" #t (removed? (car l)) eq?))
-    (set! *key* key)))
+    (set! *key* key)
+    ))
 
 ;; Second: after commit;
 (with-clean-db (db *dbname*)

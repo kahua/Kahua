@@ -1,7 +1,12 @@
-;;; upload and download plugin
+;; -*- mode: scheme; coding: utf-8 -*-
+;;
+;;  Copyright (c) 2005-2006 Tatsuya BIZENN.
+;;
+;; upload and download plugin
+;; $Id: fileio.scm,v 1.3 2006/10/24 06:14:52 bizenn Exp $
 
 (define-plugin "fileio"
-  (version "0.6")
+  (version "0.7")
   (export open-uploaded-file
 	  call-with-uploaded-file
 	  with-input-from-uploaded-file
@@ -10,19 +15,18 @@
 	  send-downloaded-file)
   (depend #f))
 
-(define-export (open-uploaded-file spec)
-  (open-input-file (car spec)))
+(define (get-tmpfile-path spec)
+  (car spec))
 
-(define-export (call-with-uploaded-file spec proc)
-  (let1 in (open-uploaded-file spec)
-    (dynamic-wind
-	(cut values)
-	(cut proc in)
-	(cut close-input-port in))))
+(define-export (open-uploaded-file spec . opts)
+  (apply open-input-file (car spec) opts))
 
-(define-export (with-input-from-uploaded-file spec thunk)
-  (call-with-uploaded-file spec (cut with-input-from-port <> thunk)))
-       
+(define-export (call-with-uploaded-file spec proc . opts)
+  (apply call-with-input-file (get-tmpfile-path spec) proc opts))
+
+(define-export (with-input-from-uploaded-file spec thunk . opts)
+  (apply with-input-from-file (get-tmpfile-path spec) thunk opts))
+
 (define-export (get-original-name spec)
   (cadr spec))
 
@@ -53,20 +57,20 @@
 			 str)
 	       #t)))
 
-(define (mime-encode-word word . args)
-  (define (%do-encoding word charset encoding proc)
-    (with-output-to-string
-      (lambda ()
-	(format #t "=?~a?~s?~a?=" charset encoding (proc (raw-word word charset))))))
-  (cond ((in-char-set? word char-set:printing) word)
-	(else
-	 (let-keywords* args
-	     ((charset (gauche-character-encoding))
-	      (encoding :b))
-	   (case encoding
-	     ((:b :B) (%do-encoding word charset 'B base64-encode-string))
-	     ((:q :Q) (%do-encoding word charset 'Q quoted-printable-encode-string))
-	     (else (errorf #`"Unsupported encoding: \"~s\"" encoding)))))))
+  (define (mime-encode-word word . args)
+    (define (%do-encoding word charset encoding proc)
+      (with-output-to-string
+	(lambda ()
+	  (format #t "=?~a?~s?~a?=" charset encoding (proc (raw-word word charset))))))
+    (cond ((in-char-set? word char-set:printing) word)
+	  (else
+	   (let-keywords* args
+	       ((charset (gauche-character-encoding))
+		(encoding :b))
+	     (case encoding
+	       ((:b :B) (%do-encoding word charset 'B base64-encode-string))
+	       ((:q :Q) (%do-encoding word charset 'Q quoted-printable-encode-string))
+	       (else (errorf #`"Unsupported encoding: \"~s\"" encoding)))))))
 
   (define (rfc2231-encode-word word . args)
     (let-keywords* args

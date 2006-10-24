@@ -2,7 +2,7 @@
 ;; test kahua.persistence with dbi
 ;; DBIバックエンドを用いたkahua.persistenceモジュールのテスト
 
-;; $Id: persistence-dbi.scm,v 1.4 2006/07/28 13:09:49 bizenn Exp $
+;; $Id: persistence-dbi.scm,v 1.5 2006/10/24 06:14:53 bizenn Exp $
 
 ;; Clear the data remaining from the other test
 (define (cleanup-db dbtype user pass options)
@@ -24,8 +24,6 @@
       (safe-query c "drop table kahua_db_classcount")	 ; for MySQL
       (safe-query c "drop sequence kahua_db_idcount")    ; for PostgreSQL
       (safe-query c "drop sequence kahua_db_classcount") ; for PostgreSQL
-      (safe-query c "drop generator kahua_db_idcount")   ; for Firebird
-      (safe-query c "drop generator kahua_db_classcount"); for Firebird
       (safe-query c "drop table kahua_db_classes")
       (dbi-close c)))
   )

@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; PostgreSQLバックエンドのテスト
-;; $Id: persistence-dbi-pg.scm,v 1.4 2006/07/28 13:09:49 bizenn Exp $
+;; $Id: persistence-dbi-pg.scm,v 1.5 2006/10/24 06:14:53 bizenn Exp $
 
 ;; Notes:
 ;;  * テストケース自体はpersistence.scmのものを使う。
@@ -10,7 +10,7 @@
 (use gauche.collection)
 (use dbi)
 (define *user* (sys-getenv "USER"))
-(define *dbname* #`"pg:,|*user*|::")
+(define *dbname* #`"postgresql:,|*user*|::")
 
 ;; 前回のテストで作られたテーブルが残っていればそれをクリアしておく
 (load "./persistence-dbi.scm")

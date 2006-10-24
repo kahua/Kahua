@@ -25,7 +25,7 @@ DESTDIR           =
 GOSH              = @GOSH@
 
 SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
-	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm \
+	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm persistence-efs.scm \
 	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
 	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
 	spvr.scm httpd.scm test-xml.scm user.scm wiki-iki.scm \
@@ -45,7 +45,7 @@ KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
 #  certain database settings.  See persistence-dbi.scm for the details.
 
 
-TESTS = test-xml persistence rollback entry-method \
+TESTS = test-xml persistence persistence-efs rollback entry-method \
         user config gsid session partcont \
         server kahua-dbm worker redirectcont \
 	define-method-rule kahua-call-with-current-context \
@@ -79,6 +79,9 @@ partcont :
 
 persistence :
 	@gosh -I../src ./persistence.scm >> test.log
+
+persistence-efs :
+	@gosh -I../src ./persistence-efs.scm >> test.log
 
 persistence-dbi : persistence-dbi-mysql persistence-dbi-pg
 
