@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.1 2006/10/24 06:14:53 bizenn Exp $
+;; $Id: efs.scm,v 1.2 2006/10/25 03:47:37 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -81,10 +81,10 @@
 
 (define (safe-update path tmpbase writer . may-be-encoding)
   (receive (out tmp) (sys-mkstemp tmpbase)
-    (guard (e ((else
-		(close-output-port out)
-		(sys-unlink tmp)
-		(raise e))))
+    (guard (e (else
+	       (close-output-port out)
+	       (sys-unlink tmp)
+	       (raise e)))
       (let1 out (or (and-let* ((ce (get-optional may-be-encoding #f)))
 		      (wrap-with-output-conversion out ce))
 		    out)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.64 2006/10/24 06:14:52 bizenn Exp $
+;; $Id: persistence.scm,v 1.65 2006/10/25 03:47:36 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1125,12 +1125,15 @@
   with-db-error?
   (continuation  kahua-error-with-db))
 
-(define (raise-with-db-error e)
-  (call/cc
-   (lambda (cnt)
-     (raise (make-compound-condition
-             e
-             (make-condition <with-db-error> 'continuation cnt))))))
+(define (raise-with-db-error e . may-be-cont)
+  (define (raise/cc e cont)
+    (raise (make-compound-condition
+	    e
+	    (make-condition <with-db-error> 'continuation cont))))
+  (let1 cont (get-optional may-be-cont #f)
+    (if cont
+	(raise/cc e cont)
+	(call/cc (pa$ raise/cc e)))))
 
 (define-syntax with-db
   (syntax-rules ()
@@ -1163,8 +1166,8 @@
 		(when (active? db)
 		  (kahua-db-close db #t)))))))
 
-(define (kahua-db-purge-objs)
-  (let ((db (current-db)))
+(define (kahua-db-purge-objs . may-be-db)
+  (let1 db (get-optional may-be-db (current-db))
     (set! (ref db 'instance-by-id)  (make-hash-table 'eqv?))
     (set! (ref db 'instance-by-key) (make-hash-table 'equal?))))
 
@@ -1180,14 +1183,20 @@
 (define (with-kahua-db-transaction db proc)
   (start-kahua-db-transaction db)
   (guard (e (else
-	     (guard (e2 ((with-db-error? e) ((kahua-error-with-db e) #f))
-			(else (raise e)))
+	     (guard (e2 ((with-db-error? e)
+			 ((kahua-error-with-db e) #f))
+			(else
+			 (kahua-db-purge-objs db)
+			 (set! (modified-instances-of db) '())
+			 (raise e)))
 	       (finish-kahua-db-transaction db #f)
 	       (if (with-db-error? e)
 		   ((kahua-error-with-db e) #f)
 		   (raise e)))))
     (begin0
       (proc db)
+      ;; If kahua-db-sync fail, call kahua-db-rollback but not raise error
+      ;; FIXME!!
       (finish-kahua-db-transaction db #t))))
 
 (define-method write-kahua-modified-instances ((db <kahua-db>))

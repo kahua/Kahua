@@ -1,3 +1,8 @@
+2006-10-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix a bug: Now catch kahua-db-sync/kahua-db-rollback error properly,
+	  and send error message back to client.
+
 2006-10-24  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change plugins/fileio.scm:

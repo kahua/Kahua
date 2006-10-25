@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.5 2006/09/25 04:00:13 bizenn Exp $
+;; $Id: mysql.scm,v 1.6 2006/10/25 03:47:37 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use srfi-1)
@@ -120,8 +120,8 @@
   (define *select-kahua-db-classcount* "select last_insert_id()")
   (define *update-kahua-db-classcount*
     (format "update ~a set value = last_insert_id(value+1)" *kahua-db-classcount*))
-  (guard (e ((else (format (current-error-port)
-			   "Error: class-table-next-suffix: ~a" (ref e 'message)))))
+  (guard (e (else (format (current-error-port)
+			  "Error: class-table-next-suffix: ~a" (ref e 'message))))
     (with-dbi-transaction db
       (lambda (conn)
 	(with-locking-tables db

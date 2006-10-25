@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.14 2006/10/24 06:14:53 bizenn Exp $
+;; $Id: fs.scm,v 1.15 2006/10/25 03:47:37 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -80,7 +80,7 @@
     (let1 out (if encoding
 		  (wrap-with-output-conversion out encoding)
 		  out)
-      (guard (e ((else (sys-unlink tmp) (raise e))))
+      (guard (e (else (sys-unlink tmp) (raise e)))
 	(writer out)
 	(close-output-port out)
 	(sys-rename tmp file)))))

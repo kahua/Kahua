@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.21 2006/10/08 07:13:27 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.22 2006/10/25 03:47:36 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -99,22 +99,25 @@
 
 (define (handle-request header body reply-cont selector)
   (if (ping-request? header)
-    (reply-cont #t #t)
-    (with-sigmask SIG_BLOCK *TERMINATION-SIGNALS*
-      (lambda ()
-	(let1 db (current-db)
-	  (unless (kahua-db-ping db)
-	    (kahua-db-reopen db))
-	  (let1 do-reply (with-kahua-db-transaction db
-			   (lambda (db)
-			     (run-hook (kahua-hook-before))
-			     (begin0
-			       (kahua-default-handler header body reply-cont default-handler
-						      :error-proc (kahua-error-proc)
-						      :eval-environment (current-module))
-			       (run-hook (kahua-hook-after))
-			       )))
-	    (do-reply)))))
+      (reply-cont #t #t)		; deprecated
+      (with-sigmask SIG_BLOCK *TERMINATION-SIGNALS*
+	(lambda ()
+	  (let1 db (current-db)
+	    (unless (kahua-db-ping db)
+	      (kahua-db-reopen db))
+	    (let1 do-reply (guard (e (else
+				      (log-format "[worker]: Unknown error: ~a" (ref e 'message))
+				      (lambda ()
+					(reply-cont '(("x-kahua-status" "ERROR")) (kahua-error-string e #t)))))
+			     (with-kahua-db-transaction db
+			       (lambda (db)
+				 (run-hook (kahua-hook-before))
+				 (begin0
+				   (kahua-default-handler header body reply-cont default-handler
+							  :error-proc (kahua-error-proc)
+							  :eval-environment (current-module))
+				   (run-hook (kahua-hook-after))))))
+	      (do-reply)))))
       ))
 
 (define (default-handler) ((main-proc)))
@@ -136,22 +139,17 @@
 	(call-with-client-socket client
 	  (lambda (input output)
 	    (set! (port-buffering input) :none)
-	    (guard (e
-		    (#t (log-format
-			 "[server]: Read error occured in accept-handler: ~a" (ref e 'message))))
+	    (guard (e (else (log-format "[worker]: Read error occured in accept-handler: ~a" (ref e 'message))))
 	      (let ((header (read input))
 		    (body   (read input)))
-		(handle-request
-		 header body
-		 (lambda (r-header r-body)
-		   (guard (e
-			   (#t (log-format
-				"[server]: client closed connection")))
-		     (begin
-		       (write r-header output) (newline output)
-		       (write r-body output)   (newline output)
-		       (flush output))))
-		 selector)))))))
+		(handle-request header body
+				(lambda (r-header r-body)
+				  (guard (e (else (log-format "[server]: client closed connection")))
+				    (begin
+				      (write r-header output) (newline output)
+				      (write r-body output)   (newline output)
+				      (flush output))))
+				selector)))))))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.79 2006/10/08 01:36:16 bizenn Exp $
+;; $Id: server.scm,v 1.80 2006/10/25 03:47:36 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -177,28 +177,28 @@
     (define (run-cont handler context)
       (parameterize ((kahua-current-context context))
         (with-error-handler
-            (lambda (e)
-              ;; This is the last resort to capture an error.
-              ;; App server should provide more appropriate error page
-              ;; within its handler.
-              (raise-with-db-error e)
-              (values
-               (html:html
-                (html:head (html:title "Kahua error"))
-                (html:body (html:pre
-                            (html-escape-string
-                             (kahua-error-string e #t)))))
-               context))
+	  (lambda (e)
+	    ;; This is the last resort to capture an error.
+	    ;; App server should provide more appropriate error page
+	    ;; within its handler.
+	    (raise-with-db-error e)
+	    (values
+	     (html:html
+	      (html:head (html:title "Kahua error"))
+	      (html:body (html:pre
+			  (html-escape-string
+			   (kahua-error-string e #t)))))
+	     context))
           (if error-proc
-            (lambda ()
-              (with-error-handler
+	      (lambda ()
+		(with-error-handler
                   (lambda (e)
                     (raise-with-db-error e)
                     (render-proc (error-proc e) context))
-                (lambda ()
-                  (render-proc (reset/pc (handler)) context))))
-            (lambda ()
-              (render-proc (reset/pc (handler)) context))))))
+		  (lambda ()
+		    (render-proc (reset/pc (handler)) context))))
+	      (lambda ()
+		(render-proc (reset/pc (handler)) context))))))
 
     ;; Handles 'eval' protocol
     ;; () -> ([Headers], [Result])
@@ -210,14 +210,14 @@
               (cut with-output-to-port std-output
                    (cut eval-proc body eval-environment)))
           (if ok?
-            (values '(("x-kahua-status" "OK"))
-                    (list* (get-output-string error-output)
-                           (get-output-string std-output)
-                           result))
-            (values '(("x-kahua-status" "ERROR"))
-                    (string-append (get-output-string error-output)
-                                   (get-output-string std-output)
-                                   result))))))
+	      (values '(("x-kahua-status" "OK"))
+		      (list* (get-output-string error-output)
+			     (get-output-string std-output)
+			     result))
+	      (values '(("x-kahua-status" "ERROR"))
+		      (string-append (get-output-string error-output)
+				     (get-output-string std-output)
+				     result))))))
      
     ;; Main dispatcher body
     (receive (state-id cont-id) (get-gsid-from-header header)
@@ -232,39 +232,39 @@
                                        (kahua-server-uri)))
                        )
           (if (assoc-ref-car header "x-kahua-eval" #f)
-            (receive (headers result) (run-eval)
-	      (lambda ()
-		(reply-cont headers result)))
-            (receive (stree context)
-                (run-cont (if cont-id
-                            (or (session-cont-get cont-id) stale-proc)
-                            default-proc)
-                          (list*
-                           `("session-state" ,state)
-                           `("x-kahua-path-info"
-                             ,(drop* (assoc-ref-car header "x-kahua-path-info"
-                                                    '())
-                                     2))
-                           `("x-kahua-path-full-info"
-                             ,(assoc-ref-car header "x-kahua-path-info"
-                                             '()))
-                           `("x-kahua-metavariables"
-                             ,(assoc-ref-car header "x-kahua-metavariables"
-                                             '()))
-                           `("x-kahua-headers" ,(make-hash-table 'string=?))
-                           `("x-kahua-worker-uri"
-                             ,(assoc-ref-car header "x-kahua-worker-uri"
-                                             #f))
-                           body))
-              (let1 extra-headers
-                  (assoc-ref-car context "extra-headers" '())
+	      (receive (headers result) (run-eval)
 		(lambda ()
-		  (reply-cont
-		   (kahua-merge-headers header extra-headers
-					(hash-table-map
-					    (assoc-ref-car context "x-kahua-headers" '())
-					  list))
-		   stree))))))
+		  (reply-cont headers result)))
+	      (receive (stree context)
+		  (run-cont (if cont-id
+				(or (session-cont-get cont-id) stale-proc)
+				default-proc)
+			    (list*
+			     `("session-state" ,state)
+			     `("x-kahua-path-info"
+			       ,(drop* (assoc-ref-car header "x-kahua-path-info"
+						      '())
+				       2))
+			     `("x-kahua-path-full-info"
+			       ,(assoc-ref-car header "x-kahua-path-info"
+					       '()))
+			     `("x-kahua-metavariables"
+			       ,(assoc-ref-car header "x-kahua-metavariables"
+					       '()))
+			     `("x-kahua-headers" ,(make-hash-table 'string=?))
+			     `("x-kahua-worker-uri"
+			       ,(assoc-ref-car header "x-kahua-worker-uri"
+					       #f))
+			     body))
+		(let1 extra-headers
+		    (assoc-ref-car context "extra-headers" '())
+		  (lambda ()
+		    (reply-cont
+		     (kahua-merge-headers header extra-headers
+					  (hash-table-map
+					      (assoc-ref-car context "x-kahua-headers" '())
+					    list))
+		     stree))))))
         )))
   )
 
@@ -277,9 +277,9 @@
 ;; default eval proc
 (define (kahua-eval-proc body env)
   (with-error-handler
-      (lambda (e)
-        (raise-with-db-error e)
-        (values #f (kahua-error-string e #t)))
+    (lambda (e)
+      (raise-with-db-error e)
+      (values #f (kahua-error-string e #t)))
     (lambda ()
       (receive r (eval body env)
         (values #t
