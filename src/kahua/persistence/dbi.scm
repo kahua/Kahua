@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.10 2006/10/24 06:14:53 bizenn Exp $
+;; $Id: dbi.scm,v 1.11 2006/10/30 07:02:41 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -49,6 +49,7 @@
 	  dbutil:current-kahua-db-idcount
 	  dbutil:fix-kahua-db-idcount
 	  dbutil:create-kahua-db-idcount
+	  dbutil:fix-instance-table-structure
 	  ;; Utility
 	  safe-execute
 
@@ -281,13 +282,17 @@
   (hash-table-get (table-map-of db) cname #f))
 
 (define-method kahua-class->table-name ((db <kahua-db-dbi>)
-				 (class <kahua-persistent-meta>))
-  (let1 cname  (class-name class)
-    (or (get-from-table-map db cname)
-	(and-let* ((tabname (select-kahua-db-classes db cname)))
-	  (register-to-table-map db cname tabname)
-	  tabname))))
+					(cn <symbol>))
+  (or (get-from-table-map db cn)
+      (and-let* ((tabname (select-kahua-db-classes db cn)))
+	(register-to-table-map db cn tabname)
+	tabname)))
 
+(define-method kahua-class->table-name ((db <kahua-db-dbi>)
+					(class <kahua-persistent-meta>))
+  (kahua-class->table-name db (class-name class)))
+
+;; If the class does not exist, create the table of this class.
 (define-method kahua-class->table-name* ((db <kahua-db-dbi>)
 					 (class <kahua-persistent-meta>))
   (with-dbi-transaction db
@@ -301,17 +306,40 @@
 ;; You must override kahua-db-unique-id.
 (define-method kahua-db-write-id-counter ((db <kahua-db-dbi>)) #f)
 
-(define-method read-kahua-instance ((db <kahua-db-dbi>)
-                                    (class <kahua-persistent-meta>)
-                                    (key <string>) . opts)
-  (define (select-class-instance tabname)
-    (format "select dataval from ~a where keyval=?" tabname))
+(define-method read-kahua-instance ((db <kahua-db-dbi>) (class <kahua-persistent-meta>)
+				    (id <integer>))
+  (define (query tab)
+    (format "select dataval from ~a where id=?" tab))
   (and-let* ((conn (connection-of db))
 	     (tab (kahua-class->table-name db class))
-             (r (dbi-do conn (select-class-instance tab) '() key))
-             (rv  (map (cut dbi-get-value <> 0) r))
-             ((not (null? rv))))
-    (call-with-input-string (car rv) read)))
+	     (r (dbi-do conn (query tab) '() id))
+	     (rv (map (cut dbi-get-value <> 0) r))
+	     ((not (null? rv))))
+    (read-from-string (car rv))))
+
+(define-method read-kahua-instance ((db <kahua-db-dbi>)
+                                    (class <kahua-persistent-meta>)
+                                    (key <string>) . may-be-include-removed-object?)
+  (define (query tab)
+    (format "select dataval from ~a where keyval=?" tab))
+  (define (query-removed tab)
+    (format "select dataval from ~a where removed>0" tab))
+  (and-let* ((conn (connection-of db))
+	     (tab (kahua-class->table-name db class)))
+    (or (and-let* ((r (dbi-do conn (query tab) '() key))
+		   (rv  (map (cut dbi-get-value <> 0) r))
+		   ((not (null? rv))))
+	  (read-from-string (car rv)))
+	(and (get-optional may-be-include-removed-object? #f)
+	     (and-let* ((r (dbi-do conn (query-removed tab) '()))
+			(rv (map (cut dbi-get-value <> 0) r))
+			((not (null? rv))))
+	       (let/cc ret
+		 (for-each (lambda (s)
+			     (let1 o (read-from-string s)
+			       (and (equal? key (key-of o)) (ret o))))
+			   rv)
+		 #f))))))
 
 (define-method kahua-persistent-instances ((db <kahua-db-dbi>) class keys filter-proc include-removed-object?)
   (let ((cn (class-name class))
@@ -418,7 +446,7 @@
 				   (unique?  <boolean>)
 				   . cols)
   (unless (null? cols)
-    (let1 sql (format "create ~a index ~a on ~a (~a)"
+    (let1 sql (format "create index ~a ~a on ~a (~a)"
 		      (if unique? 'unique "") idx-name table
 		      (string-join cols ","))
       (dbi-do (connection-of db) sql '(:pass-through #t)))))
@@ -535,21 +563,36 @@
 ;;
 (define-method dbutil:check-removed-flag-facility ((db <kahua-db-dbi>) do-fix?)
   (define (check-removed-flag-column cn r)
-    (let ((tabname (hash-table-get (table-map-of db) cn))
+    (let ((tabname (kahua-class->table-name db cn))
 	  (conn (connection-of db)))
       (if (guard (e (else #f))
-	    (map identity (dbi-do conn (format "select removed from ~a where keyval = NULL" tabname))))
+	    (map identity (dbi-do conn (format "select removed from ~a where keyval is NULL" tabname))))
 	  r
 	  (or (and do-fix? (add-removed-flag-column conn tabname) 'FIXED)
 	      'NG))))
   (define (add-removed-flag-column conn tabname)
     (dbi-do conn (format "alter table ~a add removed smallint not null default 0" tabname)
+	    '(:pass-through #t))
+    (dbi-do conn (format "create index idx_rmd_~a on ~a (removed)" tabname tabname)
 	    '(:pass-through #t)))
   (dbutil:persistent-classes-fold db check-removed-flag-column 'OK))
+
+(define-generic dbutil:fix-instance-table-structure)
+(define-method dbutil:check-id-column ((db <kahua-db-dbi>) do-fix?)
+  (define (check-id-column cn r)
+    (let ((tabname (kahua-class->table-name db cn))
+	  (conn (connection-of db)))
+      (if (guard (e (else #f))
+	    (map identity (dbi-do conn (format "select id from ~a where keyval is NULL" tabname))))
+	  r
+	  (or (and do-fix? (dbutil:fix-instance-table-structure db tabname) 'FIXED)
+	      'NG))))
+  (dbutil:persistent-classes-fold db check-id-column 'OK))
 
 (define-constant *proc-table*
   `((,dbutil:check-id-counter . "Checking kahua_db_idcount... ")
     (,dbutil:check-class-counter . "Checking kahua_db_classcount... ")
+    (,dbutil:check-id-column . "Checking ID column and indexes... ")
     (,dbutil:check-removed-flag-facility . "Checking removed flags... ")
     ))
 

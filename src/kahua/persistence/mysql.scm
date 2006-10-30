@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.6 2006/10/25 03:47:37 bizenn Exp $
+;; $Id: mysql.scm,v 1.7 2006/10/30 07:02:41 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use srfi-1)
@@ -135,16 +135,18 @@
 					 (class <kahua-persistent-meta>))
   (define (create-class-table-sql tabname)
     (format "create table ~a (
-               keyval varchar(255) binary not null,
+               id      integer not null,
+               keyval  longtext binary,
                dataval longtext binary not null,
                removed smallint not null default 0,
-             constraint pk_~a primary key (keyval)
-             ) type=~a" tabname tabname (table-type-of db)))
+               constraint primary key (id),
+               constraint unique      (keyval(255)),
+               index                  (removed)
+             ) type=~a" tabname (table-type-of db)))
   (let ((cname (class-name class))
 	(newtab (format *kahua-class-table-format* (class-table-next-suffix db))))
     (insert-kahua-db-classes db cname newtab)
     (dbi-do (connection-of db) (create-class-table-sql newtab) '(:pass-through #t))
-    (add-index-to-table db newtab (format "idx_rmd_~a" newtab) #f "removed")
     (register-to-table-map db cname newtab)
     newtab))
 
@@ -155,16 +157,41 @@
 (define-method write-kahua-instance ((db <kahua-db-mysql>)
                                      (obj <kahua-persistent-base>)
 				     (tab <string>))
-  (define *insert-class-table-format* "insert into ~a (keyval, dataval) values (?, ?)")
-  (define *update-class-table-format* "update ~a set dataval = ?, removed = ? where keyval = ?")
+  (define *insert-class-table-format* "insert into ~a (id, keyval, dataval) values (?, ?, ?)")
+  (define *update-class-table-format* "update ~a set keyval=?, dataval=?, removed=0 where id = ?")
+  (define *remove-class-table-format* "update ~a set keyval=NULL, dataval=?, removed=1 where id = ?")
   (let* ((conn (connection-of db))
 	 (data (call-with-output-string (pa$ kahua-write obj)))
-	 (key  (key-of obj)))
+	 (id (kahua-persistent-id obj))
+	 (key (key-of obj)))
     (debug-write "~a: ~a: ~s\n" (if (ref obj '%floating-instance) 'INSERT 'UPDATE) key obj)
-    (if (ref obj '%floating-instance)
-	(dbi-do conn (format *insert-class-table-format* tab) '() key data)
-	(dbi-do conn (format *update-class-table-format* tab) '() data (if (removed? obj) 1 0) key))
+    (cond ((ref obj '%floating-instance) (dbi-do conn (format *insert-class-table-format* tab) '() id key data))
+	  ((removed? obj) (dbi-do conn (format *remove-class-table-format* tab) '() data id))
+	  (else (dbi-do conn (format *update-class-table-format* tab) '() key data id)))
     (set! (ref obj '%floating-instance) #f)
+    ))
+
+(define-method dbutil:fix-instance-table-structure ((db <kahua-db-mysql>) tabname)
+  (define (warn tabname e) (format (current-error-port) "Fail: ~a: ~a\n" tabname (ref e 'message)))
+  (define add-id-column (format "alter table ~a add id integer not null" tabname))
+  (define drop-primary-key (format "alter table ~a drop primary key" tabname))
+  (define modify-keyval-type (format "alter table ~a modify keyval longtext null" tabname))
+  (define add-unique (format "alter table ~a add constraint unique (keyval(255))" tabname))
+  (define update-table (format "update ~a set id = ? where keyval = ?" tabname))
+  (define select-table (format "select keyval, dataval from ~a" tabname))
+  (define set-primary-key (format "alter table ~a add constraint primary key (id)" tabname))
+  (let1 conn (connection-of db)
+    (for-each (lambda (stmt)
+		(guard (e (else (warn tabname e)))
+		  (dbi-do conn stmt '(:pass-through #t))))
+	      `(,add-id-column ,drop-primary-key ,modify-keyval-type ,add-unique))
+    (for-each (lambda (r)
+		(let ((k (dbi-get-value r 0))
+		      (o (read-from-string (dbi-get-value r 1))))
+		  (dbi-do conn update-table '() (ref o 'id) k)))
+	      (dbi-do conn select-table '()))
+    (guard (e (else (warn tabname e)))
+      (dbi-do conn set-primary-key '(:pass-through #t)))
     ))
 
 (provide "kahua/persistence/mysql")

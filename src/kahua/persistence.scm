@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.65 2006/10/25 03:47:36 bizenn Exp $
+;; $Id: persistence.scm,v 1.66 2006/10/30 07:02:40 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -32,6 +32,7 @@
 	  ;; Kahua Object Database
           <kahua-db>
 	  kahua-db-create
+	  <kahua-db-error>
           <with-db-error>
           current-db with-db kahua-db-sync kahua-db-rollback
 	  with-kahua-db-connection with-kahua-db-transaction
@@ -56,7 +57,6 @@
 	  finish-kahua-db-transaction
 	  with-kahua-db-transaction
 	  read-kahua-instance
-	  read-kahua-instance-by-id
 	  write-kahua-instance
 	  write-kahua-modified-instances
 	  kahua-db-write-id-counter
@@ -75,6 +75,7 @@
 	  dbutil:with-dummy-reader-ctor
 	  dbutil:persistent-classes-fold
 	  dbutil:check&fix-database
+	  dbutil:kahua-db-fs->efs
           ))
 
 (select-module kahua.persistence)
@@ -300,7 +301,6 @@
 (define-class <kahua-persistent-base> ()
   (;; unique ID 
    (%kahua-persistent-base::id :init-keyword :%kahua-persistent-base::id
-			       :getter kahua-persistent-id
 			       :init-form (%kahua-db-unique-id) :final #t)
    (%kahua-persistent-base::removed? :init-value #f
 				     :getter removed?
@@ -326,6 +326,10 @@
 
 (define (kahua-persistent-base? obj)
   (is-a? obj <kahua-persistent-base>))
+
+;; You should not override this method.
+(define-method kahua-persistent-id ((obj <kahua-persistent-base>))
+  (slot-ref-using-class (current-class-of obj) obj '%kahua-persistent-base::id))
 
 ;; this method should be overriden by subclasses for convenience.
 (define-method key-of ((obj <kahua-persistent-base>))
@@ -1019,6 +1023,8 @@
 ;; Database class -----------------------------------------
 (define current-db (make-parameter #f))
 
+(define-condition-type <kahua-db-error> <error> kahua-db-error?)
+
 (define-class <kahua-db-meta> (<class>)
   ((all-instances :init-value '())))
 
@@ -1288,9 +1294,6 @@
   (hash-table-get (ref (current-db) 'instance-by-key)
                   (cons (class-name class) key) #f))
 
-;; Temporary Names
-;; FIXME!!
-(define-generic read-kahua-instance-by-id)
 (define (kahua-instance class id . args)
   (let ((db (current-db))
 	(sanitize (if (get-optional args #f)
@@ -1298,7 +1301,7 @@
 		      %sanitize-object)))
     (unless db (error "kahua-instance: No database is active"))
     (sanitize (or (id->kahua-instance id)
-		  (and-let* ((i (read-kahua-instance-by-id db class id)))
+		  (and-let* ((i (read-kahua-instance db class id)))
 		    (set! (ref i '%floating-instance) #f)
 		    i)))))
 
@@ -1318,7 +1321,9 @@
   (ref obj '%floating-instance))
 
 (define-method read-kahua-instance ((object <kahua-persistent-base>))
-  (read-kahua-instance (current-db) (current-class-of object) (key-of object)))
+  ;; This is very transitional code.
+  (guard (e (else (read-kahua-instance (current-db) (current-class-of object) (key-of object))))
+    (read-kahua-instance (current-db) (current-class-of object) (kahua-persistent-id object))))
 
 ;;=========================================================
 ;; "View" as a collection
@@ -1469,5 +1474,7 @@
     (dbutil:with-dummy-reader-ctor
      (lambda ()
        (fold proc knil (cons '<kahua-persistent-metainfo> classes))))))
+
+(define-generic dbutil:kahua-db-fs->efs)
 
 (provide "kahua/persistence")

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.5 2006/10/20 07:36:28 bizenn Exp $
+;; $Id: postgresql.scm,v 1.6 2006/10/30 07:02:41 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -87,9 +87,11 @@
 (define (lock-class-table tabname)
   (format "lock ~a in share row exclusive mode" tabname))
 (define (insert-class-instance tabname)
-  (format "insert into ~a (keyval, dataval) values (?, ?)" tabname))
+  (format "insert into ~a (id, keyval, dataval) values (?, ?, ?)" tabname))
 (define (update-class-instance tabname)
-  (format "update ~a set dataval = ?, removed = ? where keyval = ?" tabname))
+  (format "update ~a set keyval=?, dataval=?, removed=0 where id = ?" tabname))
+(define (remove-class-instance tabname)
+  (format "update ~a set keyval=NULL, dataval=?, removed=1 where id = ?" tabname))
 
 (define-method kahua-db-unique-id ((db <kahua-db-postgresql>))
   (x->integer (car (map (cut dbi-get-value <> 0)
@@ -102,11 +104,13 @@
 					 (class <kahua-persistent-meta>))
   (define (create-class-table-sql tabname)
     (format "create table ~a (
-               keyval  text not null,
+               id      integer not null,
+               keyval  text,
                dataval text not null,
                removed smallint not null default 0,
-             constraint pk_~a primary key (keyval)
-             )" tabname tabname))
+               constraint pk_~a primary key (id),
+               constraint uq_~a unique (keyval)
+             )" tabname tabname tabname))
   (let ((cname (class-name class))
 	(newtab (format *kahua-class-table-format* (class-table-next-suffix db))))
     (insert-kahua-db-classes db cname newtab)
@@ -123,11 +127,12 @@
 				     (obj <kahua-persistent-base>)
 				     (tab <string>))
   (let ((data (call-with-output-string (pa$ kahua-write obj)))
+	(id (kahua-persistent-id obj))
 	(key  (key-of obj)))
     (let1 conn (connection-of db)
-      (if (ref obj '%floating-instance)
-	  (dbi-do conn (insert-class-instance tab) '() key data)
-	  (dbi-do conn (update-class-instance tab) '() data (if (removed? obj) 1 0) key)))
+      (cond ((ref obj '%floating-instance) (dbi-do conn (insert-class-instance tab) '() id key data))
+	    ((removed? obj) (dbi-do conn (remove-class-instance tab) '() data id))
+	    (else (dbi-do conn (update-class-instance tab) '() key data id))))
     (set! (ref obj '%floating-instance) #f)
     ))
 
@@ -162,5 +167,29 @@
 (define-method dbutil:create-kahua-db-classcount ((db <kahua-db-postgresql>) n)
   (create-kahua-db-classcount db)
   (dbutil:fix-kahua-db-classcount db n))
+
+(define-method dbutil:fix-instance-table-structure ((db <kahua-db-postgresql>) tabname)
+  (define (warn tabname e) (format (current-error-port) "Fail: ~a: ~a\n" tabname (ref e 'message)))
+  (define drop-primary-key (format "alter table ~a drop constraint pk_~a" tabname tabname))
+  (define modify-keyval-type (format "alter table ~a alter column keyval drop not null" tabname))
+  (define add-unique (format "alter table ~a add constraint uq_~a unique (keyval)" tabname tabname))
+  (define add-id-column (format "alter table ~a add column id integer not null default -1" tabname))
+  (define select (format "select keyval, dataval from ~a" tabname))
+  (define set-id (format "update ~a set id=? where keyval=?" tabname))
+  (define add-primary-key (format "alter table ~a add constraint pk_~a primary key (id)" tabname tabname))
+  (define drop-default (format "alter table ~a alter column id drop default" tabname))
+  (let1 conn (connection-of db)
+    (for-each (lambda (stmt)
+		(guard (e (else (warn tabname e)))
+		  (dbi-do conn stmt '(:pass-through #t))))
+	      `(,add-id-column ,drop-primary-key ,modify-keyval-type ,add-unique))
+    (for-each (lambda (r)
+		(let ((k (dbi-get-value r 0))
+		      (o (read-from-string (dbi-get-value r 1))))
+		  (dbi-do conn set-id '() (ref o 'id) k)))
+	      (dbi-do conn select '()))
+    (dbi-do conn add-primary-key '(:pass-through #t))
+    (dbi-do conn drop-default '(:pass-through #t))
+    ))
 
 (provide "kahua/persistence/postgresql")

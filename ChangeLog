@@ -1,3 +1,17 @@
+2006-10-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add kahua-dbutil upgrade facility.
+	  If you'd like to upgrade from old fsdb to efs db:
+	  kahua-dbutil upgrade path-to-db
+
+	* Add kahua-dbutil fix facility.
+
+	* Change MySQL/PostgreSQL table structure.
+	  Now kahua_\d+ table have "id" column, and it is primary key of
+	  the table.  The column named "keyval" is now nullable column,
+	  have unique index, and if the record is "removed", the column
+	  is set NULL.
+
 2006-10-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix a bug: Now catch kahua-db-sync/kahua-db-rollback error properly,
