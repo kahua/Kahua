@@ -5,10 +5,11 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.3 2006/10/30 07:02:41 bizenn Exp $
+;; $Id: efs.scm,v 1.4 2006/11/19 22:02:26 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
+  (use srfi-11)
   (use srfi-13)
   (use file.util)
   (use gauche.fcntl)
@@ -32,6 +33,9 @@
 ;; ${path-to-db}/${class-name}/${object-id}
 ;; ${path-to-db}/${class-name}/%%alive/${object-id} -> ../${object-id}
 ;; ${path-to-db}/${class-name}/%%key/${keyval}      -> ../${object-id}
+;; ${path-to-db}/${class-name}/%%lock/lock
+;; ${path-to-db}/${class-name}/%%index/${escaped-slot-name/${escaped-index-value}/${object-id} ->../${object-id}
+;; ${path-to-db}/${class-name}/%%index/${escaped-slot-name/${escaped-index-value} -> ../${object-id}
 
 ;; filesystem-based persistent store (default)
 
@@ -43,10 +47,13 @@
 (define-constant *lock-efs* (make <sys-flock> :type F_WRLCK))
 (define-constant *unlock-efs* (make <sys-flock> :type F_UNLCK))
 (define-constant *file-name-limit* 200)
+(define-constant *class-lock-dir* "%%lock")
+(define-constant *class-lock-file* "lock")
+(define-constant *index-base* "%%index")
 
 (define-condition-type <kahua-db-efs-error> <kahua-db-error> kahua-db-efs-error?)
 (define (kahua-db-efs-error fmt . args)
-  (error <kahua-db-efs-error> :message (apply format fmt args)))
+  (apply errorf <kahua-db-efs-error> fmt args))
 
 (define mk-dbdir (cut make-directory* <> #o770))
 
@@ -57,6 +64,7 @@
    (character-encoding-path   :getter character-encoding-path-of)
    (lock-path                 :getter lock-path-of)
    (tmp-path                  :getter tmp-path-of)
+   (lock-port                 :accessor lock-port-of :init-value #f)
    ))
 
 (define-method initialize ((db <kahua-db-efs>) initargs)
@@ -75,7 +83,8 @@
     (slot-set! db 'lock-path (build-lock-path path))
     (slot-set! db 'id-counter-path (build-id-counter-path path))
     (slot-set! db 'character-encoding-path (build-character-encoding-path path))
-    (slot-set! db 'tmp-path (build-tmp-path path))))
+    (slot-set! db 'tmp-path (build-tmp-path path))
+    ))
 
 (define (kahua-id-string obj)
   (x->string (kahua-persistent-id obj)))
@@ -101,24 +110,33 @@
 (define (with-locking-output-file file proc . opts)
   (apply call-with-output-file file
 	 (lambda (out)
-	   (sys-fcntl out F_SETLKW *lock-efs*)
-	   (proc out))
-	 ;; Unlock implicitly.
+	   (with-locking-output-port out (cut proc out)))
 	 opts))
 
-(define-method kahua-db-unique-id ((db <kahua-db-efs>))
-  (let1 path  (id-counter-path-of db)
-    (with-locking-output-file path
-      (lambda (out)
-	(let1 next-id (read-from-file path)
-	  (safe-update-file path (tmp-path-of db) (pa$ write (+ next-id 1)) #f)
-	  next-id))
-      :if-exists :append)))
+(define (with-locking-output-port port thunk)
+  (define (lock port)
+    (sys-fcntl port F_SETLKW *lock-efs*))
+  (define (unlock port)
+    (sys-fcntl port F_SETLK *unlock-efs*))
 
-(define-method lock-db ((db <kahua-db-efs>))
-  #t)
-(define-method unlock-db ((db <kahua-db-efs>))
-  #t)
+  (lock port)
+  (begin0
+    (guard (e (else
+	       (unlock port)
+	       (raise e)))
+      (thunk))
+    (unlock port)))
+
+(define-method kahua-db-unique-id ((db <kahua-db-efs>))
+  (with-locking-output-port (lock-port-of db)
+    (lambda ()
+      (let* ((path (id-counter-path-of db))
+	     (next-id (read-from-file path)))
+	(safe-update-file path (tmp-path-of db) (pa$ write (+ next-id 1)) #f)
+	next-id))))
+
+(define-method lock-db ((db <kahua-db-efs>)) #t)   ; DUMMY
+(define-method unlock-db ((db <kahua-db-efs>)) #t) ; DUMMY
 
 (define-method kahua-db-create ((db <kahua-db-efs>))
   ;; There could be a race condition here, but it would be very
@@ -163,20 +181,31 @@
 	  (kahua-db-efs-error
 	   "kahua-db-open: ~s is broken as efs: please check directory structure." path))))
 
-  (with-locking-output-file (lock-path-of db)
-    (lambda _
-      (cond ((file-is-directory? (real-path-of db))
-	     (if (kahua-db-check db)
-		 (slot-set! db 'character-encoding (read-character-encoding db))
-		 (check-old-kahua-db-fs db)))
-	    (else (kahua-db-create db)))
-      (set! (active? db) #t)))
+  (unless (active? db)
+    (set! (lock-port-of db) (open-output-file (lock-path-of db) :if-exists :append))
+    (with-locking-output-port (lock-port-of db)
+      (lambda ()
+	(cond ((file-is-directory? (real-path-of db))
+	       (if (kahua-db-check db)
+		   (slot-set! db 'character-encoding (read-character-encoding db))
+		   (check-old-kahua-db-fs db)))
+	      (else (kahua-db-create db)))
+	(set! (active? db) #t))))
   db)
 
 (define-method kahua-db-close ((db <kahua-db-efs>) commit?)
+  (and-let* ((p (lock-port-of db)))
+    (unless (port-closed? p)
+      (close-output-port p)
+      (set! (lock-port-of db) #f)))
   (set! (active? db) #f))
 
 (define-method kahua-db-reopen ((db <kahua-db-efs>))
+  (and-let* ((p (lock-port-of db)))
+    (unless (port-closed? p)
+      (close-output-port p)
+      (set! (lock-port-of db) #f)))
+  (set! (lock-port-of db) (open-output-file (lock-path-of db) :if-exists :append))
   (set! (active? db) #t)
   db)
 
@@ -194,6 +223,8 @@
 
 (define-constant *class-name-literal* #[0-9a-zA-Z\-<>])
 (define-constant *key-literal* #[0-9a-zA-Z\-<>])
+(define-constant *slot-name-literal* #[0-9a-zA-Z\-])
+(define-constant *index-literal* #[0-9a-zA-Z\-])
 
 (define (string->path str literal lim encoding)
   (define (proc-byte byte cnt)
@@ -211,6 +242,10 @@
       (cond ((= cnt 0) (write-char #\_))
 	    ((>= cnt lim) (display "/_")))))))
 
+(define (mk-symlink* target path)
+  (mk-dbdir (sys-dirname path))
+  (sys-symlink target path))
+
 ;; class path(data path):
 ;;   ${db-path}/${escaped-class-name}
 
@@ -225,12 +260,22 @@
 (define-method data-path ((db <kahua-db-efs>) (obj <kahua-persistent-base>))
   (data-path db (class-name (class-of obj)) (kahua-id-string obj)))
 
+(define-method class-lock-path ((db <kahua-db-efs>) (cn <symbol>))
+  (data-path db cn *class-lock-dir* *class-lock-file*))
+
 (define (create-class-directory* db class)
-  (let1 class-path (data-path db (class-name class))
+  (let* ((cname (class-name class))
+	 (class-path (data-path db cname)))
     (unless (file-is-directory? class-path)
       (mk-dbdir class-path)
-      (create-alive-directory* db class)
-      (create-key-directory* db class))))
+      (mk-dbdir (build-path class-path *class-lock-dir*))
+      (with-locking-output-file (class-lock-path db cname)
+	(lambda _
+	  (create-alive-directory* db class)
+	  (create-key-directory* db class)
+	  (create-index-directory* db class)
+	  )
+	:if-exists :append))))
 
 ;; alive path(hold symlinks to alive(not removed) instances:
 ;;   ${db-path}/${escaped-class-name}/%%alive/${object-id}
@@ -245,12 +290,8 @@
   (let1 alivedir (alive-path db (class-name class))
     (unless (file-is-directory? alivedir)
       (mk-dbdir alivedir)
-      (let1 c (make-kahua-collection db class '(:include-removed-object? #t))
-	(for-each (lambda (i)
-		    (unless (removed? i)
-		      (sys-symlink (build-path ".." (kahua-id-string i))
-				   (alive-path db i))))
-		  c)))))
+      (for-each (pa$ maintain-alive-link db)
+		(make-kahua-collection db class '(:include-removed-object? #t))))))
 
 (define (maintain-alive-link db obj)
   (define (maintain-simple-symlink db path obj)
@@ -284,12 +325,12 @@
 
 (define (maintain-key-link db obj)
   (let* ((k (key->path-component (key-of obj) (character-encoding-of db)))
-	 (path (build-path (key-path db (class-name (class-of obj)) k)))
+	 (path (build-path (key-path db (class-name (class-of obj))) k))
 	 (target (key-symlink-target (kahua-id-string obj) k)))
     (cond ((file-is-symlink? path)
 	   (if (equal? target (sys-readlink path))
 	       (when (removed? obj) (sys-unlink path))
-	       (kahua-db-efs-error "Error: key ~s conflicts other instance" (key-of obj))))
+	       (kahua-db-efs-error "key ~s conflicts other instance" (key-of obj))))
 	  ((removed? obj) (undefined)) ; do nothing
 	  (else (make-key-link target path)))))
 
@@ -298,6 +339,103 @@
     (unless (file-is-directory? keydir)
       (mk-dbdir keydir)
       (for-each (pa$ maintain-key-link db)
+		(make-kahua-collection db class '())))))
+
+;; Index support
+
+(define-method index-base-path ((db <kahua-db-efs>) (cn <symbol>))
+  (build-path (data-path db cn) *index-base*))
+(define (slot-name-encode slot-name encoding)
+  (string->path (symbol->string slot-name) *slot-name-literal* *file-name-limit* encoding))
+(define (index-value-encode value encoding)
+  (string->path (with-output-to-string (cut write/ss value)) *index-literal* *file-name-limit* encoding))
+(define-method index-value-path ((db <kahua-db-efs>) (sn <symbol>) value)
+  (let1 enc (character-encoding-of db)
+    (build-path (slot-name-encode sn enc) (index-value-encode value enc))))
+(define-method index-slot-path ((db <kahua-db-efs>) (cn <symbol>) (sn <symbol>))
+  (build-path (index-base-path db cn) (slot-name-encode sn (character-encoding-of db))))
+(define-method index-full-path ((db <kahua-db-efs>) (cn <symbol>) (sn <symbol>) value)
+  (build-path (index-base-path db cn) (index-value-path db sn value)))
+(define-method compute-index-link ((db <kahua-db-efs>) (obj <kahua-persistent-base>)
+				   (slot-name <symbol>) value kind)
+  (let* ((idstr (kahua-id-string obj))
+	 (leaf (case kind
+		 ((:unique) "%%self")
+		 ((:any)    idstr)
+		 (else (kahua-db-efs-error "Unknown index kind: ~s" kind))))
+	 (base (index-base-path db (class-name (class-of obj))))
+	 (part (index-value-path db slot-name value))
+	 (rel (regexp-replace-all #/[^\/]+/ part "..")))
+    (values (build-path rel ".." idstr) (build-path base part leaf))))
+
+(define (update-index-link db obj slot-name cmd kind old-value new-value)
+  (let-values (((old-target old-link) (if (eq? :add cmd)
+					  (values #f #f)
+					  (compute-index-link db obj slot-name old-value kind)))
+	       ((new-target new-link) (if (eq? :drop cmd)
+					  (values #f #f)
+					  (compute-index-link db obj slot-name new-value kind))))
+    (when (and old-link (file-is-symlink? old-link) (string=? old-target (sys-readlink old-link)))
+      (sys-unlink old-link))
+    (when new-link
+      (cond ((file-is-symlink? new-link)
+	     (unless (string=? new-target (sys-readlink new-link))
+	       (kahua-db-efs-error "index conflict: slot: ~s/value: ~s" slot-name new-value)))
+	    (else (mk-symlink* new-target new-link))))))
+
+(define (maintain-index-link db obj)
+  (for-each (pa$ apply update-index-link db obj)
+	    (slot-ref obj '%modified-index-slots))
+  (set! (ref obj '%modified-index-slots) '()))
+
+(define (create-all-index-link db class)
+  (and-let* ((directives (filter-map (lambda (s)
+				       (and-let* ((idx (slot-definition-option s :index #f))
+						  (sn (slot-definition-name s)))
+					 (lambda (obj)
+					   (list sn :add idx #f (slot-ref obj sn)))))
+				     (class-slots class)))
+	     ((pair? directives)))
+    (for-each (lambda (o)
+		(for-each (pa$ apply update-index-link db o)
+			  (map (cut <> o) directives))
+		(slot-set! o '%modified-index-slots '()))
+	      (make-kahua-collection db class '()))))
+
+(define (drop-all-index-link db class)
+  (and-let* ((slots (filter-map (lambda (s)
+				  (and (slot-definition-option s :index #f)
+				       (slot-definition-name s)))
+				(class-slots class)))
+	     ((not (null? slots))))
+    (directory-fold (index-base-path db (class-name class))
+		    (lambda (f r)
+		      (and (file-is-symlink? f) (sys-unlink f)) #t) #t)))
+
+(define (create-index-directory* db class)
+  (let1 idxdir (index-base-path db (class-name class))
+    (unless (file-is-directory? idxdir)
+      (mk-dbdir idxdir)
+      (create-all-index-link db class))))
+
+(define-method kahua-interp-index-translator ((db <kahua-db-efs>) class translator)
+  (define (drop-index-slot-links db class sn)
+    (and-let* ((d (index-slot-path db (class-name class) sn))
+	       ((file-is-directory? d)))
+      (directory-fold d (lambda (p r)
+			  (and (file-is-symlink? p) (sys-unlink p)) #t) #t)))
+  (let1 index-creator(filter-map (apply$ (lambda (sn dir idx)
+					   (case dir
+					     ((:drop :modify) (drop-index-slot-links db class sn)))
+					   (and (memq dir '(:modify :add))
+						(lambda (o)
+						  (update-index-link db o sn :add idx #f
+								     (slot-ref-using-class class o sn))
+						  (slot-set-using-class! class o '%modified-index-slots '())))))
+				 translator)
+    (unless (null? index-creator)
+      (for-each (lambda (o)
+		  (for-each (cut <> o) index-creator))
 		(make-kahua-collection db class '())))))
 
 ;;
@@ -327,22 +465,24 @@
 
 (define-method write-kahua-instance ((db <kahua-db-efs>)
                                      (obj <kahua-persistent-base>))
-  (create-class-directory* db (class-of obj))
-  (let* ((file-path (data-path db obj))
+  (let* ((class (class-of obj))
+	 (file-path (data-path db obj))
 	 (writer (lambda (out)
 		   (with-port-locking out (cut kahua-write obj out)))))
-    (if (ref obj '%floating-instance)
-	(guard (e (else (kahua-db-efs-error "duplicate key: ~s" (key-of obj))))
-	  (call-with-output-file file-path
-	    writer
-	    :if-exists :error
-	    :encoding (character-encoding-of db)))
-	(with-locking-output-file file-path
-	  (lambda _
+    (create-class-directory* db class)
+    (with-locking-output-file (class-lock-path db (class-name class))
+      (lambda _
+	(if (ref obj '%floating-instance)
+	    (guard (e (else (kahua-db-efs-error "duplicate key: ~s" (key-of obj))))
+	      (call-with-output-file file-path
+		writer
+		:if-exists :error
+		:encoding (character-encoding-of db)))
 	    (safe-update-file file-path (tmp-path-of db) writer (character-encoding-of db)))
-	  :if-exists :append))
-    (maintain-alive-link db obj)
-    (maintain-key-link db obj)
+	(maintain-alive-link db obj)
+	(maintain-key-link db obj)
+	(maintain-index-link db obj))
+      :if-exists :append)
     (set! (ref obj '%floating-instance) #f)))
 
 ;; deprecated
@@ -354,29 +494,67 @@
       (apply directory-list path opts)
       '()))
 
-(define-method kahua-persistent-instances ((db <kahua-db-efs>) class keys filter-proc include-removed-object?)
-  (let* ((cn (class-name class))
-	 (filter (cond (include-removed-object?
-			(lambda (obj)
-			  (and obj (or (not keys) (member (key-of obj) keys)) (filter-proc obj))))
-		       (else filter-proc))))
-    (cond (include-removed-object?
-	   (filter-map (lambda (id)
-			 (and-let* ((obj (kahua-instance class (x->integer id) include-removed-object?)))
-			   (filter obj)))
-		       (directory-list* (data-path db cn) :children? #t
-					:filter file-is-regular? :filter-add-path? #t)))
-	  (keys
-	   (filter-map (lambda (k)
-			 (and-let* ((obj (find-kahua-instance class k include-removed-object?)))
-			   (filter obj)))
-		       keys))
-	  (else
-	   (filter-map (lambda (id)
-			 (and-let* ((obj (kahua-instance class (x->integer id) include-removed-object?)))
-			   (filter obj)))
-		       (directory-list* (alive-path db cn) :children #t
-					:filter file-is-symlink? :filter-add-path? #t))))))
+(define-method kahua-persistent-instances ((db <kahua-db-efs>) class opts)
+  (define (kahua-instances-by-index db class slot-name slot-value filter-proc)
+    (let/cc ret
+      (let* ((cached-objs (or (and-let* ((cached (read-index-cache class slot-name slot-value)))
+				(let* ((slot-def (class-slot-definition class slot-name))
+				       (idx (if slot-def
+						(slot-definition-option slot-def :index #f)
+						(kahua-persistence-error "Class ~s doesn't have slot ~s"
+									 class slot-name)))
+				       (objs (case idx
+					       ((:unique) (ret (cond ((slot-ref cached '%floating-instance) '())
+								     ((filter-proc cached) => list)
+								     (else                    '()))))
+					       ((:any) (filter (lambda (o)
+								 (and (not (slot-ref o '%floating-instance))
+								      (filter-proc o)))
+							       cached))
+					       (else (kahua-persistence-error "Unknown index kind: ~s" idx)))))
+				  objs))
+			      '()))
+	     (out-of-cache? (let1 ids (map (pa$ kahua-persistent-id) cached-objs)
+			      (lambda (id) (not (memv (x->integer id) ids)))))
+	     (index-path (index-full-path db (class-name class) slot-name slot-value)))
+	(if (file-is-directory? index-path)
+	    (directory-fold index-path
+			    (lambda (path r)
+			      (if (out-of-cache? (sys-basename (sys-readlink path)))
+				  (cond ((filter-proc (read-from-file path :encoding (character-encoding-of db)))
+					 => (cut cons <> r))
+					(else r))
+				  r))
+			    cached-objs)
+	    '()))))
+  (let-keywords* opts ((index #f)
+		       (keys #f)
+		       (predicate #f)
+		       (include-removed-object? #f))
+    (let1 cn (class-name class)
+      (cond (include-removed-object?
+	     (let1 filter-proc (make-kahua-collection-filter class opts)
+	       (filter-map (lambda (id)
+			     (and-let* ((obj (kahua-instance class (x->integer id) include-removed-object?)))
+			       (filter-proc obj)))
+			   (directory-list* (data-path db cn) :children? #t
+					    :filter file-is-regular? :filter-add-path? #t))))
+	    (index
+	     (let1 filter-proc (make-kahua-collection-filter class (delete-keyword :index opts))
+	       (kahua-instances-by-index db class (car index) (cdr index) filter-proc)))
+	    (keys
+	     (let1 filter-proc (make-kahua-collection-filter class (delete-keyword :keys opts))
+	       (filter-map (lambda (k)
+			     (and-let* ((obj (find-kahua-instance class k include-removed-object?)))
+			       (filter-proc obj)))
+			   keys)))
+	    (else
+	     (let1 filter-proc (make-kahua-collection-filter class opts)
+	       (filter-map (lambda (id)
+			     (and-let* ((obj (kahua-instance class (x->integer id) include-removed-object?)))
+			       (filter-proc obj)))
+			   (directory-list* (alive-path db cn) :children #t
+					    :filter file-is-symlink? :filter-add-path? #t))))))))
 
 ;;=================================================================
 ;; Database Consistency Check and Fix

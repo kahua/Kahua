@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.6 2006/10/30 07:02:41 bizenn Exp $
+;; $Id: postgresql.scm,v 1.7 2006/11/19 22:02:26 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -132,9 +132,8 @@
     (let1 conn (connection-of db)
       (cond ((ref obj '%floating-instance) (dbi-do conn (insert-class-instance tab) '() id key data))
 	    ((removed? obj) (dbi-do conn (remove-class-instance tab) '() data id))
-	    (else (dbi-do conn (update-class-instance tab) '() key data id))))
-    (set! (ref obj '%floating-instance) #f)
-    ))
+	    (else (dbi-do conn (update-class-instance tab) '() key data id)))))
+  (next-method))
 
 ;;=================================================================
 ;; Database Consistency Check and Fix

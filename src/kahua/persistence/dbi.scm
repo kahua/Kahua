@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.11 2006/10/30 07:02:41 bizenn Exp $
+;; $Id: dbi.scm,v 1.12 2006/11/19 22:02:26 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -41,7 +41,8 @@
 	  register-to-table-map
 
 	  kahua-db-dbi-build-dsn
-
+	  initialize-kahua-db-idcount
+	  initialize-kahua-db-classcount
 	  ;; Database Consistency Check and Fix.
 	  dbutil:current-kahua-db-classcount
 	  dbutil:fix-kahua-db-classcount
@@ -61,7 +62,9 @@
 
 (select-module kahua.persistence.dbi)
 
-(define-condition-type <kahua-persistence-dbi-error> <kahua-error> #f)
+(define-condition-type <kahua-db-dbi-error> <kahua-db-error> kahua-db-dbi-error?)
+(define (kahua-db-dbi-error fmt . args)
+  (apply errorf <kahua-db-dbi-error> fmt args))
 
 ;; Debug Facility
 ;(define dbi-do% dbi-do)
@@ -341,55 +344,68 @@
 			   rv)
 		 #f))))))
 
-(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class keys filter-proc include-removed-object?)
-  (let ((cn (class-name class))
-	(icache (ref db 'instance-by-key))
-	(conn (connection-of db)))
-    (define (%select-instances tab where)
-      (format "select keyval, dataval from ~a ~a" tab where))
-    (define (%make-where-clause keys include-removed-object?)
-      (let* ((keys-cond (%make-keys-condition keys))
-	     (removed-cond (%make-removed-condition include-removed-object?)))
-	(if (or keys-cond removed-cond)
-	    (with-output-to-string
-	      (lambda ()
-		(display " where ")
-		(when keys-cond
-		  (display keys-cond)
+(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class opts)
+  (let-keywords* opts ((index #f)
+		       (keys #f)
+		       (predicate #f)
+		       (include-removed-object? #f))
+    (when index (kahua-db-dbi-error "Index slot is not supported yet"))
+    (let ((filter-proc (if predicate
+			   (lambda (v) (and (predicate v) v))
+			   identity))
+	  (cn (class-name class))
+	  (conn (connection-of db)))
+      (define (%select-instances tab where)
+	(format "select keyval, dataval from ~a ~a" tab where))
+      (define (%make-where-clause keys include-removed-object?)
+	(let* ((keys-cond (%make-keys-condition keys))
+	       (removed-cond (%make-removed-condition include-removed-object?)))
+	  (if (or keys-cond removed-cond)
+	      (with-output-to-string
+		(lambda ()
+		  (display " where ")
+		  (when keys-cond
+		    (display keys-cond)
+		    (when removed-cond
+		      (display " and ")))
 		  (when removed-cond
-		    (display " and ")))
-		(when removed-cond
-		  (display removed-cond))))
-	    "")))
-    (define (%make-keys-condition keys)
-      (cond ((not keys) #f)
-	    ((null? keys) "keyval is NULL")
-	    (else (format "keyval in (~a)" (string-join (map (lambda _ "?") keys) ",")))))
-    (define (%make-removed-condition include-removed-object?)
-      (if include-removed-object?
-	  #f
-	  "removed = 0"))
-    (define (%find-kahua-instance row)
-      (let1 k (dbi-get-value row 0)
-	(or (hash-table-get icache (cons cn k) #f)
-	    (let1 v (call-with-input-string (dbi-get-value row 1) read)
-	      (set! (ref v '%floating-instance) #f)
-	      v))))
-    (or (and-let* ((tab (kahua-class->table-name db class))
-		   (r (apply dbi-do conn (%select-instances tab (%make-where-clause keys include-removed-object?))
-			     '() (or keys '()))))
-	  (filter-map1 (lambda (row)
-			 (and-let* ((obj (%find-kahua-instance row))
-				    ((or include-removed-object?
-					 (not (removed? obj)))))
-			   (filter-proc obj)))
-		       r))
-	'())))
+		    (display removed-cond))))
+	      "")))
+      (define (%make-keys-condition keys)
+	(cond ((not keys) #f)
+	      ((null? keys) "keyval is NULL")
+	      (else (format "keyval in (~a)" (string-join (map (lambda _ "?") keys) ",")))))
+      (define (%make-removed-condition include-removed-object?)
+	(if include-removed-object?
+	    #f
+	    "removed = 0"))
+      (define (%find-kahua-instance row)
+	(let1 k (dbi-get-value row 0)
+	  (or (read-key-cache db cn k)
+	      (let1 v (read-from-string (dbi-get-value row 1))
+		(set! (ref v '%floating-instance) #f)
+		v))))
+      (or (and-let* ((tab (kahua-class->table-name db class))
+		     (r (apply dbi-do conn (%select-instances tab (%make-where-clause keys include-removed-object?))
+			       '() (or keys '()))))
+	    (filter-map1 (lambda (row)
+			   (and-let* ((obj (%find-kahua-instance row))
+				      ((or include-removed-object?
+					   (not (removed? obj)))))
+			     (filter-proc obj)))
+			 r))
+	  '()))))
 
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
 				     (obj <kahua-persistent-base>))
-  ;; You must override the method below.
   (write-kahua-instance db obj (kahua-class->table-name* db (class-of obj))))
+
+;; FIXME!! This is a very transitional way.
+(define-method write-kahua-instance ((db <kahua-db-dbi>)
+				     (obj <kahua-persistent-base>)
+				     (tab <string>))
+  (set! (ref obj '%floating-instance) #f)
+  (set! (ref obj '%modified-index-slots) '()))
 
 (define-generic table-should-be-locked?)
 
@@ -403,12 +419,20 @@
 						 (cadr e)))
 					  obj&table)
 			      (map! (cut cons <> :read) (hash-table-values (table-map-of db))))))
-    (with-dbi-transaction db
-      (lambda _
-	(apply with-locking-tables db
-	       (lambda ()
-		 (for-each (pa$ apply write-kahua-instance db) obj&table))
-	       tables)))))
+    (receive (metainfo&table obj&table)
+	(partition (lambda (o&t) (is-a? (car o&t) <kahua-persistent-metainfo>)) obj&table)
+      (with-dbi-transaction db
+	(lambda _
+	  (apply with-locking-tables db
+		 (lambda ()
+		   (for-each (lambda (m&t)
+			       (let ((m (car m&t))
+				     (t (cadr m&t)))
+				 (kahua-update-index! db m)
+				 (write-kahua-instance db m t))) metainfo&table)
+		   (for-each (pa$ apply write-kahua-instance db) obj&table))
+		 tables))))
+    ))
 
 (define-method add-column-to-table ((db <kahua-db-dbi>)
 				    (table <string>)
@@ -459,74 +483,8 @@
 ;; Database Consistency Check and Fix
 ;;
 
-;; Object ID counter(kahua_db_idcount)
-;;
-(define-method load-all-kahua-tables ((db <kahua-db-dbi>) ht)
-  (define-method enumerate-kahua-class-table ((db <kahua-db-dbi>))
-    (map (lambda (row)
-	   (list (dbi-get-value row 0) (dbi-get-value row 1)))
-	 (dbi-do (connection-of db) "select class_name, table_name from kahua_db_classes" '())))
-  (define-method load-kahua-table ((db <kahua-db-dbi>) ht class table)
-    (let1 class-sym (string->symbol class)
-      (for-each (lambda (row)
-		  (hash-table-push! ht (dbi-get-value row 0) (cons class-sym (dbi-get-value row 1))))
-		(dbi-do (connection-of db)
-			(format "select keyval, dataval from ~a" table) '()))))
-  (for-each (lambda (class&table)
-	      (apply load-kahua-table db ht class&table))
-	    (enumerate-kahua-class-table db))
-  ht)
-
-(define-method max-kahua-key-from-idcount ((db <kahua-db-dbi>))
-  (let1 ht (load-all-kahua-tables db (make-hash-table 'equal?))
-    (hash-table-fold ht (lambda (k v r)
-			  (rxmatch-case k
-			    (#/^\d+$/ (d) (max (x->integer d) r))
-			    (else         r)))
-		     -1)))
-
-(define-method dbutil:current-kahua-db-idcount ((db <kahua-db-dbi>))
-  (x->integer (car (map (cut dbi-get-value <> 0)
-			(dbi-do (connection-of db) "select value from kahua_db_idcount" '())))))
-
-(define-method dbutil:fix-kahua-db-idcount ((db <kahua-db-dbi>) n)
-  (dbi-do (connection-of db) "update kahua_db_idcount set value = ?" '() n))
-
-(define-method dbutil:create-kahua-db-idcount ((db <kahua-db-dbi>) n)
-  (let1 conn (connection-of db)
-    (safe-execute (cut create-kahua-db-idcount db))
-    (initialize-kahua-db-idcount db n)))
-
-(define-method dbutil:check-kahua-db-idcount ((db <kahua-db-dbi>) . maybe-do-fix?)
-  (call/cc (lambda (ret)
-	     (let* ((do-fix? (get-optional maybe-do-fix? #f))
-		    (max-id (max-kahua-key-from-idcount db))
-		    (idcount (guard (e ((<dbi-exception> e)
-					(cond (do-fix?
-					       (dbutil:create-kahua-db-idcount db max-id)
-					       (ret 'FIXED))
-					      (else (ret 'NG)))))
-			       (dbutil:current-kahua-db-idcount db))))
-	       (or (and (>= idcount max-id) 'OK)
-		   (and do-fix?
-			(dbutil:fix-kahua-db-idcount db max-id)
-			'FIXED)
-		   'NG)))))
-
-(define-method dbutil:check-id-counter ((db <kahua-db-dbi>) do-fix?)
-  (dbutil:check-kahua-db-idcount db do-fix?))
-
 ;; Class counter(kahua_db_classcount)
 ;;
-(define-method max-table-name-suffix ((db <kahua-db-dbi>))
-  (let* ((conn (connection-of db))
-	 (r (dbi-do conn "select table_name from kahua_db_classes" '())))
-    (apply max (map (lambda (row)
-		      (rxmatch-case (dbi-get-value row 0)
-			(#/^kahua_(\d+)$/ (#f d) (x->integer d))
-			(else -1)))
-		    r))))
-
 (define-method dbutil:current-kahua-db-classcount ((db <kahua-db-dbi>))
   (x->integer (car (map (cut dbi-get-value <> 0)
 			(dbi-do (connection-of db) "select value from kahua_db_classcount" '())))))
@@ -540,24 +498,57 @@
       (create-kahua-db-classcount db))
     (initialize-kahua-db-classcount db n)))
 
-(define-method dbutil:check-kahua-db-classcount ((db <kahua-db-dbi>) . maybe-do-fix?)
-  (call/cc (lambda (ret)
-	     (let* ((do-fix? (get-optional maybe-do-fix? #f))
-		    (max-suffix (max-table-name-suffix db))
-		    (classcount (guard (e ((<dbi-exception> e)
-					   (cond (do-fix?
-						  (dbutil:create-kahua-db-classcount db max-suffix)
-						  (ret 'FIXED))
-						 (ret 'NG))))
-				  (dbutil:current-kahua-db-classcount db))))
-	       (or (and (>= classcount max-suffix) 'OK)
-		   (and do-fix?
-			(dbutil:fix-kahua-db-classcount db max-suffix)
-			'FIXED)
-		   'NG)))))
-
 (define-method dbutil:check-class-counter ((db <kahua-db-dbi>) do-fix?)
-  (dbutil:check-kahua-db-classcount db do-fix?))
+  (define (max-class-id cn r)
+    (or (and-let* ((tabname (kahua-class->table-name db cn))
+		   (m (#/^kahua_(\d+)$/ tabname)))
+	  (max r (x->integer (m 1))))
+	r))
+  (let/cc ret
+    (let* ((maxid (dbutil:persistent-classes-fold db max-class-id -1))
+	   (classcount (guard (e ((<dbi-exception> e)
+				  (or (and do-fix? (dbutil:create-kahua-db-classcount db maxid) (ret 'FIXED))
+				      (ret 'NG))))
+			 (dbutil:current-kahua-db-classcount db))))
+      (cond ((= maxid classcount) 'OK)
+	    (else
+	     (or (and do-fix? (dbutil:fix-kahua-db-classcount db maxid) 'FIXED)
+		 'NG))))))
+
+;; Check Max ID from all instances data.
+;;
+(define-method dbutil:current-kahua-db-idcount ((db <kahua-db-dbi>))
+  (x->integer (car (map (cut dbi-get-value <> 0)
+			(dbi-do (connection-of db) "select value from kahua_db_idcount" '())))))
+
+(define-method dbutil:fix-kahua-db-idcount ((db <kahua-db-dbi>) n)
+  (dbi-do (connection-of db) "update kahua_db_idcount set value = ?" '() n))
+
+(define-method dbutil:create-kahua-db-idcount ((db <kahua-db-dbi>) n)
+  (let1 conn (connection-of db)
+    (safe-execute (cut create-kahua-db-idcount db))
+    (initialize-kahua-db-idcount db n)))
+
+(define-method dbutil:check-id-counter ((db <kahua-db-dbi>) do-fix?)
+  (define (max-id cn r)
+    (let ((tabname (kahua-class->table-name db cn))
+	  (conn (connection-of db)))
+      (fold (lambda (row r)
+	      (let* ((obj (read-from-string (dbi-get-value row 0)))
+		     (id (ref obj 'id)))
+		(max id r)))
+	    r
+	    (dbi-do conn (format "select dataval from ~a" tabname) '()))))
+  (let/cc ret
+    (let* ((maxid (dbutil:persistent-classes-fold db max-id -1))
+	   (idcount (guard (e ((<dbi-exception> e)
+			       (or (and do-fix? (dbutil:create-kahua-db-idcount db (+ maxid 1)) (ret 'FIXED))
+				   (ret 'NG))))
+		      (dbutil:current-kahua-db-idcount db))))
+      (cond ((= (+ maxid 1) idcount) 'OK)
+	    (else
+	     (or (and do-fix? (dbutil:fix-kahua-db-idcount db (+ maxid 1)) 'FIXED)
+		 'NG))))))
 
 ;; Removed flag column (named "removed") on each class table.
 ;;
@@ -603,6 +594,7 @@
 		(writer msg-prefix)
 		(writer (do-check db do-fix?))
 		(writer "\n")))
-	    *proc-table*))
+	    *proc-table*)
+  )
 
 (provide "kahua/persistence/dbi")

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.15 2006/10/25 03:47:37 bizenn Exp $
+;; $Id: fs.scm,v 1.16 2006/11/19 22:02:26 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)
@@ -33,6 +33,10 @@
 
 (define-constant *alive* "%%alive")
 (define-constant *key*   "%%key")
+
+(define-condition-type <kahua-db-fs-error> <kahua-db-error> kahua-db-fs-error?)
+(define (kahua-db-fs-error fmt . args)
+  (errorf <kahua-db-fs-error> fmt args))
 
 (define mk-dbdir (cut make-directory* <> #o770))
 
@@ -234,7 +238,8 @@
 				     writer
 				     (character-encoding-of db)))
     (maintain-alive-link db obj)
-    (set! (ref obj '%floating-instance) #f)))
+    (set! (ref obj '%floating-instance) #f)
+    (set! (ref obj '%modified-index-slots) '())))
 
 (define-method kahua-db-write-id-counter ((db <kahua-db-fs>))
   (%call-writer-to-file-safely (id-counter-path-of db)
@@ -242,23 +247,30 @@
 			       (pa$ write (id-counter-of db)) #f))
 
 
-(define-method kahua-persistent-instances ((db <kahua-db-fs>) class keys filter-proc include-removed-object?)
-  (let* ((cn (class-name class))
-	 (icache (ref db 'instance-by-key))
-	 (target-dir (if include-removed-object?
-			 (data-path db cn)
-			 (data-path db cn *alive*)))
-	 (dir-filter (if include-removed-object?
-			 file-is-regular?
-			 file-is-symlink?)))
-    (filter-map (lambda (k)
-		  (and-let* ((obj (find-kahua-instance class k include-removed-object?)))
-		    (filter-proc obj)))
-		(or keys
-		    (if (file-is-directory? target-dir)
-			(directory-list target-dir :children? #t
-					:filter dir-filter :filter-add-path? #t)
-			'())))))
+(define-method kahua-persistent-instances ((db <kahua-db-fs>) class opts)
+  (let-keywords* opts ((index #f)
+		       (keys #f)
+		       (predicate #f)
+		       (include-removed-object? #f))
+    (when index (kahua-db-fs-error "Index slot is not supported: please upgrade to kahua.persistent.efs"))
+    (let* ((filter-proc (if predicate
+			    (lambda (v) (and (predicate v) v))
+			    identity))
+	   (cn (class-name class))
+	   (target-dir (if include-removed-object?
+			   (data-path db cn)
+			   (data-path db cn *alive*)))
+	   (dir-filter (if include-removed-object?
+			   file-is-regular?
+			   file-is-symlink?)))
+      (filter-map (lambda (k)
+		    (and-let* ((obj (find-kahua-instance class k include-removed-object?)))
+		      (filter-proc obj)))
+		  (or keys
+		      (if (file-is-directory? target-dir)
+			  (directory-list target-dir :children? #t
+					  :filter dir-filter :filter-add-path? #t)
+			  '()))))))
 
 ;;=================================================================
 ;; Database Consistency Check and Fix

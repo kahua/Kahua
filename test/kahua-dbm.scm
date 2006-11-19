@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test kahua.dbm module
-;; $Id: kahua-dbm.scm,v 1.2 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: kahua-dbm.scm,v 1.3 2006/11/19 22:04:17 bizenn Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -182,9 +182,10 @@
 ;; KAHUA-DBM test
 ;;
 
-(define *dbname* (build-path (sys-getcwd) "_tmp"))
+(define *dbpath* (build-path (sys-getcwd) "_tmpefs"))
 
-(sys-system #`"rm -rf ,*dbname*")
+(sys-system #`"rm -rf ,*dbpath*")
+(define *dbname* #`"efs:,|*dbpath*|")
 
 (with-db (db *dbname*)
   (full-test <kahua-dbm>)

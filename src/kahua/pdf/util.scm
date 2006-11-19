@@ -1,10 +1,11 @@
+;; -*- coding: euc-jp; mode: scheme -*-
 ;; PDF utilities
 ;;
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.2 2004/03/03 04:45:34 shiro Exp $
+;; $Id: util.scm,v 1.3 2006/11/19 22:02:25 bizenn Exp $
 
 ;; This file includes a code taken from Bruce Butterfield (bab@entricom.com)'s
 ;; scm-pdf, which is derived from Marc Battyani's cl-pdf.  The following

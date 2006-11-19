@@ -24,8 +24,9 @@
 (use-plugin query)
 (use kahua.persistence)
 
-(define *dbname* (build-path (sys-getcwd) "_tmp"))
-(sys-system #`"rm -rf ,*dbname*")
+(define *dbpath* (build-path (sys-getcwd) "_tmpefs"))
+(sys-system #`"rm -rf ,*dbpath*")
+(define *dbname* #`"efs:,|*dbpath*|")
 
 (define-class <address> (<kahua-persistent-base>)
   ((address :allocation :persistent :init-keyword :address)

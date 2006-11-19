@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.25 2006/10/08 07:13:27 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.26 2006/11/19 22:02:25 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -385,9 +385,10 @@
 ;; start worker specified by worker-class
 (define (%run-worker spvr type)
   (let1 w (make <kahua-worker> :type type)
-    (log-worker-action "run" w)
-    (%register-worker spvr type w)
-    w))
+    (and (slot-ref w 'process)
+	 (log-worker-action "run" w)
+	 (%register-worker spvr type w)
+	 w)))
 
 (define (%run-workers spvr type count)
   (list-tabulate count (lambda _ (%run-worker spvr type))))
@@ -572,16 +573,22 @@
   (let* ((wtype (type-of self))
 	 (cmd   (worker-script (name-of wtype) (slot-ref wtype 'spvr)))
          (p     (run-piped-cmd cmd))
-         (id    (read-line (process-output p)))
-         (wno   (slot-ref self 'next-wno))
-	 (log-str (format "[worker] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
-    (slot-set! self 'logger (pa$ log-format log-str))
-    (slot-set! self 'wid id)
-    (slot-set! self 'wno wno)
-    (slot-set! self 'process p)
-    (slot-set! self 'sockaddr (worker-id->sockaddr id (slot-ref (spvr-of wtype) 'sockbase)))
-    (inc! (ref self 'next-wno))
-    ))
+         (id    (read-line (process-output p))))
+    (cond ((eof-object? id)		; Worker died suddenly, maybe.
+	   (process-send-signal p SIGTERM)
+	   (process-wait p)
+	   (slot-set! self 'process #f)
+	   (log-format "[worker] ~A died suddenly" (name-of wtype)))
+	  (else
+	   (let* ((wno   (slot-ref self 'next-wno))
+		  (log-str (format "[worker] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
+	     (slot-set! self 'logger (pa$ log-format log-str))
+	     (slot-set! self 'wid id)
+	     (slot-set! self 'wno wno)
+	     (slot-set! self 'process p)
+	     (slot-set! self 'sockaddr (worker-id->sockaddr id (slot-ref (spvr-of wtype) 'sockbase)))
+	     (inc! (ref self 'next-wno))))))
+  self)
 
 (define (%terminate! spvr type worker)
   (slot-set! worker 'zombee #t)

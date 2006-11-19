@@ -1,5 +1,5 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
-;; $Id: user.scm,v 1.6 2006/09/26 23:10:17 bizenn Exp $
+;; $Id: user.scm,v 1.7 2006/11/19 22:04:17 bizenn Exp $
 
 ;; test kahua.user
 
@@ -14,8 +14,9 @@
 (use kahua.user)
 (test-module 'kahua.user)
 
-(define *dbname* (build-path (sys-getcwd) "_tmp"))
-(sys-system #`"rm -rf ,*dbname*")
+(define *dbpath* (build-path (sys-getcwd) "_tmpefs"))
+(sys-system #`"rm -rf ,*dbpath*")
+(define *dbname* #`"efs:,|*dbpath*|")
 
 (test* "kahua-check-user (in the empty db)" #f
        (with-db (db *dbname*)

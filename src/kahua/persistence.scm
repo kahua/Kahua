@@ -4,10 +4,11 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.66 2006/10/30 07:02:40 bizenn Exp $
+;; $Id: persistence.scm,v 1.67 2006/11/19 22:02:25 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
+  (use srfi-11)
   (use file.util)
   (use util.list)
   (use gauche.sequence)
@@ -15,6 +16,7 @@
   (use gauche.collection)
   (use kahua.util)
   (export <kahua-persistence-error>
+	  kahua-persistence-error
 	  <kahua-persistent-meta>
 	  <kahua-persistent-base>
           <kahua-persistent-metainfo>
@@ -28,6 +30,7 @@
           kahua-persistent-class-generation
           kahua-persistent-class-definition
 	  removed?
+	  modified-instances-of
 
 	  ;; Kahua Object Database
           <kahua-db>
@@ -37,7 +40,6 @@
           current-db with-db kahua-db-sync kahua-db-rollback
 	  with-kahua-db-connection with-kahua-db-transaction
 	  kahua-db-purge-objs
-          id->kahua-instance class&key->kahua-instance
           <kahua-collection>
           raise-with-db-error
           persistent-initialize
@@ -45,6 +47,13 @@
           key-of-using-instance
           kahua-check-transaction!
 	  kahua-write
+	  kahua-interp-index-translator
+
+	  dump-id-cache
+	  dump-key-cache
+	  dump-index-cache
+
+	  read-index-cache
 
 	  ;; for Database Driver Module.
 	  kahua-db-unique-id
@@ -62,6 +71,7 @@
 	  kahua-db-write-id-counter
 	  make-kahua-collection
 	  remove-kahua-instance
+	  make-kahua-collection-filter
 
 	  kahua-persistent-instances
 
@@ -81,6 +91,8 @@
 (select-module kahua.persistence)
 
 (define-condition-type <kahua-persistence-error> <kahua-error> #f)
+(define (kahua-persistence-error fmt . args)
+  (apply errorf <kahua-persistence-error> fmt args))
 
 ;; Deprecated, and now no effect.
 (define kahua-check-transaction! (make-parameter #t))
@@ -103,7 +115,7 @@
 (define-class <kahua-persistent-meta> (<class>)
   (;; In-memory catalog of persistent classes.
    ;; maps class name to class object.
-   (class-alist :allocation :class :init-value '())
+   (class-alist :allocation :class :init-value '() :accessor class-alist-of)
 
    ;; A signature given in the class definition in the source file
    ;; to be used to determine class' generation.
@@ -119,6 +131,7 @@
                   :init-keyword :write-syncer)
    (read-syncer   :init-value :auto
                   :init-keyword :read-syncer)
+   (index-cache   :init-form (create-index-cache))
    ))
 
 (define-method make ((class <kahua-persistent-meta>) . initargs)
@@ -126,6 +139,11 @@
   ;; in memory), the in-memory definition and in-db definition is compared.
   (ensure-metainfo class)
   (next-method))
+
+(define persistent-class-alist
+  (getter-with-setter
+   (lambda () (class-slot-ref <kahua-persistent-meta> 'class-alist))
+   (lambda (o) (class-slot-set! <kahua-persistent-meta> 'class-alist o))))
 
 (define (kahua-read-syncer in-memory in-db-slots)
   ;; we shuold update transaction-id of in-memory object at last,
@@ -175,18 +193,17 @@
 (define-method initialize ((class <kahua-persistent-meta>) initargs)
   (define (make-syncer default v)
     (cond ((eq? v :error)
-           (lambda _ (error "object was obtained in other transaction")))
+           (lambda _ (kahua-persistence-error "object was obtained in other transaction")))
           ((eq? v :auto) default)
           ((procedure? v) v)
           (else (lambda _ #f))))
 
   (next-method)
 
-   (update! (ref class 'read-syncer)  (pa$ make-syncer kahua-read-syncer))
+  (update! (ref class 'read-syncer)  (pa$ make-syncer kahua-read-syncer))
 ;   (update! (ref class 'write-syncer) (pa$ make-syncer kahua-write-syncer))
-  
-  (set! (ref class 'class-alist)
-        (assq-set! (ref class 'class-alist) (class-name class) class)))
+  (set! (class-alist-of class)
+	(assq-set! (class-alist-of class) (class-name class) class)))
 
 ;; Support of persistent slot
 (define-method compute-get-n-set ((class <kahua-persistent-meta>) slot)
@@ -238,8 +255,16 @@
   (unless (modified-instance? db obj)
     (push! (modified-instances-of db) obj)))
 
+(define (reset-modified-index-slots! obj)
+  (slot-set-using-class! (current-class-of obj) obj '%modified-index-slots '()))
+
 (define (reset-modified-instance! db obj)
-  (update! (modified-instances-of db) (cut delete obj <>)))
+  (update! (modified-instances-of db) (cut delete obj <>))
+  (reset-modified-index-slots! obj))
+
+(define (clear-modified-instances! db)
+  (for-each reset-modified-index-slots! (modified-instances-of db))
+  (set! (modified-instances-of db) '()))
 
 (define (%removed-object? obj)
   (and (kahua-persistent-base? obj) (removed? obj)))
@@ -272,7 +297,7 @@
 
 (define (make-kahua-setter acc slot)
   (let ((aot       (slot-definition-option slot :out-of-transaction :read-only))
-        (slot-name (car slot)))
+        (slot-name (slot-definition-name slot)))
     (lambda (o v)
       (let ((db (current-db))
 	    (v (%sanitize-object v)))
@@ -280,19 +305,128 @@
             (begin
               (ensure-transaction o)
 	      (add-modified-instance! db o)
+	      (check-index-slot o slot v)
               (slot-set-using-accessor! o acc v))
 	    (if (eq? aot :read/write)
 		(begin
 		  (unless (assq slot-name (ref o '%in-transaction-cache))
 		    (push! (ref o '%in-transaction-cache)
 			   (cons slot-name (slot-ref-using-accessor o acc))))
-		  (floted-instance-touch! o)
+		  (floated-instance-touch! o)
+		  (check-index-slot o slot v)
 		  (slot-set-using-accessor! o acc v))
 		(error "database not active")))))))
 
 (define (make-kahua-boundp acc)
   (lambda (o)
     (slot-bound-using-accessor? o acc)))
+
+(define (safe-ref o sn fallback)
+  (let1 class (current-class-of o)
+    (if (slot-bound-using-class? class o sn)
+	(slot-ref-using-class class o sn)
+	fallback)))
+
+(define (check-index-slot o slot v)
+  (define (peel* v)
+    (if (kahua-wrapper? v)
+	(peel-wrapper v)
+	v))
+  (and-let* ((idx (slot-definition-option slot :index #f))
+	     (sn (slot-definition-name slot))
+	     (class (current-class-of o)))
+    (let*-values (((modified-slots) (safe-ref o '%modified-index-slots '()))
+		  ((nv) (peel* v))
+		  ((directive ov) (cond ((assq sn modified-slots) =>
+					 (lambda (e)
+					   (cond ((eq? (list-ref e 1) :add)
+						  (unregister-index-cache o sn idx (list-ref e 4))
+						  (values :add #f))
+						 (else
+						  (values :modify (list-ref e 3))))))
+					((slot-bound-using-class? class o sn)
+					 (values :modify (slot-ref-using-class class o sn)))
+					(else (values :add #f)))))
+      (unless (or (and (eq? directive :modify) (equal? ov nv)) (removed? o))
+	(case directive ((:drop :modify) (unregister-index-cache o sn idx ov)))
+	(slot-set-using-class! class o '%modified-index-slots
+			       (assq-set! modified-slots sn (list directive idx ov nv)))
+	(case directive ((:modify :add) (register-index-cache o sn idx nv)))))))
+
+(define (drop-all-index-values! obj)
+  (let1 class (current-class-of obj)
+    (define (drop-index-value o slot)
+      (and-let* ((idx (slot-definition-option slot :index #f))
+		 (sn (slot-definition-name slot)))
+	(let* ((modified-slots (safe-ref o '%modified-index-slots '()))
+	       (ov (cond ((assq sn modified-slots) => (cut list-ref <> 3))
+			 (else (slot-ref-using-class class o sn)))))
+	  (slot-set-using-class! class o '%modified-index-slots
+				 (assq-set! modified-slots sn (list :drop idx ov #f)))
+	  (unregister-index-cache o sn idx (slot-ref-using-class class o sn)))))
+    (for-each (pa$ drop-index-value obj) (class-slots class))))
+
+;;
+;; Index Slot Cache Handling
+;;
+;; Unique Index:
+;;   key:   (slot-name . index-value)
+;;   value: object
+;;
+;; Any Index:
+;;   key:   (slot-name . index-value)
+;;   value: (object ...)
+
+(define create-index-cache (cut make-hash-table 'equal?))
+(define (clear-index-cache! class)
+  (let1 cache (slot-ref class 'index-cache)
+    (hash-table-for-each cache (lambda (k _) (hash-table-delete! cache k)))))
+(define (clear-all-index-cache!)
+  (for-each (compose clear-index-cache! cdr) (persistent-class-alist)))
+
+(define (index-cache-key slot-name value)
+  (cons slot-name value))
+
+(define (read-index-cache class slot-name value)
+  (and-let* ((slot (class-slot-definition class slot-name))
+	     (index (slot-definition-option slot :index #f)))
+    (hash-table-get (slot-ref class 'index-cache) (index-cache-key slot-name value) #f)))
+
+(define (register-index-cache obj slot-name index value)
+  (let* ((class (current-class-of obj))
+	 (idxcache (slot-ref class 'index-cache))
+	 (key (index-cache-key slot-name value)))
+    (case index
+      ((:unique)
+       (or (and-let* ((v (hash-table-get idxcache key #f)))
+	     (if (eq? v obj)
+		 #t			; do nothing
+		 (kahua-persistence-error "~s: index slot ~s conflict with ~s" obj key v)))
+	   (hash-table-put! idxcache key obj)))
+      ((:any)
+       (hash-table-update! idxcache key
+			   (lambda (objs)
+			     (if (memq obj objs) objs (cons obj objs)))
+			   '()))
+      (else (kahua-persistence-error "Unknown index type: ~s" index)))))
+
+(define (unregister-index-cache obj slot-name index value)
+  (let* ((class (current-class-of obj))
+	 (idxcache (slot-ref class 'index-cache))
+	 (key (index-cache-key slot-name value)))
+    (case index
+      ((:unique)
+       (and (eq? obj (hash-table-get idxcache key #f))
+	    (hash-table-delete! idxcache key)))
+      ((:any)
+       (hash-table-update! idxcache key (cut delete! obj <> eq?) '())
+       (when (null? (hash-table-get idxcache key '()))
+	 (hash-table-delete! idxcache key)))
+      (else
+       (kahua-persistence-error "Unknown index type: ~s" index)))))
+
+(define (dump-index-cache class)
+  (hash-table-map (slot-ref class 'index-cache) cons))
 
 ;;=========================================================
 ;; Persistent baseclass
@@ -302,9 +436,8 @@
   (;; unique ID 
    (%kahua-persistent-base::id :init-keyword :%kahua-persistent-base::id
 			       :init-form (%kahua-db-unique-id) :final #t)
-   (%kahua-persistent-base::removed? :init-value #f
-				     :getter removed?
-				     :final #t) ; It's removed?
+   (%kahua-persistent-base::removed? :init-keyword :%kahua-persistent-base::removed?
+				     :init-value #f :final #t) ; It's removed?
    ;; management data
    (%kahua-persistent-base::db :init-form (current-db) :final #t)  ; points back to db
    ;; alist of slot data which is in the DB but not in the current
@@ -321,7 +454,9 @@
    ;; it to be used to check in-db / in-memory consistency.
    (%in-transaction-cache :init-value '())
    ;; persistent key
-   (%persistent-key :init-value #f))
+   (%persistent-key :init-value #f)
+   ;; updated index alist ((slot-name :directive :kind old-value new-value) ...)
+   (%modified-index-slots))
   :metaclass <kahua-persistent-meta>)
 
 (define (kahua-persistent-base? obj)
@@ -334,6 +469,11 @@
 ;; this method should be overriden by subclasses for convenience.
 (define-method key-of ((obj <kahua-persistent-base>))
   (format "~6,'0d" (slot-ref-using-class (current-class-of obj) obj '%kahua-persistent-base::id)))
+
+(define-method removed? ((obj <kahua-persistent-base>))
+  (let1 class (current-class-of obj)
+    (and (slot-bound-using-class? class obj '%kahua-persistent-base::removed?)
+	 (slot-ref-using-class class obj '%kahua-persistent-base::removed?))))
 
 ;; Initializing persistent instance:
 ;;  * (initialize (obj <kahua-persistent-base>)) initializes in-memory
@@ -356,39 +496,56 @@
   obj)					; DUMMY
 
 (define-method initialize ((obj <kahua-persistent-base>) initargs)
-  (next-method)
+  (define (check-id-cache db id)
+    (and-let* ((o (read-id-cache db id)))
+      (kahua-persistence-error "instance ~s with the same ID (~s) is active" o id)))
   (let ((db (current-db))
-        (id (kahua-persistent-id obj))
-        (rsv (get-keyword :%realization-slot-values initargs #f))
 	(class (class-of obj)))
-    (when (id->kahua-instance id)
-      (errorf "instance with same ID (~s) is active (class ~s)" id class))
-    
-    (update-transaction! obj)
-    
-    (if rsv
-        (begin
-          ;; we are realizing an instance from the saved one
-          (dolist (p rsv)
-            (when (assq (car p) (class-slots class))
-              ;; loop!
-              (slot-set! obj (car p) (make <kahua-wrapper> :value (cdr p)))))
-          ;; obj is marked dirty because of the above setup.
-          ;; we revert it to clean.  it is ugly, but it's the easiest
-          ;; way to prevent obj from being marked dirty inadvertently.
-          (reset-modified-instance! db obj))
-	;; initialize persistent object for the first time.
-	(persistent-initialize obj initargs))
+    ;; Avoid that slots initialized twice.
+    (define (persistent-initialize-from-db obj initargs rsv)
+      (define (slot-initialize slot)
+	(let* ((slot-name (slot-definition-name slot))
+	       (accessor (class-slot-accessor class slot-name)))
+	  (cond ((assq slot-name rsv)
+		 => (lambda (p)
+		      (slot-set-using-accessor! obj accessor
+						(make <kahua-wrapper> :value (cdr p)))))
+		(else (slot-initialize-using-accessor! obj accessor initargs)))))
+      (let* ((slots (class-slots class))
+	     (db (current-db)))
+	(and-let* ((id (get-keyword :%kahua-persistent-base::id initargs))
+		   (o (read-id-cache db id)))
+	  (kahua-persistence-error "instance ~s with the same ID (~s) is active" o id))
+	(let*-values (((index-slots non-index-slots)
+		       (partition (cut slot-definition-option <> :index #f) slots))
+		      ((transaction-id rest-slots)
+		       (partition (lambda (s) (eq? (slot-definition-name s) '%transaction-id)) non-index-slots)))
+	  (for-each slot-initialize rest-slots)
+	  (for-each slot-initialize index-slots)
+	  (for-each slot-initialize transaction-id)) ; Avoid to initialize recursively.
+	(update-transaction! obj)
+	(reset-modified-instance! db obj)
+	obj))
 
-    (let1 key (key-of obj)
-      (slot-set! obj '%persistent-key key)
-      (hash-table-put! (ref db 'instance-by-id) id obj)
-      (hash-table-put! (ref db 'instance-by-key)
-		       (cons (class-name class) key) obj)))
-  obj)
+    (unless db (kahua-persistence-error "No database is active"))
+    (cond ((get-keyword :%realization-slot-values initargs #f)
+	   => (pa$ persistent-initialize-from-db obj initargs))
+	  (else
+	   (next-method)
+	   (and-let* ((id (kahua-persistent-id obj))
+		      (o (read-id-cache db id)))
+	     (kahua-persistence-error "instance ~s with the same ID (~s) is active" o id))
+	   (update-transaction! obj)
+	   ;; initialize persistent object for the first time.
+	   (persistent-initialize obj initargs)))
+    (register-id-cache db obj)
+    (register-key-cache db obj)
+    (unless (slot-bound? obj '%modified-index-slots)
+      (slot-set! obj '%modified-index-slots '()))
+    obj))
 
 (define (find-kahua-class name)
-  (or (assq-ref (class-slot-ref <kahua-persistent-meta> 'class-alist) name)
+  (or (assq-ref (persistent-class-alist) name)
       (error "can't find a class: " name)))
 
 ;; Mark a persistent object dirty
@@ -549,7 +706,12 @@
 
 ;; kahua-object (1st version)
 (define (kahua-object-read class-desc id . vals)
-  (let1 object (id->kahua-instance id)
+  (apply kahua-object2-read class-desc id #f vals))
+(define-reader-ctor 'kahua-object kahua-object-read)
+
+;; kahua-object2 (2nd version: add removed flag)
+(define (kahua-object2-read class-desc id removed? . vals)
+  (let1 object (read-id-cache (current-db) id)
     ;; See notes on (initialize (<kahua-persistent-base>)) for
     ;; the :%realization-slot-values argument.
     (let* ((cname (if (pair? class-desc) (car class-desc) class-desc))
@@ -565,22 +727,18 @@
 	;;  reader macro dose not called.
 	(if object
 	    (begin
+	      (slot-set-using-class! (current-class-of object) object
+				     '%kahua-persistent-base::removed? removed?)
 	      ((ref class 'read-syncer) object slot-alist)
 	      object)
 	    (begin
 	      (make class :%kahua-persistent-base::id id
 		    :%realization-slot-values slot-alist
 		    :%hidden-slot-values save-slots
-		    :%persistent-generation generation))
+		    :%persistent-generation generation
+		    :%kahua-persistent-base::removed? removed?
+		    :%floating-instance #f))
 	    )))))
-(define-reader-ctor 'kahua-object kahua-object-read)
-
-;; kahua-object2 (2nd version: add removed flag)
-(define (kahua-object2-read class-desc id removed? . vals)
-  (let1 obj (apply kahua-object-read class-desc id vals)
-    (slot-set-using-class! (current-class-of obj) obj
-			   '%kahua-persistent-base::removed? removed?)
-    obj))
 (define-reader-ctor 'kahua-object2 kahua-object2-read)
 
 ;; kahua-proxy
@@ -644,6 +802,8 @@
    ;; current generation & signature
    (generation       :allocation :persistent :init-value 0
                      :init-keyword :persistent-generation)
+   (previous-generation :allocation :persistent :init-value 0
+			:init-keyword :previous-generation)
    (signature        :allocation :persistent :init-value '()
                      :init-keyword :signature)
 
@@ -673,6 +833,8 @@
    ;; to register an arbitrary translation procedures.
    (translator-alist :allocation :persistent :init-value '()
                      :init-keyword :translator-alist)
+   ;; ((slot-name :directive :result-kind) ...)
+   (index-translator :init-value '() :accessor index-translator-of)
    ))
 
 (define-method key-of ((info <kahua-persistent-metainfo>))
@@ -683,14 +845,23 @@
     (persistent-class-bind-metainfo class))
   (ref class 'metainfo))
 
+(define (ensure-all-classes)
+  (for-each (lambda (c)
+             (unless (eq? (car c) '<kahua-persistent-base>)
+               (ensure-metainfo (cdr c))))
+           (persistent-class-alist)))
+
 ;; Calculates class signature.  Currently we take all persistent-allocated
 ;; slots.
 (define-method persistent-class-signature ((class <kahua-persistent-meta>))
   (define (extract-slot-def slot)
-    (and (memq (slot-definition-allocation slot) '(:persistent))
-         (list (slot-definition-name slot)
-               :allocation (slot-definition-allocation slot)
-               )))
+    (let1 allocation (slot-definition-allocation slot)
+      (and (memq allocation '(:persistent))
+	   `(,(slot-definition-name slot)
+	     :allocation ,allocation
+	     ,@(or (and-let* ((index (slot-definition-option slot :index #f)))
+		     (list :index index))
+		   '())))))
   (sort (filter-map extract-slot-def (class-slots class))
         (lambda (x y)
           (string<? (symbol->string (car x)) (symbol->string (car y))))))
@@ -755,6 +926,13 @@
             (filter-map (cut assv <> (ref metainfo 'signature-alist))
                         generations))))
 
+  (define (find-signature metainfo generation)
+    (if (= generation (ref metainfo 'generation))
+	(ref metainfo 'signature)
+	(and-let* ((gen&sig (find (lambda (gen&sig) (= (car gen&sig) generation))
+				  (ref metainfo 'signature-alist))))
+	  (cdr gen&sig))))
+
   ;; we couldn't find matching signature, so we assume the in-memory
   ;; class is newer.  record the newer class signature.
   (define (increment-generation metainfo signature)
@@ -762,11 +940,11 @@
            (newgen (+ oldgen 1))
            (oldsig (ref metainfo 'signature)))
       (slot-push! metainfo 'signature-alist (cons oldgen oldsig))
-      (slot-push! metainfo 'translator-alist
-                  (cons oldgen
-                        (compute-translation-directive
-                         (signature->slot-definitions oldsig)
-                         (signature->slot-definitions signature))))
+      (receive (translator-alist index-translator)
+	  (compute-translation-directive oldsig signature)
+	(set! (index-translator-of metainfo) index-translator)
+	(unless (null? translator-alist)
+	  (slot-push! metainfo 'translator-alist (cons oldgen translator-alist))))
       (set! (ref metainfo 'generation) newgen)
       (set! (ref metainfo 'signature) signature)
       (record-source-id metainfo newgen)
@@ -787,23 +965,36 @@
 
   ;; Main part of persistent-class-bind-metainfo
   (or (eq? (class-name class) '<kahua-persistent-metainfo>)
-      (let ((metainfo (find-kahua-instance <kahua-persistent-metainfo>
-                                           (x->string (class-name class))))
-            (signature (persistent-class-signature class)))
-        (cond ((not metainfo) (register-metainfo signature))
-              ((signature=? (ref metainfo 'signature) signature)
-               ;; in-memory class is up to date.
-               (let1 gen (ref metainfo 'generation)
-                 (record-source-id metainfo gen)
-                 (set-generation! gen gen metainfo)))
-              ((find-generation metainfo signature)
-               => (lambda (gen&sig)
-                    (set-generation! (car gen&sig)
-                                     (ref metainfo 'generation)
-                                     metainfo)))
-              (else
-               (increment-generation metainfo signature)))))
-  )
+      (let1 signature (persistent-class-signature class)
+	(or (and-let* ((metainfo (find-kahua-instance <kahua-persistent-metainfo>
+						      (x->string (class-name class))))
+		       (prev-gen (ref metainfo 'previous-generation)))
+	      (begin0
+		(cond ((signature=? (ref metainfo 'signature) signature)
+		       ;; in-memory class is up to date.
+		       (let*-values (((gen) (ref metainfo 'generation))
+				     ((prev-sig) (find-signature metainfo prev-gen))
+				     ((_ index-translator)
+				      (compute-translation-directive prev-sig signature)))
+			 (set! (index-translator-of metainfo) index-translator)
+			 (record-source-id metainfo gen)
+			 (set-generation! gen gen metainfo)))
+		      ((find-generation metainfo signature)
+		       => (lambda (gen&sig)
+			    (let*-values (((prev-sig) (find-signature metainfo prev-gen))
+					  ((_ index-translator)
+					   (compute-translation-directive prev-sig signature)))
+			      (set! (index-translator-of metainfo) index-translator)
+			      (set-generation! (car gen&sig)
+					       (ref metainfo 'generation)
+					       metainfo))))
+		      (else
+		       (increment-generation metainfo signature)))
+		(and-let* ((curr-gen (ref class 'generation))
+			   ((not (= prev-gen curr-gen))))
+		  (slot-set! metainfo 'previous-generation curr-gen))))
+	    ;; metainfo does not exist.
+	    (register-metainfo signature)))))
 
 ;; Translating between in-db slot value alist and in-memory slots
 ;;
@@ -911,19 +1102,53 @@
 ;; Assumes both input slot list are sorted.
 ;; Slots common in both A and B aren't included in the directive list.
 
-(define (compute-translation-directive A-slots B-slots)
-  (let loop ((A-slots A-slots) (B-slots B-slots) (dirs '()))
+(define (compute-translation-directive A-sig B-sig)
+  ;; FIXME!!
+  ;; This should be more general.
+  ;; And assume that (eq? (slot-definition-name A-slot)
+  ;;                      (slot-definition-name B-slot))
+  (define (compute-index-change A-slot B-slot)
+    (let ((A-idx (slot-definition-option A-slot :index #f))
+	  (B-idx (slot-definition-option B-slot :index #f)))
+      (cond ((eq? A-idx B-idx) #f)
+	    ((not A-idx) (list :add B-idx))
+	    ((not B-idx) (list :drop A-idx))
+	    (else        (list :modify B-idx)))))
+  (define (index-directive-filter s directive)
+    (and-let* ((idx (slot-definition-option s :index #f)))
+      (list (slot-definition-name s) directive idx)))
+
+  (let loop ((A-slots (signature->slot-definitions A-sig))
+	     (B-slots (signature->slot-definitions B-sig))
+	     (dirs '()) (index-dirs '()))
     (cond ((null? A-slots)
-           (append! dirs (map (lambda (s) (cons (car s) :add)) B-slots)))
+	   (values
+	    (append! dirs (map (lambda (s) (cons (slot-definition-name s) :add)) B-slots))
+	    (append! index-dirs (filter-map (cut index-directive-filter <> :add) B-slots))))
           ((null? B-slots)
-           (append! dirs (map (lambda (s) (cons (car s) :drop)) A-slots)))
-          ((eq? (caar A-slots) (caar B-slots))
-           (loop (cdr A-slots) (cdr B-slots) dirs))
-          ((string<? (symbol->string (caar A-slots))
-                     (symbol->string (caar B-slots)))
-           (loop (cdr A-slots) B-slots (acons (caar A-slots) :drop dirs)))
-          (else
-           (loop A-slots (cdr B-slots) (acons (caar B-slots) :add dirs))))
+           (values
+	    (append! dirs (map (lambda (s) (cons (car s) :drop)) A-slots))
+	    (append! index-dirs (filter-map (cut index-directive-filter <> :drop) A-slots))))
+	  (else
+	   (let* ((A-slot (car A-slots))
+		  (B-slot (car B-slots))
+		  (A-slot-name (slot-definition-name A-slot))
+		  (B-slot-name (slot-definition-name B-slot)))
+	     (cond ((eq? A-slot-name B-slot-name)
+		    (or (and-let* ((index-change (compute-index-change (car A-slots) (car B-slots))))
+			  (loop (cdr A-slots) (cdr B-slots)
+				dirs (acons A-slot-name index-change index-dirs)))
+			(loop (cdr A-slots) (cdr B-slots) dirs index-dirs)))
+		   ((string<? (symbol->string A-slot-name) (symbol->string B-slot-name))
+		    (loop (cdr A-slots) B-slots (acons A-slot-name :drop dirs)
+			  (or (and-let* ((directive (index-directive-filter A-slot :drop)))
+				(cons directive index-dirs))
+			      index-dirs)))
+		   (else
+		    (loop A-slots (cdr B-slots) (acons B-slot-name :add dirs)
+			  (or (and-let* ((directive (index-directive-filter B-slot :add)))
+				(cons directive index-dirs))
+			      index-dirs)))))))
     ))
 
 ;; Given translation directive and slot value alist, returns
@@ -1024,6 +1249,8 @@
 (define current-db (make-parameter #f))
 
 (define-condition-type <kahua-db-error> <error> kahua-db-error?)
+(define (kahua-db-error fmt . args)
+  (error <kahua-db-error> :message (apply format fmt args)))
 
 (define-class <kahua-db-meta> (<class>)
   ((all-instances :init-value '())))
@@ -1041,8 +1268,8 @@
 (define-class <kahua-db> ()
   ((path       :init-keyword :path :init-value #f :accessor path-of)
    (active     :init-keyword :active :init-value #f :accessor active?)
-   (instance-by-id  :init-form (make-hash-table 'eqv?))
-   (instance-by-key :init-form (make-hash-table 'equal?))
+   (instance-by-id  :init-form (create-id-cache))
+   (instance-by-key :init-form (create-key-cache))
    (modified-instances :init-form '() :accessor modified-instances-of)
    (current-transaction-id :init-value 0)
    (floated-modified-instances :init-value '()) ;; modified, but...
@@ -1078,6 +1305,9 @@
           (ref obj 'path)
           (if (active? obj) "active" "inactive")))
 
+(define-method write-object ((obj <kahua-wrapper>) port)
+  (format port "#<~a ~s>" (class-name (class-of obj)) (ref obj 'value)))
+
 (define (%kahua-db-unique-id)
   (let1 db (current-db)
     (unless db (error "kahua-db-unique-id: No db is active"))
@@ -1101,31 +1331,10 @@
 (define-method remove-kahua-instance ((obj <kahua-persistent-base>))
   (ensure-transaction obj)
   (slot-set! obj '%kahua-persistent-base::removed? #t)
+  (drop-all-index-values! obj)
   (touch-kahua-instance! obj))
 (define-generic kahua-db-write-id-counter)
 (define-generic kahua-persistent-instances)
-(define-method make-kahua-collection ((db <kahua-db>)
-                                      class opts)
-  (let-keywords* opts ((predicate #f)
-		       (keys #f)
-		       (include-removed-object? #f))
-    (let ((icache (ref db 'instance-by-key))
-	  (cn (class-name class))
-	  (f (if predicate
-		 (lambda (v) (and (predicate v) v))
-		 identity)))
-      (make <kahua-collection>
-	:instances
-	(append!
-	 (kahua-persistent-instances db class keys f include-removed-object?)
-	 (filter-map (lambda (i) (and (or include-removed-object?
-					  (not (removed? i)))
-				      (ref i '%floating-instance)
-				      (is-a? i class)
-				      (or (not keys) (member (key-of i) keys))
-				      (f i)))
-		     (modified-instances-of db)))
-	 ))))
 
 (define-condition-type <with-db-error> <kahua-error>
   with-db-error?
@@ -1174,8 +1383,9 @@
 
 (define (kahua-db-purge-objs . may-be-db)
   (let1 db (get-optional may-be-db (current-db))
-    (set! (ref db 'instance-by-id)  (make-hash-table 'eqv?))
-    (set! (ref db 'instance-by-key) (make-hash-table 'equal?))))
+    (clear-id-cache! db)
+    (clear-key-cache! db)
+    (clear-all-index-cache!)))
 
 (define-method kahua-db-open ((path <string>))
   (kahua-db-open (make (select-db-class path) :path path)))
@@ -1193,7 +1403,7 @@
 			 ((kahua-error-with-db e) #f))
 			(else
 			 (kahua-db-purge-objs db)
-			 (set! (modified-instances-of db) '())
+			 (clear-modified-instances! db)
 			 (raise e)))
 	       (finish-kahua-db-transaction db #f)
 	       (if (with-db-error? e)
@@ -1205,14 +1415,34 @@
       ;; FIXME!!
       (finish-kahua-db-transaction db #t))))
 
+(define-method kahua-interp-index-translator ((db <kahua-db>) cn translator)
+  (kahua-persistence-error "~s does not support index translation" db))
+
+(define-method kahua-update-index! ((db <kahua-db>) (metainfo <kahua-persistent-metainfo>))
+  (and-let* ((t (index-translator-of metainfo))
+	     ((pair? t))
+	     (class (find-kahua-class (slot-ref metainfo 'name))))
+    (kahua-interp-index-translator db class t)
+    (set! (index-translator-of metainfo) '())))
+
 (define-method write-kahua-modified-instances ((db <kahua-db>))
-  (for-each (cut write-kahua-instance db <>)
-	    (reverse! (modified-instances-of db))))
+  (receive (metainfos others) (partition (cut is-a? <> <kahua-persistent-metainfo>)
+					 (modified-instances-of db))
+    (for-each (lambda (m)
+		(kahua-update-index! db m)
+		(write-kahua-instance db m))
+	      metainfos)
+    (for-each (lambda (o)
+		(write-kahua-instance db o)
+		(when (removed? o)
+		  (unregister-id-cache db o)
+		  (unregister-key-cache db o)))
+	      others)))
 
 (define (kahua-db-sync . maybe-db)
   (let1 db (get-optional maybe-db (current-db))
     (write-kahua-modified-instances db)
-    (set! (modified-instances-of db) '())
+    (clear-modified-instances! db)
     (kahua-db-write-id-counter db)))
 
 (define (kahua-db-rollback . maybe-db)
@@ -1220,11 +1450,8 @@
     (define (rollback-object obj)
       (if (ref obj '%floating-instance)
           (begin
-            (hash-table-delete! (ref db 'instance-by-id) (kahua-persistent-id obj))
-            (hash-table-delete! (ref db 'instance-by-key)
-                                (cons
-                                 (class-name (class-of obj))
-                                 (key-of obj)))
+	    (unregister-id-cache db obj)
+	    (unregister-key-cache db obj)
             (let1 klass (current-class-of obj)
               (when (eq? klass
                          <kahua-persistent-metainfo>)
@@ -1233,9 +1460,62 @@
         (read-kahua-instance obj)))
 
     (for-each rollback-object (modified-instances-of db))
-    (set! (modified-instances-of db) '())))
+    (clear-all-index-cache!)
+    (clear-modified-instances! db)))
 
+;;
+;; On Memory Cache (by ID)
+;;
+
+(define create-id-cache (cut make-hash-table 'eqv?))
+
+(define (clear-id-cache! db)
+  (slot-set! db 'instance-by-id (create-id-cache)))
+
+(define-method register-id-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
+  (hash-table-put! (slot-ref db 'instance-by-id) (kahua-persistent-id obj) obj))
+
+(define-method unregister-id-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
+  (hash-table-delete! (slot-ref db 'instance-by-id) (kahua-persistent-id obj)))
+
+(define-method read-id-cache ((db <kahua-db>) (id <integer>))
+  (hash-table-get (slot-ref db 'instance-by-id) id #f))
+
+(define (dump-id-cache db)
+  (hash-table-map (slot-ref db 'instance-by-id) cons))
+
+;;
+;; On Memory Cache (by Key)
+;;
+
+(define create-key-cache (cut make-hash-table 'equal?))
+
+(define (clear-key-cache! db)
+  (slot-set! db 'instance-by-key (create-key-cache)))
+
+(define make-cache-key cons)
+
+(define-method register-key-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
+  (let1 key (key-of obj)
+    (slot-set! obj '%persistent-key key)
+    (hash-table-put! (slot-ref db 'instance-by-key)
+		     (make-cache-key (class-name (class-of obj)) key)
+		     obj)))
+
+(define-method unregister-key-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
+  (hash-table-delete! (slot-ref db 'instance-by-key)
+		      (make-cache-key (class-name (class-of obj)) (key-of obj))))
+
+(define-method read-key-cache ((db <kahua-db>) (cn <symbol>) key)
+  (hash-table-get (slot-ref db 'instance-by-key)
+		  (make-cache-key cn key) #f))
+
+(define (dump-key-cache db)
+  (hash-table-map (slot-ref db 'instance-by-key) cons))
+
+;;
 ;; cache consistency management -----------------------------------
+;;
 (define (current-transaction-id)
   (ref (current-db) 'current-transaction-id))
 
@@ -1265,7 +1545,7 @@
                      (eq? (slot-definition-allocation slot) :persistent))
                    (class-slots class))))
 
-(define (floted-instance-touch! o)
+(define (floated-instance-touch! o)
   (update! (ref (ref o '%kahua-persistent-base::db) 'floated-modified-instances)
            (lambda (instances)
              (if (memq o instances)
@@ -1283,27 +1563,16 @@
 
 ;; Instance I/O ----------------------------------------------
 
-(define (id->kahua-instance id)
-  (unless (current-db)
-    (error "id->kahua-instance: No db is active"))
-  (hash-table-get (ref (current-db) 'instance-by-id) id #f))
-
-(define (class&key->kahua-instance class key)
-  (unless (current-db)
-    (error "class&key->kahua-instance: No db is active"))
-  (hash-table-get (ref (current-db) 'instance-by-key)
-                  (cons (class-name class) key) #f))
-
 (define (kahua-instance class id . args)
   (let ((db (current-db))
 	(sanitize (if (get-optional args #f)
 		      identity
 		      %sanitize-object)))
     (unless db (error "kahua-instance: No database is active"))
-    (sanitize (or (id->kahua-instance id)
-		  (and-let* ((i (read-kahua-instance db class id)))
-		    (set! (ref i '%floating-instance) #f)
-		    i)))))
+    (sanitize (or (and-let* ((i (read-id-cache db id))
+			     ((eq? (class-of i) class))) ; not subclass
+		    i)
+		  (read-kahua-instance db class id)))))
 
 (define (find-kahua-instance class key . args)
   (let* ((db (current-db))
@@ -1312,10 +1581,8 @@
 		       identity
 		       %sanitize-object)))
     (unless db (error "find-kahua-instance: No database is active"))
-    (sanitize (or (class&key->kahua-instance class key)
-		  (and-let* ((i (read-kahua-instance db class key include-removed-object?)))
-		    (set! (ref i '%floating-instance) #f)
-		    i)))))
+    (sanitize (or (read-key-cache db (class-name class) key)
+		  (read-kahua-instance db class key include-removed-object?)))))
 
 (define (key-of-using-instance obj)
   (ref obj '%floating-instance))
@@ -1333,8 +1600,8 @@
 ;; Later we can change the back-end to read it lazily.
 
 (define-class <kahua-collection> (<collection>)
-  ((instances :init-keyword :instances :init-value '()))
-  )
+  ((class :init-keyword :class)
+   (instances :init-keyword :instances :init-value '())))
 
 (define-method append-map (proc (col <collection>))
   (fold (lambda (v r)
@@ -1353,6 +1620,45 @@
                             (class-subclasses class)))
           (make-kahua-collection db class opts)))))
 
+(define-method make-kahua-collection ((db <kahua-db>)
+                                      class opts)
+  (let* ((filter-proc (make-kahua-collection-filter class opts))
+	 (persistent-list (kahua-persistent-instances db class opts))
+	 (floating-list (filter-map (lambda (i) (and (ref i '%floating-instance)
+						     (eq? (class-of i) class)
+						     (filter-proc i)))
+				    (modified-instances-of db))))
+    (make <kahua-collection>
+      :class class
+      :instances (append! persistent-list floating-list))))
+
+(define (make-index-filter class index-cond)
+  (and-let* (((pair? index-cond))
+	     (sn (car index-cond))
+	     (value (cdr index-cond))
+	     (idx (and-let* ((s (class-slot-definition class sn)))
+		    (slot-definition-option s :index #f))))
+    (unless idx (kahua-db-error "Slot ~s is not index slot" sn))
+    (lambda (obj)
+      (equal? value (slot-ref obj sn)))))
+
+(define (make-keys-filter class keys)
+  (and keys
+       (lambda (obj) (member (key-of obj) keys))))
+
+(define (make-kahua-collection-filter class opts)
+  (let-keywords* opts ((index #f)
+		       (keys #f)
+		       (predicate #f)
+		       (include-removed-object? #f))
+    (let* ((index-filter (make-index-filter class index))
+	   (keys-filter (make-keys-filter class keys))
+	   (include-removed-filter (and (not include-removed-object?)
+					(lambda (o) (not (removed? o)))))
+	   (predicate-filter (and predicate
+				  (lambda (v) (predicate v)))))
+      (make-filter-pipeline `(,index-filter ,keys-filter ,include-removed-filter ,predicate-filter)))))
+
 (define-method call-with-iterator ((coll <kahua-collection>) proc . opts)
   (let1 p (ref coll 'instances)
     (proc (cut null? p)
@@ -1366,6 +1672,10 @@
 	  (append subs
 		  (append-map class-subclasses* subs)))))
   (delete-duplicates (class-subclasses* class)))
+
+;;
+;; Support for Class Redefinition
+;;
 
 (define instance-changing-class-stack (make-parameter '()))
 
@@ -1417,7 +1727,9 @@
 	    (slot-initialize-using-accessor! obj acc '()))))
     obj))
 
+;;
 ;; for check and fix database consistency.
+;;
 
 (define-generic dbutil:check-kahua-db-classcount)
 (define-generic dbutil:check-kahua-db-idcount)

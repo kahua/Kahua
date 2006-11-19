@@ -1,3 +1,28 @@
+2006-11-20  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix lack of magic comment to specify character coding system
+	  of source code.
+
+	* Drop (use kahua.pdf) from kahua module.
+
+	* Now kahua.persistence.fs is obsolete.
+	  You should use kahua.persistence.efs instead of it.
+	  kahua.persistence.fs is available still, but it'll have gone soon.
+
+	* Add index slot feature to kahua.persistence.efs
+	  You define persistent class like:
+	  (define-class <index-test> (<kahua-persistent-base>)
+	    ((a :init-keyword :a :init-value "a" :allocation :persistent :index :unique)
+	     (b :init-keyword :b :init-value "b" :allocation :persistent :index :any)
+	     (c :init-keyword :c :init-value "c" :allocation :persistent)))
+	  and query like:
+	  (make-kahua-collection <index-test> :index '(a . "a1"))
+	  or
+	  (make-kahua-collection <index-test> :index '(b . "b1"))
+	  Now only kahua.persistence.efs has this feature, but
+	  kahua.persistence.dbi(so and mysql and postgresql) will have
+	  it soon, but kahua.persistence.fs will not.
+
 2006-10-30  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Add kahua-dbutil upgrade facility.

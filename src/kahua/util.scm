@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.8 2006/10/08 06:00:16 bizenn Exp $
+;; $Id: util.scm,v 1.9 2006/11/19 22:02:25 bizenn Exp $
 
 ;; This module contains generally useful routines, which don't belong to
 ;; a particular module.
@@ -33,6 +33,7 @@
 	  write-pid-file
 	  read-pid-file
 	  check-pid
+	  make-filter-pipeline
 	  ))
 (select-module kahua.util)
 
@@ -165,5 +166,16 @@
       (error <kahua-error> :message (format "Process #~d on PID file ~s" pid path)))
     (sys-unlink path))
   (with-output-to-file path (cut write (sys-getpid)) :if-exists :error))
+
+(define (make-filter-pipeline filter-list)
+  (let1 filtered-filters (filter identity filter-list)
+    (lambda (obj)
+      (let/cc break
+	(fold (lambda (f obj)
+		(if obj
+		    (and (f obj) obj)
+		    (break #f)))
+	      obj
+	      filtered-filters)))))
 
 (provide "kahua/util")

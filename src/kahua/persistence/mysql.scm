@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.7 2006/10/30 07:02:41 bizenn Exp $
+;; $Id: mysql.scm,v 1.8 2006/11/19 22:02:26 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use srfi-1)
@@ -167,9 +167,8 @@
     (debug-write "~a: ~a: ~s\n" (if (ref obj '%floating-instance) 'INSERT 'UPDATE) key obj)
     (cond ((ref obj '%floating-instance) (dbi-do conn (format *insert-class-table-format* tab) '() id key data))
 	  ((removed? obj) (dbi-do conn (format *remove-class-table-format* tab) '() data id))
-	  (else (dbi-do conn (format *update-class-table-format* tab) '() key data id)))
-    (set! (ref obj '%floating-instance) #f)
-    ))
+	  (else (dbi-do conn (format *update-class-table-format* tab) '() key data id))))
+  (next-method))
 
 (define-method dbutil:fix-instance-table-structure ((db <kahua-db-mysql>) tabname)
   (define (warn tabname e) (format (current-error-port) "Fail: ~a: ~a\n" tabname (ref e 'message)))

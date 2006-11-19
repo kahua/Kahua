@@ -29,7 +29,8 @@ SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
 	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
 	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
 	spvr.scm httpd.scm test-xml.scm user.scm wiki-iki.scm \
-	worker.scm query.scm rollback.scm entry-method.scm redirectcont.scm
+	worker.scm query.scm rollback.scm entry-method.scm redirectcont.scm \
+	index-slots.scm
 
 SCMFILES2 = shell.scm
 
@@ -45,8 +46,8 @@ KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
 #  certain database settings.  See persistence-dbi.scm for the details.
 
 
-TESTS = test-xml persistence persistence-efs rollback entry-method \
-        user config gsid session partcont \
+TESTS = test-xml persistence persistence-efs index-slots \
+	rollback entry-method user config gsid session partcont \
         server kahua-dbm worker redirectcont \
 	define-method-rule kahua-call-with-current-context \
 	lambdabooks wiki-iki nqueen foldlist \
@@ -90,6 +91,9 @@ persistence-dbi-mysql :
 
 persistence-dbi-pg :
 	@gosh -I../src ./persistence-dbi-pg.scm >> test.log
+
+index-slots :
+	@gosh -I../src ./index-slots.scm >>test.log
 
 rollback :
 	@gosh -I../src ./rollback.scm >> test.log
