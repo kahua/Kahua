@@ -1,5 +1,16 @@
 2006-11-20  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: HTTP status
+	  Server(worker) not found => 404
+	  Server(worker) not respond => 503
+	  Unknown error => 500
+
+	* Fix: when kahua-dbutil upgrade fs to efs, it didn't create lock
+	  directory in each class directory.
+
+	* Change: now database name specified by :default-database-name is prior
+	  to primary-database-name parameter in application source file.
+
 	* Fix src/kahua/persistence/efs.scm: update index link before execution
 	  of write-kahua-instance.
 

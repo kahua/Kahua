@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.5 2006/11/20 04:27:18 bizenn Exp $
+;; $Id: efs.scm,v 1.6 2006/11/20 10:51:46 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -708,11 +708,13 @@
   (define (fix-class-directory dir)
     (let* ((alivedir (build-path dir *alive*))
 	   (keydir (build-path dir *key*))
+	   (lockdir (build-path dir *class-lock-dir*))
 	   (tmpdir (build-path dir "%%transitional"))
 	   (encoding (get-character-encoding))
 	   (reader (cut read-from-file <> :encoding encoding)))
       (mk-dbdir alivedir)
       (mk-dbdir keydir)
+      (mk-dbdir lockdir)
       (mk-dbdir tmpdir)
       (let1 new-cn (fold (lambda (f cn)
 			   (let* ((obj (reader f))

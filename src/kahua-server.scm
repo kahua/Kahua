@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.22 2006/10/25 03:47:36 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.23 2006/11/20 10:51:45 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -212,10 +212,10 @@
     (set! *kahua-top-module* (car mods))
     (kahua-common-init site conf-file)
     (set! kahua-app-server (kahua-application-environment))
-    (primary-database-name db)
     (initialize-plugins)
     (kahua-app-args (cdr mods))
     (load-kahua-module (car mods))
+    (when db (primary-database-name db))
     (let* ((worker-name (car (string-split (sys-basename (car mods)) #\.))) 
            (worker-id (kahua-init-server worker-name keyserv))
 	   (profile (and prof (string-append prof "." worker-id)))

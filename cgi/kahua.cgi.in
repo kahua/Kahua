@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.43 2006/10/08 07:13:27 bizenn Exp $
+;; $Id: kahua.cgi.in,v 1.44 2006/11/20 10:51:45 bizenn Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -225,8 +225,9 @@
 
 (define (cgi-error-proc e)
   (let ((errmsg (slot-ref e 'message))
-	(status (cond ((<kahua-worker-not-found> e) 404)
-		      (else                         503))))
+	(status (cond ((<kahua-worker-not-found> e)   404)
+		      ((<kahua-worker-not-respond> e) 503)
+		      (else                           500))))
     (log-format "CGI error caught: ~a" errmsg)
     `((("status" ,(http-status-string status #f))
        ("content-type" "text/html"))

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.14 2006/10/08 07:13:27 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.15 2006/11/20 10:51:45 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -216,6 +216,14 @@
 (define-condition-type <http-not-implemented> <kahua-http-error> #f)
 (define-method reply-error ((e <http-not-implemented>) out)
   (reply-not-implemented out (request-method) (request-uri) (request-version) #t))
+
+;; 503 Service Unavailable
+(define (reply-service-unavailable out ver with-body?)
+  (reply out 503 ver (basic-header "text/html")
+	 (and with-body?
+	      (cut output-error-page <> 503 "Service Unavailable."))))
+(define-method reply-error ((e <kahua-worker-not-respond>) out)
+  (reply-service-unavailable out (request-version) #t))
 
 (define (prepare-dispatch-request cs in)
   (define (http-host->server-name host)

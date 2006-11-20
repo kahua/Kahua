@@ -6,7 +6,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.3 2006/09/01 06:21:04 bizenn Exp $
+;; $Id: worker.scm,v 1.4 2006/11/20 10:51:46 bizenn Exp $
 (define-module kahua.protocol.worker
   (use util.list)
   (use gauche.net)
@@ -18,13 +18,21 @@
 	  add-kahua-header!
 	  kahua-worker-header
 	  <kahua-worker-not-found>
-	  <kahua-worker-error>)
+	  <kahua-worker-not-respond>
+	  <kahua-worker-unknown-error>
+	  <kahua-spvr-session-expired>
+	  kahua-worker-not-found?
+	  kahua-worker-not-respond?
+	  kahua-worker-unknown-error?
+	  kahua-spvr-session-expired?)
   )
 
 (select-module kahua.protocol.worker)
 
-(define-condition-type <kahua-worker-error> <kahua-error> #f)
-(define-condition-type <kahua-worker-not-found> <kahua-error> #f)
+(define-condition-type <kahua-worker-unknown-error> <kahua-error> kahua-worker-unknown-error?)
+(define-condition-type <kahua-worker-not-found> <kahua-error> kahua-worker-not-found?)
+(define-condition-type <kahua-worker-not-respond> <kahua-error> kahua-worker-not-respond?)
+(define-condition-type <kahua-spvr-session-expired> <kahua-error> kahua-spvr-session-expired?)
 
 (define (add-kahua-header! header . args)
   (let loop ((h header)
@@ -58,14 +66,23 @@
 			"x-kahua-metavariables" metavariables
 			))))
 
+;; Too ugly. FIXME!!
 (define (check-kahua-status kheader kbody)
-  (or (and-let* ((kahua-status (assoc-ref-car kheader "x-kahua-status")))
-	(case (string->symbol kahua-status)
-	  ((OK)         #t)
-	  ((SPVR-ERROR) (raise (make-condition <kahua-worker-not-found> 'message "Worker not found")))
-	  (else
-	   (log-format "Unknown x-kahua-status: ~s" kahua-status)
-	   (raise (make-condition <kahua-worker-error> 'message "Worker error")))))
+  (or (and-let* ((kahua-status (assoc-ref kheader "x-kahua-status")))
+	(if (null? kahua-status)
+	    (error <kahua-worker-unknown-error> "Unknown worker error")
+	    (case (string->symbol (car kahua-status))
+	      ((OK)         #t)
+	      ((SPVR-ERROR)
+	       (if (null? (cdr kahua-status))
+		   (error <kahua-worker-unknown-error> "Unknown worker error")
+		   (case (cadr kahua-status)
+		     ((<kahua-worker-not-found>) (error <kahua-worker-not-found> "Worker not found"))
+		     ((<kahua-worker-not-respond>) (error <kahua-worker-not-respond> "Worker not respond"))
+		     (else (error <kahua-worker-unknown-error> "Unknown worker error")))))
+	      (else
+	       (log-format "Unknown x-kahua-status: ~s" kahua-status)
+	       (error <kahua-worker-unknown-error> "Unknown worker error")))))
       #t))
 
 (define (make-socket-to-worker cgsid)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.26 2006/11/19 22:02:25 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.27 2006/11/20 10:51:45 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -39,6 +39,7 @@
 (use kahua.developer)
 (use kahua.util)
 (use kahua.thread-pool)
+(use kahua.protocol.worker)
 
 (define *spvr* #f) ;; bound to supervisor object for convenience
 
@@ -150,32 +151,12 @@
 ;;; Error handling
 ;;;
 
-;; Spvr should handle all "expected" exceptional cases gracefully,
-;; which is indicated by throwing <spvr-exception> object.
-;; If an object other than <spvr-exception> is thrown, it should be
-;; a program bug.
-
-(define-condition-type <spvr-exception> <kahua-error> #f)
-
-;; A convenience function to raise <spvr-exception> or its subclasses
 (define (spvr-errorf class fmt . args)
-  (raise (make class :message (apply format fmt args))))
+  (apply log-format fmt args)
+  (apply errorf class fmt args))
 
-;; This exception occurs when the URI given from the client doesn't
-;; correspond to any known worker type.    "404 Not found" may be
-;; an appropriate response to the http client.
-(define-condition-type <spvr-unknown-worker-type> <spvr-exception> #f)
-
-;; This exception occurs when the URI given form the client
-;; specifies a worker that is known, but is not running.
-;; "503 Service unavailable" may be an appropriate response
-;; to the http client.
-(define-condition-type <spvr-worker-not-running> <spvr-exception> #f)
-
-;; This exception occurs when the given session id is invalid
-;; or may be expired.  The httpd can return "200 OK" with
-;; an appropriate message.
-(define-condition-type <spvr-expired-session> <spvr-exception> #f)
+(define (spvr-error-header err)
+  `(("x-kahua-status" "SPVR-ERROR" ,(class-name (class-of err)))))
 
 ;; If errors occur before spvr service starts, we should terminate
 ;; spvr with appropriate error message.
@@ -322,8 +303,10 @@
 				      (#t (cons (let1 type (symbol->string worker-type)
 						  (string-append type "/" type ".kahua"))
 						args)))))))))
-        (else (spvr-errorf <spvr-unknown-worker-type>
-                          "unknown worker type: ~a" worker-type))))
+        (else
+	 (lot-format "Worker not found")
+	 (spvr-errorf <kahua-worker-not-found>
+		      "unknown worker type: ~a" worker-type))))
 
 (define (load-app-servers-file)
   (define (find-default-worker-type lis)
@@ -385,10 +368,9 @@
 ;; start worker specified by worker-class
 (define (%run-worker spvr type)
   (let1 w (make <kahua-worker> :type type)
-    (and (slot-ref w 'process)
-	 (log-worker-action "run" w)
-	 (%register-worker spvr type w)
-	 w)))
+    (log-worker-action "run" w)
+    (%register-worker spvr type w)
+    w))
 
 (define (%run-workers spvr type count)
   (list-tabulate count (lambda _ (%run-worker spvr type))))
@@ -573,22 +555,19 @@
   (let* ((wtype (type-of self))
 	 (cmd   (worker-script (name-of wtype) (slot-ref wtype 'spvr)))
          (p     (run-piped-cmd cmd))
-         (id    (read-line (process-output p))))
-    (cond ((eof-object? id)		; Worker died suddenly, maybe.
-	   (process-send-signal p SIGTERM)
-	   (process-wait p)
-	   (slot-set! self 'process #f)
-	   (log-format "[worker] ~A died suddenly" (name-of wtype)))
-	  (else
-	   (let* ((wno   (slot-ref self 'next-wno))
-		  (log-str (format "[worker] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
-	     (slot-set! self 'logger (pa$ log-format log-str))
-	     (slot-set! self 'wid id)
-	     (slot-set! self 'wno wno)
-	     (slot-set! self 'process p)
-	     (slot-set! self 'sockaddr (worker-id->sockaddr id (slot-ref (spvr-of wtype) 'sockbase)))
-	     (inc! (ref self 'next-wno))))))
-  self)
+         (id    (read-line (process-output p)))
+         (wno   (slot-ref self 'next-wno))
+	 (log-str (format "[worker] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
+    (slot-set! self 'logger (pa$ log-format log-str))
+    (slot-set! self 'wid id)
+    (slot-set! self 'wno wno)
+    (slot-set! self 'process p)
+    (slot-set! self 'sockaddr
+	       (if (eof-object? id)
+		   #f
+		   (worker-id->sockaddr id (slot-ref (spvr-of wtype) 'sockbase))))
+    (inc! (ref self 'next-wno))
+    ))
 
 (define (%terminate! spvr type worker)
   (slot-set! worker 'zombee #t)
@@ -626,16 +605,20 @@
   (close-input-port (process-output (process-of self))))
 
 (define-method dispatch-to-worker ((self <kahua-worker>) header body cont)
-  (let1 sock (make-client-socket (sockaddr-of self))
-    (call-with-client-socket sock
-      (lambda (in out)
-	(send-message out header body)
-	(guard (e (else
-		   (cont '(("x-kahua-status" "SPVR-ERROR"))
-			 (list (ref e 'message) (kahua-error-string e #t)))))
-	  (receive (header body) (receive-message in)
-	    (socket-shutdown sock)
-	    (cont header body)))))))
+  (let1 sockaddr (sockaddr-of self)
+    (if sockaddr
+	(let1 sock (make-client-socket sockaddr)
+	  (call-with-client-socket sock
+	    (lambda (in out)
+	      (send-message out header body)
+	      (guard (e (else
+			 (cont (spvr-error-header e)
+			       (list (ref e 'message) (kahua-error-string e #t)))))
+		(receive (header body) (receive-message in)
+		  (socket-shutdown sock)
+		  (cont header body))))))
+	(spvr-errorf <kahua-worker-not-respond>
+		     "Worker ~s (~s) is not running currently" (name-of (type-of self)) (wno-of self)))))
 
 ;;;=================================================================
 ;;; Supervisor commands
@@ -714,17 +697,15 @@
 	   ;; we know which worker handles the request
 	   (let1 w (find-worker self cont-h)
 	     (unless w
-	       (spvr-errorf <spvr-expired-session> "Session key expired"))
+	       (spvr-errorf <kahua-spvr-session-expired> "Session key expired"))
 	     (dispatch-to-worker w header body cont)))
 	  (else
 	   ;; this is a session-initiating request.  wtype must be symbol.
 	   (let1 w (find-worker self wtype)
 	     (unless w
 	       (if (assq wtype *worker-types*)
-		   (spvr-errorf <spvr-worker-not-running>
-				"Application server for ~a is not running currently."
-				wtype)
-		   (spvr-errorf <spvr-unknown-worker-type> "/~a" wtype)))
+		   (spvr-errorf <kahua-worker-not-respond> "Worker ~a is not running currently." wtype)
+		   (spvr-errorf <kahua-worker-not-found> "/~a" wtype)))
 	     (dispatch-to-worker w header body cont))))
     ))
 
@@ -732,10 +713,9 @@
 (define-method handle-kahua ((self <kahua-spvr>) client-sock)
   (call-with-client-socket client-sock
     (lambda (in out)
-      (guard (e
-	      (#t (let ((error-log (kahua-error-string e #t)))
-		    (send-message out '(("x-kahua-status" "SPVR-ERROR"))
-				  (list (ref e 'message) error-log)))))
+      (guard (e (else
+		 (send-message out (spvr-error-header e)
+			       (list (ref e 'message) (kahua-error-string e #t)))))
 	(receive (header body) (receive-message in)
 	  (handle-common self header body
 			 (lambda (header body)
