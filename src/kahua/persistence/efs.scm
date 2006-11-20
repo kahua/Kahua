@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.4 2006/11/19 22:02:26 bizenn Exp $
+;; $Id: efs.scm,v 1.5 2006/11/20 04:27:18 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -384,8 +384,13 @@
 	    (else (mk-symlink* new-target new-link))))))
 
 (define (maintain-index-link db obj)
-  (for-each (pa$ apply update-index-link db obj)
-	    (slot-ref obj '%modified-index-slots))
+  (let-values (((unique-index any-index)
+		(partition (lambda (e)
+			     (eq? :unique (list-ref e 2)))
+			   (slot-ref obj '%modified-index-slots)))
+	       ((do-it) (pa$ apply update-index-link db obj)))
+    (for-each do-it unique-index)
+    (for-each do-it any-index))
   (set! (ref obj '%modified-index-slots) '()))
 
 (define (create-all-index-link db class)
@@ -472,6 +477,7 @@
     (create-class-directory* db class)
     (with-locking-output-file (class-lock-path db (class-name class))
       (lambda _
+	(maintain-index-link db obj)
 	(if (ref obj '%floating-instance)
 	    (guard (e (else (kahua-db-efs-error "duplicate key: ~s" (key-of obj))))
 	      (call-with-output-file file-path
@@ -480,8 +486,7 @@
 		:encoding (character-encoding-of db)))
 	    (safe-update-file file-path (tmp-path-of db) writer (character-encoding-of db)))
 	(maintain-alive-link db obj)
-	(maintain-key-link db obj)
-	(maintain-index-link db obj))
+	(maintain-key-link db obj))
       :if-exists :append)
     (set! (ref obj '%floating-instance) #f)))
 

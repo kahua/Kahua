@@ -3,7 +3,7 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: Setup.ja,v 1.13 2006/09/29 04:12:01 bizenn Exp $
+;; $Id: Setup.ja,v 1.14 2006/11/20 04:27:18 bizenn Exp $
 
 * Kahuaをセットアップする
 
@@ -14,15 +14,20 @@
 
 *** Gauche のインストール
 
-Kahuaを動かすためには、0.8.7 以降のpthreadをサポートした
+Kahuaを動かすためには、0.8.8 以降のpthreadをサポートした
 [http://practical-scheme.net/gauche/index-j.html Gauche]
 がインストール済みである必要があります。
-0.8.8がリリースされるまでは、可能ならCVS HEADの使用をお薦めします
-(いくつかクリティカルなバグが修正されています)。
 {{{
 $ gosh -V
 Gauche scheme interpreter, version 0.8.7 [utf-8,pthreads]
 }}}
+なお、0.8.8リリースには、Schemeスクリプト内でエラー/例外が発生し、
+かつスクリプト内でそのエラー/例外が補足されない場合、エラーメッセージを
+表示せずに終了してしまうバグがあります。
+
+http://sourceforge.net/mailarchive/forum.php?thread_id=30949517&forum_id=2043
+
+このパッチを適用してからGaucheをビルドすることを推奨します。
 
 適切なバージョンの Gauche がインストールされていなければ、
 インストールしてください。
@@ -37,8 +42,8 @@ Gauche scheme interpreter, version 0.8.7 [utf-8,pthreads]
 しまうことをお薦めします。後述のようなパーミッションやユーザ/グループの
 設定が不要になります。
 {{{
-% tar xvzf Kahua-0.7.tgz
-% cd Kahua-0.7
+% tar xvzf Kahua-0.8.tgz
+% cd Kahua-0.8
 % ./configure --prefix=${HOME}/kahua --with-staticdir=${HOME}/public_html/kahua
 % make
 % make check
@@ -326,6 +331,82 @@ lambdabooks(gje:2ft3z)> (map (cut ref <> 'login-name) (make-kahua-collection <ka
 lambdabooks(gje:2ft3z)>
 }}}
 サンプルアプリケーションのlambabooksに接続し、式を評価したところです。
+
+----
+
+** サイトバンドルを使用する
+
+Kahua 0.8から、サイトバンドルという機構が組み込まれました。Kahuaサーバ群が
+動作するワーキングディレクトリを抽象化したもので、単一のKahuaインストール
+ベースの下で、複数のKahuaサーバ群(kahua-spvrとその配下のサーバ群)を簡単に
+動かすことができるようになります。
+
+*** サイトバンドルを作る
+
+作成するサイトに対応したkahua-spvrの実行権限で以下のコマンドを実行します。
+{{{
+% kahua-package create /var/tmp/kahua
+}}}
+これでサイトのスケルトンが作成されます。ディレクトリ構成は以下のように
+なります。
+{{{
+% find /var/tmp/kahua
+/var/tmp/kahua
+/var/tmp/kahua/app
+/var/tmp/kahua/app-servers
+/var/tmp/kahua/database
+/var/tmp/kahua/etc
+/var/tmp/kahua/etc/kahua.conf
+/var/tmp/kahua/etc/user.conf
+/var/tmp/kahua/logs
+/var/tmp/kahua/plugins
+/var/tmp/kahua/run
+/var/tmp/kahua/socket
+/var/tmp/kahua/static
+/var/tmp/kahua/tmp
+}}}
+標準のワーキングディレクトリの構成に似ていますが、いくつか変更を加えて
+います。
+
+# app: 標準のワーキングディレクトリでは歴史的経緯から「checkout」。
+アプリケーションごとにこの下にサブディレクトリを掘り、アプリケーション
+のソースファイルを配置する。
+# database: 標準のワーキングディレクトリではワーキングディレクトリ直下に
+置かれていたファイルシステム系データベースのディレクトリが置かれる。
+# etc: サイトバンドル上で起動するkahua-*スクリプト群が参照する設定ファイル
+や開発ユーザデータベースが配置される。サイトバンドル使用時、kahua-*
+スクリプトは標準の設定ファイルを参照しない。
+# logs: ログファイルの出力先。
+# plugins: プラグインファイルを配置する。現状では、Kahuaとともに
+インストールされる標準プラグインをサイトバンドル内で使用したい時は、
+ここにコピーする必要がある。
+# run: PIDファイルの出力先。
+# socket: Kahuaサーバ群が通信に使用するUNIXドメインソケットの配置場所。
+# static: 静的コンテンツの配置先。
+# tmp: テンポラリディレクトリ。
+
+*** サイトバンドル上でkahua-spvrを動かす
+
+サイトバンドルを作成した権限で以下のように起動します。
+{{{
+% kahua-spvr -S /var/tmp/kahua --httpd 8889
+}}}
+-Sの後ろに来るサイトバンドルへのパスはフルパスで指定してください。
+このkahua-spvrにkahua-adminを接続したいときは、
+{{{
+% kahua-admin -S /var/tmp/kahua
+}}}
+と起動します。
+
+なお、毎回コマンドラインオプションを指定するのが面倒であれば、
+環境変数kAHUA_DEFAULT_SITEにデフォルトで使用するサイトバンドルを
+指定することができます。
+{{{
+% export KAHUA_DEFAULT_SITE=/var/tmp/kahua
+% kahua-spvr --httpd 8889
+}}}
+
+この機構の導入にともない、ユーザ専用モードは廃止しました。
 
 ----
 

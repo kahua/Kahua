@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005-2006 Tatsuya BIZENN.
 ;;
 ;; upload and download plugin
-;; $Id: fileio.scm,v 1.3 2006/10/24 06:14:52 bizenn Exp $
+;; $Id: fileio.scm,v 1.4 2006/11/20 04:27:18 bizenn Exp $
 
 (define-plugin "fileio"
   (version "0.7")
@@ -28,7 +28,7 @@
   (apply with-input-from-file (get-tmpfile-path spec) thunk opts))
 
 (define-export (get-original-name spec)
-  (cadr spec))
+  (sys-basename (cadr spec)))
 
 (define-export (save-uploaded-file spec path)
   (sys-rename (car spec) path))
