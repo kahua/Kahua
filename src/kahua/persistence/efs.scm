@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.6 2006/11/20 10:51:46 bizenn Exp $
+;; $Id: efs.scm,v 1.7 2006/11/20 23:57:35 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -348,7 +348,8 @@
 (define (slot-name-encode slot-name encoding)
   (string->path (symbol->string slot-name) *slot-name-literal* *file-name-limit* encoding))
 (define (index-value-encode value encoding)
-  (string->path (with-output-to-string (cut write/ss value)) *index-literal* *file-name-limit* encoding))
+  (string->path (with-output-to-string (cut index-value-write value))
+		*index-literal* *file-name-limit* encoding))
 (define-method index-value-path ((db <kahua-db-efs>) (sn <symbol>) value)
   (let1 enc (character-encoding-of db)
     (build-path (slot-name-encode sn enc) (index-value-encode value enc))))

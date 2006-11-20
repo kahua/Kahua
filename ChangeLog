@@ -1,3 +1,10 @@
+2006-11-21  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 0.8 released.
+
+	* Fix: restrict index value to string, number, symbol, boolean, keyword,
+	  vector and list whose all elements are these types.
+
 2006-11-20  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: HTTP status

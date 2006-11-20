@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.67 2006/11/19 22:02:25 bizenn Exp $
+;; $Id: persistence.scm,v 1.68 2006/11/20 23:57:34 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -54,6 +54,7 @@
 	  dump-index-cache
 
 	  read-index-cache
+	  index-value-write
 
 	  ;; for Database Driver Module.
 	  kahua-db-unique-id
@@ -352,6 +353,21 @@
 	(slot-set-using-class! class o '%modified-index-slots
 			       (assq-set! modified-slots sn (list directive idx ov nv)))
 	(case directive ((:modify :add) (register-index-cache o sn idx nv)))))))
+
+(define (index-value-write value)
+  (cond ((any (pa$ is-a? value) `(,<string> ,<number> ,<symbol> ,<boolean> ,<keyword>))
+	 (write value))
+	((null? value) (write '()))
+	((pair? value)
+	 (write-char #\()(index-value-write (car value))
+	 (for-each (lambda (e)
+		     (write-char #\space)
+		     (index-value-write e)) (cdr value))
+	 (write-char #\)))
+	((vector? value)
+	 (write-char #\#)
+	 (index-value-write (vector->list value)))
+	(else (kahua-persistence-error "Object ~s cannot be used as index value" value))))
 
 (define (drop-all-index-values! obj)
   (let1 class (current-class-of obj)
