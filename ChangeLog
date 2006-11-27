@@ -1,3 +1,7 @@
+2006-11-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Now MySQL driver support index slot feature.
+
 2006-11-21  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 0.8 released.

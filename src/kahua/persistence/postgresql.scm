@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.7 2006/11/19 22:02:26 bizenn Exp $
+;; $Id: postgresql.scm,v 1.8 2006/11/27 07:18:35 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -122,18 +122,6 @@
 (define-method table-should-be-locked? ((db <kahua-db-postgresql>)
 					(obj <kahua-persistent-base>))
   (slot-ref obj '%floating-instance))
-
-(define-method write-kahua-instance ((db <kahua-db-postgresql>)
-				     (obj <kahua-persistent-base>)
-				     (tab <string>))
-  (let ((data (call-with-output-string (pa$ kahua-write obj)))
-	(id (kahua-persistent-id obj))
-	(key  (key-of obj)))
-    (let1 conn (connection-of db)
-      (cond ((ref obj '%floating-instance) (dbi-do conn (insert-class-instance tab) '() id key data))
-	    ((removed? obj) (dbi-do conn (remove-class-instance tab) '() data id))
-	    (else (dbi-do conn (update-class-instance tab) '() key data id)))))
-  (next-method))
 
 ;;=================================================================
 ;; Database Consistency Check and Fix

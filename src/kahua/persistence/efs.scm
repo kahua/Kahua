@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.7 2006/11/20 23:57:35 bizenn Exp $
+;; $Id: efs.scm,v 1.8 2006/11/27 07:18:35 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -430,15 +430,15 @@
 	       ((file-is-directory? d)))
       (directory-fold d (lambda (p r)
 			  (and (file-is-symlink? p) (sys-unlink p)) #t) #t)))
-  (let1 index-creator(filter-map (apply$ (lambda (sn dir idx)
-					   (case dir
-					     ((:drop :modify) (drop-index-slot-links db class sn)))
-					   (and (memq dir '(:modify :add))
-						(lambda (o)
-						  (update-index-link db o sn :add idx #f
-								     (slot-ref-using-class class o sn))
-						  (slot-set-using-class! class o '%modified-index-slots '())))))
-				 translator)
+  (let1 index-creator (filter-map (apply$ (lambda (sn dir idx)
+					    (case dir
+					      ((:drop :modify) (drop-index-slot-links db class sn)))
+					    (and (memq dir '(:modify :add))
+						 (lambda (o)
+						   (update-index-link db o sn :add idx #f
+								      (slot-ref-using-class class o sn))
+						   (slot-set-using-class! class o '%modified-index-slots '())))))
+				  translator)
     (unless (null? index-creator)
       (for-each (lambda (o)
 		  (for-each (cut <> o) index-creator))
@@ -480,7 +480,7 @@
       (lambda _
 	(maintain-index-link db obj)
 	(if (ref obj '%floating-instance)
-	    (guard (e (else (kahua-db-efs-error "duplicate key: ~s" (key-of obj))))
+	    (guard (e (else (kahua-db-efs-error "Object ID ~s conflicts" (kahua-persistent-id obj))))
 	      (call-with-output-file file-path
 		writer
 		:if-exists :error

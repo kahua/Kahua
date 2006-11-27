@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.8 2006/11/19 22:02:26 bizenn Exp $
+;; $Id: mysql.scm,v 1.9 2006/11/27 07:18:35 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use srfi-1)
@@ -133,20 +133,43 @@
 
 (define-method create-kahua-class-table ((db <kahua-db-mysql>)
 					 (class <kahua-persistent-meta>))
-  (define (create-class-table-sql tabname)
-    (format "create table ~a (
-               id      integer not null,
-               keyval  longtext binary,
-               dataval longtext binary not null,
-               removed smallint not null default 0,
-               constraint primary key (id),
-               constraint unique      (keyval(255)),
-               index                  (removed)
-             ) type=~a" tabname (table-type-of db)))
+  (define (create-class-table-sql tabname index-slots)
+    (receive (us as)
+	(partition (lambda (s) (eq? :unique (slot-definition-option s :index))) index-slots)
+      (let* ((columns (map (lambda (s)
+			     (format "~a longtext binary"
+				     (slot-name->column-name (slot-definition-name s)))) index-slots))
+	     (uindexes (map (lambda (s)
+			      (format "constraint unique (~a(255))"
+				      (slot-name->column-name (slot-definition-name s)))) us))
+	     (indexes (map (lambda (s)
+			     (format "index (~a(255))"
+				     (slot-name->column-name (slot-definition-name s)))) as)))
+	(format "
+create table ~a (
+ id      integer not null,
+ keyval  longtext binary,
+ dataval longtext binary not null,
+ removed smallint not null default 0,
+~a
+ constraint primary key (id),
+ constraint unique      (keyval(255)),
+ index                  (removed)
+~a~a
+) type=~a"
+		tabname
+		(string-join columns "," 'suffix)
+		(string-join uindexes "," 'prefix)
+		(string-join indexes "," 'prefix)
+		(table-type-of db)))))
   (let ((cname (class-name class))
 	(newtab (format *kahua-class-table-format* (class-table-next-suffix db))))
     (insert-kahua-db-classes db cname newtab)
-    (dbi-do (connection-of db) (create-class-table-sql newtab) '(:pass-through #t))
+    (dbi-do (connection-of db)
+	    (create-class-table-sql newtab
+				    (filter (cut slot-definition-option <> :index #f)
+					    (class-slots class)))
+	    '(:pass-through #t))
     (register-to-table-map db cname newtab)
     newtab))
 
@@ -154,22 +177,60 @@
 					(obj <kahua-persistent-base>))
   #t)					; Always should lock the table.
 
-(define-method write-kahua-instance ((db <kahua-db-mysql>)
-                                     (obj <kahua-persistent-base>)
-				     (tab <string>))
-  (define *insert-class-table-format* "insert into ~a (id, keyval, dataval) values (?, ?, ?)")
-  (define *update-class-table-format* "update ~a set keyval=?, dataval=?, removed=0 where id = ?")
-  (define *remove-class-table-format* "update ~a set keyval=NULL, dataval=?, removed=1 where id = ?")
-  (let* ((conn (connection-of db))
-	 (data (call-with-output-string (pa$ kahua-write obj)))
-	 (id (kahua-persistent-id obj))
-	 (key (key-of obj)))
-    (debug-write "~a: ~a: ~s\n" (if (ref obj '%floating-instance) 'INSERT 'UPDATE) key obj)
-    (cond ((ref obj '%floating-instance) (dbi-do conn (format *insert-class-table-format* tab) '() id key data))
-	  ((removed? obj) (dbi-do conn (format *remove-class-table-format* tab) '() data id))
-	  (else (dbi-do conn (format *update-class-table-format* tab) '() key data id))))
-  (next-method))
+;;
+;; Index handling
+;;
+(define-method create-index-column ((db <kahua-db-mysql>)
+				    (class <kahua-persistent-meta>)
+				    slot-name index-type)
+  (let ((conn (connection-of db))
+	(tabname (kahua-class->table-name* db class))
+	(colname (slot-name->column-name slot-name)))
+    (dbi-do conn (format "alter table ~a add ~a longtext" tabname colname) '(:pass-through #t))
+    (dbi-do conn (format "alter table ~a add ~a index (~a(255))"
+			 tabname (if (eq? index-type :unique) "unique" "") colname)
+	    '(:pass-through #t))))
+(define-method change-index-type ((db <kahua-db-mysql>)
+				  (class <kahua-persistent-meta>)
+				  slot-name index-type)
+  (let ((conn (connection-of db))
+	(tabname (kahua-class->table-name* db class))
+	(colname (slot-name->column-name slot-name)))
+    (dbi-do conn (format "alter table ~a drop index ~a" tabname colname) '(:pass-through #t))
+    (dbi-do conn (format "alter table ~a add ~a index (~a(255))"
+			 tabname (if (eq? index-type :unique) "unique" "") colname)
+	    '(:pass-through #t))))
+(define-method drop-index-column ((db <kahua-db-mysql>)
+				  (class <kahua-persistent-meta>)
+				  slot-name)
+  (let ((conn (connection-of db))
+	(tabname (kahua-class->table-name* db class))
+	(colname (slot-name->column-name slot-name)))
+    (dbi-do conn (format "alter table ~a drop ~a" tabname colname))))
+(define-method make-index-updater ((db <kahua-db-mysql>)
+				   (class <kahua-persistent-meta>)
+				   slot-names)
+  (define (build-update-string tabname slot-names)
+    (format "update ~a set ~a where id=?"
+	    tabname
+	    (string-join (map (lambda (sn)
+				(format "~a=?" (slot-name->column-name sn)))
+			      slot-names)
+			 ",")))
+  (let ((conn (connection-of db))
+	(update (build-update-string (kahua-class->table-name* db class) slot-names)))
+    (lambda (o)
+      (let ((vals (map (lambda (sn)
+			 (with-output-to-string
+			   (lambda ()
+			     (index-value-write (slot-ref o sn)))))
+		       slot-names))
+	    (id (kahua-persistent-id o)))
+	(apply dbi-do conn update '() (append! vals (list id)))))))
 
+;;
+;; for maintainance database structure.
+;;
 (define-method dbutil:fix-instance-table-structure ((db <kahua-db-mysql>) tabname)
   (define (warn tabname e) (format (current-error-port) "Fail: ~a: ~a\n" tabname (ref e 'message)))
   (define add-id-column (format "alter table ~a add id integer not null" tabname))

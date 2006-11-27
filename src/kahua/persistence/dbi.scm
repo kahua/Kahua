@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.12 2006/11/19 22:02:26 bizenn Exp $
+;; $Id: dbi.scm,v 1.13 2006/11/27 07:18:35 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -13,6 +13,7 @@
   (extend kahua.persistence
 	  dbi util.list
 	  gauche.collection
+	  gauche.parameter
 	  gauche.logger)
   (export <kahua-db-dbi>
 	  set-default-character-encoding!
@@ -53,6 +54,12 @@
 	  dbutil:fix-instance-table-structure
 	  ;; Utility
 	  safe-execute
+
+	  slot-name->column-name
+	  create-index-column
+	  change-index-type
+	  drop-index-column
+	  make-index-updater
 
 	  add-column-to-table
 	  drop-column-from-table
@@ -107,15 +114,30 @@
 (define-method kahua-db-dbi-build-dsn ((db <kahua-db-dbi>) driver options)
   (format "dbi:~a:~a" driver options))
 
+(define transaction-level (make-parameter 0))
 (define-method with-dbi-transaction ((db <kahua-db-dbi>) proc)
+  (define (parameter-inc! param)
+    (param (+ 1 (param))))
+  (define (parameter-dec! param)
+    (param (- (param) 1))
+    (param))
+  (define (do-start-transaction conn)
+    (when (= 0 (parameter-inc! transaction-level))
+      (dbi-do conn "start transaction" '(:pass-through #t))))
+  (define (do-commit conn)
+    (when (= 0 (parameter-dec! transaction-level))
+      (dbi-do conn "commit" '(:pass-through #t))))
+  (define (do-rollback conn)
+    (when (= 0 (parameter-dec! transaction-level))
+      (dbi-do conn "rollback" '(:pass-through #t))))
   (let1 conn (connection-of db)
     (guard (e (else
-	       (dbi-do conn "rollback" '(:pass-through #t))
+	       (do-rollback conn)
 	       (raise e)))
-      (dbi-do conn "start transaction" '(:pass-through #t))
+      (do-start-transaction conn)
       (begin0
 	(proc conn)
-	(dbi-do conn "commit" '(:pass-through #t))))))
+	(do-commit conn)))))
 
 (define-method lock-db ((db <kahua-db-dbi>)) #t)
 (define-method unlock-db ((db <kahua-db-dbi>)) #t)
@@ -345,71 +367,123 @@
 		 #f))))))
 
 (define-method kahua-persistent-instances ((db <kahua-db-dbi>) class opts)
+  (define (%select-instances tabname where-clause)
+    (format "select keyval, dataval from ~a ~a" tabname where-clause))
+  (define (%make-where-clause index keys)
+    (let1 conditions `(,(%make-index-condition index)
+		       ,(%make-keys-condition keys)
+		       "removed=0")
+      (format "where ~a"
+	      (string-join (filter identity conditions) " and "))))
+  (define (%make-keys-condition keys)
+    (and keys
+	 (if (null? keys) "keyval is NULL"
+	     (format "keyval in (~a)" (string-join (map (lambda _ "?") keys) ",")))))
+  (define (%make-index-condition index)
+    (and index
+	 (format "~a=?" (slot-name->column-name (car index)))))
+  (define (%make-sql-parameters index keys)
+    (let1 keys (or keys '())
+      (if index
+	  (cons (with-output-to-string
+		  (cut index-value-write (cdr index))) keys)
+	  keys)))
+  (define (%find-kahua-instance row)
+    (let1 k (dbi-get-value row 0)
+      (or (read-key-cache db (class-name class) k)
+	  (let1 v (read-from-string (dbi-get-value row 1))
+	    (set! (ref v '%floating-instance) #f)
+	    v))))
+  ;; main
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
 		       (include-removed-object? #f))
-    (when index (kahua-db-dbi-error "Index slot is not supported yet"))
-    (let ((filter-proc (if predicate
-			   (lambda (v) (and (predicate v) v))
-			   identity))
-	  (cn (class-name class))
-	  (conn (connection-of db)))
-      (define (%select-instances tab where)
-	(format "select keyval, dataval from ~a ~a" tab where))
-      (define (%make-where-clause keys include-removed-object?)
-	(let* ((keys-cond (%make-keys-condition keys))
-	       (removed-cond (%make-removed-condition include-removed-object?)))
-	  (if (or keys-cond removed-cond)
-	      (with-output-to-string
-		(lambda ()
-		  (display " where ")
-		  (when keys-cond
-		    (display keys-cond)
-		    (when removed-cond
-		      (display " and ")))
-		  (when removed-cond
-		    (display removed-cond))))
-	      "")))
-      (define (%make-keys-condition keys)
-	(cond ((not keys) #f)
-	      ((null? keys) "keyval is NULL")
-	      (else (format "keyval in (~a)" (string-join (map (lambda _ "?") keys) ",")))))
-      (define (%make-removed-condition include-removed-object?)
-	(if include-removed-object?
-	    #f
-	    "removed = 0"))
-      (define (%find-kahua-instance row)
-	(let1 k (dbi-get-value row 0)
-	  (or (read-key-cache db cn k)
-	      (let1 v (read-from-string (dbi-get-value row 1))
-		(set! (ref v '%floating-instance) #f)
-		v))))
-      (or (and-let* ((tab (kahua-class->table-name db class))
-		     (r (apply dbi-do conn (%select-instances tab (%make-where-clause keys include-removed-object?))
-			       '() (or keys '()))))
+    (or (and-let* ((tab (kahua-class->table-name db class))
+		   (conn (connection-of db)))
+	  (receive (filter-proc res)
+	      (cond (include-removed-object?
+		     (values (make-kahua-collection-filter class opts)
+			     (dbi-do conn (%select-instances tab "") '())))
+		    (else
+		     (values (make-kahua-collection-filter class `(:predicate ,predicate))
+			     (apply dbi-do conn (%select-instances tab (%make-where-clause index keys))
+				    '() (%make-sql-parameters index keys)))))
 	    (filter-map1 (lambda (row)
-			   (and-let* ((obj (%find-kahua-instance row))
-				      ((or include-removed-object?
-					   (not (removed? obj)))))
+			   (and-let* ((obj (%find-kahua-instance row)))
 			     (filter-proc obj)))
-			 r))
-	  '()))))
+			 res)))
+	'())))
 
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
 				     (obj <kahua-persistent-base>))
   (write-kahua-instance db obj (kahua-class->table-name* db (class-of obj))))
 
-;; FIXME!! This is a very transitional way.
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
 				     (obj <kahua-persistent-base>)
-				     (tab <string>))
-  (set! (ref obj '%floating-instance) #f)
-  (set! (ref obj '%modified-index-slots) '()))
+				     (tabname <string>))
+  (let* ((conn (connection-of db))
+	 (class (class-of obj))
+	 (islots (filter-map (lambda (s)
+			       (and (slot-definition-option s :index #f)
+				    (slot-definition-name s)))
+			     (class-slots class)))
+	 (id (kahua-persistent-id obj))
+	 (data  (call-with-output-string (pa$ kahua-write obj))))
+    (define (dbi-do-insert-instance)
+      (let1 icolumns (map slot-name->column-name islots)
+	(if (removed? obj)
+	    (dbi-do conn
+		    (format "insert into ~a (id,keyval,dataval,removed~a) values (?,NULL,?,1~a)"
+			    tabname
+			    (string-join icolumns "," 'prefix)
+			    (string-join (map (lambda _ "NULL") icolumns) "," 'prefix))
+		    '() id data)
+	    (let* ((ivalues (map (lambda (sn)
+				   (with-output-to-string
+				     (lambda ()
+				       (index-value-write (slot-ref obj sn))))) islots))
+		   (insert-sql (format "insert into ~a (id,keyval,dataval,removed~a) values (?,?,?,0~a)"
+				       tabname (string-join icolumns "," 'prefix)
+				       (string-join (map (lambda _ "?") icolumns) "," 'prefix))))
+	      (apply dbi-do conn insert-sql '() id (key-of obj) data ivalues)))))
+    (define (dbi-do-update-instance)
+      (let* ((icolumns (map (lambda (sn)
+			      (format "~a=?" (slot-name->column-name sn))) islots))
+	     (ivalues (map (lambda (sn)
+			     (with-output-to-string
+			       (lambda ()
+				 (index-value-write (slot-ref obj sn))))) islots))
+	     (update-sql (format "update ~a set keyval=?,dataval=?,removed=0~a where id=~d"
+				 tabname (string-join icolumns "," 'prefix) id)))
+	(apply dbi-do conn update-sql '() (key-of obj) data ivalues)))
+    (define (dbi-do-remove-instance)
+      (let* ((icolumns (map (lambda (sn)
+			      (format "~a=NULL" (slot-name->column-name sn))) islots))
+	     (remove-sql (format "update ~a set ~keyval=NULL,removed=1,dataval=?~a where id=?"
+				 tabname (string-join icolumns "," 'prefix))))
+	(dbi-do conn remove-sql '() data (kahua-persistent-id obj))))
+
+    (cond ((ref obj '%floating-instance) (dbi-do-insert-instance))
+	  ((removed? obj)                (dbi-do-remove-instance))
+	  (else                          (dbi-do-update-instance)))
+    (set! (ref obj '%floating-instance) #f)
+    (set! (ref obj '%modified-index-slots) '())))
 
 (define-generic table-should-be-locked?)
 
 (define-method write-kahua-modified-instances ((db <kahua-db-dbi>))
+  (define (drop-old-index-value conn obj table)
+    (let ((columns (filter-map (lambda (i)
+				 (case (list-ref i 1)
+				   ((:drop :modify)
+				    (format "~a=NULL" (slot-name->column-name (list-ref i 0))))
+				   (else #f)))
+			       (ref obj '%modified-index-slots))))
+      (unless (null? columns)
+	(dbi-do conn (format "update ~a set ~a where id=~d"
+			     table (string-join columns ",") (kahua-persistent-id obj))
+		'(:pass-through #t)))))
   (and-let* ((obj&table (map (lambda (obj)
 			       (list obj (kahua-class->table-name* db (class-of obj))))
 			     (reverse! (modified-instances-of db))))
@@ -430,9 +504,35 @@
 				     (t (cadr m&t)))
 				 (kahua-update-index! db m)
 				 (write-kahua-instance db m t))) metainfo&table)
+		   (for-each (pa$ apply drop-old-index-value (connection-of db)) obj&table)
 		   (for-each (pa$ apply write-kahua-instance db) obj&table))
 		 tables))))
     ))
+
+(define (slot-name->column-name slot-name)
+  (with-string-io (symbol->string slot-name)
+    (lambda ()
+      (port-for-each (lambda (b)
+		       (cond ((char-set-contains? #[0-9a-zA-Z] (integer->char b))
+			      (write-byte b))
+			     (else (format #t "_~2,'0x" b))))
+		     read-byte))))
+
+(define-generic create-index-column)
+(define-generic change-index-type)
+(define-generic drop-index-column)
+(define-generic make-index-updater)
+(define-method kahua-interp-index-translator ((db <kahua-db-dbi>) class translator)
+  (let1 slots-to-be-updated (filter-map
+			     (apply$ (lambda (sn dir idx)
+				       (case dir
+					 ((:drop)   (drop-index-column db class sn)       #f)
+					 ((:modify) (change-index-type db class sn idx)   sn)
+					 ((:add)    (create-index-column db class sn idx) sn))))
+			     translator)
+    (unless (null? slots-to-be-updated)
+      (for-each (make-index-updater db class slots-to-be-updated)
+		(make-kahua-collection db class '())))))
 
 (define-method add-column-to-table ((db <kahua-db-dbi>)
 				    (table <string>)

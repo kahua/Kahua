@@ -1,10 +1,7 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
 ;; Tests for Index Slots
 ;;
-;; $Id: index-slots.scm,v 1.1 2006/11/19 22:04:17 bizenn Exp $
-
-(define *dbname* "efs:_tmpefs")
-(sys-system "rm -rf _tmpefs*")
+;; $Id: index-slots.scm,v 1.2 2006/11/27 07:18:37 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -12,7 +9,7 @@
 
 (debug-print-width #f)
 
-(test-start "index slots")
+(test-start (format "index slots (~a)" ((#/^(\w+):/ *dbname*) 1)))
 
 (use kahua.persistence)
 (test-module 'kahua.persistence)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.68 2006/11/20 23:57:34 bizenn Exp $
+;; $Id: persistence.scm,v 1.69 2006/11/27 07:18:33 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -55,6 +55,7 @@
 
 	  read-index-cache
 	  index-value-write
+	  kahua-update-index!
 
 	  ;; for Database Driver Module.
 	  kahua-db-unique-id
@@ -1313,7 +1314,7 @@
 		  (if (equal? dbtype "pg")
 		      (kahua-concrete-db-class "postgresql") ; for backword compatibility
 		      (kahua-concrete-db-class dbtype))))))
-        (else (kahua-concrete-db-class "fs"))))	; fall back to default file-system DB.
+        (else (kahua-concrete-db-class "efs")))) ; fall back to default extended file-system DB.
 
 (define-method write-object ((obj <kahua-db>) port)
   (format port "#<~a ~s (~a)>"
