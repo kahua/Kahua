@@ -1,5 +1,11 @@
 2006-11-28  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Now database name that has no prefix(like "efs:" or "mysql")
+	  handled as efsdb path.
+
+	* Fix that test/admin.scm and test/shell.scm depended
+	  on cvs command.
+
 	* Now PostgreSQL driver support index slot feature.
 
 2006-11-27  Tatsuya BIZENN  <bizenn@arthub.net>

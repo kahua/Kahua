@@ -3,7 +3,7 @@
 ;; this test isn't for modules, but for actual scripts.
 ;; kahua-admin テスト
 
-;; $Id: admin.scm,v 1.5 2006/07/28 13:09:49 bizenn Exp $
+;; $Id: admin.scm,v 1.6 2006/11/28 06:22:49 bizenn Exp $
 
 (use gauche.test)
 (use gauche.process)
@@ -17,37 +17,18 @@
 ;;---------------------------------------------------------------
 (test-section "initialization")
 
-(sys-system "rm -rf _tmp _work _cvs _src user.conf")
+(sys-system "rm -rf _tmp _work user.conf")
 (sys-mkdir "_tmp" #o755)
 (sys-mkdir "_work" #o755)
 (sys-mkdir "_work/checkout" #o755)
+(sys-mkdir "_work/checkout/hello" #o755)
+(sys-mkdir "_work/checkout/greeting" #o755)
+(sys-mkdir "_work/checkout/lister" #o755)
+(copy-file "hello-world.kahua" "_work/checkout/hello/hello.kahua")
+(copy-file "greeting.kahua"    "_work/checkout/greeting/greeting.kahua")
+(copy-file "lister.kahua"      "_work/checkout/lister/lister.kahua")
 (sys-mkdir "_work/plugins" #o755)
-
-;; prepre cvs repository
-(define repository (sys-normalize-pathname "./_cvs" :absolute #t))
-
-(sys-mkdir "_cvs" #o755)
-(run-process "cvs" "-d" repository "init" :wait #t)
-
-(sys-mkdir "_src" #o755)
-(sys-mkdir "_src/hello"    #o755)
-(sys-mkdir "_src/greeting" #o755)
-(sys-mkdir "_src/lister"   #o755)
-
-(copy-file "hello-world.kahua" "_src/hello/hello.kahua")
-(copy-file "greeting.kahua"    "_src/greeting/greeting.kahua")
-(copy-file "lister.kahua"      "_src/lister/lister.kahua")
-
 (copy-file "../plugins/allow-module.scm"  "_work/plugins/allow-module.scm")
-
-(sys-chdir "./_src")
-(run-process "cvs" "-Q" "-d" repository "import" "-m test" "." "vt" "rt"
-  :wait #t)
-
-(sys-chdir "../")
-
-(run-process "cvs" "-Q" "-d" repository "checkout" "-d" "_work/checkout" 
-	     "hello" "greeting" "lister" :wait #t)
 
 ;; copy user.conf
 (copy-file "testuser.conf" "user.conf")
@@ -211,14 +192,6 @@
 			 (read-block 1000 (admin-in)))))))
 
 (newline (admin-out))
-
-;;------------------------------------------------------------
-;; cvs コマンドをテストする。
-(test-section "cvs test")
-
-;; cvs update コマンドを実行できることを確認する。
-(test* "admin: cvs update" #f
-       (not (send&recv-str '(cvs update hello))))
 
 ;;------------------------------------------------------------
 ;; 開発者アカウントをテストする。
