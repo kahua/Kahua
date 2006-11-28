@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.13 2006/11/27 07:18:35 bizenn Exp $
+;; $Id: dbi.scm,v 1.14 2006/11/28 03:52:57 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -55,11 +55,11 @@
 	  ;; Utility
 	  safe-execute
 
+	  ;; Index slot handling
 	  slot-name->column-name
 	  create-index-column
 	  change-index-type
 	  drop-index-column
-	  make-index-updater
 
 	  add-column-to-table
 	  drop-column-from-table
@@ -521,7 +521,26 @@
 (define-generic create-index-column)
 (define-generic change-index-type)
 (define-generic drop-index-column)
-(define-generic make-index-updater)
+(define-method make-index-updater ((db <kahua-db-dbi>)
+				   (class <kahua-persistent-meta>)
+				   slot-names)
+  (define (build-update-string tabname slot-names)
+    (format "update ~a set ~a where id=?"
+	    tabname
+	    (string-join (map (lambda (sn)
+				(format "~a=?" (slot-name->column-name sn)))
+			      slot-names)
+			 ",")))
+  (let ((conn (connection-of db))
+	(update (build-update-string (kahua-class->table-name* db class) slot-names)))
+    (lambda (o)
+      (let ((vals (map (lambda (sn)
+			 (with-output-to-string
+			   (lambda ()
+			     (index-value-write (slot-ref o sn)))))
+		       slot-names))
+	    (id (kahua-persistent-id o)))
+	(apply dbi-do conn update '() (append! vals (list id)))))))
 (define-method kahua-interp-index-translator ((db <kahua-db-dbi>) class translator)
   (let1 slots-to-be-updated (filter-map
 			     (apply$ (lambda (sn dir idx)

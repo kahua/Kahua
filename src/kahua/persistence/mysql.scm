@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.9 2006/11/27 07:18:35 bizenn Exp $
+;; $Id: mysql.scm,v 1.10 2006/11/28 03:52:57 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use srfi-1)
@@ -133,19 +133,21 @@
 
 (define-method create-kahua-class-table ((db <kahua-db-mysql>)
 					 (class <kahua-persistent-meta>))
-  (define (create-class-table-sql tabname index-slots)
-    (receive (us as)
-	(partition (lambda (s) (eq? :unique (slot-definition-option s :index))) index-slots)
-      (let* ((columns (map (lambda (s)
-			     (format "~a longtext binary"
-				     (slot-name->column-name (slot-definition-name s)))) index-slots))
-	     (uindexes (map (lambda (s)
-			      (format "constraint unique (~a(255))"
-				      (slot-name->column-name (slot-definition-name s)))) us))
-	     (indexes (map (lambda (s)
-			     (format "index (~a(255))"
-				     (slot-name->column-name (slot-definition-name s)))) as)))
-	(format "
+  (define (create-class-table-sql tabname slots)
+    (receive (columns indexes)
+	(fold2 (lambda (s columns indexes)
+		 (or (and-let* ((index (slot-definition-option s :index #f))
+				(colname (slot-name->column-name (slot-definition-name s))))
+		       (values (cons (format "~a longtext binary" colname) columns)
+			       (case index
+				 ((:unique) (cons (format "constraint unique (~a(255))" colname) indexes))
+				 ((:any) (cons (format "index (~a(255))" colname) indexes))
+				 (else indexes))))
+		     (values columns indexes)))
+	       '()
+	       '()
+	       slots)
+      (format "
 create table ~a (
  id      integer not null,
  keyval  longtext binary,
@@ -155,20 +157,17 @@ create table ~a (
  constraint primary key (id),
  constraint unique      (keyval(255)),
  index                  (removed)
-~a~a
+~a
 ) type=~a"
-		tabname
-		(string-join columns "," 'suffix)
-		(string-join uindexes "," 'prefix)
-		(string-join indexes "," 'prefix)
-		(table-type-of db)))))
+	      tabname
+	      (string-join columns "," 'suffix)
+	      (string-join indexes "," 'prefix)
+	      (table-type-of db))))
   (let ((cname (class-name class))
 	(newtab (format *kahua-class-table-format* (class-table-next-suffix db))))
     (insert-kahua-db-classes db cname newtab)
     (dbi-do (connection-of db)
-	    (create-class-table-sql newtab
-				    (filter (cut slot-definition-option <> :index #f)
-					    (class-slots class)))
+	    (create-class-table-sql newtab (class-slots class))
 	    '(:pass-through #t))
     (register-to-table-map db cname newtab)
     newtab))
@@ -206,27 +205,7 @@ create table ~a (
   (let ((conn (connection-of db))
 	(tabname (kahua-class->table-name* db class))
 	(colname (slot-name->column-name slot-name)))
-    (dbi-do conn (format "alter table ~a drop ~a" tabname colname))))
-(define-method make-index-updater ((db <kahua-db-mysql>)
-				   (class <kahua-persistent-meta>)
-				   slot-names)
-  (define (build-update-string tabname slot-names)
-    (format "update ~a set ~a where id=?"
-	    tabname
-	    (string-join (map (lambda (sn)
-				(format "~a=?" (slot-name->column-name sn)))
-			      slot-names)
-			 ",")))
-  (let ((conn (connection-of db))
-	(update (build-update-string (kahua-class->table-name* db class) slot-names)))
-    (lambda (o)
-      (let ((vals (map (lambda (sn)
-			 (with-output-to-string
-			   (lambda ()
-			     (index-value-write (slot-ref o sn)))))
-		       slot-names))
-	    (id (kahua-persistent-id o)))
-	(apply dbi-do conn update '() (append! vals (list id)))))))
+    (dbi-do conn (format "alter table ~a drop ~a" tabname colname) '(:pass-through #t))))
 
 ;;
 ;; for maintainance database structure.

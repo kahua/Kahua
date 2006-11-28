@@ -1,3 +1,7 @@
+2006-11-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Now PostgreSQL driver support index slot feature.
+
 2006-11-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Now MySQL driver support index slot feature.

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.8 2006/11/27 07:18:35 bizenn Exp $
+;; $Id: postgresql.scm,v 1.9 2006/11/28 03:52:57 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -100,21 +100,49 @@
 (define-method class-table-next-suffix ((db <kahua-db-postgresql>))
   (car (map (cut dbi-get-value <> 0) (select-kahua-db-classcount db))))
 
+(define (make-index-name tabname colname)
+  (format "~a$~a" tabname colname))
+
 (define-method create-kahua-class-table ((db <kahua-db-postgresql>)
 					 (class <kahua-persistent-meta>))
-  (define (create-class-table-sql tabname)
-    (format "create table ~a (
-               id      integer not null,
-               keyval  text,
-               dataval text not null,
-               removed smallint not null default 0,
-               constraint pk_~a primary key (id),
-               constraint uq_~a unique (keyval)
-             )" tabname tabname tabname))
+  (define (create-class-table-sql tabname slots)
+    (receive (columns indexes)
+	(fold2 (lambda (s columns indexes)
+		 (or (and-let* ((index (slot-definition-option s :index #f))
+				(colname (slot-name->column-name (slot-definition-name s))))
+		       (values (cons (format "~a text" colname) columns)
+			       (case index
+				 ((:unique)
+				  (cons (format "create unique index \"~a\" on ~a (~a)"
+						(make-index-name tabname colname) tabname colname) indexes))
+				 ((:any)
+				  (cons (format "create index \"~a\" on ~a (~a)"
+						(make-index-name tabname colname) tabname colname) indexes))
+				 (else indexes))))
+		     (values columns indexes)))
+	       '()
+	       '()
+	       slots)
+      (cons
+       (format "
+create table ~a (
+ id      integer not null,
+ keyval  text,
+ dataval text not null,
+ removed smallint not null default 0,
+~a
+ constraint pk_~a primary key (id),
+ constraint uq_~a unique (keyval))"
+	       tabname
+	       (string-join columns "," 'suffix)
+	       tabname tabname)
+       indexes)))
   (let ((cname (class-name class))
-	(newtab (format *kahua-class-table-format* (class-table-next-suffix db))))
+	(newtab (format *kahua-class-table-format* (class-table-next-suffix db)))
+	(conn (connection-of db)))
     (insert-kahua-db-classes db cname newtab)
-    (dbi-do (connection-of db) (create-class-table-sql newtab) '(:pass-through #t))
+    (for-each (cut dbi-do conn <> '(:pass-through #t))
+	      (create-class-table-sql newtab (class-slots class)))
     (add-index-to-table db newtab (format "idx_rmd_~a" newtab) #f "removed")
     (register-to-table-map db cname newtab)
     newtab))
@@ -122,6 +150,42 @@
 (define-method table-should-be-locked? ((db <kahua-db-postgresql>)
 					(obj <kahua-persistent-base>))
   (slot-ref obj '%floating-instance))
+
+;;
+;; Index handling
+;;
+(define-method create-index-column ((db <kahua-db-postgresql>)
+				    (class <kahua-persistent-meta>)
+				    slot-name index-type)
+  (let ((conn (connection-of db))
+	(tabname (kahua-class->table-name* db class))
+	(colname (slot-name->column-name slot-name)))
+    (dbi-do conn (format "alter table ~a add ~a text" tabname colname) '(:pass-through #t))
+    (dbi-do conn (format "create ~a index \"~a\" on ~a (~a)"
+			 (if (eq? index-type :unique) :unique "")
+			 (make-index-name tabname colname) tabname colname)
+	    '(:pass-through #t))))
+(define-method change-index-type ((db <kahua-db-postgresql>)
+				  (class <kahua-persistent-meta>)
+				  slot-name index-type)
+  (let* ((conn (connection-of db))
+	 (tabname (kahua-class->table-name* db class))
+	 (colname (slot-name->column-name slot-name))
+	 (idxname (make-index-name tabname colname)))
+    (dbi-do conn (format "drop index \"~a\"" idxname) '(:pass-through #t))
+    (dbi-do conn (format "create ~a index \"~a\" on ~a (~a)"
+			 (if (eq? index-type :unique) :unique "")
+			 idxname tabname colname)
+	    '(:pass-through #t))))
+(define-method drop-index-column ((db <kahua-db-postgresql>)
+				  (class <kahua-persistent-meta>)
+				  slot-name)
+  (let ((conn (connection-of db))
+	(tabname (kahua-class->table-name* db class))
+	(colname (slot-name->column-name slot-name)))
+    (dbi-do conn (format "drop index \"~a\"" (make-index-name tabname colname))
+	    '(pass-through #t))
+    (dbi-do conn (format "alter table ~a drop ~a" tabname colname) '(:pass-through #t))))
 
 ;;=================================================================
 ;; Database Consistency Check and Fix

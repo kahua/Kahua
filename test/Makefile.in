@@ -30,7 +30,7 @@ SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
 	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
 	spvr.scm httpd.scm test-xml.scm user.scm wiki-iki.scm \
 	worker.scm query.scm rollback.scm entry-method.scm redirectcont.scm \
-	index-slots.scm index-slots-efs.scm index-slots-mysql.scm
+	index-slots.scm index-slots-efs.scm index-slots-mysql.scm index-slots-pg.scm
 
 SCMFILES2 = shell.scm
 
@@ -84,7 +84,8 @@ persistence :
 persistence-efs :
 	@gosh -I../src ./persistence-efs.scm >> test.log
 
-persistence-dbi : persistence-dbi-mysql persistence-dbi-pg index-slots-mysql
+persistence-dbi : persistence-dbi-mysql persistence-dbi-pg \
+		  index-slots-mysql index-slots-pg
 
 persistence-dbi-mysql :
 	@gosh -I../src ./persistence-dbi-mysql.scm >> test.log
@@ -99,6 +100,9 @@ index-slots-efs :
 
 index-slots-mysql :
 	@gosh -I../src ./index-slots-mysql.scm >>test.log
+
+index-slots-pg :
+	@gosh -I../src ./index-slots-pg.scm >>test.log
 
 rollback :
 	@gosh -I../src ./rollback.scm >> test.log
