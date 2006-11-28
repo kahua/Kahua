@@ -1,7 +1,7 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
 ;; Tests for Index Slots
 ;;
-;; $Id: index-slots.scm,v 1.2 2006/11/27 07:18:37 bizenn Exp $
+;; $Id: index-slots.scm,v 1.3 2006/11/28 09:31:44 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -34,13 +34,11 @@
 		     <index-test> (class-of (make <index-test> :a a :b "b0")) eq?))
 	    '("a0" "a1" "a2" "a3" "a4"))
   (for-each (lambda (a)
-	      (test* (format "make-kahua-collection for unique index ~s" a)
-		     `(,a) (map (cut slot-ref <> 'a)
-				(make-kahua-collection <index-test> :index `(a . ,a)))
-		     equal?))
+	      (test* (format "find-kahua-instance for unique index ~s" a)
+		     a (slot-ref (find-kahua-instance <index-test> 'a a) 'a) equal?))
 	    '("a" "a0" "a1" "a2" "a3" "a4"))
-  (test* "make-kahua-collection for instance that doesn't exist"
-	 '() (map identity (make-kahua-collection <index-test> :index '(a . "aa"))) eq?)
+  (test* "find-kahua-instance for instance that doesn't exist"
+	 #f (find-kahua-instance <index-test> 'a "aa") eq?)
   (test* "make-kahua-collection for any index \"b\""
 	 '("a") (map (cut slot-ref <> 'a) (make-kahua-collection <index-test> :index '(b . "b"))) equal?)
   (test* "make-kahua-collection for any index \"b0\""
@@ -50,16 +48,16 @@
   (test* "make-kahua-collection for instance that doesn't exist"
 	 '() (map identity (make-kahua-collection <index-test> :index '(b . "bb"))))
   (test-section "Modify index value before committing")
-  (let ((o (car (map identity (make-kahua-collection <index-test> :index '(a . "a")))))
-	(o1 (car (map identity (make-kahua-collection <index-test> :index '(a . "a3")))))
-	(o2 (car (map identity (make-kahua-collection <index-test> :index '(a . "a4"))))))
+  (let ((o (find-kahua-instance <index-test> 'a "a"))
+	(o1 (find-kahua-instance <index-test> 'a "a3"))
+	(o2 (find-kahua-instance <index-test> 'a "a4")))
     (set! (ref o 'a) "a5")
     (set! (ref o1 'b) "b1")
     (set! (ref o2 'b) "b1")
-    (test* "make-kahua-collection by old value w/ unique index"
-	   '() (map identity (make-kahua-collection <index-test> :index '(a . "a"))) eq?)
-    (test* "make-kahua-collection by new value w/ unique index"
-	   '("a5") (map (cut slot-ref <> 'a) (make-kahua-collection <index-test> :index '(a . "a5"))) equal?)
+    (test* "find-kahua-instance by old value w/ unique index"
+	   #f (find-kahua-instance <index-test> 'a "a") eq?)
+    (test* "find-kahua-instance by new value w/ unique index"
+	   "a5" (slot-ref (find-kahua-instance <index-test> 'a "a5") 'a) equal?)
     (test* "make-kahua-collection by \"b0\" w/ any index"
 	   '("a0" "a1" "a2")
 	   (sort! (map (cut slot-ref <> 'a) (make-kahua-collection <index-test> :index '(b . "b0"))))
@@ -70,32 +68,32 @@
 	   equal?)
     (test-section "Remove instance before committing")
     (remove-kahua-instance o)
-    (test* "make-kahua-collection for removed instance"
-	   '() (map identity (make-kahua-collection <index-test> :index '(a . "a5"))) eq?)
+    (test* "find-kahua-instance for removed instance"
+	   #f (find-kahua-instance <index-test> 'a "a5") eq?)
     (test* "make-kahua-collection for removed instance"
 	   '() (map identity (make-kahua-collection <index-test> :index '(b . "b"))) eq?)
+    (test* "find-kahua-instance for removed instance w/ :include-removed-object? #t"
+	   "a5" (slot-ref (find-kahua-instance <index-test> 'a "a5" #t) 'a) equal?)
     (test* "make-kahua-collection for removed instance w/ :include-removed-object? #t"
 	   '("a5") (map (cut slot-ref <> 'a)
-			(make-kahua-collection <index-test> :index '(a . "a5")
-					       :include-removed-object? #t)) equal?)))
+			(make-kahua-collection <index-test> :index '(b . "b")
+					       :include-removed-object? #t)) equal?)
+    ))
 
 ;; access to saved instances
 (with-db (_ *dbname*)
   (test-section "Maybe on cache")
   (test-section "Collect instances by unique index")
   (for-each (lambda (a)
-	      (test* (format "make-kahua-collection by (a . ~s) w/ unique index" a)
-		     `(,a) (map (cut slot-ref <> 'a)
-				(make-kahua-collection <index-test> :index `(a . ,a))) equal?))
+	      (test* (format "find-kahua-instance w/ a ~s on unique index" a)
+		     a (slot-ref (find-kahua-instance <index-test> 'a a) 'a) equal?))
 	    '("a0" "a1" "a2" "a3" "a4"))
-  (test* "make-kahua-collection for removed instance"
-	 '() (map identity (make-kahua-collection <index-test> :index '(a . "a5"))) eq?)
-  (test* "make-kahua-collection for removed instance w/ :include-removed-object? #t"
-	 '("a5") (map (cut slot-ref <> 'a)
-		      (make-kahua-collection <index-test> :index '(a . "a5")
-					     :include-removed-object? #t)) equal?)
-  (test* "make-kahua-collection for instance does'nt exist"
-	 '() (map identity (make-kahua-collection <index-test> :index '(a . "a6"))) eq?)
+  (test* "find-kahua-instance for removed instance"
+	 #f (find-kahua-instance <index-test> 'a "a5") eq?)
+  (test* "find-kahua-instance for removed instance w/ :include-removed-object? #t"
+	 "a5" (slot-ref (find-kahua-instance <index-test> 'a "a5" #t) 'a) equal?)
+  (test* "find-kahua-instance for instance doesn't exist"
+	 #f (find-kahua-instance <index-test> 'a "a6") eq?)
   (test-section "Collect instances by any index")
   (test* "make-kahua-collection by (b . \"b0\") w/ any index"
 	 '("a0" "a1" "a2")
@@ -105,26 +103,23 @@
 	 '("a3" "a4")
 	 (sort! (map (cut slot-ref <> 'a) (make-kahua-collection <index-test> :index '(b . "b1"))))
 	 equal?)
-  (test* "make-kahua-collection for instance does'nt exist"
+  (test* "make-kahua-collection for instance doesn't exist"
 	 '() (map identity (make-kahua-collection <index-test> :index '(b . "b2"))) eq?)
 
   (kahua-db-purge-objs)			; Clear on-memory cache
   (test-section "Maybe on disk")
   (test-section "Collect instances by unique index")
   (for-each (lambda (a)
-	      (test* (format "make-kahua-collection by (a . ~s) w/ unique index" a)
-		     `(,a) (map (cut slot-ref <> 'a)
-				(make-kahua-collection <index-test> :index `(a . ,a))) equal?))
+	      (test* (format "find-kahua-instance w/ a ~s on unique index" a)
+		     a (slot-ref (find-kahua-instance <index-test> 'a a) 'a) equal?))
 	    '("a0" "a1" "a2" "a3" "a4"))
 
-  (test* "make-kahua-collection for removed instance"
-	 '() (map identity (make-kahua-collection <index-test> :index '(a . "a5"))) eq?)
-  (test* "make-kahua-collection for removed instance w/ :include-removed-object? #t"
-	 '("a5") (map (cut slot-ref <> 'a)
-		      (make-kahua-collection <index-test> :index '(a . "a5")
-					     :include-removed-object? #t)) equal?)
-  (test* "make-kahua-collection for instance does'nt exist"
-	 '() (map identity (make-kahua-collection <index-test> :index '(a . "a6"))) eq?)
+  (test* "find-kahua-instance for removed instance"
+	 #f (find-kahua-instance <index-test> 'a "a5") eq?)
+  (test* "find-kahua-instance for removed instance w/ :include-removed-object? #t"
+	 "a5" (slot-ref (find-kahua-instance <index-test> 'a "a5" #t) 'a) equal?)
+  (test* "find-kahua-instance for instance doesn't exist"
+	 #f (find-kahua-instance <index-test> 'a "a6") eq?)
   (test-section "Collect instances by any index")
   (test* "make-kahua-collection by (b . \"b0\") w/ any index"
 	 '("a0" "a1" "a2")
@@ -134,12 +129,12 @@
 	 '("a3" "a4")
 	 (sort! (map (cut slot-ref <> 'a) (make-kahua-collection <index-test> :index '(b . "b1"))))
 	 equal?)
-  (test* "make-kahua-collection for instance does'nt exist"
+  (test* "make-kahua-collection for instance doesn't exist"
 	 '() (map identity (make-kahua-collection <index-test> :index '(b . "b2"))) eq?)
 
-  (let ((o (car (map identity (make-kahua-collection <index-test> :index '(a . "a0")))))
-	(o1 (car (map identity (make-kahua-collection <index-test> :index '(a . "a1")))))
-	(o2 (car (map identity (make-kahua-collection <index-test> :index '(a . "a2"))))))
+  (let ((o (find-kahua-instance <index-test> 'a "a0"))
+	(o1 (find-kahua-instance <index-test> 'a "a1"))
+	(o2 (find-kahua-instance <index-test> 'a "a2")))
     (set! (ref o 'a) "a5")
     (set! (ref o1 'a) "a6")
     (set! (ref o2 'a) "a7")))
@@ -148,11 +143,12 @@
   (kahua-db-purge-objs)			; Clear on-memory cache
   (test-section "Maybe on disk again")
   (for-each (lambda (a result)
-	      (test* (format "make-kahua-collection by (a . ~s) w/ unique index" a)
-		     result (map (cut slot-ref <> 'a)
-				 (make-kahua-collection <index-test> :index `(a . ,a))) equal?))
-	    '("a0" "a1" "a2"  "a3"   "a4"   "a5"   "a6"   "a7")
-	    '(()   ()   ()   ("a3") ("a4") ("a5") ("a6") ("a7")))
+	      (test* (format "find-kahua-instance w/ a ~s on unique index" a)
+		     result (and-let* ((obj (find-kahua-instance <index-test> 'a a)))
+			      (slot-ref obj 'a))
+		     equal?))
+	    '("a0" "a1" "a2" "a3" "a4" "a5" "a6" "a7")
+	    '(#f   #f   #f   "a3" "a4" "a5" "a6" "a7"))
   (for-each (lambda (b result)
 	      (test* (format "make-kahua-collection by (b . ~s) w/ any index" b)
 		     result (sort! (map (cut slot-ref <> 'a)

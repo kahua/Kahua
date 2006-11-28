@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.69 2006/11/27 07:18:33 bizenn Exp $
+;; $Id: persistence.scm,v 1.70 2006/11/28 09:31:44 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1591,7 +1591,9 @@
 		    i)
 		  (read-kahua-instance db class id)))))
 
-(define (find-kahua-instance class key . args)
+(define-method find-kahua-instance ((class <kahua-persistent-meta>)
+				    (key <string>)
+				    . args)
   (let* ((db (current-db))
 	 (include-removed-object? (get-optional args #f))
 	 (sanitize (if include-removed-object?
@@ -1600,6 +1602,23 @@
     (unless db (error "find-kahua-instance: No database is active"))
     (sanitize (or (read-key-cache db (class-name class) key)
 		  (read-kahua-instance db class key include-removed-object?)))))
+
+(define (index-slot-type class slot-name)
+  (or (and-let* ((slot (class-slot-definition class slot-name)))
+	(slot-definition-option slot :index))
+      (kahua-persistence-error "~s doesn't have such a slot: ~a" class slot-name)))
+
+(define-method find-kahua-instance ((class <kahua-persistent-meta>)
+				    (slot-name <symbol>)
+				    slot-value . args)
+  (let1 index-type (index-slot-type class slot-name)
+    (case index-type
+      ((:unique)
+       (let1 res (make-kahua-collection class :index (cons slot-name slot-value)
+					:include-removed-object? (get-optional args #f))
+	 (and (< 0 (size-of res))
+	      (car (map identity res)))))
+      (else (kahua-persistence-error "~a is not a unique index slot" slot-name)))))
 
 (define (key-of-using-instance obj)
   (ref obj '%floating-instance))
@@ -1653,9 +1672,7 @@
   (and-let* (((pair? index-cond))
 	     (sn (car index-cond))
 	     (value (cdr index-cond))
-	     (idx (and-let* ((s (class-slot-definition class sn)))
-		    (slot-definition-option s :index #f))))
-    (unless idx (kahua-db-error "Slot ~s is not index slot" sn))
+	     (idx (index-slot-type class sn)))
     (lambda (obj)
       (equal? value (slot-ref obj sn)))))
 

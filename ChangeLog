@@ -1,5 +1,9 @@
 2006-11-28  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* find-kahua-instance now can take index slot name(it must be
+	  "unique" index) and its value like this:
+	  (find-kahua-instance <a-class> unique-index-slot-nae value)
+
 	* Now database name that has no prefix(like "efs:" or "mysql")
 	  handled as efsdb path.
 
