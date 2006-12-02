@@ -25,9 +25,10 @@ DESTDIR           =
 GOSH              = @GOSH@
 
 SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
-	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm persistence-efs.scm \
+	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm \
+	persistence.scm persistence-fs.scm persistence-efs.scm \
 	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
-	persistence.scm plugin.scm sandbox.scm server.scm session.scm \
+	plugin.scm sandbox.scm server.scm session.scm \
 	spvr.scm httpd.scm test-xml.scm user.scm wiki-iki.scm \
 	worker.scm query.scm rollback.scm entry-method.scm redirectcont.scm \
 	index-slots.scm index-slots-efs.scm index-slots-mysql.scm index-slots-pg.scm
@@ -46,12 +47,11 @@ KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
 #  certain database settings.  See persistence-dbi.scm for the details.
 
 
-TESTS = test-xml persistence persistence-efs index-slots \
-	rollback entry-method user config gsid session partcont \
-        server kahua-dbm worker redirectcont \
+TESTS = test-xml persistence rollback entry-method user config \
+	gsid session partcont server kahua-dbm worker redirectcont \
 	define-method-rule kahua-call-with-current-context \
-	lambdabooks wiki-iki nqueen foldlist \
-	spvr httpd admin developer shell sandbox plugin query
+	lambdabooks wiki-iki nqueen foldlist spvr httpd admin \
+	developer shell sandbox plugin query
 
 CONFIG_GENERATED = Makefile
 
@@ -78,8 +78,11 @@ session :
 partcont :
 	@gosh -I../src ./partcont.scm >> test.log
 
-persistence :
-	@gosh -I../src ./persistence.scm >> test.log
+persistence : persistence-efs index-slots
+
+# Obsolete
+persistence-fs :
+	@gosh -I../src ./persistence-fs.scm >> test.log
 
 persistence-efs :
 	@gosh -I../src ./persistence-efs.scm >> test.log

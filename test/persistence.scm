@@ -2,7 +2,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.19 2006/10/24 06:14:53 bizenn Exp $
+;; $Id: persistence.scm,v 1.20 2006/12/02 07:11:36 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -11,17 +11,12 @@
 
 ;; A hook to use this file for both stand-alone test and
 ;; DBI-backed-up test.
-(define *dbname*
-  (cond ((global-variable-bound? (current-module) '*dbname*)
-	 (rxmatch-if (#/^(\w+):/ *dbname*) (#f driver)
-	   (test-start #`"persistence/,|driver| (,|*dbname*|)")
-	   (test-start #`"persistence/fs (,|*dbname*|)"))
-	 *dbname*)
-	(else
-	 (let1 name "_tmp"
-	   (test-start #`"persistence/fs (,|name|)")
-	   name))))
-(sys-system #`"rm -rf ,*dbname*")
+(cond ((global-variable-bound? (current-module) '*dbname*)
+       (rxmatch-if (#/^(\w+):/ *dbname*) (#f driver)
+	 (test-start #`"persistence/,|driver| (,|*dbname*|)")
+	 (test-start #`"persistence/efs (,|*dbname*|)")))
+      (else
+       (error "You must define \*dbname\* for database name.")))
 
 (define-syntax with-clean-db
   (syntax-rules ()
@@ -1052,10 +1047,10 @@
 
 (test* "redefine instance(1)" '(#f 0)
        (with-db (db *dbname*)
-	 (let1 obj (find-kahua-instance <redefine-A> "a")
+	 (let* ((obj (find-kahua-instance <redefine-A> "a"))
+		(base (ref obj 'base)))	; trigger instance update.
 	   (set! *id2* (kahua-persistent-id obj))
-	   (list (eq? *id* (kahua-persistent-id obj))
-		 (ref obj 'base)))))
+	   (list (eq? *id* (kahua-persistent-id obj)) base))))
 
 (test* "find redefined instance(1)" '(#t 0)
        (with-clean-db (db *dbname*)

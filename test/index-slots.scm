@@ -1,7 +1,7 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
 ;; Tests for Index Slots
 ;;
-;; $Id: index-slots.scm,v 1.3 2006/11/28 09:31:44 bizenn Exp $
+;; $Id: index-slots.scm,v 1.4 2006/12/02 07:11:36 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -147,8 +147,8 @@
 		     result (and-let* ((obj (find-kahua-instance <index-test> 'a a)))
 			      (slot-ref obj 'a))
 		     equal?))
-	    '("a0" "a1" "a2" "a3" "a4" "a5" "a6" "a7")
-	    '(#f   #f   #f   "a3" "a4" "a5" "a6" "a7"))
+	    '("a0" "a1" "a2" "a3" "a4" "a5" "a6" "a7" "a8")
+	    '(#f   #f   #f   "a3" "a4" "a5" "a6" "a7" #f))
   (for-each (lambda (b result)
 	      (test* (format "make-kahua-collection by (b . ~s) w/ any index" b)
 		     result (sort! (map (cut slot-ref <> 'a)
@@ -163,14 +163,13 @@
 
 (test-section "Class Redifinition (index change)")
 (with-db (_ *dbname*)
-  (kahua-db-purge-objs)			; Clear on-memory cache
   (test-section "Maybe on disk again")
   (for-each (lambda (a result)
-	      (test* (format "make-kahua-collection by (a . ~s) w/ unique index" a)
+	      (test* (format "make-kahua-collection by (a . ~s) w/ any index" a)
 		     result (map (cut slot-ref <> 'a)
 				 (make-kahua-collection <index-test> :index `(a . ,a))) equal?))
-	    '("a0" "a1" "a2"  "a3"   "a4"   "a5"   "a6"   "a7")
-	    '(()   ()   ()   ("a3") ("a4") ("a5") ("a6") ("a7")))
+	    '("a0" "a1" "a2"  "a3"   "a4"   "a5"   "a6"   "a7" "a8")
+	    '(()   ()   ()   ("a3") ("a4") ("a5") ("a6") ("a7") ()))
   (for-each (lambda (b result)
 	      (test* (format "make-kahua-collection by (b . ~s) w/ any index" b)
 		     result (sort! (map (cut slot-ref <> 'a)
@@ -178,5 +177,29 @@
 	    '("b0" "b1")
 	    '(("a5" "a6" "a7") ("a3" "a4"))))
 
+(define-class <index-test> (<kahua-persistent-base>)
+  ((a :init-keyword :a :init-value "a" :allocation :persistent)
+   (b :init-keyword :b :init-value "b" :allocation :persistent)
+   (c :init-keyword :c :init-value "c" :allocation :persistent :index :any)))
+
+(with-db (_ *dbname*)
+  (test* "make-kahua-collection by (c . \"c\") w/ any index"
+	 '("a3" "a4" "a5" "a6" "a7")
+	 (sort! (map (cut slot-ref <> 'a) (make-kahua-collection <index-test> :index '(c . "c")))) equal?))
+
+(define-class <index-test> (<kahua-persistent-base>)
+  ((a :init-keyword :a :init-value "a" :allocation :persistent :index :unique)
+   (b :init-keyword :b :init-value "b" :allocation :persistent)
+   (c :init-keyword :c :init-value "c" :allocation :persistent)))
+
+(with-db (_ *dbname*)
+  (for-each (lambda (a result)
+	      (test* (format "find-kahua-instance w/ a ~s on unique index" a)
+		     result (and-let* ((obj (find-kahua-instance <index-test> 'a a)))
+			      (slot-ref obj 'a))
+		     equal?))
+	    '("a0" "a1" "a2" "a3" "a4" "a5" "a6" "a7" "a8")
+	    '(#f   #f   #f   "a3" "a4" "a5" "a6" "a7" #f))
+  )
 
 (test-end)

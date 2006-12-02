@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.9 2006/11/28 03:52:57 bizenn Exp $
+;; $Id: postgresql.scm,v 1.10 2006/12/02 07:11:32 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -149,7 +149,7 @@ create table ~a (
 
 (define-method table-should-be-locked? ((db <kahua-db-postgresql>)
 					(obj <kahua-persistent-base>))
-  (slot-ref obj '%floating-instance))
+  (floating-instance? obj))
 
 ;;
 ;; Index handling

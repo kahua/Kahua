@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.8 2006/11/27 07:18:35 bizenn Exp $
+;; $Id: efs.scm,v 1.9 2006/12/02 07:11:32 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -435,9 +435,8 @@
 					      ((:drop :modify) (drop-index-slot-links db class sn)))
 					    (and (memq dir '(:modify :add))
 						 (lambda (o)
-						   (update-index-link db o sn :add idx #f
-								      (slot-ref-using-class class o sn))
-						   (slot-set-using-class! class o '%modified-index-slots '())))))
+						   (update-index-link db o sn :add idx #f (slot-ref o sn))
+						   (slot-set! o '%modified-index-slots '())))))
 				  translator)
     (unless (null? index-creator)
       (for-each (lambda (o)
@@ -479,7 +478,7 @@
     (with-locking-output-file (class-lock-path db (class-name class))
       (lambda _
 	(maintain-index-link db obj)
-	(if (ref obj '%floating-instance)
+	(if (floating-instance? obj)
 	    (guard (e (else (kahua-db-efs-error "Object ID ~s conflicts" (kahua-persistent-id obj))))
 	      (call-with-output-file file-path
 		writer
@@ -489,7 +488,7 @@
 	(maintain-alive-link db obj)
 	(maintain-key-link db obj))
       :if-exists :append)
-    (set! (ref obj '%floating-instance) #f)))
+    (touch-down-instance! obj)))
 
 ;; deprecated
 (define-method kahua-db-write-id-counter ((db <kahua-db-efs>))
@@ -500,67 +499,54 @@
       (apply directory-list path opts)
       '()))
 
-(define-method kahua-persistent-instances ((db <kahua-db-efs>) class opts)
-  (define (kahua-instances-by-index db class slot-name slot-value filter-proc)
-    (let/cc ret
-      (let* ((cached-objs (or (and-let* ((cached (read-index-cache class slot-name slot-value)))
-				(let* ((slot-def (class-slot-definition class slot-name))
-				       (idx (if slot-def
-						(slot-definition-option slot-def :index #f)
-						(kahua-persistence-error "Class ~s doesn't have slot ~s"
-									 class slot-name)))
-				       (objs (case idx
-					       ((:unique) (ret (cond ((slot-ref cached '%floating-instance) '())
-								     ((filter-proc cached) => list)
-								     (else                    '()))))
-					       ((:any) (filter (lambda (o)
-								 (and (not (slot-ref o '%floating-instance))
-								      (filter-proc o)))
-							       cached))
-					       (else (kahua-persistence-error "Unknown index kind: ~s" idx)))))
-				  objs))
-			      '()))
-	     (out-of-cache? (let1 ids (map (pa$ kahua-persistent-id) cached-objs)
-			      (lambda (id) (not (memv (x->integer id) ids)))))
-	     (index-path (index-full-path db (class-name class) slot-name slot-value)))
-	(if (file-is-directory? index-path)
-	    (directory-fold index-path
-			    (lambda (path r)
-			      (if (out-of-cache? (sys-basename (sys-readlink path)))
-				  (cond ((filter-proc (read-from-file path :encoding (character-encoding-of db)))
-					 => (cut cons <> r))
-					(else r))
-				  r))
-			    cached-objs)
-	    '()))))
+(define-method kahua-persistent-instances ((db <kahua-db-efs>) class opts . may-be-sweep?)
+  (define (kahua-instances-by-index slot-name slot-value filter-proc)
+    (let ((index-path (index-full-path db (class-name class) slot-name slot-value))
+	  (encoding (character-encoding-of db)))
+      (if (file-is-directory? index-path)
+	  (directory-fold index-path
+			  (lambda (path r)
+			    (or (and-let* ((oid (x->integer (sys-basename (sys-readlink path))))
+					   ((not (read-id-cache db oid)))
+					   (obj (read-from-file path :encoding encoding))
+					   ((filter-proc obj)))
+				  (cons obj r))
+				r))
+			  '())
+	  '())))
+  (define (kahua-instances-by-id dir path-predicate? filter-proc)
+    (let1 encoding (character-encoding-of db)
+      (if (file-is-directory? dir)
+	  (filter-map (lambda (id)
+			(and-let* ((id (x->integer id))
+				   ((not (read-id-cache db id)))
+				   (obj (read-kahua-instance db class id)))
+			  (filter-proc obj)))
+		      (directory-list* dir :children? #t
+				       :filter path-predicate? :filter-add-path? #t))
+	  '())))
+
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
 		       (include-removed-object? #f))
     (let1 cn (class-name class)
-      (cond (include-removed-object?
-	     (let1 filter-proc (make-kahua-collection-filter class opts)
-	       (filter-map (lambda (id)
-			     (and-let* ((obj (kahua-instance class (x->integer id) include-removed-object?)))
-			       (filter-proc obj)))
-			   (directory-list* (data-path db cn) :children? #t
-					    :filter file-is-regular? :filter-add-path? #t))))
+      (cond ((or include-removed-object? (and index (get-optional may-be-sweep? #f)))
+	     (kahua-instances-by-id (data-path db cn) file-is-regular?
+				    (make-kahua-collection-filter class opts)))
 	    (index
-	     (let1 filter-proc (make-kahua-collection-filter class (delete-keyword :index opts))
-	       (kahua-instances-by-index db class (car index) (cdr index) filter-proc)))
+	     (kahua-instances-by-index (car index) (cdr index)
+				       (make-kahua-collection-filter class (delete-keyword :index opts))))
 	    (keys
 	     (let1 filter-proc (make-kahua-collection-filter class (delete-keyword :keys opts))
 	       (filter-map (lambda (k)
-			     (and-let* ((obj (find-kahua-instance class k include-removed-object?)))
+			     (and-let* (((not (read-key-cache db (class-name class) k)))
+					(obj (read-kahua-instance db class k)))
 			       (filter-proc obj)))
 			   keys)))
 	    (else
-	     (let1 filter-proc (make-kahua-collection-filter class opts)
-	       (filter-map (lambda (id)
-			     (and-let* ((obj (kahua-instance class (x->integer id) include-removed-object?)))
-			       (filter-proc obj)))
-			   (directory-list* (alive-path db cn) :children #t
-					    :filter file-is-symlink? :filter-add-path? #t))))))))
+	     (kahua-instances-by-id (alive-path db cn) file-is-symlink?
+				    (make-kahua-collection-filter class opts)))))))
 
 ;;=================================================================
 ;; Database Consistency Check and Fix
