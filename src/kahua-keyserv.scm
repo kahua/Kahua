@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.9 2006/10/08 07:13:27 bizenn Exp $
+;; $Id: kahua-keyserv.scm,v 1.10 2006/12/12 08:06:07 bizenn Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -49,7 +49,10 @@
 (use gauche.selector)
 (use util.list)
 (use srfi-27)
-(use kahua)
+(use kahua.config)
+(use kahua.util)
+(use kahua.gsid)
+(use kahua.thread-pool)
 
 (define-constant *default-timeout* (* 3 3600))
 (define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP))

@@ -5,7 +5,7 @@
 ;;
 ;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.12 2006/02/21 14:24:33 nobsun Exp $
+;; $Id: sandbox.scm,v 1.13 2006/12/12 08:06:19 bizenn Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)
@@ -81,6 +81,7 @@
         (use kahua.server)
         (use kahua.developer)
         (use kahua.elem)
+	(use kahua.xml-template)
         (use kahua.error-report)
 
         ;; for class redefinition.

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.82 2006/12/12 03:47:02 bizenn Exp $
+;; $Id: server.scm,v 1.83 2006/12/12 08:06:19 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -34,7 +34,6 @@
   (use kahua.user)
   (use kahua.util)
   (use kahua.elem)
-  (use kahua.pdf)
   (export kahua-init-server
           kahua-bridge-name
           kahua-server-uri
@@ -1300,33 +1299,35 @@
 			  contents)))
 	context))
 
+;; DEAD CODE - OMITTED
+;;
 ;;==========================================================
 ;;  SXML tree interpreter - generates PDF
 ;;
 ;; interp-pdf :: Node -> Context -> Stree
-(define (interp-pdf nodes context cont)
-  (let ((data (reverse (map reverse-lines
-                            (boxes-of-state
-                             (exec/state (make-state 0 0 #t '() '())
-                                         (interp-html-pdf nodes))))))
-        (port (open-output-string)))
-    (with-docdata-to-port port (lambda () data))
-
-    ;;for extra headers
-    (receive (stree context)
-        (interp-html-rec nodes context cont)
-      (let1 headers (assoc-ref-car context "extra-headers" '())
-        (cont
-         (list (get-output-string port))
-         (if (assoc "content-type" headers)
-           context
-           (cons `("extra-headers"
-                   ,(kahua-merge-headers
-                     headers '(("content-type" "application/pdf"))))
-                 context)))))
-    ))
-
-(add-interp! 'pdf interp-pdf)
+;(define (interp-pdf nodes context cont)
+;  (let ((data (reverse (map reverse-lines
+;                            (boxes-of-state
+;                             (exec/state (make-state 0 0 #t '() '())
+;                                         (interp-html-pdf nodes))))))
+;        (port (open-output-string)))
+;    (with-docdata-to-port port (lambda () data))
+;
+;    ;;for extra headers
+;    (receive (stree context)
+;        (interp-html-rec nodes context cont)
+;      (let1 headers (assoc-ref-car context "extra-headers" '())
+;        (cont
+;         (list (get-output-string port))
+;         (if (assoc "content-type" headers)
+;           context
+;           (cons `("extra-headers"
+;                   ,(kahua-merge-headers
+;                     headers '(("content-type" "application/pdf"))))
+;                 context)))))
+;    ))
+;
+;(add-interp! 'pdf interp-pdf)
 
 ;;===========================================================
 ;; SXML tree interpreter - for RSS
