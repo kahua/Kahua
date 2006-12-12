@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software.
 ;;
-;; $Id: xml-template.scm,v 1.1 2006/12/12 03:39:17 bizenn Exp $
+;; $Id: xml-template.scm,v 1.2 2006/12/12 09:31:24 bizenn Exp $
 
 (define-module kahua.xml-template
   (use srfi-1)
@@ -13,6 +13,7 @@
   (use text.parse)
   (use sxml.ssax)
   (use gauche.parameter)
+  (use kahua.util)
   (use kahua.elem)
   (export kahua:make-xml-parser
 	  <kahua:xml-template>
@@ -23,6 +24,10 @@
 	  ))
 
 (select-module kahua.xml-template)
+
+(define-condition-type <kahua-xml-template-error> <kahua-error> #f)
+(define (kahua-xml-template-error fmt . args)
+  (apply errorf <kahua-xml-template-error> fmt args))
 
 ;; FIXME!! It should use the DOCTYPE declaration itself.
 
@@ -72,8 +77,13 @@
 	       (cdr p))
 	     => (lambda (node)
 		  (cond ((procedure? node) (car (rev-nodes (exec '() node))))
-			((eq? (car node) 'node-set) (cadr node))
-			(else (car node)))))
+			((pair? node)
+			 (let1 e (car node)
+			   (cond ((eq? e 'node-set) (cadr node))
+				 ((symbol? e)       node)
+				 (else              (car node)))))
+			(else
+			 (kahua-xml-template-error "invalid node: ~s" node)))))
 	    ((list? node) (map xml-template->sxml-internal node))
 	    (else node)))
     (list (xml-template->sxml-internal (slot-ref tmpl 'sxml)))))
