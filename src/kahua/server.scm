@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.81 2006/12/12 03:39:16 bizenn Exp $
+;; $Id: server.scm,v 1.82 2006/12/12 03:47:02 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -868,8 +868,8 @@
 ;;    where Stree is a list of string segments passed to tree->string.
 ;;
 ;; Maybe dead code.
-;(define (interp-html nodes context)
-;  (interp-html-rec (car nodes) context (lambda (s _) s)))
+(define (interp-html nodes context)
+  (interp-html-rec (car nodes) context (lambda (s _) s)))
 
 ;; internal loop
 (define (interp-html-rec-gen default-handler)
