@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.26 2006/10/08 01:36:16 bizenn Exp $
+;; $Id: elem.scm,v 1.27 2006/12/12 03:39:16 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -102,16 +102,16 @@
 ;; This state thread is a spcial case of the state monad :
 ;;   State -> (a, State)
 
+(define get identity)
+(define (put s) (lambda (_) s))
 (define (>>= st f)
   (lambda (s)
     (let1 s1 (st s)
       ((f s1) s1))))
 (define (>> st1 st2)
-  (>>= st1 (lambda (_) st2)))
-(define get (lambda (s) s))
-(define (put s) (lambda (_) s))
-(define (update f) 
-  (>>= get (lambda (s) (put (f s)))))
+  (>>= st1 (put st2)))
+(define (update f)
+  (>>= get (compose put f)))
 
 (define (exec s0 st) (st s0))
 
@@ -127,7 +127,7 @@
 (define (node-set/ . args)
   (node-set args))
 
-(define empty (lambda (s) s))
+(define empty identity)
 
 ;; Special tags
 
@@ -169,13 +169,14 @@
 	  ((no-escape? node) node)
 	  ((or (eq? (car node) '@) (eq? (car node) '@@)) node)
 	  (else (cons (car node) (rev-nodes (cdr node))))))
-  (reverse! (map rev node-set)))
+  (reverse (map rev node-set)))
 
 (define-macro (define-basic-element name)
-  `(define-values (,(string->symbol (string-append (symbol->string name) "/"))
-		   ,(string->symbol (string-append (symbol->string name) ":")))
-     (values (lambda args (update (cut cons (cons (quote ,name) (exec '() (node-set args))) <>)))
-	     (lambda args (cons (quote ,name) (flatten args))))))
+  (let ((name/ (string->symbol (string-append (symbol->string name) "/")))
+	(name: (string->symbol (string-append (symbol->string name) ":"))))
+    `(define-values (,name/ ,name:)
+       (values (lambda args (update (cut cons (cons (quote ,name) (exec '() (node-set args))) <>)))
+	       (lambda args (cons (quote ,name) (flatten args)))))))
 (define-macro (define-elements . names)
   `(begin ,@(map (lambda (n) (list 'define-basic-element n)) names)))
 
@@ -191,17 +192,14 @@
 ;;--------------------------------------------------------------------------
 
 (define (flatten ls)
-  (define (iter acc ls)
-    (if (null? ls) 
-	(reverse acc)
-	(let ((hd (car ls))
-	      (tl  (cdr ls)))
-	  (cond ((html:element? hd) (iter (cons (obj->string hd) acc) tl))
-		((null? hd) (iter acc tl))
-		((eq? 'node-set (car hd)) 
-		 (iter (append (reverse (cdr hd)) acc) tl))
-		(else (iter (cons hd acc) tl))))))
-  (iter '() ls))
+  (reverse
+   (fold (lambda (e r)
+	   (cond ((html:element? e) (cons (obj->string e) r))
+		 ((null? e) r)
+		 ((eq? 'node-set (car e)) (fold cons r (cdr e)))
+		 (else (cons e r))))
+	 '()
+	 ls)))
 
 (define (node-list-to-node-set ls) (cons 'node-set (flatten ls)))
 (define (node-set: . arg) `(node-set ,@(flatten arg)))

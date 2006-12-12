@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.15 2006/12/02 07:11:32 bizenn Exp $
+;; $Id: dbi.scm,v 1.16 2006/12/12 03:39:17 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -538,7 +538,7 @@
 			     (index-value-write (slot-ref o sn)))))
 		       slot-names))
 	    (id (kahua-persistent-id o)))
-	(apply dbi-do conn update '() (append! vals (list id)))))))
+	(apply dbi-do conn update '() `(,@vals ,id))))))
 (define-method kahua-interp-index-translator ((db <kahua-db-dbi>) class translator)
   (let1 slots-to-be-updated (filter-map
 			     (apply$ (lambda (sn dir idx)

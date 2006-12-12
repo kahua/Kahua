@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.80 2006/10/25 03:47:36 bizenn Exp $
+;; $Id: server.scm,v 1.81 2006/12/12 03:39:16 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -862,10 +862,14 @@
 ;;  Default SXML tree interpreter - generates HTML
 ;;
 
+(define *namespace-prefix-table* (make-parameter '()))
+
 ;; interp-html :: Node -> Context -> Stree
 ;;    where Stree is a list of string segments passed to tree->string.
-(define (interp-html nodes context)
-  (interp-html-rec (car nodes) context (lambda (s _) s)))
+;;
+;; Maybe dead code.
+;(define (interp-html nodes context)
+;  (interp-html-rec (car nodes) context (lambda (s _) s)))
 
 ;; internal loop
 (define (interp-html-rec-gen default-handler)
@@ -893,14 +897,12 @@
       )))
 
 ;; customized version of sxml:attr->xml
-;;  - fixes single-quote bug
 ;;  - omits attributes with value #f
 (define (sxml:attr->xml-bis attr)
-  (if (cadr attr)
-    (let* ((v (x->string (cadr attr)))
-           (q (if (string-any #\' v) "\"" "'")))
-      (list " " (sxml:ncname attr) "=" q v q))
-    ""))
+  (or (and-let* ((value (cadr attr)))
+	(list " " (sxml:name attr) "='"
+	      (sxml:string->xml (x->string value)) "'"))
+      ""))
 
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents
@@ -908,11 +910,11 @@
    (lambda (stree context)
      (if (memq tag '(area base basefont br col frame hr img
                           input isindex link meta param))
-       (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) " />") context)
-       (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
-               ,@stree
-               "</" ,tag "\n>")
-             context)))))
+	 (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) " />") context)
+	 (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
+		 ,@stree
+		 "</" ,tag "\n>")
+	       context)))))
 
 (define (default-element-handler-bis tag attrs content context cont)
   (handle-element-contents-bis
@@ -951,6 +953,66 @@
 
 ;; set interp-html-rec as default interp
 (add-interp! 'html interp-html-rec #t)
+
+;;
+;; interp-xhtml - This is very transitional code.
+;;
+
+(define (interp-xhtml node context cont)
+  (define (extract-namespaces node)
+    (cond ((assq '*NAMESPACES* node)
+	   => (lambda (node)
+		(map (lambda (e)
+		       (list (or (and-let* ((prefix (car e)))
+				   #`"xmlns:,|prefix|")
+				 "xmlns")
+			     (cadr e)))
+		     (cdr node))))
+	  (else '())))
+  (define (extract-xml-decl node)
+    (if (eq? (car node) 'xml)
+	(list (apply format "<?~a ~a?>\n" node))
+	'()))
+  (define (extract-doctype node)
+    (if (eq? (car node) 'html)
+	(list (apply format "<!DOCTYPE ~a\n PUBLIC ~s\n ~s>\n" node))
+	'()))
+  (define (interp-xhtml-prologue node)
+    (let loop ((node node)
+	       (ns-list '())
+	       (xml-decl '())
+	       (doctype '()))
+      (if (null? node)
+	  (values node ns-list xml-decl doctype)
+	  (let1 e (car node)
+	    (cond ((eq? e '*TOP*) (loop (cdr node) ns-list xml-decl doctype))
+		  ((pair? e)
+		   (let1 name (car e)
+		     (case name
+		       ((@@)        (loop (cdr node) (extract-namespaces (cdr e)) xml-decl doctype))
+		       ((*PI*)      (loop (cdr node) ns-list (extract-xml-decl (cdr e)) doctype))
+		       ((*DOCTYPE*) (loop (cdr node) ns-list xml-decl (extract-doctype (cdr e))))
+		       ((html)      (values e ns-list xml-decl doctype))
+		       (else        (values node ns-list xml-decl doctype))))))))))
+  (define (html-root-handler attrs content context cont)
+    (handle-element-contents
+     content context
+     (lambda (stree context)
+       (cont `("<html"
+	       ,(map sxml:attr->xml-bis (append (*namespace-prefix-table*) attrs))
+	       ">"
+	       ,@stree
+	       "</html\n>")
+	     context))))
+
+  (let*-values (((node ns-list xml-decl doctype) (interp-xhtml-prologue node))
+		((stree context) (parameterize ((*namespace-prefix-table* ns-list))
+				   (let ((attrs (sxml:attr-list-u node))
+					 (contents (sxml:content node)))
+				     (html-root-handler attrs contents context cont)))))
+    (cont `(,@xml-decl ,@doctype ,stree) context)))
+
+(add-interp! '*TOP* interp-xhtml)
 
 ;;==========================================================
 ;; Element management
@@ -1237,7 +1299,6 @@
 			    #`"&,|c|;")
 			  contents)))
 	context))
-
 
 ;;==========================================================
 ;;  SXML tree interpreter - generates PDF

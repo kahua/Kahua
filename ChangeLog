@@ -1,3 +1,13 @@
+2006-12-12  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: (src/kahua/server.scm):
+	  Escape characters #\< #\> #\' #\" #\& in attribute value.
+
+	* Add XML page template engine.
+
+	  (define tmpl (kahua:make-xml-template path-to-tmplfile)
+	  (kahua:xml-template->sxml tmpl :id1 (p/ "fugafuga") :id2 (p/ "hogehoge"))
+
 2006-12-02  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Now we deprecate kahua.persistece.fs.  It was taken away from test
