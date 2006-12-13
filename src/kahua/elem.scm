@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.28 2006/12/13 03:09:29 bizenn Exp $
+;; $Id: elem.scm,v 1.29 2006/12/13 04:32:34 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -38,6 +38,7 @@
 	  map/
           with-ie/
 	  &/
+	  when/ unless/
 
 	  applet/ param/ object/ embed/ noembed/
 
@@ -60,6 +61,7 @@
 	  map:
 	  with-ie:
 	  &:
+	  when: unless:
 
 	  applet: param: object: embed: noembed:
 
@@ -127,6 +129,18 @@
     (cond ((number? val) (format "#~x" val))
 	  (else val)))
   (update (cut cons `(& ,@(exec '() (node-set (map val->string args)))) <>)))
+
+(define-syntax when/
+  (syntax-rules ()
+    ((_ expr . body)
+     (cond (expr . body)
+	   (else empty)))))
+
+(define-syntax unless/
+  (syntax-rules ()
+    ((_ expr . body)
+     (cond (expr empty)
+	   (else . body)))))
 
 ;; SXML tag
 
@@ -216,10 +230,23 @@
 
 (define (map: proc arg1 . args)
   (node-list-to-node-set (apply map proc arg1 args)))
+
 (define (&: . arg)
   (define (val->string val)
     (cond ((number? val) (format "#~x" val))
 	  (else val)))
   `(& ,@(flatten (map val->string arg))))
+
+(define-syntax when:
+  (syntax-rules ()
+    ((_ expr . body)
+     (cond (expr . body)
+	   (else (node-set:))))))
+
+(define-syntax unless:
+  (syntax-rules ()
+    ((_ expr . body)
+     (cond (expr (node-set:))
+	   (else . body)))))
 
 (provide "kahua/elem")
