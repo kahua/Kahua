@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.27 2006/12/12 03:39:16 bizenn Exp $
+;; $Id: elem.scm,v 1.28 2006/12/13 03:09:29 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -63,25 +63,11 @@
 
 	  applet: param: object: embed: noembed:
 
-          obj->string
-          html:element?
 	  make-no-escape-text-element
 	  no-escape?
 	  ))
 
 (select-module kahua.elem)
-
-(define-method obj->string ((self <integer>))
-  (number->string self))
-
-(define-method obj->string ((self <symbol>))
-  (symbol->string self))
-
-(define-method obj->string ((self <string>))
-  self)
-
-(define (html:element? obj)
-  (not (null? (compute-applicable-methods obj->string (list obj)))))
 
 ;;
 ;; unescape elements
@@ -91,7 +77,7 @@
   ((src :init-keyword :src)))
 
 (define (make-no-escape-text-element . src)
-  (let1 src (apply string-append (map obj->string src))
+  (let1 src (apply string-append (map x->string src))
     (make <no-escape> :src src)))
 
 (define (no-escape? node)
@@ -117,12 +103,11 @@
 
 (define (node-set sts)
   (if (null? sts)
-      identity
+      empty
       (let1 st (car sts)
-	(if (or (html:element? st)
-		(no-escape? st))
-	    (>> (text/ st) (node-set (cdr sts)))
-	    (>> st (node-set (cdr sts)))))))
+	(cond ((procedure? st) (>> st (node-set (cdr sts))))
+	      (st (>> (text/ st) (node-set (cdr sts))))
+	      (else (node-set (cdr sts)))))))
 
 (define (node-set/ . args)
   (node-set args))
@@ -165,10 +150,13 @@
 
 (define (rev-nodes node-set)
   (define (rev node)
-    (cond ((html:element? node) (obj->string node))
+    (cond ((pair? node)
+	   (let1 name (car node)
+	     (case name
+	       ((@ @@) node)
+	       (else (cons name (rev-nodes (cdr node)))))))
 	  ((no-escape? node) node)
-	  ((or (eq? (car node) '@) (eq? (car node) '@@)) node)
-	  (else (cons (car node) (rev-nodes (cdr node))))))
+	  (else (x->string node))))
   (reverse (map rev node-set)))
 
 (define-macro (define-basic-element name)
@@ -194,10 +182,14 @@
 (define (flatten ls)
   (reverse
    (fold (lambda (e r)
-	   (cond ((html:element? e) (cons (obj->string e) r))
-		 ((null? e) r)
-		 ((eq? 'node-set (car e)) (fold cons r (cdr e)))
-		 (else (cons e r))))
+	   (cond ((null? e) r)
+		 ((pair? e)
+		  (case (car e)
+		    ((node-set) (fold cons r (cdr e)))
+		    (else (cons e r))))
+		 ((no-escape? e) (cons e r))
+		 (e (cons (x->string e) r))
+		 (else r)))
 	 '()
 	 ls)))
 

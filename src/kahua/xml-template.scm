@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software.
 ;;
-;; $Id: xml-template.scm,v 1.2 2006/12/12 09:31:24 bizenn Exp $
+;; $Id: xml-template.scm,v 1.3 2006/12/13 03:09:29 bizenn Exp $
 
 (define-module kahua.xml-template
   (use srfi-1)
@@ -90,6 +90,7 @@
 
 ;;
 ;; The parser take input port and seed(maybe a nil)
+;; FIXME!!  This cannot handle namespace and DOCTYPE properly.
 ;;
 (define (kahua:make-xml-parser ns-alist)
   (define (res-name->sxml res-name)

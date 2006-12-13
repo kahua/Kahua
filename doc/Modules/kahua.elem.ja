@@ -124,7 +124,7 @@ with-ie/ノードにcondition属性を付ける事で条件を指摘できます．
 
 関数ノードのリストを一つの関数ノードに変換する手続き
 
-[procedure] empty s
+[constant] empty
 
 空の関数ノード
 
@@ -155,7 +155,7 @@ SXMLノードスタックを引数としてとり、現在の関数ノードを処理して生成したSXMLノー
 
 以下は現行の関数ノードの実装に依存しています。
 
-[variable] get
+[constant] get
 
 SXMLスタックを取得する関数ノードです。
 
