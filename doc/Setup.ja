@@ -3,7 +3,7 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: Setup.ja,v 1.14 2006/11/20 04:27:18 bizenn Exp $
+;; $Id: Setup.ja,v 1.15 2006/12/13 08:45:39 bizenn Exp $
 
 * Kahuaをセットアップする
 
@@ -19,7 +19,7 @@ Kahuaを動かすためには、0.8.8 以降のpthreadをサポートした
 がインストール済みである必要があります。
 {{{
 $ gosh -V
-Gauche scheme interpreter, version 0.8.7 [utf-8,pthreads]
+Gauche scheme interpreter, version 0.8.8 [utf-8,pthreads]
 }}}
 なお、0.8.8リリースには、Schemeスクリプト内でエラー/例外が発生し、
 かつスクリプト内でそのエラー/例外が補足されない場合、エラーメッセージを
@@ -42,8 +42,8 @@ http://sourceforge.net/mailarchive/forum.php?thread_id=30949517&forum_id=2043
 しまうことをお薦めします。後述のようなパーミッションやユーザ/グループの
 設定が不要になります。
 {{{
-% tar xvzf Kahua-0.8.tgz
-% cd Kahua-0.8
+% tar xvzf Kahua-0.9.tgz
+% cd Kahua-0.9
 % ./configure --prefix=${HOME}/kahua --with-staticdir=${HOME}/public_html/kahua
 % make
 % make check

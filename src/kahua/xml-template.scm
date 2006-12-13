@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software.
 ;;
-;; $Id: xml-template.scm,v 1.3 2006/12/13 03:09:29 bizenn Exp $
+;; $Id: xml-template.scm,v 1.4 2006/12/13 08:45:44 bizenn Exp $
 
 (define-module kahua.xml-template
   (use srfi-1)
@@ -71,22 +71,23 @@
 
 (define-method kahua:xml-template->sxml ((tmpl <kahua:xml-template>) . args)
   (let1 elem-alist (keyword-list->alist args)
-    (define (xml-template->sxml-internal node)
+    (define (xml-template->sxml-internal node accum)
       (cond ((and-let* ((id (kahua:get-xml-element-id tmpl node))
 			(p (assq id elem-alist)))
 	       (cdr p))
 	     => (lambda (node)
-		  (cond ((procedure? node) (car (rev-nodes (exec '() node))))
-			((pair? node)
-			 (let1 e (car node)
-			   (cond ((eq? e 'node-set) (cadr node))
-				 ((symbol? e)       node)
-				 (else              (car node)))))
-			(else
-			 (kahua-xml-template-error "invalid node: ~s" node)))))
-	    ((list? node) (map xml-template->sxml-internal node))
-	    (else node)))
-    (list (xml-template->sxml-internal (slot-ref tmpl 'sxml)))))
+		  (let1 node (cond ((procedure? node)
+				    (rev-nodes (exec '() node)))
+				   ((pair? node)
+				    (let1 n (car node)
+				      (cond ((eq? n 'node-set) (cdr node))
+					    ((symbol? n) (list node))
+					    (else        node))))
+				   (else (kahua-xml-template-error "invalid node: ~s" node)))
+		    (fold cons accum node))))
+	    ((list? node) (cons (reverse (fold xml-template->sxml-internal '() node)) accum))
+	    (else (cons node accum))))
+    (list (reverse (fold xml-template->sxml-internal '() (slot-ref tmpl 'sxml))))))
 
 ;;
 ;; The parser take input port and seed(maybe a nil)
