@@ -1,3 +1,7 @@
+2006-12-13  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* Add explanation of !contain for doc/Module/kahua.test.xml.ja.
+
 2006-12-12  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: (src/kahua/server.scm):

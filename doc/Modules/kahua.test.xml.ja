@@ -32,6 +32,7 @@ inputはSXML。patternは、照合すべきパターンを表現するS式。
               | (!permute <pattern> ...)
               | (!or      <pattern> ...)
               | (!repeat  <pattern> ...)
+              | (!contain <pattern> ...)
 
     <literal-symbol> : 先頭が'?'あるいは'!'ではないすべてのシンボル
 
@@ -103,6 +104,20 @@ inputはSXML。patternは、照合すべきパターンを表現するS式。
     は以下の入力にマッチします。
 
     (dl (dt "foo") (dd "bar") (dt "foo2") (dd "bar2"))
+
+(!contain <pattern> ...)
+
+    <pattern> ...を含むものにマッチします。<pattern> ... の出現順序は
+    問いませんが、すべての<pattern> ...が含まれている場合のみマッチに
+    成功します。パターン
+
+    (ul (!contain (li "foo") (li "bar")))
+
+    は以下の入力のいずれにもマッチします。
+
+    (ul (li "foo") (li "bar"))
+    (ul (li "bar") (li "foo"))
+    (ul (li "baz") (li "bar") (li "foo"))
 
 オプション引数 extra-check を与えると、これは、パターン変数とマッチし
 た値との連想リストを引数として呼び出されます。extra-checkは追加のチェ
