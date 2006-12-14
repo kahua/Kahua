@@ -1,5 +1,7 @@
 2006-12-14  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* 0.9.1 released.
+
 	* Fix: src/kahua/server.scm
 	  Use &#39; intead of &apos; as entity reference of ', because
 	  Internet Explorer(IE) cannot recognize &apos; in XHTML (I

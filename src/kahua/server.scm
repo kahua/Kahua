@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.84 2006/12/14 03:54:14 bizenn Exp $
+;; $Id: server.scm,v 1.85 2006/12/14 05:51:17 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -877,7 +877,7 @@
     (let ((name (sxml:element-name node)))
       (if (not name)
           (cont (cond ((string? node)
-                       (sxml:string->xml-bis node))
+                       (sxml:string->html node))
                       ((no-escape? node)
                        (ref node 'src))
                       (else ""))
