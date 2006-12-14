@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.83 2006/12/12 08:06:19 bizenn Exp $
+;; $Id: server.scm,v 1.84 2006/12/14 03:54:14 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -26,6 +26,7 @@
   (use util.list)
   (use util.match)
   (use sxml.tools)
+  (use sxml.adaptor)
   (use file.util)
   (use kahua.gsid)
   (use kahua.partcont)
@@ -876,7 +877,7 @@
     (let ((name (sxml:element-name node)))
       (if (not name)
           (cont (cond ((string? node)
-                       (sxml:string->html node))
+                       (sxml:string->xml-bis node))
                       ((no-escape? node)
                        (ref node 'src))
                       (else ""))
@@ -900,8 +901,15 @@
 (define (sxml:attr->xml-bis attr)
   (or (and-let* ((value (cadr attr)))
 	(list " " (sxml:name attr) "='"
-	      (sxml:string->xml (x->string value)) "'"))
+	      (sxml:string->xml-bis (x->string value)) "'"))
       ""))
+
+;; Internet Explorer cannot recognize &apos;
+;; So we cannot use sxml:string->xml itself :-(
+(define sxml:string->xml-bis
+  (make-char-quotator
+   '((#\< . "&lt;") (#\> . "&gt;") (#\& . "&amp;") 
+     (#\" . "&quot;") (#\' . "&#39;"))))
 
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents
