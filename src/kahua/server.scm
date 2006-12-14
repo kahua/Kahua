@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.85 2006/12/14 05:51:17 bizenn Exp $
+;; $Id: server.scm,v 1.86 2006/12/14 10:33:39 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -877,7 +877,7 @@
     (let ((name (sxml:element-name node)))
       (if (not name)
           (cont (cond ((string? node)
-                       (sxml:string->html node))
+                       (sxml:string->xml node))
                       ((no-escape? node)
                        (ref node 'src))
                       (else ""))
@@ -891,6 +891,8 @@
                        => (cut <> attrs auxs contents context
                                (lambda (nds cntx)
                                  (handle-element-contents nds cntx cont))))
+		      ((memq name '(script style))
+		       (script-element-handler name attrs contents context cont))
                       (else 
                        (default-handler name attrs contents context cont)))
                 )))
@@ -931,6 +933,44 @@
              ,@stree
              "</" ,tag "\n>")
            context))))
+
+(define (script-element-handler tag attrs content context cont)
+  (define (string->script-string str)
+    (with-string-io str
+      (lambda ()
+	(letrec ((in-code (lambda (c)
+			    (unless (eof-object? c)
+			      (write-char c)
+			      (case c
+				((#\") (in-string (read-char)))
+				(else  (in-code (read-char)))))))
+		 (in-string (lambda (c)
+			      (unless (eof-object? c)
+				(write-char c)
+				(case c
+				  ((#\\) (escape-char (read-char)))
+				  ((#\<) (maybe-escape (read-char)))
+				  ((#\") (in-code (read-char)))
+				  (else (in-string (read-char)))))))
+		 (escape-char (lambda (c)
+				(unless (eof-object? c)
+				  (write-char c)
+				  (in-string (read-char)))))
+		 (maybe-escape (lambda (c)
+				 (unless (eof-object? c)
+				   (when (char=? #\/ c)
+				     (write-char #\\))
+				   (write-char c)
+				   (in-string (read-char))))))
+	  (in-code (read-char))))))
+  (define (proc-content c)
+    (cond ((null? c) c)
+	  ((pair? c) (map proc-content c))
+	  (else (string->script-string (x->string c)))))
+  (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
+	  ,(proc-content content)
+	  "</" ,tag "\n>")
+	context))
 
 (define (handle-element-contents contents context cont)
   (if (null? contents)
