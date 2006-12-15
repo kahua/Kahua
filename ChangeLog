@@ -1,3 +1,8 @@
+2006-12-15  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm
+	  Use sxml:string->xml-bis instead of sxml:string->xml(again).
+
 2006-12-14  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/server.scm
