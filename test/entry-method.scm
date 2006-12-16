@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: entry-method.scm,v 1.8 2006/02/18 12:41:03 shibata Exp $
+;; $Id: entry-method.scm,v 1.9 2006/12/16 16:01:55 shibata Exp $
 
 (use srfi-2)
 (use gauche.test)
@@ -87,6 +87,19 @@
          '(("x-kahua-cgsid" "show")
            ("x-kahua-path-info"
             ("entry-method" "show")))
+         '(("k" "keyword")))
+        (make-match&pick w))
+
+ (test* "dispatch shwo entry(arg1 :rest rargs)"
+        '(*TOP*
+          (html
+           (body
+            "(path1 path2 path3)")))
+        (call-worker/gsid->sxml
+         w
+         '(("x-kahua-cgsid" "show")
+           ("x-kahua-path-info"
+            ("entry-method" "show" "path1" "path2" "path3")))
          '(("k" "keyword")))
         (make-match&pick w))
 

@@ -20,6 +20,13 @@
   (list "(\"d\" x)"
         x))
 
+(define-method-rule rule (a b . c)
+  (list "(a b . c)"
+        a
+        b
+        c))
+
+
 (test* "(x)" '("(x)" "X")
        (rule "X"))
 
@@ -34,6 +41,9 @@
 
 (test* "(\"d\" x)" '("(\"d\" x)" "X")
        (rule "d" "X"))
+
+(test* "(\"d\" x)" '("(a b . c)" "a" "b" ("c" "d"))
+       (rule "a" "b" "c" "d"))
 
 ;; TODO more test
 

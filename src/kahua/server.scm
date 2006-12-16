@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.87 2006/12/15 09:05:22 bizenn Exp $
+;; $Id: server.scm,v 1.88 2006/12/16 16:02:17 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -711,14 +711,16 @@
                   (acons idx a b)
                 b)) '() specs)))
 
-(define (apply-rule rules . args)
+
+(define (apply-rule rules args)
   (let loop ((rules rules))
     (if (null? rules)
         (error "no applicable rule")
       (let ((rule (caar rules))
             (proc (cdar rules)))
         (let loop2 ((rule rule))
-          (if (null? rule)
+          (if (or (null? rule)
+                  (not (list? rule)))
               (apply proc args)
             (let ((pos (caar rule))
                   (val (cdar rule)))
@@ -740,10 +742,12 @@
        (memq rule rule-list)))))
 
 (define-macro (define-method-rule name args . body)
-  (let* ((specs (gen-specializers args))
-         (rules (gen-rules args))
-         (method-args (gen-method-args args))
-         (lambda-args (gen-lambda-args method-args)))
+  (let* ((rarg (if (dotted-list? args) (cdr (last-pair args)) '()))
+         (args (map identity args))
+         (specs (append (gen-specializers args) (if (null? rarg) rarg 'rarg)))
+         (rules (append (gen-rules args) rarg))
+         (method-args (append (gen-method-args args) rarg))
+         (lambda-args (append (gen-lambda-args method-args) rarg)))
     `(begin
        ,(unless (rule-exist? name)
                 (add-rule! name)
@@ -756,7 +760,7 @@
                            '())
        (define-method ,name ,method-args
          (let1 rules (hash-table-get (ref ,name 'rules) ',specs)
-           (,apply-rule rules ,@lambda-args))))))
+           (,apply-rule rules (append (list ,@(map identity lambda-args)) ,rarg)))))))
 
 ;;
 ;; kahua-call-with-current-context
@@ -806,7 +810,7 @@
 (define (apply-entry-method gf . args)
   (apply gf entry-specializer args))
 
-;;  [syntax] define-entry name (arg ... :keyword karg ...) body ...
+;;  [syntax] define-entry-method name (arg ... :keyword karg ... :rest restarg) body ...
 
 (define-syntax define-entry-method
   (syntax-rules ()
@@ -822,8 +826,8 @@
     ;; collecting positional args
     ((_ "pargs" name () pargs body)
      (define-entry-method "specilize" name pargs () body))
-    ((_ "pargs" name (:rest . syms) pargs body)
-     (define-entry-method "specilize" name pargs (:rest . syms) body))
+    ((_ "pargs" name (:rest sym) (parg1 ...) body)
+     (define-entry-method "specilize" name (parg1 ... . sym) (:rest sym) body))
     ((_ "pargs" name (:keyword . syms) pargs body)
      (define-entry-method "specilize" name pargs (:keyword . syms) body))
     ((_ "pargs" name (:multi-value-keyword . syms) pargs body)

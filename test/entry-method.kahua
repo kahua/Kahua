@@ -40,6 +40,11 @@
         (h2/ k)
       ""))))
 
+(define-entry-method show (arg1 :rest rargs)
+  (html/
+   (body/
+    (x->string rargs))))
+
 (define-entry-method show (p1)
   (html/
    (body/
