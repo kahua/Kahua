@@ -1,3 +1,9 @@
+2006-12-17  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: configure.ac
+	  Change default value of KAHUA_STATICDIR(--with-staticdir) from
+	  /var/www/kahua to ${localstatedir}/var/kahua/static.
+
 2006-12-17  SHIBATA Tomohisa  <shibata@kahua.org>
 
 	* Change: src/kahua/server.scm
