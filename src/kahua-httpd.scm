@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.15 2006/11/20 10:51:45 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.16 2006/12/18 07:18:27 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -115,8 +115,8 @@
 	(else
 	 (receive (scheme user host port path query frag) (uri-parse uri)
 	   (values scheme user host port
-		   (and path (uri-decode-string path))
-		   (and query (uri-decode-string query :cgi-decode #t))
+		   (and path (uri-decode-string path)) ; for compatibility with Apache HTTPd
+		   query	                       ; decode in cgi-parse-parameters
 		   (and frag (uri-decode-string frag)))))))
 
 (define (server-software)
