@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software.
 ;;
-;; $Id: xml-template.scm,v 1.5 2006/12/19 00:14:18 bizenn Exp $
+;; $Id: xml-template.scm,v 1.6 2006/12/19 10:28:00 bizenn Exp $
 
 (define-module kahua.xml-template
   (use srfi-1)
@@ -49,7 +49,7 @@
 (define (kahua:make-xml-template path . maybe-ns-alist)
   (let* ((ns-alist (get-optional maybe-ns-alist '((#f . "http://www.w3.org/1999/xhtml"))))
 	 (parser (kahua:make-xml-parser ns-alist))
-	 (sxml (call-with-input-file path (cut parser <> '()))))
+	 (sxml (call-with-input-file path (cut parser <> '()) :encoding 'UTF-8))) ; FIXME!!
     (make <kahua:xml-template>
       :sxml sxml :parser parser :path path)))
 
@@ -94,7 +94,7 @@
   (let ((namespaces (map (lambda (el)
 			   (list* #f (car el)
 				  (ssax:uri-string->symbol (cdr el))))
-			 ns-alist)))
+			 (or ns-alist '()))))
     (define (%new-level-seed elem-gi attributes namespaces expected-content seed)
       '())
     (define (%finish-element elem-gi attributes namespaces parent-seed seed)
@@ -145,11 +145,14 @@
 					PI                ((*DEFAULT* . %default-pi-handler)))
       (lambda (port seed)
 	(let1 result (reverse (base-parser port seed))
-	  (cons '*TOP*
-		(if (null? ns-alist)
-		    result
-		    (cons (list '@@ (cons '*NAMESPACES*
-					  (map (lambda (ns) (list (car ns) (cdr ns))) ns-alist)))
-			  result))))))))
+	  (cond (ns-alist
+		 (cons '*TOP*
+		       (if (null? ns-alist)
+			   result
+			   (cons (list '@@ (cons '*NAMESPACES*
+						 (map (lambda (ns) (list (car ns) (cdr ns))) ns-alist)))
+				 result))))
+		((and (pair? result) (pair? (car result))) (car result))
+		(else result)))))))
 
 (provide "kahua/xml-template")
