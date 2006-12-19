@@ -5,21 +5,20 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software.
 ;;
-;; $Id: xml-template.scm,v 1.4 2006/12/13 08:45:44 bizenn Exp $
+;; $Id: xml-template.scm,v 1.5 2006/12/19 00:14:18 bizenn Exp $
 
 (define-module kahua.xml-template
   (use srfi-1)
   (use srfi-13)
   (use text.parse)
   (use sxml.ssax)
+  (use sxml.tools)
   (use gauche.parameter)
   (use kahua.util)
   (use kahua.elem)
   (export kahua:make-xml-parser
 	  <kahua:xml-template>
 	  kahua:make-xml-template
-	  kahua:get-xml-element-id
-	  kahua:dump-xml-id-table
 	  kahua:xml-template->sxml
 	  ))
 
@@ -34,7 +33,9 @@
 (define-constant *doctype-table*
   `(("http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"       . "-//W3C//DTD XHTML 1.0 Strict//EN")
     ("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd" . "-//W3C//DTD XHTML 1.0 Transitional//EN")
-    ("http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"     . "-//W3C//DTD XHTML 1.0 Frameset//EN")))
+    ("http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"     . "-//W3C//DTD XHTML 1.0 Frameset//EN")
+    ("http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"            . "-//W3C//DTD XHTML 1.1//EN")
+    ))
 
 (define (public-identifier uri)
   (and-let* ((id (assoc uri *doctype-table*)))
@@ -43,22 +44,14 @@
 (define-class <kahua:xml-template> ()
   ((sxml :init-keyword :sxml)
    (parser :init-keyword :parser)
-   (id-table :init-keyword :id-table)
    (path :init-keyword :path)))
 
 (define (kahua:make-xml-template path . maybe-ns-alist)
   (let* ((ns-alist (get-optional maybe-ns-alist '((#f . "http://www.w3.org/1999/xhtml"))))
-	 (id-table (make-hash-table 'eq?))
 	 (parser (kahua:make-xml-parser ns-alist))
-	 (sxml (call-with-input-file path (cut parser <> '() id-table))))
+	 (sxml (call-with-input-file path (cut parser <> '()))))
     (make <kahua:xml-template>
-      :sxml sxml :parser parser :id-table id-table :path path)))
-
-(define-method kahua:get-xml-element-id ((tmpl <kahua:xml-template>) elem)
-  (hash-table-get (slot-ref tmpl 'id-table) elem #f))
-
-(define-method kahua:dump-xml-id-table ((tmpl <kahua:xml-template>))
-  (hash-table-map (slot-ref tmpl 'id-table) cons))
+      :sxml sxml :parser parser :path path)))
 
 (define (keyword-list->alist klist)
   (define keyword->symbol (compose string->symbol keyword->string))
@@ -72,8 +65,8 @@
 (define-method kahua:xml-template->sxml ((tmpl <kahua:xml-template>) . args)
   (let1 elem-alist (keyword-list->alist args)
     (define (xml-template->sxml-internal node accum)
-      (cond ((and-let* ((id (kahua:get-xml-element-id tmpl node))
-			(p (assq id elem-alist)))
+      (cond ((and-let* ((id (sxml:attr node 'id))
+			(p (assq (string->symbol id) elem-alist)))
 	       (cdr p))
 	     => (lambda (node)
 		  (let1 node (cond ((procedure? node)
@@ -101,8 +94,7 @@
   (let ((namespaces (map (lambda (el)
 			   (list* #f (car el)
 				  (ssax:uri-string->symbol (cdr el))))
-			 ns-alist))
-	(id-table (make-parameter #f)))
+			 ns-alist)))
     (define (%new-level-seed elem-gi attributes namespaces expected-content seed)
       '())
     (define (%finish-element elem-gi attributes namespaces parent-seed seed)
@@ -121,8 +113,6 @@
 	(let* ((seed (ssax:reverse-collect-str-drop-ws seed))
 	       (node (cons (res-name->sxml elem-gi)
 			   (if (null? attrs) seed (cons (cons '@ attrs) seed)))))
-	  ;; register to ID table if specified.
-	  (and (id-table) id (hash-table-put! (id-table) node id))
 	  (cons node parent-seed))))
     (define (%char-data-handler string1 string2 seed)
       (if (string-null? string2)
@@ -153,15 +143,13 @@
 					FINISH-ELEMENT    %finish-element
 					CHAR-DATA-HANDLER %char-data-handler
 					PI                ((*DEFAULT* . %default-pi-handler)))
-      (lambda (port seed . maybe-id-table)
-	(parameterize ((id-table (get-optional maybe-id-table #f)))
-	  (let1 result (reverse (base-parser port seed))
-	    (cons '*TOP*
-		  (if (null? ns-alist)
-		      result
-		      (cons (list '@@ (cons '*NAMESPACES*
-					    (map (lambda (ns) (list (car ns) (cdr ns))) ns-alist)))
-			    result)))))))
-    ))
+      (lambda (port seed)
+	(let1 result (reverse (base-parser port seed))
+	  (cons '*TOP*
+		(if (null? ns-alist)
+		    result
+		    (cons (list '@@ (cons '*NAMESPACES*
+					  (map (lambda (ns) (list (car ns) (cdr ns))) ns-alist)))
+			  result))))))))
 
 (provide "kahua/xml-template")

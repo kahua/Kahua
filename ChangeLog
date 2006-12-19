@@ -1,3 +1,9 @@
+2006-12-19  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/xml-template.scm
+	  Use sxml:attr to get id attribute, and drop id-table slot
+	  in <kahua:xml-template>.
+
 2006-12-18  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua-httpd.scm
