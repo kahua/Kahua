@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.23 2006/11/20 10:51:45 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.24 2006/12/21 14:27:06 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -163,8 +163,7 @@
 	  (kahua-profiler-start profile)
 	  (dotimes (_ 100)
 	    (selector-select selector))
-	  (kahua-profiler-flush profile)
-	  )))))
+	  (kahua-profiler-flush profile))))))
 
 (define *kahua-top-module* #f)
 

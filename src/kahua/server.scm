@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.88 2006/12/16 16:02:17 shibata Exp $
+;; $Id: server.scm,v 1.89 2006/12/21 14:27:07 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -51,6 +51,7 @@
           kahua-current-entry-name
           kahua-current-user
           kahua-current-user-name
+	  kahua-authorized?
           kahua-worker-type
           kahua-merge-headers
           kahua-header-set!
@@ -482,12 +483,19 @@
 (define kahua-current-user-name
   (getter-with-setter
    (lambda ()
-     (and-let* ((u (find-login-state (and-let* ((db (current-db))) (path-of db)) #t)))
+     (and-let* ((u (find-login-state (and-let* ((db (current-db)))
+				       (path-of db))
+				     #t)))
        (car u)))
    (lambda (login-name)
      (if (current-db)
 	 (set! (kahua-current-user) login-name)
 	 (register-login-state login-name #f)))))
+
+(define (kahua-authorized? . roles)
+  (and-let* ((u (kahua-current-user)))
+    (or (null? roles)
+	(find (cut kahua-user-has-role? u <>) roles))))
 
 ;; KAHUA-MERGE-HEADERS :: ([Headers],...) -> [Headers]
 ;;

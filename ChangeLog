@@ -1,3 +1,9 @@
+2006-12-21  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/server.scm
+	  New function kahua-authorized? for convenience.
+	  Usage: (kahua-authorized?) or (kahua-authorized? role1 role2 ...)
+
 2006-12-19  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Add: src/kahua/xml-template.scm
