@@ -1,3 +1,10 @@
+2006-12-22  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/server.scm
+	  New function kahua-login and kahua-logout for convenience.
+	  Usage: (kahua-login user-name password)
+	         (kahua-logout)
+
 2006-12-21  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Add: src/kahua/server.scm

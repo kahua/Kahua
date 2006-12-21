@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.89 2006/12/21 14:27:07 bizenn Exp $
+;; $Id: server.scm,v 1.90 2006/12/21 16:00:31 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -51,6 +51,8 @@
           kahua-current-entry-name
           kahua-current-user
           kahua-current-user-name
+	  kahua-login
+	  kahua-logout
 	  kahua-authorized?
           kahua-worker-type
           kahua-merge-headers
@@ -491,6 +493,18 @@
      (if (current-db)
 	 (set! (kahua-current-user) login-name)
 	 (register-login-state login-name #f)))))
+
+;;
+;; Simple User Authorization
+;;
+
+(define (kahua-login user-name password)
+  (and-let* ((u (kahua-check-user user-name password)))
+    (set! (kahua-current-user) u)
+    u))
+
+(define (kahua-logout)
+  (set! (kahua-current-user) #f))
 
 (define (kahua-authorized? . roles)
   (and-let* ((u (kahua-current-user)))
