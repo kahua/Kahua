@@ -1,7 +1,7 @@
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
-;; $Id: INSTALL,v 1.12 2006/12/17 06:48:09 bizenn Exp $
+;; $Id: INSTALL,v 1.13 2006/12/22 09:35:48 bizenn Exp $
 
 * Setup Kahua
 
@@ -136,8 +136,8 @@ scripts, but its configuration requires a careful attention.
 
 This is configuration and building process on a real site.
 {{{
-% tar xzvf Kahua-0.7.tgz
-% cd Kahua-0.7
+% tar xzvf Kahua-0.9.tgz
+% cd Kahua-0.9
 % ./configure \
     --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
     --prefix=/usr/local/kahua \
@@ -257,3 +257,88 @@ Kahua System doesn't yet have any mechanism that registers its startup
 scripts to the operating system.  You must create them by hand, or you can
 use "daemontools" to manage Kahua Servers processes.
 
+----
+
+** Use "Site-Bundle"
+
+"Site-Bundle" is the new feature mounted from Kahua 0.8.  It is an
+abstraction of the working directory where kahua servers are
+activating. By this feature, you can control several kahua servers,
+kahua-spvr and its following servers, under the single kahua install
+base.
+
+*** Create a "Site-Bundle"
+
+Execute following command with kahua-spvr authorization that meets to
+the site to create.
+{{{
+% kahua-package create /var/tmp/kahua
+}}}
+The Skelton of site is created with this.  Followings are the
+explanation of directory structure.
+{{{
+% find /var/tmp/kahua
+/var/tmp/kahua
+/var/tmp/kahua/app
+/var/tmp/kahua/app-servers
+/var/tmp/kahua/database
+/var/tmp/kahua/etc
+/var/tmp/kahua/etc/kahua.conf
+/var/tmp/kahua/etc/user.conf
+/var/tmp/kahua/logs
+/var/tmp/kahua/plugins
+/var/tmp/kahua/run
+/var/tmp/kahua/socket
+/var/tmp/kahua/static
+/var/tmp/kahua/tmp
+}}}
+It seems to be same as standard working directory, but there are some
+different points.
+
+# '''app''':
+For historical background, "checkout" is used in the standard working
+directory. Dig sub directory here for each application and deploy
+source file.
+# '''database''':
+The database is deployed under the file-system-database directory
+instead of under the working directory.
+# '''etc''':
+The configuration files which "kahua-* scripts", activating on the
+"Site-Bundle", refer to, and developer user database are deployed
+here.  If you use "Site-Bundle", "kahua-* scripts" do not refer to
+standard configuration files.
+# '''logs''':
+Store log files.
+# '''plugins''':
+Deploy plug-in files.  Under the current situation, if you want to use
+standard plug-in installed with Kahua in "Site-Bundle", you need to
+copy.
+# '''run''':
+Store PID files.
+# '''socket''':
+Deploy UNIX domain socket to use in connection by Kahua servers.
+# '''static''':
+Deploy static contents.
+# '''tmp''':
+This is a temporary directory.
+
+*** Activate kahua-spvr on "Site-Bundle"
+
+Execute following command with same authorization that creates "Site-Bundle".
+{{{
+% kahua-spvr -S /var/tmp/kahua --httpd 8889
+}}}
+Set full path to "Site-Bundle" after "-S".
+
+Execute following command to connect kahua-admin to this kahua-spvr.
+{{{
+% kahua-admin -S /var/tmp/kahua
+}}}
+
+Additionally, you can set to use "Site-Bundle" by default in its
+environment variable, KAHUA_DEFAULT_SITE.
+{{{
+% export KAHUA_DEFAULT_SITE=/var/tmp/kahua
+% kahua-spvr --httpd 8889
+}}}
+By this new feature, "Site-Bundle", user-mode was abolished.
