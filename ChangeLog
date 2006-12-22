@@ -1,5 +1,10 @@
 2006-12-22  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Add: src/kahua/user.scm
+	  New function kahua-user-add-role! and kahua-user-drop-role!,
+	  and <kahua-user> has name-of(login-name), roles-of(role-alist)
+	  accessor.
+
 	* Add: src/kahua/server.scm
 	  New function kahua-login and kahua-logout for convenience.
 	  Usage: (kahua-login user-name password)

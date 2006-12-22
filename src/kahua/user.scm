@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.8 2006/09/26 23:09:57 bizenn Exp $
+;; $Id: user.scm,v 1.9 2006/12/22 05:01:26 bizenn Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -14,7 +14,8 @@
   (use gauche.collection)
   (export <kahua-user> kahua-add-user kahua-check-user kahua-find-user
           kahua-user-password-change kahua-user-password-change-force
-	  kahua-user-has-role? dbpath-of inactive?
+	  kahua-user-has-role? kahua-user-add-role! kahua-user-drop-role!
+	  dbpath-of inactive? active? name-of roles-of
 	  ))
 (select-module kahua.user)
 
@@ -28,11 +29,11 @@
   (slot-set! class '%user-class class))
 
 (define-class <kahua-user> (<kahua-persistent-base> <kaua-user-mixin>)
-  ((login-name    :allocation :persistent
+  ((login-name    :allocation :persistent :accessor name-of
                   :init-keyword :login-name :init-value #f)
    (password-hash :allocation :persistent
                   :init-keyword :password-hash :init-value #f)
-   (role-alist    :allocation :persistent
+   (role-alist    :allocation :persistent :accessor roles-of
                   :init-keyword :role-alist :init-value '())
    (inactive      :allocation :persistent :accessor inactive?
                   :init-keyword :inactive :init-value #f)
@@ -92,6 +93,14 @@
        (find (lambda (urole) (find (cut eq? <> urole) roles))
              (ref user 'role-alist))))
 
+(define (kahua-user-add-role! user role)
+  (when (and user (symbol? role))
+    (unless (memq role (roles-of user))
+      (push! (roles-of user) role))))
+
+(define (kahua-user-drop-role! user role)
+  (when (and user (symbol? role))
+    (set! (roles-of user) (delete role (roles-of user) eq?))))
 
 ;; internal utility
 (define (crypt-passwd passwd)
