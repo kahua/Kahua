@@ -5,6 +5,7 @@
 	  for install XML kahua template files.
 	* Fix: skel/Makefile.in
 	  fix bug at kahua-package generate project's test.
+	  and fix proj-start,proj-stop install directory.
 	* Change: skel/proj/default.kahua
 	  change db path and delete kahua-check-transaction!.
 	* Change: skel/proj/page.kahua
