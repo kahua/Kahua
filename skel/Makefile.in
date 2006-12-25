@@ -1,5 +1,5 @@
 # Makefile for %%_PROJECT_NAME_%%
-# $Id: Makefile.in,v 1.4 2006/09/08 05:40:57 bizenn Exp $
+# $Id: Makefile.in,v 1.5 2006/09/08 14:50:24 cut-sea Exp $
 
 package	          = %%_PROJECT_NAME_%%
 kahua		  = kahua
@@ -36,6 +36,7 @@ KAHUA_LIB     = $(libdir)
 KAHUACONFIG = -c $(sysconfdir)/kahua.conf
 
 %%_PROJECT_NAME_UP_%%_INPLACE = $(shell pwd)
+TEST_DIR    = $(shell pwd)
 
 %%_PROJECT_NAME_UP_%%_VERSION = $(shell cat $(top_srcdir)/VERSION)
 %%_PROJECT_NAME_UP_%%_WORKING = $(%%_PROJECT_NAME_UP_%%_INPLACE)
@@ -62,13 +63,14 @@ SOURCEDIR   = %%_PROJECT_NAME_%%
 PLUGINDIR   = plugins
 PLUGINFILE  = %%_PROJECT_NAME_%%.scm
 
-
+TEMPLATEDIR = templates
+XMLFILES    = page.xml
 
 CONFIG_GENERATED = Makefile %%_PROJECT_NAME_%%.conf test/test.scm config.log config.status autom4*.cache
 
 .PHONY: all check clean distclean install maintainer-clean
 
-all:	test/test.scm $(SCRIPTS) %%_PROJECT_NAME_%%/version.kahua %%_PROJECT_NAME_%%.conf
+all:	test/test.conf test/test.scm $(SCRIPTS) %%_PROJECT_NAME_%%/version.kahua %%_PROJECT_NAME_%%.conf
 	-rm -rf tmp
 	mkdir tmp
 	test -L checkout || ln -s . checkout
@@ -81,8 +83,11 @@ all:	test/test.scm $(SCRIPTS) %%_PROJECT_NAME_%%/version.kahua %%_PROJECT_NAME_%
 	sed -e "s@###%%_PROJECT_NAME_UP_%%_INPLACE###@$(%%_PROJECT_NAME_UP_%%_INPLACE)@" $< > $@
 	chmod +x $@
 
+test/test.conf: test/test.conf.in
+	sed -e "s@##TEST_DIR##@$(TEST_DIR)@" $? > $@
+
 test/test.scm:	test/test.scm.in
-	sed -e "s@##GOSH##@$(GOSH)@" -e "s@##KAHUA_WORKING##@$(KAHUA_WORKING)@" -e "s@##KAHUA_LIB##@$(KAHUA_LIB)@" -e "s@##%%_PROJECT_NAME_UP_%%_VERSION##@$(%%_PROJECT_NAME_UP_%%_VERSION)@" $< > $@
+	sed -e "s@##GOSH##@$(GOSH)@" -e "s@##PLUGINS##@$(PLUGINFILES)@" -e "s@##KAHUA_WORKING##@$(KAHUA_WORKING)@" -e "s@##KAHUA_LIB##@$(KAHUA_LIB)@" -e "s@##%%_PROJECT_NAME_UP_%%_VERSION##@$(%%_PROJECT_NAME_UP_%%_VERSION)@" $< > $@
 
 %%_PROJECT_NAME_%%/version.kahua: %%_PROJECT_NAME_%%/version.kahua.in
 	sed -e "s@###%%_PROJECT_NAME_UP_%%_VERSION###@$(%%_PROJECT_NAME_UP_%%_VERSION)@" $< > $@
@@ -103,8 +108,15 @@ install:
 	$(KAHUA_INSTALL) $(KAHUACONFIG) -t static --no-overwrite $(STATICFILES)
 	$(KAHUA_INSTALL) $(KAHUACONFIG) -t plugin -r $(PLUGINFILE) \
                                         $(PLUGINDIR)/$(PLUGINFILE)
+	for f in $(PLUGINFILES); do \
+	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t plugin -r $$f $(PLUGINDIR)/$$f;\
+	done
+	mkdir -p $(bindir)
 	for f in $(SCRIPTS); do \
 	  $(INSTALL) -m 555 $$f $(bindir)/$$f;\
+	done
+	for f in $(XMLFILES); do \
+	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t template -r %%_PROJECT_NAME_%%/$$f $(TEMPLATEDIR)/$$f;\
 	done
 
 uninstall :

@@ -1,0 +1,18 @@
+;; -*- coding: euc-jp; mode: scheme -*-
+;;
+;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; test configuration file
+;; $Id: test.conf.in,v 1.1 2006/11/12 12:08:58 cut-sea Exp $
+
+(make <kahua-config>
+  :sockbase "unix:##TEST_DIR##/test/_tmp"
+  :working-directory "##TEST_DIR##/test/_work"
+  :repository "./_cvs"
+  :static-document-path "##TEST_DIR##/test/_www"
+  )
+
+;; Local variables:
+;; mode: scheme
+;; end:

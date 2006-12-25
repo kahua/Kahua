@@ -3,6 +3,18 @@
 	* Change: src/kahua-install.scm
 	  Add New material-type as "template",which is
 	  for install XML kahua template files.
+	* Fix: skel/Makefile.in
+	  fix bug at kahua-package generate project's test.
+	* Change: skel/proj/default.kahua
+	  change db path and delete kahua-check-transaction!.
+	* Change: skel/proj/page.kahua
+	  modify http-equiv's value.
+	* Fix: skel/test/test.scm.in
+	  catch up current Kahua and pass skelton project's test.
+	* Add: skel/test/test.conf.in
+	  catch up current Kahua and pass skelton project's test.
+	* Change: src/kahua-package.scm
+	  catch up current Kahua's skelton.
 	
 2006-12-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
