@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-install.scm,v 1.5 2006/10/08 07:13:27 bizenn Exp $
+;; $Id: kahua-install.scm,v 1.6 2006/12/25 14:10:57 cut-sea Exp $
 
 ;; Installs Kahua's application server materials according to
 ;; the kahua.conf configuration settings.
@@ -17,7 +17,7 @@
   (print "kahua-install [-c conf-file][-U][-t type][-r name][--no-overwrite] file ...")
   (print "  Install files under kahua-managed directories.")
   (print "   -U : uninstall files instead of installing.")
-  (print "   -t type: script | static | base | plugin.  static by default.")
+  (print "   -t type: script | static | base | plugin | template.  static by default.")
   (print "   -r (rename): rename file to name.  When this option is given,")
   (print "      only one file can be specified.")
   (print "   --no-overwrite : if the target file exists, the file won't be")
@@ -39,7 +39,7 @@
        (gosh      "gosh=s")  ;; wrapper script adds this.  ignore.
        . files)
     (unless (member material-type
-                    '("script" "static" "base" "plugin")) (usage))
+                    '("script" "static" "base" "plugin" "template")) (usage))
     (when (and rename (not (= (length files) 1))) (usage))
     (kahua-common-init site conf-file)
     (if dirs?
@@ -103,6 +103,8 @@
          (build-path (kahua-plugin-directory) file))
         ((equal? material-type "static")
          (kahua-static-document-path file))
+	((equal? material-type "template")
+	 (build-path (kahua-template-directory) file))
         (else
          (error "unknown material type:" material-type))))
 
