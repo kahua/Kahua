@@ -2,7 +2,7 @@
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.server.ja,v 1.7 2006/12/26 06:38:01 bizenn Exp $
+;; $Id: kahua.server.ja,v 1.8 2006/12/26 07:39:35 bizenn Exp $
 
 * [module] kahua.server
 
@@ -251,10 +251,42 @@ kahua-context-refを使ってクライアントから渡された情報を取り出し、
 entry-lambdaマクロを直接使うことにより、無名の継続手続きを
 簡単に作成できます。
 
-*** [macro] define-entry-method name (entry-formals) body
-
 *** [procedure] kahua-call-with-current-context proc
 *** [procedure] kall/cc proc
+
+現在のcontextとともに継続を捕捉します。次のようなサンプルコードの場合を
+考えてみましょう。
+{{{
+(define counter-page
+  (let1 *counter* 0
+    (lambda (self)
+     (html/
+      (head/ (title/ "call"))
+      (body/
+       (h1/ (begin
+	      (inc! *counter*)
+	      *counter*))
+       (p/ (a/cont/ (@@/ (cont (cut callee self)))
+		    "call")))))))
+
+(define (callee return)
+  (html/
+   (head/ (title/ "callee"))
+   (body/
+    (h1/ (sys-time))
+    (a/cont/ (@@/ (cont return))
+	     "return caller"))))
+
+(define-entry (caller)
+  (kall/cc counter-page))
+
+(initialize-main-proc caller)
+}}}
+例えば http://localhost:8080/kallcc というアプリケーションだったとすると、
+最初は、counter-pageで定義されたページ、そのリンクをたどるとcalleeで
+定義されたページが表示されます。calleeのページでリンクをたどるとcounter-page
+に戻りますが、カウンターは進んでいきます。つまり、contextを保存したまま、
+counter-pageが実行されているのです。
 
 
 * API for Scripts
