@@ -2,7 +2,7 @@
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.server.ja,v 1.8 2006/12/26 07:39:35 bizenn Exp $
+;; $Id: kahua.server.ja,v 1.9 2006/12/26 11:36:55 bizenn Exp $
 
 * [module] kahua.server
 
@@ -287,6 +287,16 @@ entry-lambdaマクロを直接使うことにより、無名の継続手続きを
 定義されたページが表示されます。calleeのページでリンクをたどるとcounter-page
 に戻りますが、カウンターは進んでいきます。つまり、contextを保存したまま、
 counter-pageが実行されているのです。
+
+*** [procedure] initialize-main-proc ''thunk''
+
+アプリケーションがエントリ名なしで呼ばれた時に起動する引数をとらない手
+続き''thunk''をワーカプロセスに登録します。thunkは継続エントリポイント
+(有名無名を問わず) でも、ただのサンクでもかまいません。
+
+※この手続きはkahua.serverモジュールで定義されているものではなく、
+[[../Scripts/kahua-server]]内で定義されている内部手続きですが、アプリケー
+ション記述の際に使用するため、ここで説明をします。
 
 
 * API for Scripts
