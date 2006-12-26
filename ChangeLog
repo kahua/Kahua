@@ -1,10 +1,14 @@
 2006-12-26  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Add: src/kahua/persistence.scm
+	  kahua-indexable-object? is predicate that return #t
+	  if a argument is able to use as index value, or #f.
+
 	* Change: src/kahua/elem.scm
 	  Export define-basic-element and define-elements.
 
 	* Update: doc/Modules/*
-	  kahua.config.ja, kahua.server.ja
+	  kahua.config.ja, kahua.server.ja, kahua.persistence.ja
 
 2006-12-25  Katsutoshi Itoh <cut-sea@kahua.org>
 

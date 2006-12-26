@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.71 2006/12/02 07:11:31 bizenn Exp $
+;; $Id: persistence.scm,v 1.72 2006/12/26 09:42:13 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -26,6 +26,7 @@
 	  find-kahua-instance
           touch-kahua-instance!
           kahua-serializable-object?
+	  kahua-indexable-object?
           kahua-persistent-classes-in-db
           kahua-persistent-class-generation
           kahua-persistent-class-definition
@@ -373,6 +374,16 @@
 	 (write-char #\#)
 	 (index-value-write (vector->list value)))
 	(else (kahua-persistence-error "Object ~s cannot be used as index value" value))))
+
+(define (kahua-indexable-object? obj)
+  (or (any (pa$ is-a? obj) `(,<string> ,<number> ,<symbol> ,<boolean> ,<keyword>))
+      (and (or (list? obj) (vector? obj))
+	   (let/cc ret
+	     (for-each (lambda (obj)
+			 (unless (kahua-indexable-object? obj)
+			   (ret #f)))
+		       obj)
+	     #t))))
 
 (define (drop-all-index-values! obj)
   (let1 class (current-class-of obj)
