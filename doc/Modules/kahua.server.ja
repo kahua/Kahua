@@ -2,7 +2,7 @@
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.server.ja,v 1.6 2006/12/26 06:02:10 bizenn Exp $
+;; $Id: kahua.server.ja,v 1.7 2006/12/26 06:38:01 bizenn Exp $
 
 * [module] kahua.server
 
@@ -153,6 +153,11 @@ kahua-context-refとよく似ていますが、該当するコンテキスト情報が
 リストとして返されること、maybe-defaultを省略したときのデフォルト値が
 ()であることが違います。
 
+*** [procedure] kahua-meta-ref ''key'' . maybe-default
+
+contextから、CGIメタ変数を取り出します。maybe-defaultが省略された時は
+#fが渡されたのと同じです。
+
 
 ** 継続エントリポイントの設定
 
@@ -246,8 +251,16 @@ kahua-context-refを使ってクライアントから渡された情報を取り出し、
 entry-lambdaマクロを直接使うことにより、無名の継続手続きを
 簡単に作成できます。
 
+*** [macro] define-entry-method name (entry-formals) body
+
+*** [procedure] kahua-call-with-current-context proc
+*** [procedure] kall/cc proc
+
 
 * API for Scripts
+
+kahua-serverが使うAPIです。kahua-serverにかわるアプリケーションサーバを
+書くのでなければ、特に使う必要がありません。
 
 *** [procedure] kahua-init-server ''worker-type'' [''session-server-id'']
 
