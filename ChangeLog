@@ -1,6 +1,7 @@
 2006-12-26  Tatsuya BIZENN  <bizenn@arthub.net>
 
-	* Update: doc/Modules/kahua.config.ja
+	* Update: doc/Modules/*
+	  kahua.config.ja, kahua.server.ja
 
 2006-12-25  Katsutoshi Itoh <cut-sea@kahua.org>
 
