@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.30 2006/12/26 07:51:01 bizenn Exp $
+;; $Id: elem.scm,v 1.31 2006/12/26 11:02:47 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -28,7 +28,7 @@
 	  form/ label/ input/ select/ optgroup/ option/ textarea/ fieldset/
 	  legend/ button/ table/ caption/ thead/ tfoot/ tbody/ colgroup/
           col/ tr/ th/ td/ head/ title/ base/ meta/ style/ script/ noscript/
-	  html/ pdf/ frameset/ frame/
+	  html/ frameset/ frame/
 	  @/
 	  @@/
 	  a/cont/
@@ -42,6 +42,7 @@
 
 	  applet/ param/ object/ embed/ noembed/
 
+	  node-list->node-set
 	  node-list-to-node-set
 	  node-set:
 	  font: tt: i: b: big: small: em: strong: dfn: code: samp: kbd: var:
@@ -51,7 +52,7 @@
 	  form: label: input: select: optgroup: option: textarea: fieldset:
 	  legend: button: table: caption: thead: tfoot: tbody: colgroup:
           col: tr: th: td: head: title: base: meta: style: script: noscript:
-	  html: pdf: frameset: frame:
+	  html: frameset: frame:
 	  @:
 	  @@:
 	  a/cont:
@@ -210,7 +211,8 @@
 	 '()
 	 ls)))
 
-(define (node-list-to-node-set ls) (cons 'node-set (flatten ls)))
+(define (node-list->node-set ls) (cons 'node-set (flatten ls)))
+(define node-list-to-node-set node-list->node-set) ; for backward compatibility
 (define (node-set: . arg) `(node-set ,@(flatten arg)))
 
 (define-syntax @:

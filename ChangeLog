@@ -6,9 +6,12 @@
 
 	* Change: src/kahua/elem.scm
 	  Export define-basic-element and define-elements.
+	  Drop pdf/ and pdf:.
+	  Add node-list->node-set
 
 	* Update: doc/Modules/*
-	  kahua.config.ja, kahua.server.ja, kahua.persistence.ja
+	  kahua.config.ja, kahua.server.ja, kahua.persistence.ja,
+	  kahua.ja, kahua.partcont.ja, kahua.elem.ja
 
 2006-12-25  Katsutoshi Itoh <cut-sea@kahua.org>
 
