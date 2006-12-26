@@ -3,7 +3,7 @@ dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-dnl $Id: configure.ac,v 1.44 2006/12/26 22:37:33 bizenn Exp $
+dnl $Id: configure.ac,v 1.1 2006/12/26 22:37:33 bizenn Exp $
 dnl
 AC_PREREQ(2.54)
 AC_INIT(kahua, 0.9.1, info@kahua.org)
@@ -115,14 +115,5 @@ dnl Add more test
 dnl Set LDFLAGS to generate shared library.
 AC_GAUCHE_FIX_LIBS
 
-AC_CONFIG_SUBDIRS(examples)
-
 dnl Output
-echo $PACKAGE_VERSION > VERSION
-AC_OUTPUT(Makefile 
-          src/Makefile 
-          doc/Modules/Makefile
-          cgi/Makefile 
-          emacs/Makefile
-          plugins/Makefile
-          test/Makefile)
+AC_OUTPUT(Makefile)

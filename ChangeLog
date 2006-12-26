@@ -1,3 +1,9 @@
+2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* New: examples/configure.ac
+	  Separate configure script of examples. It's to support
+	  installation into a site bundle.
+
 2006-12-26  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Add: src/kahua/persistence.scm

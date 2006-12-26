@@ -13,6 +13,7 @@ done
 
 if [ "$gen" = "yes" ]; then
   autoconf -I `gauche-config --ac`
+  (cd examples; autoconf -I `gauche-config --ac`)
 fi
 
 if [ "$tgz" = "yes" ]; then

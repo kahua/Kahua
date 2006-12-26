@@ -29,7 +29,7 @@ DESTDIR  =
 
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
-INSTALL = $(top_srcdir)/src/kahua-install --test
+INSTALL = $(bindir)/kahua-install
 
 # specify -c ../kahua.conf etc. to give an alternative conf file
 KAHUACONFIG = -c $(sysconfdir)/kahua.conf
@@ -53,7 +53,7 @@ STATICFILES = lambdabooks/images/lambda-books-logo.png \
               wiki-iki/wiki-iki.css \
               wiki-iki/images/wiki-iki.png
 
-CONFIG_GENERATED = Makefile
+CONFIG_GENERATED = Makefile config.cache config.log config.status configure.lineno autom4te*.cache
 
 .PHONY: all check clean distclean install maintainer-clean
 
@@ -85,5 +85,6 @@ distclean: clean
 
 maintainer-clean: clean
 	rm -rf $(CONFIG_GENERATED)
+	rm -rf configure
 
 
