@@ -3,7 +3,7 @@ dnl Configuring Kahua Examples
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-dnl $Id: configure.ac,v 1.2 2006/12/26 22:48:36 bizenn Exp $
+dnl $Id: configure.ac,v 1.3 2006/12/26 23:05:16 bizenn Exp $
 dnl
 AC_PREREQ(2.54)
 AC_INIT(examples, 1.0, info@kahua.org)
@@ -20,46 +20,6 @@ dnl Check for other programs.
 AC_PROG_INSTALL
 AC_CHECK_PROGS(MAKEINFO, makeinfo)
 AC_CHECK_PROGS(GZIP_PROGRAM, gzip)
-
-dnl Sets some additional installation destination
-KAHUA_CGIDIR=$libexecdir/kahua
-AC_ARG_WITH(cgidir,
-  AC_HELP_STRING([--with-cgidir=PATH],
-                 [Specifies the directory where Kahua cgi scripts should be
-installed.  If disabled (--with-cgidir=no or --without-cgidir), cgi scripts
-are not installed automatically.  Default: $libexecdir/kahua]),
-  [
-    case "$with_cgidir" in
-      yes|no) KAHUA_CGIDIR= ;;
-      *)      KAHUA_CGIDIR=$with_cgidir ;;
-    esac
-  ])
-AC_SUBST(KAHUA_CGIDIR)
-
-dnl Sets cgi log directory
-KAHUA_CGILOGDIR=$localstatedir/kahua/cgilog
-AC_ARG_WITH(cgilogdir,
-  AC_HELP_STRING([--with-cgilogdir=PATH],
-                 [Specifies the directory where Kahua cgi script log should be
-output to.  If disabled (--with-cgilogdir=no or --without-cgilogdir), cgi script log directory is not specified automatically.  Default: $localstatedir/kahua/cgilog]),
-  [
-    case "$with_cgilogdir" in
-      yes|no) KAHUA_CGILOGDIR= ;;
-      *)      KAHUA_CGILOGDIR=$with_cgilogdir ;;
-    esac
-  ])
-AC_SUBST(KAHUA_CGILOGDIR)
-
-AC_ARG_WITH(fastcgi,
-  AC_HELP_STRING([--with-fastcgi=yes|no],
-                 [If yes, kahua.cgi will be generated as a fastcgi script. Default: no]),
-  [
-    case "$with_fastcgi" in
-      no) FASTCGI_SCRIPT=          ;;
-      *)  FASTCGI_SCRIPT=kahua.fcg ;;
-    esac
-  ])
-AC_SUBST(FASTCGI_SCRIPT)
 
 KAHUA_STATICDIR=$localstatedir/kahua/static
 AC_ARG_WITH(staticdir,
@@ -97,20 +57,6 @@ AC_ARG_WITH(kahua-group,
     esac
   ])
 AC_SUBST(KAHUA_GROUP_OPTION)
-
-CGI_USER_OPTION=
-AC_ARG_WITH(cgi-user,
-  AC_HELP_STRING([--with-cgi-user=USER],
-                 [User name execute kahua CGI. Default: none]),
-  [
-    case "$with_cgi_user" in
-      yes|no) CGI_USER_OPTION= ;;
-      *)      CGI_USER_OPTION="-o $with_cgi_user" ;;
-    esac
-  ])
-AC_SUBST(CGI_USER_OPTION)
-
-dnl Add more test
 
 dnl Set LDFLAGS to generate shared library.
 AC_GAUCHE_FIX_LIBS
