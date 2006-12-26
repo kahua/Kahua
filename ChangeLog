@@ -11,7 +11,8 @@
 
 	* Update: doc/Modules/*
 	  kahua.config.ja, kahua.server.ja, kahua.persistence.ja,
-	  kahua.ja, kahua.partcont.ja, kahua.elem.ja, kahua.user.ja
+	  kahua.ja, kahua.partcont.ja, kahua.elem.ja, kahua.user.ja,
+	  kahua.plugin.ja
 
 2006-12-25  Katsutoshi Itoh <cut-sea@kahua.org>
 

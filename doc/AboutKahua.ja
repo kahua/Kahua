@@ -3,7 +3,7 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: AboutKahua.ja,v 1.1 2006/12/25 07:25:32 bizenn Exp $
+;; $Id: AboutKahua.ja,v 1.2 2006/12/26 11:46:04 bizenn Exp $
 
 
 ##(toc)
@@ -92,7 +92,7 @@ KahuaプロジェクトはKahuaそのものやKahuaを用いたアプリケーションサービスを
 
 :Kahua(かふあ):ハワイ語で基盤、基礎、土台、広場(集会場)、何かを産み出す母体。
 
-:[http://practical-scheme.net/gauche/index-j.html Gauche(ごーしゅ)]:川合史朗氏によって開発されたオープンソースのScheme言語処理系。国際化(マルチバイト)対応、充実した同根ライブラリ、拡張バインディングの開発のしやすさ、バランスのとれた機能を特長とする。Perl、Ruby、Pythonなどの代わりに使える汎用スクリプト言語でもある。
+:[http://practical-scheme.net/gauche/index-j.html Gauche(ごーしゅ)]:川合史朗氏によって開発されたオープンソースのScheme言語処理系。国際化(マルチバイト)対応、充実した同梱ライブラリ、拡張バインディングの開発のしやすさ、バランスのとれた機能を特長とする。Perl、Ruby、Pythonなどの代わりに使える汎用スクリプト言語でもある。
 
 :[http://ja.wikipedia.org/wiki/Scheme Scheme(すきーむ)]:プログラミング言語。非常にシンプルな言語仕様を持つ。Lisp言語の一種。
 

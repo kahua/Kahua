@@ -1,22 +1,27 @@
-kahua.plugin
+;; Modules/kahua.plugin -*- mode: text; coding: euc-jp -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.plugin.ja,v 1.2 2006/12/26 11:46:05 bizenn Exp $
 
-[module] kahua.plugin
 
-このモジュールはサンドボックスモジュールに Kahua 開発者が許可した安
-全な手続きを提供するための機能を提供します。
+* [module] kahua.plugin
 
-プラグインの作成方法
+このモジュールはサンドボックスモジュールに Kahua 開発者が許可した安全な
+手続きを提供するための機能を提供します。
 
-Kahua のアプリケーションを記述する *.kahua と違い、プラグインは制限
-のない Gauche を使うことができます。アプリケーションに危険な手続き
-を使った機能(例えば、メール送信のために sendmail を run-process す
-る)が必要なときは、手続きをラッピングしてプラグインにするといいでし
-ょう。
+** プラグインの作成方法
 
-作成した手続きをプラグインに登録するために define-plugin を使いま
-す。 define-plugin はファイルの先頭で使い、select-module したあとに
-呼び出されることがないようにしてください。
+Kahua のアプリケーションを記述する *.kahua と違い、プラグインは制限のな
+い Gauche を使うことができます。アプリケーションに危険な手続きを使った
+機能(例えば、メール送信のために sendmail を run-process する)が必要なと
+きは、手続きをラッピングしてプラグインにするといいでしょう。
 
+作成した手続きをプラグインに登録するために define-plugin を使います。
+define-plugin はファイルの先頭で使い、select-module したあとに呼び出さ
+れることがないようにしてください。
+
+{{{
 ;; sendmail plugin.
 
 (use gauche.process)
@@ -39,25 +44,30 @@ Kahua のアプリケーションを記述する *.kahua と違い、プラグインは制限
      (display "\n\n" p)
      (display (ces-convert body "eucjp" "iso2022jp") p)
      )))
+}}}
 
-allow-module マクロを使って既存のモジュールをそのままプラグイン化す
-ることができます。
 
+allow-module マクロを使って既存のモジュールをそのままプラグイン化するこ
+とができます。
+
+{{{
 (allow-module srfi-1)
+}}}
 
-プラグインのインストール方法
+** プラグインのインストール方法
 
-kahua.conf で設定したワーキングディレクトリに define-plugin を書い
-た scm ファイルを置いてください。
+kahua.config のkahua-plugin-directoryで得られるディレクトリに、
+define-plugin を書いたscm ファイルを置いてください。
 
-そのあとで kahua-spvr を起動すれば、全てのアプリケーションでプラグ
-インを利用できます。
+その後で kahua-spvr を起動すれば、全てのアプリケーションでプラグインを
+利用することができます。
 
-起動中のアプリケーションにプラグインを追加したい場合は kahua-admin
-を起動して plugin reload コマンドをアプリケーションのワーカー番号付
-きで実行してください。kahua-admin で plugin コマンドを実行するとプ
-ラグインの一覧を表示できます。
+起動中のアプリケーションにプラグインを追加したい場合は kahua-admin を起
+動して plugin reload コマンドをアプリケーションのワーカー番号付きで実行
+してください。kahua-admin で plugin コマンドを実行するとプラグインの一
+覧を表示できます。
 
+{{{
 $ kahua-admin
 spvr> plugin
 name                 version
@@ -94,65 +104,69 @@ text.parse           1.0
 util.list            1.0
 wiliki.format        1.0
 wiliki.log           1.0
-spvr>
+spvr> 
+}}}
 
-*.scm にプラグイン化したい手続きを定義し、Kahua のワーキングディレ
-クトリ下にある pluginsディレクトリにコピーすればインストール完了で
-す。
 
-[macro] define-export def body
+
+*.scm にプラグイン化したい手続きを定義し、Kahua のワーキングディレクト
+リ下にある pluginsディレクトリにコピーすればインストール完了です。
+
+
+** [macro] define-export ''def'' ''body''
 
 明示的にプラグインとして提供することを宣言するためのマクロです。
 
-[procedure] lookup-exports name
+** [procedure] lookup-exports ''name''
 
-プラグインファイルはプラグイン読み込み用の無名モジュールでロードさ
-れますが、必ずそのモジュールで束縛されるとは限りません。
+プラグインファイルはプラグイン読み込み用の無名モジュールでロードされま
+すが、必ずそのモジュールで束縛されるとは限りません。
 
-name のプラグインで export リストにある名前を探し、シンポルとモジュ
-ールの alist を返します。
+''name'' のプラグインで export リストにある名前を探し、シンポルとモジュー
+ルの alist を返します。
 
-[macro] expand-define name module
+** [macro] expand-define ''name'' ''module''
 
-name の手続きを module に束縛します。
+''name'' の手続きを ''module'' に束縛します。
 
-[macro] load-plugin file
 
-file という名前のプラグインの提供する手続きをサンドボックスに束縛し
-ます。file は文字列でなければなりません。
+** [macro] %load-plugin ''file''
 
-[macro] use-plugin name
+''file'' という名前のプラグインの提供する手続きをサンドボックスに束縛
+します。''file'' は文字列でなければなりません。
 
-load-plugin の構文シュガーです。サンドボックスはこの手続きを use と
-いう名前で束縛し、Gauche の use と同じ構文でプラグインを使うことが
-できます。
+** [macro] use-plugin ''name''
 
-[macro] define-plugin name (version) (export ...) (depend ...)
+load-plugin のシンタックスシュガーです。サンドボックスはこの手続きを
+use という名前で束縛し、Gauche の use と同じ構文でプラグインを使うこと
+ができます。
 
-プラグインを登録するために使います。export にプラグインが提供する手
-続きの名前を書きます。
+** [macro] define-plugin ''name'' (''version'') (''export'' ...) (''depend'' ...)
 
-version と depend はプラグイン一覧表示用のメタ情報です。
+プラグインを登録するために使います。export にプラグインが提供する手続き
+の名前を書きます。
 
-[macro] allow-module module
+''version'' と ''depend'' はプラグイン一覧表示用のメタ情報です。
 
-module をそのままプラグイン化します。既存モジュールをプラグイン化す
+** [macro] allow-module ''module''
+
+''module'' をそのままプラグイン化します。既存モジュールをプラグイン化す
 る場合は define-plugin の代わりに使います。
 
-[procedure] register-plugin name version export depend
+** [procedure] register-plugin ''name'' ''version'' ''export'' ''depend''
 
-define-plugin と allow-module でラッピングされているプラグイン登録
-手続きです。
+define-plugin と allow-module でラッピングされているプラグイン登録手続
+きです。
 
-[procedure] initialize-plugins
+** [procedure] initialize-plugins
 
 プラグイン初期化手続きです。実行するとプラグインディレクトリにある
 *.scm ファイルをプラグイン環境にロードします。
 
-[procedure] refresh-plugin filename
+** [procedure] refresh-plugin ''filename''
 
 プラグインを読み込む手続きです。
 
-[procedure] all-plugins
+** [procedure] all-plugins
 
 登録されているプラグインの名前とバージョン番号の alist を返します。
