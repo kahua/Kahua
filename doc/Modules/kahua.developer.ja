@@ -1,38 +1,41 @@
-kahua.developer
+;; Modules/kahua.developer -*- mode: text; coding: euc-jp -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.developer.ja,v 1.2 2006/12/26 12:35:44 bizenn Exp $
 
-[module] kahua.developer
 
-このモジュールは、Kahua の開発者アカウント機能を提供します。
+* [module] kahua.developer
 
-開発者アカウントは名前、パスワード、複数のロールを持ちます。
+このモジュールは、Kahua の開発者アカウント機能を提供します。Kahuaアプリ
+ケーションのプログラマがこのモジュールのAPIを直接使用することは、めった
+にないでしょう。
 
-開発者アカウントは、kahua-shell と Emacsクライアントを使うと
-き、ユーザ専用モードにアクセスするときに利用されます。
+開発者アカウントは名前、パスワード、複数のロールを持ち、kahua-shellを使っ
+てワーカプロセスに接続する際に使用します。この情報は、kahua.configモ
+ジュールの kahua-userconf-file が返すファイルに保存されます。
 
-アカウント情報は kahua.conf の userconf-file に設定されたファ
-イルに保存されます。
+** [procedure] kahua-add-developer ''name'' ''password'' ''roles''
 
-[procedure] kahua-add-developer name password roles
+開発者アカウントを登録します。roles にはシンボルのリストを与えてくださ
+い。登録できれば #t を返します。name が既に登録されている場合やパスワー
+ドが短か過ぎる場合はエラーになります。
 
-開発者アカウントを登録します。roles にはリストを与えてくださ
-い。登録できれば #t を返します。name が既に登録されている場
-合、パスワードが短かい場合はエラーになります。
+** [procedure] kahua-delete-developer ''name''
 
-[procedure] kahua-delete-developer name
+開発者アカウントを削除します。削除できれば #t を返します。アカウントが
+存在しない場合はエラーになります。
 
-開発者アカウントを削除します。削除できれば #t を返します。ア
-カウントが存在しない場合はエラーになります。
+** [procedure] kahua-check-developer ''name'' ''password''
 
-[procedure] kahua-check-developer name password
+開発者アカウントの認証を行います。成功すれば #t、失敗すれば #f を返しま
+す。
 
-開発者アカウントの認証を行います。成功すれば #t、失敗すれば
-#f を返します。
+** [procedure] kahua-change-developer-password ''name'' ''new-password''
 
-[procedure] kahua-change-developer-password name new-password
+開発者アカウントのパスワードを変更します。パスワードが短かい場合はエラー
+になります。
 
-開発者アカウントのパスワードを変更します。パスワードが短かい
-場合はエラーになります。
-
-[procedure] kahua-list-developer
+** [procedure] kahua-list-developer
 
 登録されている開発者アカウントの名前のリストを返します。
