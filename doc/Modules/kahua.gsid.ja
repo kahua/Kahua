@@ -1,91 +1,109 @@
-kahua.gsid
+;; Modules/kahua.gsid -*- mode: text; coding: euc-jp -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.gsid.ja,v 1.2 2006/12/26 12:53:02 bizenn Exp $
 
-[module] kahua.gsid
 
-グローバルセッションID (gsid) を扱うための手続き群を提供しま
-す。
+* [module] kahua.gsid
 
-アプリケーションサーバーから使う場合、通常はkahua.sessionモジ
-ュールが自動的にセッションIDを作成するので、このモジュールを
-直接使う必要はあまり無いでしょう。
+グローバルセッションID (gsid) を扱うための手続き群を提供します。
 
-アプリケーションサーバー以外のKahuaユーティリティは、GSIDを解
-読するのにこのモジュールが必要です。
+アプリケーションコードにおいては、通常は[[kahua.session]]モジュールが自
+動的にセッションIDを作成するので、このモジュールのAPIを直接使う必要はあ
+まりないでしょう。
 
-Global session ID (GSID)
+アプリケーションサーバー以外のKahuaユーティリティは、GSIDを解読するのに
+このモジュールが必要です。
 
-Session ID consists of two strings. One is a continuation ID,
-which corresponds to a continuation of the session. It can be
-restartable, that is, the same continuation ID can be reused
-to backtrack the session as far as it hasn't explicitly
-invalidated. In other word, a continuation ID has an
-unlimited extent by default.
+** Global session ID (GSID)
 
-The other is a state ID, which stands for a monadic state of
-the session. It carries a stateful information---therefore
-can't be backtracked.
+;; Session ID consists of two strings.  One is a continuation ID, which
+;; corresponds to a continuation of the session.   It can be restartable,
+;; that is, the same continuation ID can be reused to backtrack the
+;; session as far as it hasn't explicitly invalidated.  In other word,
+;; a continuation ID has an unlimited extent by default.
 
-In a typical web session, the continuation ID is kept in
-parameters in POST request or in URL, whereas the state ID is
-kept in cookies.
+セッションIDは2つの文字列から構成されます。ひとつは継続IDで、そのセッショ
+ンの中の継続のひとつに対応します。この継続はリスタート可能であり、同じ
+継続IDを使うことで、明示的に無効化されるまでの間であればセッションをバッ
+クトラックするために再利用することができます。言葉を換えれば、継続IDは
+デフォルトで無限エクステントを持ちます。
 
-Both ID consists of the following format:
+;; The other is a state ID, which stands for a monadic state of
+;; the session.  It carries a stateful information---therefore can't 
+;; be backtracked.
 
+もう一方は状態IDで、セッションにおけるモナディックな状態を表現していま
+す。これは状態に関する情報を含みます--つまり、バックトラックできません。
+
+;; In a typical web session, the continuation ID is kept in parameters
+;; in POST request or in URL, whereas the state ID is kept in cookies.
+
+典型的なWebセッションにおいては、継続IDはPOSTリクエストのパラメータか
+URLに保持され、状態IDはCookieに保持されます。
+
+;; Both ID consists of the following format:
+
+この2つのIDは次のような書式で構成されます。
+{{{
    1-HHHHH-BBBBBBB
+}}}
+;; The first '1' desginates the GSID version.  Hs and Bs are for a header
+;; and a body.  The format after the version number can be changed
+;; in the later versions.  For version 1, the header just includes worker ID.
+;; The body is up to the worker.  Hs and Bs shouldn't include a minus sign.
 
-The first '1' desginates the GSID version. Hs and Bs are for
-a header and a body. The format after the version number can
-be changed in the later versions. For version 1, the header
-just includes worker ID. The body is up to the worker. Hs and
-Bs shouldn't include a minus sign.
+最初の'1'はGSIDのバージョンを表します。HとBはヘッダとボディを意味します。
+バージョン番号の後ろの書式は、今後のバージョンにおいては変更されるかも
+しれません。バージョン1においては、ヘッダはワーカIDのみを含みます。ボディ
+はそのワーカに依存します。HやBには'-'(ハイフン)を含んではいけません。
 
-[procedure] make-gsid worker-id body
+** [procedure] make-gsid ''worker-id'' ''body''
 
-GSID形式の文字列をworker-idとbodyから作成して返します。
+GSID形式の文字列を''worker-id''と''body''から作成して返します。
 
-この手続きは単に文字列を作成するだけで、それがユニークである
-ことは保証しません。kahua.sessionモジュールがユニークなIDの作
-成を保証します。
+この手続きは単に文字列を作成するだけで、それがユニークであることは
+保証しません。[[kahua.session]]モジュールがユニークなIDの作成を
+保証します。
 
-[procedure] decompose-gsid gsid
+** [procedure] decompose-gsid ''gsid''
 
-GSID文字列からヘッダ部分とボディ部分を取り出し、 2つの値とし
-て返します。
+GSID文字列からヘッダ部分とボディ部分を取り出し、
+2つの値として返します。
 
-[procedure] gsid->worker-id gsid
+** [procedure] gsid->worker-id ''gsid''
 
-GSID文字列からworker idを取り出して返します。gsidが#fの場合に
-は #fを返します。
+GSID文字列からworker idを取り出して返します。''gsid''が#fの場合には
+#fを返します。
 
-[procedure] get-gsid-from-header header
+** [procedure] get-gsid-from-header ''header''
 
-メッセージ(プロトコル?参照)のヘッダから、2つのgsid (state
-gsidとcontinuation gsid)を取り出し、2つの値として返します。該
-当するgsidがヘッダに与えられていない場合はその値として#fが返
-ります。
+メッセージ([[プロトコル]]参照)のヘッダから、2つのgsid
+(state gsidとcontinuation gsid)を取り出し、2つの値として返します。
+該当するgsidがヘッダに与えられていない場合はその値として#fが返ります。
 
-[procedure] add-gsid-to-header header state-gsid cont-gsid
+** [procedure] add-gsid-to-header ''header'' ''state-gsid'' ''cont-gsid''
 
-ヘッダheader (リストのリスト) に、state-gsidで指定される
-state gsidと、cont-gsidで指定されるcontinuation gsidを設定し
-たヘッダを返します。headerに既にこれらのgsidが含まれる場合は
+ヘッダ''header'' (リストのリスト) に、''state-gsid''で指定される
+state gsidと、''cont-gsid''で指定されるcontinuation gsidを設定した
+ヘッダを返します。''header''に既にこれらのgsidが含まれる場合は
 新しいものに置き換えられます。
 
-[procedure] worker-id->sockaddr worker-id [sockbase]
+** [procedure] worker-id->sockaddr ''worker-id'' [''sockbase'']
 
-worker-idから、そのworker (アプリケーションサーバー) に接続す
-るための <sockaddr>オブジェクトを作成して返します。worker-id
-に#fを与えると、スーパバイザサーバーに接続するための
-<sockaddr>を返します。
+worker-idから、そのworker (アプリケーションサーバー) に接続するための
+<sockaddr>オブジェクトを作成して返します。''worker-id''に#fを与えると、
+スーパバイザサーバーに接続するための<sockaddr>を返します。
 
-返った<sockaddr>をmake-client-socketに与えることで、クライア
-ントソケットを作成してサーバーに接続することができます。
+返った<sockaddr>をmake-client-socketに与えることで、クライアントソケットを
+作成してサーバーに接続することができます。
 
-[procedure] make-worker-id worker-type
+** [procedure] make-worker-id ''worker-type''
 
 workerタイプからworker idを作成します。
 
-[procedure] supervisor-sockaddr [sockbase]
+** [procedure] supervisor-sockaddr [''sockbase'']
 
-(worker-id->sockaddr #f) と同じで、スーパバイザサーバーに接続
-するための <sockaddr>を作成して返します。
+(worker-id->sockaddr #f) と同じで、スーパバイザサーバーに接続するための
+<sockaddr>を作成して返します。
