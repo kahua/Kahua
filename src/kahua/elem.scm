@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.29 2006/12/13 04:32:34 bizenn Exp $
+;; $Id: elem.scm,v 1.30 2006/12/26 07:51:01 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -64,6 +64,9 @@
 	  when: unless:
 
 	  applet: param: object: embed: noembed:
+
+	  define-basic-element
+	  define-elements
 
 	  make-no-escape-text-element
 	  no-escape?
