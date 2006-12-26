@@ -1,190 +1,323 @@
-kahua.config
+;; Modules/kahua.config -*- mode: text; coding: euc-jp -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.config.ja,v 1.2 2006/12/26 02:54:59 bizenn Exp $
 
-[module] kahua.config
 
-Kahuaサーバ、ツール群で共通して使われるコンフィグレーションパ
-ラメータを扱うモジュールです。
+* [module] kahua.config
 
-Kahuaサーバ、ツール群(Scripts参照)は、起動時にコンフィグレー
-ションファイルを読み込みます。デフォルトは/etc/kahua.confです
-が、多くのツールは-cオプションで替わりのファイルを指定するこ
-ともできます。
+Kahuaサーバ、ツール群で共通して使われる設定パラメータを
+統一的に扱うためのモジュールです。
 
-コンフィグレーションファイルはSchemeスクリプト片で、単にload
-されます。それは、<kahua-config>クラスのシングルトンインスタ
-ンスを生成する式を含んでいなければなりません。
+Kahuaサーバ、ツール群([[../Scripts]]参照)は、起動時にコンフィグレーショ
+ンファイルを読み込みます。デフォルトは${prefix}/etc/kahua.confですが、
+多くのツールは-cオプションで替わりのファイルを指定することもできます。
 
+また、[[../Concepts/Site Bundle//サイトバンドル]]を使用している場合は、
+${path_to_site}/etc/kahua.conf が使われ、システムの設定ファイルは無視さ
+れます。
+
+コンフィグレーションファイルはSchemeスクリプト片で、単にloadされるだけ
+です。それは、<kahua-config>クラスのシングルトンインスタンスを生成する
+式を含んでいなければなりません。
+
+{{{
 (make <kahua-config>
   :sockbase ....
   :working-directory ...)
+}}}
 
-src/kahua.conf.sample にサンプルのコンフィグレーションファイ
-ルがあります。
+ソースアーカイブ(tarball)の中のsrc/kahua.conf.sample にサンプルの設定ファ
+イルがあります。
 
-[class] <kahua-config>
+** [class] <kahua-config>
 
-gauche.mop.singletonの<singleton-mixin>を継承しており、ただ一
-つだけインスタンスが作成されます。以下のユーザアクセス可能な
-スロットがあります。コンフィグレーションファイル内で、
-<kahua-config>のインスタンス作成時にこれらのスロットに初期値
-を与えることで、 Kahuaの動作に影響を与えるパラメータを設定す
-ることができます。
+gauche.mop.singletonの<singleton-mixin>を継承しており、makeすると単一の
+インスタンスが作成されます。このクラスには、初期化可能な以下のスロット
+が定義されています。kahua.conf中でこれらのスロットに初期値を与えること
+で、Kahuaの設定を行うわけです。
 
-これらのスロットの値を実行中に変更した場合の動作は未定義で
-す。プログラム中では、下記にあるユーティリティ手続き等で参照
-するだけにとどめて下さい。
+これらのスロットは、プログラムの動作中に値を変更することを想定していま
+せん。プログラム中では、後述のアクセッサやユーティリティ手続き等で参照
+するだけにとどめておくべきです。
 
-[slot] sockbase
+*** [slot] site-root
 
-サーバソケットをオープンする際のベースとなる値を指定します。
-現在サポートされているのはunixドメインソケットのみです。次の
-ように指定します。
+サイトバンドルを使用する場合、そのサイトバンドルのrootにあたるディレク
+トリのフルパス名が設定されます。この値のみは、設定ファイル内で明示的に
+設定すべきではありません。サイトバンドル使用時に自動的に設定されます。
+サイトバンドルを使用しない場合(つまり、システムの設定ファイルを使用する
+場合)は、このスロットは #f で初期化されます。
 
-  unix:dir
+*** [slot] sockbase
 
-dirはディレクトリ名で、その下にソケットファイルが作成されま
-す。 dirは存在して、Kahuaサーバを起動するユーザが書き込み可能
-でなければなりません。
+初期化キーワードは :sockbase で、Kahuaサーバ群がサーバソケットを作成す
+るディレクトリのパスを以下の書式で設定します。
+{{{
+:sockbase unix:''dir''
+}}}
+dirが相対パスである場合、
+# サイトバンドル使用時は、スロットsite-rootの値からの相対パスとして扱われます。
+# サイトバンドルを使用していない場合は、カレントディレクトリからの相対パスとして扱われます。
+unix:というプレフィックスをつけるのは将来TCPソケットなどを使えるように
+するためですが、現在はUNIXドメインソケットのみがサポートされていま
+す。''dir''の直下にソケットファイルが作成されます。''dir''はKahuaコマン
+ド実行時にあらかじめ存在していなければならず、Kahuaサーバの実行権限で書
+き込み可能でなければなりません。
 
-デフォルトは unix:/tmp/kahua-elua です。
+サイトバンドル使用時のデフォルトは unix:socket、サイトバンドル不使用時
+のデフォルトは unix:${prefix}/tmp/kahua です。
 
-[slot] working-directory
+*** [slot] working-directory
 
-Kahuaサーバ群が使用するワーキングディレクトリを指定します。こ
-のディレクトリは存在して、Kahuaサーバを起動するユーザが書き込
-み可能でなければなりません。
+初期化キーワードは :working-directory で、Kahuaサーバ群が使用するワーキ
+ングディレクトリのパスを指定します。このディレクトリはKahuaサーバ群起動
+時にはあらかじめ存在して、Kahuaサーバの実行権限で書き込み可能でなければ
+なりません。
 
-Kahuaサーバ群は、この下にアプリケーションサーバスクリプトや、
-データベースを保持します。
+Kahuaサーバ群は、この下にアプリケーションコードや、ファイルシステムデー
+タベースを保存します。
 
-デフォルトは/var/lib/kahua-elua です。
+サイトバンドル使用時のデフォルト値は . で、これはサイトバンドルのトップ
+ディレクトリを意味します。サイトバンドル不使用時のデフォルト値は
+${localstatedir}/kahuaです。
 
-[slot] static-document-path
+*** [slot] app-servers
 
-スタティックなコンテンツを保持するディレクトリを指定します。
-このディレクトリ以下に書き込んだものが、次に述べる
-static-document-urlで外部からhttpd経由でアクセス可能でなけれ
-ばなりません。 Kahuaサーバ群は、スタティックなコンテンツへの
-リンクは毎回cgiを通して送るのではなく、直接そのファイルを指す
-urlを生成します。
+初期化キーワードは :app-servers で、kahua-spvrが使用するapp-serversファ
+イルのパスを指定します。
 
-このディレクトリは存在して、Kahuaサーバを起動するユーザが書き
-込み可能でなければなりません。
+サイトバンドル使用時のデフォルト値は app-servers で、サイトバンドル不使
+用時のデフォルト値は ${localstatedir}/kahua/app-servers です。
 
-デフォルトは/var/www/html/kahuaです。
+*** [slot] application-directory
 
-[slot] static-document-url
+初期化キーワードは :application-directory で、アプリケーションコードが
+置かれるベースディレクトリのパスを指定します。
 
-スタティックなコンテンツを外部からhttpd経由でアクセスするため
-の urlのパスを指定します。通常、サーバ名を除いた絶対パスが使
-われます。
+サイトバンドル使用時のデフォルト値は app で、サイトバンドル不使用時のデ
+フォルト値は ${localstatedir}/kahua/checkout です。
+
+*** [slot] plugin-directory
+
+初期化キーワードは :plugin-directory で、プラグインコードが置かれるディ
+レクトリのパスを指定します。
+
+サイトバンドル使用時のデフォルト値は plugins で、サイトバンドル不使用時
+のデフォルト値は ${localstatedir}/kahua/plugins です。
+
+*** [slot] template-directory
+
+初期化キーワードは :template-directory で、XMLテンプレートファイルを置
+くディレクトリのパスを指定します。
+
+サイトバンドル使用時のデフォルト値は templates で、サイトバンドル不使用
+時のデフォルト値は ${localstatedir}/kahua/templates です。
+
+*** [slot] static-document-path
+
+初期化キーワードは :static-document-path で、静的なコンテンツを保持する
+ディレクトリを指定します。このディレクトリの下に置かれたファイルは、次
+に述べる static-document-url を起点とするURLで、直接HTTPd経由で読み取ら
+れることを意図しています。
+
+このディレクトリはあらかじめ存在して、(Kahuaサーバ群ではなく)HTTPdが読
+み取り可能でなければなりません。また、Kahuaアプリケーションがこのディレ
+クトリに書き込みを行う場合(例えばKahua アプリケーションでこのディレクト
+リにファイルをアップロードするなど)、Kahuaサーバ群の実行権限で書き込み
+可能でなければなりません。
+
+サイトバンドル使用時のデフォルト値は static です。サイトバンドル不使用
+時のデフォルト値は ${localstatedir}/kahua/static です。
+
+*** [slot] static-document-url
+
+初期化キーワードは :static-document-url で、静的なコンテンツにアクセス
+するためのURLのベースパスを指定します。この値は、Kahuaアプリケーション
+内で静的コンテンツのURL(のパス部分)を生成する際に使用します。
 
 デフォルトは/kahuaです。
 
-[slot] ping-timeout-sec
+※kahua-httpdにおいてはこのURLから静的コンテンツファイルのパスへのマッ
+ピングは自動的に行われますが、ApacheなどのHTTPdでは、下記のような設定を
+HTTPdの設定に加える必要があります。
+{{{
+Alias /kahua/ "/usr/local/kahua/var/kahua/static/"
+}}}
 
-kahua-spvr は一定間隔で各 worker が動作しているかを確認し、一
-定時間 worker が無反応だった場合（タイムアウト）、worker を再
-起動します。
+*** [slot] database-directory
 
-このスロットは、そのタイムアウトの秒数を設定します。
+初期化キーワードは :database-directory で、ファイルシステムデータベース
+が置かれるディレクトリのパスが指定されます。
 
-[slot] ping-interval-sec
+サイトバンドル使用時のデフォルト値は database で、サイトバンドル不使用
+時のデフォルト値は ${localstatedir}/kahua 、つまりworking-directoryと同
+じ値です。
 
-このスロットは、ping を打つ間隔の秒数を設定します。
+*** [slot] default-database-name
 
-[slot] auto-restart
+初期化キーワードは :default-database-name で、デフォルトで使用するデー
+タベースの名前を指定します。デフォルト値は "db" で、database-directory
+からの相対パスとして扱われます。絶対パスを指定したり、RDBMSを使用するた
+めのDSNを指定することもできます。
 
-意図せずに終了した worker プロセスを自動的に再起動する場合に
-は #t を設定します。デフォルトでは #f になっています。
+*** [slot] temporary-directory
 
-[procedure] kahua-init [conf-file] [skip-check]
+初期化キーワードは :temporary-directory で、一時ファイルを書き込むディ
+レクトリのパスが指定されます。
 
-Kahuaアプリケーションサーバは最初にこの手続きを呼ぶ必要があり
-ます。
+サイトバンドル使用時のデフォルト値は "tmp" で、サイトバンドル不使用時の
+デフォルト値は ${localstatedir}/kahua/tmp です。
 
-コンフィグレーションクラス<kahua-config>のシングルトンインス
-タンスを初期化します。conf-fileが与えられていればそれをloadし
-ます。与えられていなければデフォルトのコンフグレーションファ
-イル (/etc/kahua.conf) のロードを試み、それが見つからなければ
-警告を出して適当な初期値を設定します。
+*** [slot] log-directory
 
-一度初期化されたら、<kahua-config>のシングルトンインスタンス
-は
+初期化キーワードは :log-directory で、Kahuaサーバ群がログを書き出すディ
+レクトリのパスを指定します。
 
-  (kahua-config)
+デフォルト値は logs で、サイトバンドル使用時は site-root の値からの相対
+パス、サイトバンドル不使用時は working-directory からの相対パスとして扱
+われます。絶対パスも指定できます。
 
-でアクセスすることができます。
+*** [slot] run-directory
 
-skip-check に #t だった場合、working-dir などのチェックを省略
-します。 kahua.conf の内容だけ知りたい場合はこれを #t にして
-利用してください。このオプションが与えられていない場合はチェ
-ックを行います。
+初期化キーワードは :run-directory で、Kahuaサーバ群がPIDファイルを書き
+出すディレクトリのパスを指定します。
 
-以下のアクセス手続きが提供されています。
+デフォルト値はサイトバンドル使用時は run で site-root の値からの相対パ
+スとして扱われ、サイトバンドル不使用時は . で working-directory の値か
+らの相対パスとして扱われます。絶対パスも指定できます。
 
-[procedure] kahua-config
+*** [slot] secure-sandbox
 
-<kahua-config>のシングルトンインスタンスを返します。
+モジュールの読み込みや使える手続きに制限のあるさんどボックス機構を有効
+にするかどうかを#tか#fで指定します。デフォルト値は#tです。
 
-[procedure] kahua-sockbase
+*** [slot] userconf-file
 
-ソケットを開く箇所の基準となるsockbaseの値を返します。
+開発ユーザのデータベースファイルのパスを指定します。
 
-今のところサポートされているのはunixドメインソケットのみで、
-sockbase は次の形式の文字列です。
+サイトバンドル使用時のデフォルト値は #`",(ref (kahua-config) 'etc-directory)/user.conf"、
+サイトバンドル不使用時のデフォルト値は ${localstatedir}/kahua/user.confです。
 
-  unix:dir
+*** [slot] spvr-concurrency
 
-ここで、dirは存在するディレクトリ名で、その下にunixドメインソ
-ケットが作成されます。
+kahua-spvrが使用するスレッドプールの大きさ(起動するスレッドの数)を指定
+します。デフォルト値は10です。
 
-[procedure] kahua-logpath filename
+*** [slot] timeout-mins
 
-ログファイルfilenameを作成するためのフルパス名を返します。
-<kahua-config>で指定されたワーキングディレクトリ名をwdirとす
-ると、ログファイルのフルパスは
+セッションの生存時間を分で指定します。デフォルトは60分です。
 
-  wdir/logs/filename
+*** [slot] ping-timeout-sec
 
-となります。
+廃止されました。後方互換性のためだけに残っています。
 
-[procedure] kahua-static-document-path path
+*** [slot] ping-interval-sec
 
-スタティックドキュメントを置くためのパスを返します。 pathには
-相対パスを指定します。例えばstatic-document-pathが
-"/var/www/html/kahua"の場合、
+廃止されました。後方互換性のためだけに残っています。
 
-  (kahua-static-document-path "myapp/home.html")
-    => "/var/www/html/kahua/myapp/home.html"
+*** [slot] auto-restart
 
-となります。
+意図せずに終了した worker プロセスを自動的に再起動する場合には #t を設
+定します。デフォルトでは #f になっています。
 
-[procedure] kahua-static-document-url path
+** アクセス手続き
 
-スタティックドキュメントを外部から参照するためのurlのパスを返
-します。
-
-[procedure] kahua-config-file
-
-kahua-initで指定されたコンフグレーションファイル名(無指定だっ
-た場合はデフォルトのパス) を返します。
-
-[procedure] kahua-ping-timeout-sec
-
-kahua-spvr は一定間隔で各 worker が動作しているかを確認し、一
-定時間 worker が無反応だった場合（タイムアウト）、worker を再
-起動します。
-
-この手続きは、そのタイムアウトとして何秒間設定するかを返しま
+各スロットを直接指定せずに済むように、以下のアクセス手続きが定義されて
+います。いずれも、引数なしで呼び出すと、対応するスロットの値が得られま
 す。
+{{{
+ kahua-site-root
+ kahua-sockbase
+ kahua-working-directory
+ kahua-app-servers
+ kahua-application-directory
+ kahua-plugin-directory
+ kahua-template-directory
+ kahua-database-directory
+ kahua-temporary-directory
+ kahua-log-directory
+ kahua-run-directory
+ kahua-etc-directory
+ kahua-default-database-name
+}}}
 
-[procedure] kahua-ping-interval-sec
+** ユーティリティ手続き
 
-ping を打つ間隔の秒数を返します。
+Kahuaアプリケーションを書く際、単にkahua-configのスロット値を得るのでは
+なく、その値を元にパスを組み立てることがよくあります。そういったパスの
+組み立てを行うためのユーティリティ手続きが提供されています。
 
-[procedure] kahua-auto-restart
+*** [procedure] kahua-sockbase-abs-path sockbase
 
-自動的に予期せず終了した worker プロセスを再起動させる設定の
-場合、#t を返します。
+プレフィックスのついた相対パス(ex. unix:socket)をプレフィックスつきのフ
+ルパスに展開します。現在の実装では、unix:以外のプレフィックスがついた文
+字列がsockbaseとして渡されたときは、sockbase自身を返します。また、プレ
+フィックスのないパスがsockbaseとして渡されると、unix:がプレフィックスと
+して付加されます。
 
+*** [procedure] kahua-tmpbase
+
+sys-mkstempに渡すためのテンプレートをフルパスで生成します。
+
+*** [procedure] kahua-dbpath dbpath
+
+プレフィックスのついた相対パスをdbpathとして渡すと、
+(kahua-database-directory) が返す値からの相対パスと見なして、プレフィッ
+クスつきの絶対パスに展開します。パス展開が行われるプレフィックスは、現
+状ではefs:とfs:のみです。
+
+プレフィックスがついていないパスが渡されると、同様に絶対パスに展開し、
+プレフィックスefs:を付加します。efs:やfs:ではないプレフィックスが
+dbpathに含まれている場合、dbpathの値をそのまま返します。
+
+*** [procedure] kahua-logpath filename
+
+filenameを(kahua-log-directory)の値が示すディレクトリからの相対パスと見
+なして絶対パスに展開します。
+
+*** [procedure] kahua-spvr-pidpath
+*** [procedure] kahua-keyserv-pidpath
+*** [procedure] kahua-httpd-pidpath
+
+それぞれ、kahua-spvr、kahua-keyserv、kahua-httpdのPIDを含むファイルの絶
+対パスを返します。
+
+*** [procedure] kahua-static-document-path . path-components
+
+引数は0個以上のパス要素。スロット static-document-path の後ろにパス要素
+を付加する形で絶対パスを構築します。以下と同じ意味です。正規化は行われません。
+{{{
+(apply build-path (ref (kahua-config) 'static-document-path) path-components)
+}}}
+
+*** [procedure] kahua-static-document-url . path-components
+
+引数は0個以上のパス要素で、URIエンコード済みでなければなりません。以下
+と同じ意味で、URLの絶対パス部分を構築します。正規化は行われません。
+{{{
+(apply build-path (ref (kahua-config) 'static-document-url) path-components)
+}}}
+
+
+** その他の手続き
+
+*** [procedure] kahua-common-init ''site-path'' ''conf-file''
+
+Kahuaの各プログラムはは最初にこの手続きを呼びだして初期化を行います。ア
+プリケーションコードの中でこの手続きを呼ぶ必要は通常ありません。
+
+コンフィグレーションクラス<kahua-config>のシングルトンインスタンスを初
+期化します。''site-path''が真値であればその値をサイトバンドルのパスとし
+て使用して初期化します。''site-path''が偽値の時は''conf-file''が真値で
+あればその値をKahua設定ファイルのパスと見なしてloadしま
+す。''conf-file''が偽値なら、デフォルトのKahua設定ファイル
+(/etc/kahua.conf) のloadを試み、それが見つからなければ警告を出して適当
+な初期値を設定します。
+
+*** [procedure] kahua-config
+
+<kahua-config>のシングルトンインスタンスを返します。通常、シングルトン
+インスタンスのスロットに直接slot-refでアクセスするより、上記のアクセス
+手続きやユーティリティ手続きを使うことが推奨されます。
