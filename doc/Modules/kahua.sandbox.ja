@@ -1,45 +1,53 @@
-kahua.sandbox
+;; Modules/kahua.sandbox -*- mode: text; coding: euc-jp -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.sandbox.ja,v 1.2 2006/12/26 12:58:17 bizenn Exp $
 
-[module] kahua.sandbox
 
-このモジュールは、ローカルファイルシステムやプロセスなどの外
-部環境へアクセスすること、load や use することを禁止するサン
-ドボックスモジュールを提供します。
+* [module] kahua.sandbox
+
+このモジュールは、ローカルファイルシステムやプロセスなどの外部環境へア
+クセスすること、load や use することを禁止するサンドボックスモジュール
+を提供します。
+
+※このモジュールの仕様は、今後大きく変更される可能性があります。
 
 このモジュールが Kahua アプリケーションの実行環境になります。
 
-[procedure] make-sandbox-module
+** [procedure] make-sandbox-module
 
 危険な手続きを禁止した無名モジュールを返します。
 
 以下の手続きが禁止されています。
 
+{{{
  open-input-file open-output-file
  call-with-input-file call-with-output-file
  with-input-from-file with-output-to-file
  load transcript-on transcript-off
- null-environment scheme-report-environment
+ null-environment scheme-report-environment 
  interaction-environment
  exit sys-exit sys-abort
  import require
  select-module
  with-module define-module
  define-in-module find-module
+}}}
 
 use は kahua.plugin の提供する use-plugin マクロで置換され、
-kahua.plugin で許可されたモジュールをサンドボックスモジュール
-に束縛することができます。
+[[/doc/Modules/kahua.plugin]] で許可されたモジュールをサンドボックスモ
+ジュールに束縛することができます。
 
-[macro] export-module module name ...
+** [macro] export-module ''module'' ''name'' ...
 
-module にある name を束縛して export します。
+''module'' にある ''name'' を束縛して export します。
 
-[macro] enable-module-except module names ...
+** [macro] enable-module-except ''module'' ''names'' ...
 
-names 以外の module の提供する手続きを束縛します。
+''names'' 以外の ''module'' の提供する手続きを束縛します。
 
-[macro] disable-bindings name ...
+** [macro] disable-bindings ''name'' ...
 
-name にある束縛をエラーを起こすマクロで上書きし、無効にしま
-す。
+''name'' にある束縛をエラーを起こすマクロで上書きし、無効にします。
 
