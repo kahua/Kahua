@@ -1,88 +1,93 @@
-kahua.user
+;; Modules/kahua.user -*- mode: text; coding: euc-jp -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.user.ja,v 1.3 2006/12/26 11:21:21 bizenn Exp $
 
-[module] kahua.user
 
-ユーザ情報の管理。
+* [module] kahua.user
 
-[class] <kahua-user>
+Kahuaアプリケーションのログインセッションにおいて、認証に使用するユーザ
+情報を扱うためのモジュールです。
 
-一人のユーザの情報を保持するクラスです。
-<kahua-persistent-base>を継承しています (kahua.persistence参
-照]])。
+** [class] <kahua-user>
 
-[slot] login-name
+一人のユーザの情報を保持するクラスです。<kahua-persistent-base>を継承し
+ています ([[kahua.persistence]]参照)。
 
-ユーザのログイン名。これが<kahua-user>永続クラスのキーになり
-ます。
+*** [slot] login-name
 
-[slot] password-hash
+ユーザのログイン名。これが<kahua-user>永続クラスのキーとして使用されます。
 
-パスワードのハッシュ値(salt含む)。ハッシュには今のところmd5を
-使っています。
+*** [slot] password-hash
 
-[slot] role-alist
+パスワードのハッシュ値(salt含む)。ハッシュには今のところmd5を使っています。
 
-このユーザのroleを表現するリスト。今のところ、role-alistは単
-なるシンボルのリストです。 roleの定義はアプリケーションサーバ
-によって行われます。
+*** [slot] role-alist
 
-[procedure] kahua-add-user login-name password
-[method] add-user <kahua-user> login-name password
+このユーザのroleを表現するリスト。今のところ、role-alistは単なる
+シンボルのリストです。
+roleの定義はアプリケーションサーバによって行われます。
 
-このメソッドはデータベースがアクティブな時に呼ばれなければな
-りません。
+** [procedure] kahua-add-user ''login-name'' ''password''
 
-新たなユーザを登録します。passwordには生のパスワードテキスト
-を渡します。それは内部でハッシュされ、実際にユーザオブジェク
-トに保存されるのはハッシュ値のみです。
+このメソッドはデータベースがアクティブな時に呼ばれなければなりません。
 
-既に同じlogin-nameを持つユーザがいない場合は、登録は成功し、
-新たに作られた<kahua-user>オブジェクトが返されます。同じ
-login-nameを持つユーザがいた場合は、新たなユーザは登録され
-ず、 #fが返ります。
+新たなユーザを登録します。passwordには生のパスワードテキストを渡します。
+それは内部でハッシュされ、実際にユーザオブジェクトに保存されるのは
+ハッシュ値のみです。
 
-add-userは<kahua-user>および<kahua-user>を継承したサブクラス
-に適用可能なメソッドです。
+既に同じ''login-name''を持つユーザがいない場合は、登録は成功し、
+新たに作られた<kahua-user>オブジェクトが返されます。
+同じ''login-name''を持つユーザがいた場合は、新たなユーザは登録されず、
+#fが返ります。
 
-[procedure] kahua-check-user login-name password
-[method] check-user <kahua-user> login-name password
+** [procedure] kahua-check-user ''login-name'' ''password''
 
-このメソッドはデータベースがアクティブな時に呼ばれなければな
-りません。
+このメソッドはデータベースがアクティブな時に呼ばれなければなりません。
 
-与えられたlogin-nameとpasswordを持つユーザが見つかればその
-<kahua-user>オブジェクトを、見つからなければ#fを返します。
-
-check-userは<kahua-user>および<kahua-user>を継承したサブクラス
-に適用可能なメソッドです。
-
-[procedure] kahua-find-user login-name
-[method] find-user <kahua-user> login-name
-
-このメソッドはデータベースがアクティブな時に呼ばれなければな
-りません。
-
-与えられたlogin-nameを持つユーザが見つかればその<kahua-user>
+与えられたlogin-nameとpasswordを持つユーザが見つかればその<kahua-user>
 オブジェクトを、見つからなければ#fを返します。
 
-find-userは<kahua-user>および<kahua-user>を継承したサブクラス
-に適用可能なメソッドです。
+** [procedure] kahua-find-user ''login-name''
 
-[procedure] kahua-user-has-role? user roles
-[method] user-has-role? user roles
+このメソッドはデータベースがアクティブな時に呼ばれなければなりません。
 
-このメソッドはデータベースがアクティブな時に呼ばれなければな
-りません。
+与えられたlogin-nameを持つユーザが見つかればその<kahua-user>オブジェク
+トを、見つからなければ#fを返します。
 
-ユーザuserが、rolesに挙げられているroleのいずれかを持っている
-時に#tを、そうでなければ#fを返します。
+** [procedure] kahua-user-password-change ''user'' ''old-password'' ''new-password''
 
-userには、<kahua-user>のインスタンスか、#fを渡します。 #fを渡
-した場合は常に#fが返ります。これは、kahua-current-user (
-kahua.session 参照) の戻り値をそのまま渡すのに便利です。
+ユーザ''user''のパスワードを''new-password''に変更します。ユーザの現在
+のパスワードが''old-password''にマッチしないときは変更されません。
 
-rolesはroleを表すシンボルのリストです。将来は、より複雑な条件
+変更が成功したときは#tが、失敗したときは#fが返されます。
+
+** [procedure] kahua-user-password-change-force ''user'' ''new-password''
+
+ユーザ''user''のパスワードを強制的に''new-password''に変更します。
+
+変更が成功したときは#tが、失敗したときは#fが返されます。
+
+** [procedure] kahua-user-has-role? ''user'' ''roles''
+
+このメソッドはデータベースがアクティブな時に呼ばれなければなりません。
+
+ユーザ''user''が、''roles''に挙げられているroleのいずれかを持っている時
+に#tを、そうでなければ#fを返します。
+
+''user''には、<kahua-user>のインスタンスか、#fを渡します。#fを渡した場
+合は常に#fが返ります。これは、kahua-current-user ([[kahua.server]] 参
+照) の戻り値をそのまま渡すのに便利です。
+
+''roles''はroleを表す'''シンボルのリスト'''です。将来は、より複雑な条件
 を指定できるように拡張されるかもしれません。
 
-user-has-role?は<kahua-user>および<kahua-user>を継承したサブ
-クラスに適用可能なメソッドです。
+** [procedure] kahua-user-add-role! ''user'' ''role''
+
+ユーザ''user''にシンボル''role''で表されるロールを追加します。
+
+** [procedure] kahua-user-drop-role! ''user'' ''role''
+
+ユーザ''user''からシンボル''role''で表されるロールを削除します。
+
