@@ -1,3 +1,20 @@
+2006-12-27  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Remove: skel/proj/auto-update-base.kahua,
+	          skel/proj/debug-support.kahua
+	          skel/proj/default.kahua
+	          skel/proj/page.kahua
+	          skel/proj/parts-collection.kahua
+	          skel/proj/pcont-page.kahua
+	          skel/proj/session.kahua
+	          skel/proj/slot-acl-base.kahua
+	          skel/proj/utility.kahua
+	          skel/proj/validator.kahua
+	* Change: skel/proj/proj.kahua
+	  rewrite hello level simple code.
+	* Change: src/kahua-package.scm
+	  catch up skel's change.
+	
 2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* New: doc/Scripts/*.txt

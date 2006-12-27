@@ -3,154 +3,29 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: proj.kahua,v 1.5 2006/08/14 05:46:52 cut-sea Exp $
+;; $Id: proj.kahua,v 1.6 2006/09/08 14:50:24 cut-sea Exp $
 ;;
 
-;; module (in plugins/%%_PROJECT_NAME_%%.scm)
-(use srfi-1)
-(use srfi-13)
-(use srfi-19)
-(use srfi-27)
-(use util.list)
-(use util.match)
-(use file.util)
-(use gauche.collection)
-(use gauche.mop.singleton)
-(use rfc.uri)
-
-;; plugins
-;(use calendar)
-;(use fileio)
-;(use sendmail/headers)
-
-;; etc
 (load "%%_PROJECT_NAME_%%/version.kahua")
-(load "%%_PROJECT_NAME_%%/default.kahua")
-(load "%%_PROJECT_NAME_%%/utility.kahua")
-(load "%%_PROJECT_NAME_%%/validator.kahua")
-(load "%%_PROJECT_NAME_%%/session.kahua")
-
-;; page template
-(load "%%_PROJECT_NAME_%%/page.kahua")
-
-;; partcont page
-(load "%%_PROJECT_NAME_%%/pcont-page.kahua")
-
-;; classes and methods
-(load "%%_PROJECT_NAME_%%/auto-update-base.kahua")
-(load "%%_PROJECT_NAME_%%/slot-acl-base.kahua")
-
-;; parts
-(load "%%_PROJECT_NAME_%%/parts-collection.kahua")
-
-;; You should add loading files below here.
-
-;; test for <slot-acl-base>
-;;
-(define (accessable?) #t)
-
-;
-; class
-;
-(define-class <item> (<auto-update-base> <slot-acl-base>)
-  (
-   (name     :allocation :persistent :init-keyword :name
-	     :init-value "" :accessor name-of
-	     :auto-update #t :acl? (lambda () (accessable?)) :invisible-value "***")
-   ))
-
-(define (all-active-items)
-  (all-active-objects <item>))
-
-(define-method name>=? ((x <item>) (y <item>))
-  (string>=? (name-of x) (name-of y)))
-(define-method name<=? ((x <item>) (y <item>))
-  (string<=? (name-of x) (name-of y)))
-(compare-set! name>=? name<=?)
 
 
-
-;
-; main-proc
-;
-(define (%edit-item . args)
-  (let-keywords* args ((return %item-list)
-		       (edit? :item #f)
-		       (item #f)
-		       (name (cond (item => name-of)
-				   (else ""))))
-    (kall/cc
-     (lambda (self)
-       (define %%posted
-	 (entry-lambda (:keyword name)
-	     (cond ((string-null? name) (redirect/cont (cont return)))
-		   (edit? (set! (name-of item) name)
-			  (redirect/cont (cont return)))
-		   (else (make <item> :name name)
-			 (redirect/cont (cont return))))))
-       (simple-page
-	(h3/ (if edit? #`",(name-of item) - Update" "New Item - Create"))
-	(form/cont/
-	 (@@/ (cont %%posted))
-	 (table/
-	  (tr/ (th/ "Name")
-	       (th/ (input/ (@/ (type "text") (name "name") (value name))))))
-	  (input/ (@/ (type "submit") (name "commit") (value "Commit")))
-	  (a/cont/ (@@/ (cont return)) "Back")))))))
-
-(define (%item-list . args)
-  (let-keywords* args ((return #f)
-		       (order? key>=?)
-		       (page 0))
-    (kall/cc
-     (lambda (self)
-       (define (%%sort cmp)
-	 (let1 cmp (if (eq? order? cmp) (compare-get cmp) cmp)
-	   (apply %item-list (keyrep args :order? cmp))))
-       (kahua-call-with-paging-context
-	(slices* (sort (all-active-items) order?) 50)
-	(lambda (n)
-	  (kall/cc
-	   (lambda (cont)
-	     (apply %item-list (keyrep args :page n)))))
-	(lambda (sliced-items paging-header/)
-	  (simple-page
-	   (h3/ "Item List")
-	   (a/cont/ (@@/ (cont (lambda ()
-				 (%edit-item :return self))))
-		    "[Create Item]")
-	   (paging-header/ page)
-	   (table/
-	    (tr/
-	     (map/ (lambda (cmp label)
-		     (th/
-		      (a/cont/
-		       (@@/ (cont (lambda () (%%sort cmp))))
-		       label)))
-		   (list key>=? name>=? ctime>=? mtime>=?)
-		   (list "No." "Name" "Created" "Modify")))
-	    (map/ (lambda (i)
-		    (tr/ (td/ (a/cont/ (@@/ (cont (lambda ()
-						    (%edit-item :item i :return self))))
-				       (key-of i)))
-			 (td/ (name-of i))
-			 (td/ (ymd-of (ctime-of i)))
-			 (td/ (ymd-of (mtime-of i)))))
-		  (list-ref* page sliced-items)))
-	    (cond (return (a/cont/ (@@/ (cont return)) "Back"))
-		  (else invisible))
-	    )))))))
+(define (page title . body)
+  (html/ (title/ title)
+	 (body/ (h1/ title) (node-set body))))
 
 
-(define-entry (%%_PROJECT_NAME_%%)
-  (kall/cc
-   (lambda (self)
-     (%item-list :return self))))
+(define-entry (version)
+  (page (format "Hello: version ~a" *%%_PROJECT_NAME_%%-version*)
+	(a/cont/ (@@/ (cont greeting))
+		 "greeting")))
 
-
+(define-entry (greeting)
+  (page "Hello, Kahua!"
+	(a/cont/ (@@/ (cont version))
+		 "version")))
 
 ;
 ; initialization
 ;
    
-(initialize-main-proc %%_PROJECT_NAME_%%)
+(initialize-main-proc greeting)

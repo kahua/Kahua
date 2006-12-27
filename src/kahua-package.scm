@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.7 2006/12/25 18:34:01 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.8 2006/12/27 12:06:52 cut-sea Exp $
 (use srfi-13)
 
 (use file.util)
@@ -33,16 +33,6 @@
   (define (gen-src&dst-files proj)
     (list (cons #`",|skel|/proj/proj.css" #`",|proj|/,|proj|.css")
 	  (cons #`",|skel|/proj/proj.kahua" #`",|proj|/,|proj|.kahua")
-	  (cons #`",|skel|/proj/auto-update-base.kahua" #`",|proj|/auto-update-base.kahua")
-	  (cons #`",|skel|/proj/default.kahua" #`",|proj|/default.kahua")
-	  (cons #`",|skel|/proj/debug-support.kahua" #`",|proj|/debug-support.kahua")
-	  (cons #`",|skel|/proj/page.kahua" #`",|proj|/page.kahua")
-	  (cons #`",|skel|/proj/parts-collection.kahua" #`",|proj|/parts-collection.kahua")
-	  (cons #`",|skel|/proj/pcont-page.kahua" #`",|proj|/pcont-page.kahua")
-	  (cons #`",|skel|/proj/session.kahua" #`",|proj|/session.kahua")
-	  (cons #`",|skel|/proj/slot-acl-base.kahua" #`",|proj|/slot-acl-base.kahua")
-	  (cons #`",|skel|/proj/utility.kahua" #`",|proj|/utility.kahua")
-	  (cons #`",|skel|/proj/validator.kahua" #`",|proj|/validator.kahua")
 	  (cons #`",|skel|/proj/version.kahua.in" #`",|proj|/version.kahua.in")
 	  (cons #`",|skel|/test/test.conf.in" "test/test.conf.in")
 	  (cons #`",|skel|/test/test.scm.in" "test/test.scm.in")

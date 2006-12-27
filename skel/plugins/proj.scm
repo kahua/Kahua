@@ -9,8 +9,3 @@
 (allow-module gauche.collection)
 (allow-module gauche.mop.singleton)
 (allow-module rfc.uri)
-
-;; for debug-support
-(allow-module sxml.ssax)
-(allow-module sxml.sxpath)
-(allow-module sxml.tools)
