@@ -1,4 +1,4 @@
-$Id: INSTALL,v 1.1.2.2 2006/07/17 00:29:51 cut-sea Exp $
+$Id: INSTALL,v 1.2 2006/07/28 13:09:38 bizenn Exp $
 
 %%_PROJECT_NAME_%% : A simple dummy application of Kahua
 
@@ -25,7 +25,7 @@ And then
   % make check
   % make install
 
-Then, edit app-servers in the Kahua working directory to add "%%_CREATOR_NAME_%%" entry.
+Then, edit app-servers in the Kahua working directory to add "%%_PROJECT_NAME_%%" entry.
 
   (%%_PROJECT_NAME_%% :argument () :run-by-default 0)
 

@@ -1,0 +1,13 @@
+================================================================================
+
+Please edit app-servers in the Kahua working directory to add
+ "%%_PROJECT_NAME_%%" entry.
+
+  (%%_PROJECT_NAME_%% :argument () :run-by-default 0)
+
+If you want to allow non registered user to edit page, 
+give 'non-member-edit as a argument.
+
+  (%%_PROJECT_NAME_%% :argument (non-member-edit) :run-by-default 0)
+
+================================================================================

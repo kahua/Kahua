@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.8 2006/12/27 12:06:52 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.9 2006/12/27 13:31:06 cut-sea Exp $
 (use srfi-13)
 
 (use file.util)
@@ -45,6 +45,7 @@
 	  (cons #`",|skel|/INSTALL" "INSTALL")
 	  (cons #`",|skel|/Makefile.in" "Makefile.in")
 	  (cons #`",|skel|/README" "README")
+	  (cons #`",|skel|/MESSAGES" "MESSAGES")
 	  (cons #`",|skel|/app-servers" "app-servers")
 	  (cons #`",|skel|/configure.ac" "configure.ac")
 	  (cons #`",|skel|/install-sh" "install-sh")

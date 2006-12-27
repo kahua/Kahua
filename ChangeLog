@@ -17,6 +17,8 @@
 	* Change: skel/test/test.scm.in
 	          skel/templates/page.xml
 	  modify sample code using page template file.
+	* New: skel/MESSAGES
+	  English Messages after install skelton project.
 	
 2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
