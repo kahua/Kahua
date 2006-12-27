@@ -3,7 +3,7 @@ dnl Configuring Kahua Examples
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-dnl $Id: configure.ac,v 1.3 2006/12/26 23:05:16 bizenn Exp $
+dnl $Id: configure.ac,v 1.4 2006/12/27 00:24:40 bizenn Exp $
 dnl
 AC_PREREQ(2.54)
 AC_INIT(examples, 1.0, info@kahua.org)
@@ -57,6 +57,18 @@ AC_ARG_WITH(kahua-group,
     esac
   ])
 AC_SUBST(KAHUA_GROUP_OPTION)
+
+KAHUACONFIG_OPTION=' -c $(sysconfdir)/kahua.conf'
+AC_ARG_WITH(site-bundle,
+  AC_HELP_STRING([--with-site-bundle=/path/to/bundle],
+                 [Target site bundle path. Default: none]),
+  [
+    case "$with_site_bundle" in
+      no) KAHUACONFIG_OPTION=' -c $(sysconfdir)/kahua.conf' ;;
+      *)  KAHUACONFIG_OPTION=" -S $with_site_bundle" ;;
+    esac
+  ])
+AC_SUBST(KAHUACONFIG_OPTION)
 
 dnl Set LDFLAGS to generate shared library.
 AC_GAUCHE_FIX_LIBS

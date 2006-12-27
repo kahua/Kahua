@@ -32,7 +32,7 @@ GAUCHE_CONFIG = @GAUCHE_CONFIG@
 INSTALL = $(bindir)/kahua-install
 
 # specify -c ../kahua.conf etc. to give an alternative conf file
-KAHUACONFIG = -c $(sysconfdir)/kahua.conf
+KAHUACONFIG = @KAHUACONFIG_OPTION@
 
 SCRIPTFILES = foldlist/foldlist.kahua           \
 	      lambdabooks/lambdabooks.kahua     \
@@ -71,6 +71,7 @@ install-examples: all
 	$(INSTALL) $(KAHUACONFIG) -t script $(SCRIPTFILES)
 	$(INSTALL) $(KAHUACONFIG) -t static $(STATICFILES)
 	$(INSTALL) $(KAHUACONFIG) -t base -r app-servers --no-overwrite app-servers.sample
+	$(INSTALL) $(KAHUACONFIG) -t plugin -r allow-module.scm --no-overwrite ../plugins/allow-module.scm
 	$(GOSH) -I. -I$(libdir) ./lambdabooks.init $(KAHUACONFIG) 
 
 uninstall :
