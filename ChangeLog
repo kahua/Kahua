@@ -1,5 +1,9 @@
 2006-12-28  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Fix: src/kahua/config.scm.in
+	  If -c conf-file or -S /path/to/site is specified, it's prior
+	  to KAHUA_DEFAULT_SITE environment variable.
+
 	* Fix: src/kahua-package
 	  "generate" sub command now handle --creator=... and --mail=...
 	  option properly.

@@ -3,7 +3,7 @@ dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-dnl $Id: configure.ac,v 1.46 2006/12/27 14:42:12 bizenn Exp $
+dnl $Id: configure.ac,v 1.46.2.1 2006/12/27 17:19:14 bizenn Exp $
 dnl
 AC_PREREQ(2.54)
 AC_INIT(kahua, 1.0, info@kahua.org)
@@ -109,6 +109,10 @@ AC_ARG_WITH(cgi-user,
     esac
   ])
 AC_SUBST(CGI_USER_OPTION)
+
+AC_ARG_WITH(site-bundle,
+  AC_HELP_STRING([--with-site-bundle=/path/to/site],
+                 [Examples installed into /path/to/bundle. Default: none]),[])
 
 dnl Add more test
 
