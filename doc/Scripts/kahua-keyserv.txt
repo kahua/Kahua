@@ -1,0 +1,6 @@
+kahua-keyserv
+kahua-keyserv [-c conf-file]
+
+This is the server to store and manage session information hooking up to the state session ID. Generally, it is activated by "kahua-spvr".
+
+The session information, login status for example, of "kahua-server" which is activated from the same "kahua-spvr" will be store in this server.

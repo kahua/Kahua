@@ -1,0 +1,16 @@
+kahua-dbutil
+kahua-dbutil {check|fix} database-path
+
+
+This utility is for checking consistency of internal counter and repairing it. Sometime in the future, this will become integrated utility to check consistency, repair and operates the Kahua object database.
+
+
+The way to store Kahua object database into RDBMS has changed between version 0.5 and 0.7. So if you use the kahua before that and want to use newer version, you need to change database by this utility script.
+
+check
+
+Check consistency of the internal counter, "kahua_db_idcount" and "kahua_db_classcount". Also ascertain presence of the delete flag column and report to the standard output. This does not repair.
+
+fix
+
+Check the internal counter, "kahua_db_idcount" and "kahua_db_classcount". If consistency does not work, this repairs data or instance. Also if there is no delete flag column, this adds column and creates index.

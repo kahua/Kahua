@@ -1,0 +1,37 @@
+kahua-install
+kahua-install [-c conf-file] [-U] [-t material-type] [-r rename] [--no-overwrite] file [...]
+
+This script is to install file as material of Kahua application, to the place pointed by configuration files.
+
+-c conf-file
+
+Set path to the common configuration file like kahua-spvr. 
+(See details in kahua.config.)
+
+-t material-type
+
+Set any of "static", "script", "base", and Ågplugin" into the material-type.
+
+ static
+ Install file under the "static-document-path" pointed by configuration file.
+
+ script
+ Install file under the "$(working-directory)/checkout" pointed by configuration file.
+
+ base
+ Install file under the "$(working-directory)".
+
+ plugin
+ Install file under the "$(working-directory)/plugins"
+
+-r rename
+
+Change the file name to "'rename'" by this option.
+
+--no-overwrite
+
+Disallow to overwrite in installation by this option.
+
+-U
+
+Remove file installed by this option.

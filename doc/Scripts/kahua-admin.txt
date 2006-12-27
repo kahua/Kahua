@@ -1,0 +1,157 @@
+kahua-admin
+
+kahua-admin [-c conf-file]
+
+This is the front-end script to control the active kahua-spvr or worker process interactively.
+
+As kahua-admin starts, it connects to kahua-spvr.
+
+To express connecting kahua-spvr,
+
+spvr>
+
+is shown on the command prompt.
+
+To stop kahua-admin, type EOF(Ctrl-D).
+This prompt differs according to present connection.
+
+
+Activation options
+
+  -c conf-file
+Set the configuration file name to refer.
+"$(sysconfdir)/kahua/kahua.conf" is set by default.
+
+When you've not set configure script in setup, "/usr/local/etc/kahua/kahua.conf" is set.
+
+"$(working-directory)" refers to the value set as ":working-directory" on this file.
+
+Commands of kahua-spvr
+You can use following commands to "spvr>" prompt.
+
+help
+Show the lists of commands.
+
+ls
+Show the lists of worker process under the kahua-spvr.
+
+          spvr> ls
+          wno   pid type         since        wid
+            0 21434 lambdabooks  Sep 27 16:19 gje:2ft3z
+            1 17371 wiki-iki     Sep 27 16:19 dej:inai
+            2 11683 login        Sep 27 16:19 90j:5hwlk
+
+run <type>
+
+Activate new worker server process specified by <type>.
+
+kill <wno>
+kill <type>
+kill *
+
+Stop the worker process. Followings are "kill" command's arguments to specify which process to stop.
+
+ <wno>
+ Specify by the number of wno column shown by ls command.
+
+<type>
+ Specify by the worker type. You can stop any relevant worker processes.
+
+*
+ Stop all worker processes.
+ 
+restart <wno>
+restart <type>
+restart *
+
+Restart the worker process. The arguments to specify which process to restart are same as which of kill command.
+
+
+connect <wno>
+
+Connect to the worker process specified by <wno>.
+
+If you succeed in the connection to worker process, the prompt will change to worker ID.
+
+          spvr> connect 3
+          lambdabooks(3v:5u3ni)> 
+
+types
+
+Output the list of worker types which is on the "$(working-directory)/app-servers" file,
+
+
+spvr> types
+          (lambdabooks wiki-iki login foldlist lambdacalcul nqueen lazy-nqueen)
+
+
+Not only active worker types but also inactive worker types are included on this list.
+
+reload
+
+Reload the "$(working-directory)/app-servers" file.
+On this occasion, check the number of the active worker process which worker types' ":run-by-default" are set more than 1 in the app-servers file. The number of active worker processes are less, make up by activating processes. If you want to know about app-servers file, see kahua-spvr.
+
+lsuser
+
+Show the account list of registered developers.
+
+spvr> lsuser
+("steel" "sussman" "pochi" "tama")
+
+adduser <name> <password> [<role> ...]
+
+Create new account for developer.
+
+<name> should be more than 3 letters and <password> should be more than 4 letters. If you set the <role>, account will be created as it is belonging to the <role>.
+
+deluser <name>
+
+Delete account for developer.
+
+moduser password <name> <new-password>
+
+Change account's password to <new-password>.
+
+plugin [<wno>]
+
+Show the list of plug-in which initialized by worker process specified by <wno>. If you short <wno>, the weeest worker number is chosen.
+Basically, every worker process initializes same plug-in. 
+Rarely, this could be changed by reload plug-in command.
+
+
+plugin reload <wno>
+
+Reload plug-in and initialize active application's plug-in module.
+You can load plug-in which is installed after activation by this command.
+shutdown
+
+Stop the kahua-spvr.
+Also stop all worker processes and key servers.
+
+update <wno> [<file> ...]
+update <type> [<file> ...]
+
+Reload the script of entry point of worker specified by <wno> or <type>.
+
+For example, if specified worker's worker type is "lambdabooks",
+"$(working-directory)/checkout/lambdabooks/lambdabooks.kahua" is to be reloaded.
+
+In the case that you specify <file>, worker is to load "$(working-directory)/checkout/<file>". You can set <fike>, plurally.
+
+Command to worker process
+
+As mentioned above, you can connect to worker process by connect command. After connection, you can make the worker process evaluate Scheme expressions.
+
+In fact, if you entry Scheme expression to prompt, the expression will be sent to worker process and the result will be sent back from worker process as well as normal "repl (real-eval-print-loop)".
+
+The module which evaluates expressions varies depending on their structures.
+"user" module is used by default.
+
+"disconnect" is the only special command.
+If you type this command, the connection to worker process will break and you will back to kahua-spvr prompt.
+
+     lambdabooks(mi0:5xd09)> disconnect
+     spvr> spvr> 
+
+The reason why spvr prompt appears twice is that the newline will be read from spvr prompt after disconnection.

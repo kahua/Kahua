@@ -1,0 +1,59 @@
+kahua-shell
+kahua-shell [-c conffile]
+
+The kahua-shell is a front end script that is for connecting to active worker process and for publishing scheme expressions to application sand-box environment, interactively.
+
+Activate from command line or emacs by application developer.
+
+First you activate kahua-shell, certified prompt appears.
+So you must enter your account and password created in kahua-admin.
+Then you chose worker process to connect from the list of worker number (wno).
+
+Once you chose, prompt appears.
+
+     % /usr/local/kahua/bin/kahua-shell
+     Welcome to Kahua.
+     username: taro
+     password: 
+     wno type         since        wid
+       0 kahua-web    Sep 28 16:20 h52:5jxo6
+       1 kahua-web    Sep 28 16:20 h53:5mphi
+       2 kagoiri-musume Sep 28 16:20 h54:eta8
+       3 kagoiri-musume Sep 28 16:20 h55:gpxc
+     select wno> 0
+
+     kahua-web(h52:5jxo6)> 
+
+The scheme expressions are evaluated in the sandbox environment (the environment where *.kahua runs.) of worker process connecting, by inputting expressions to the prompt.
+
+     kahua-web(h52:5jxo6)> (map (cut ref <> 'login-name) (make-kahua-collection <kahua-user>))
+     ("admin" "taro")
+     kahua-web(h52:5jxo6)> 
+
+Stop by typing EOF (Ctrl-D).
+
+Activate options.
+
+-c conf-file
+
+Set the path of configuration file.
+
+
+How to use kahua-shell from Emacs.
+
+1. Relocate kahua.el and kahua-shell.el from the Emacs directory of Kahua source tree to the directory where you set the Emacs's load-path.
+
+2. Give the description of (require 'kahua) to ".emacs " to load in the start-up of Emacs. Or perform (require 'kahua) on the *scratch* buffer to load after the start-up of Emacs.
+
+3. Previously, set path or add exec-path to the directory where kahua-admin and kahua-shell are stored.
+
+4. You can use following two command by loading kahua.el.
+
+* M-x run-kahua :
+Activate kahua-admin.
+
+* M-x run-kahua-shell :
+Connect to remote host through ssh and activate kahua-shell. Use kahua-shell of your role by pressing enter key when it asks hostname.
+
+Additionally, there are some variables to change run-kahua-shell behavior. You can set hostname, username and so on by M-x customize-group kahua.
+
