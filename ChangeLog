@@ -1,5 +1,9 @@
 2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: skel/configure.ac, skel/Makefile.in
+	  Now skelton have --with-site-bundle configure option.
+	  Fix some old style installation target.
+
 	* New: examples/configure.ac
 	  Separate configure script of examples. It's to support
 	  installation into a site bundle.
