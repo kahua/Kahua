@@ -19,6 +19,7 @@
 	  modify sample code using page template file.
 	* New: skel/MESSAGES
 	  English Messages after install skelton project.
+	* Change: at install Kahua mv old skel directory to skel.bak.
 	
 2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
