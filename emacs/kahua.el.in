@@ -4,11 +4,11 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua.el.in,v 1.5 2006/05/13 01:55:35 bizenn Exp $
+;; $Id: kahua.el.in,v 1.6 2006/12/27 14:40:26 bizenn Exp $
 ;;
 
+(require 'comint)
 (require 'cmuscheme)
-(require 'kahua-shell)
 
 ;; Custom Variables:
 (defgroup kahua nil
@@ -49,8 +49,8 @@
   :type 'string
   :group 'kahua)
 
-(defcustom kahua-user-mode ""
-  "*User name for kahua-shell. If empty, run kahua-shell without -user option."
+(defcustom kahua-site-bundle ""
+  "Site Bundle for kahua-shell and kahua-admin."
   :type 'string
   :group 'kahua)
 
@@ -71,10 +71,74 @@
 		("kahua-shell" . get-kahua-shell-coding-system))
 	      process-coding-system-alist))
 
+(defvar kahua-worker-prompt-regex "^select wno> "
+  "Regexp to recognise select woker prompt")
+
+(define-derived-mode kahua-mode scheme-mode "Kahua mode"
+  "Major mode for editing kahua code.
+Editing commands are similar to those of 'scheme-mode'."
+  (make-local-variable 'scheme-buffer)
+  (setq scheme-buffer "*kahua-shell*"))
+
+(defun kahua-select-worker-prompt (string)
+  "Prompt in the minibuffer for selecting worker"
+  (if (string-match kahua-worker-prompt-regex string)
+      (comint-simple-send "*kahua-shell*" (read-string "select worker: " nil))))
+
+(defun run-kahua-shell (host user)
+  (interactive
+   (let* ((host (if kahua-ssh-mode
+                    (read-string "hostname: " kahua-default-server) ""))
+          (user (if (and kahua-ssh-mode (not (string= host "")))
+                    (read-string "username: " kahua-default-user) "")))
+     (list host user)))
+
+  (unless (get-buffer "*kahua-shell*")
+    (let ((add-password-hook?
+           (not (memq 'comint-watch-for-password-prompt
+                      comint-output-filter-functions))))
+      (set-buffer (get-buffer-create "*kahua-shell*"))
+      (make-local-hook 'comint-output-filter-functions)
+      (add-hook 'comint-output-filter-functions
+                'kahua-select-worker-prompt nil t)
+      (when add-password-hook?
+        (add-hook 'comint-output-filter-functions
+                  'comint-watch-for-password-prompt nil t)))
+    )
+  (if (not (comint-check-proc "*kahua-shell*"))
+      (let* ((use-ssh          (and kahua-ssh-mode (not (string= host ""))))
+             (program          (if use-ssh "ssh" kahua-shell-command))
+             (kahua-shell-args (if (string= kahua-site-bundle "")
+                                   '() (list "-S" (expand-file-name kahua-site-bundle))))
+             (args             (if use-ssh
+                                   `(,@kahua-ssh-opts
+                                     ,(if (string= user "")
+                                          host (concat user "@" host))
+                                     ,kahua-shell-command
+                                     ,@kahua-shell-args)
+                                 kahua-shell-args)))
+        (set-buffer (apply 'make-comint "kahua-shell" program nil args))
+        (inferior-scheme-mode)))
+  (pop-to-buffer "*kahua-shell*")
+  (make-local-variable 'scheme-program-name)
+  (setq scheme-program-name "kahua-shell")
+  (make-local-variable 'scheme-buffer)
+  (setq scheme-buffer "*kahua-shell*"))
+
 (defun run-kahua ()
-  "Run kahua Emacs interface in *scheme* buffer.  Make sure you're not running other inferior scheme."
   (interactive)
-  (run-scheme kahua-admin-command))
+  (unless (get-buffer "*kahua-admin*")
+    (set-buffer (get-buffer-create "*kahua-admin*")))
+  (if (not (comint-check-proc "*kahua-admin*"))
+      (let ((kahua-admin-args (if (string= kahua-site-bundle "")
+				  '() (list "-S" (expand-file-name kahua-site-bundle)))))
+	(set-buffer (apply 'make-comint "kahua-admin" kahua-admin-command nil kahua-admin-args))
+	(inferior-scheme-mode)))
+  (pop-to-buffer "*kahua-admin*")
+  (make-local-variable 'scheme-program-name)
+  (setq scheme-program-name "kahua-admin")
+  (make-local-variable 'scheme-buffer)
+  (setq scheme-buffer "*kahua-admin*"))
 
 (provide 'kahua)
 

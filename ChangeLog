@@ -1,3 +1,12 @@
+2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: kahua.el.in
+	  Add "kahua-site-bundle" custom variable for kahua-shell mode
+	  and kahua-admin mode.
+
+	* Remove: kahua-shell.el.in
+	  Integrated to kahua.el.in.
+
 2006-12-27  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Remove: skel/proj/auto-update-base.kahua,
