@@ -20,6 +20,8 @@
 	* New: skel/MESSAGES
 	  English Messages after install skelton project.
 	* Change: at install Kahua mv old skel directory to skel.bak.
+	* Fix: skel/INSTALL, skel/MESSAGES
+	  modify typo :argument => :arguments.
 	
 2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
