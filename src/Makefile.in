@@ -166,6 +166,7 @@ install: all
 	  $(INSTALL) $(KAHUA_GROUP_OPTION) -m 0660 user.conf.sample $(localstatedir)/user.conf; \
 	fi
 	@if test -d $(sysconfdir)/skel; then \
+	  rm -rf $(sysconfdir)/skel.bak; \
 	  mv $(sysconfdir)/skel $(sysconfdir)/skel.bak; \
 	fi
 	@if test ! -d $(sysconfdir)/skel; then \
