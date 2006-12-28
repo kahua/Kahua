@@ -1,0 +1,79 @@
+kahua-spvr
+kahua-spvr [-c conf-file] [-i] [-l logfile] [-H [host:]port] 
+
+Starts the supervisor process. As the need arises, the Kahua supervisor process runs the worker process along the lines of the key server process (kahua-keyserv), HTTPd process (kahua-httpd) as well as app-servers file. Additionaly, it dispatches request from client to the worker and monitors its process's alive.
+
+Activation options
+
+ -c conf-file
+Set the configuration file name to refer. $(sysconfdir)/kahua/kahua.conf is default configuration file. If you didn't set configure script, /usr/local/etc/kahua/kahua.conf is default configuration file.
+
+The configuration file name given here carries on into kahua-keyserv and kahua-server. See the kahua.config to know the document format and configuration format.
+
+ -i 
+Start repl(read-eval-print-loop) to normal input and output by this interactive option. This is for debug use.
+
+ -l log-file
+
+Set the log file. Output logs to the stdout as "-l -".
+ $(working-directory)/logs/kahua-spvr.log is selected by default.
+
+ -H, --httpd [host:]port
+
+Start the kahua-httpd with setting the option value as argument
+Set like following examples.
+  -H 8080
+  -H localhost:8080
+See the kahua-httpd in detail.
+
+The active kahua-spvr is able to be controlled interactively by kahua-admin command. In the present status, kahua-spvr can not be activated by daemonizing itself or by changing to certain authority.
+
+Try bellowing command to activate kahua-spvr at the background.
+
+ % (kahua-spvr >> /logpath 2>&1 &)
+
+Also, try following command to active kahua-spvr with downgrading authority from root to certain user.
+
+ # su kahua -c "(kahua-spvr >> /logpath 2>&1 &)"
+
+The normal output and normal error output of kahua-spvr should not redirect to /dev/null because the error message of abnormal exit appears in normal error output.
+
+app-servers file
+
+kahua-spvr load the file,$(working-directory)/app-servers file, to get information of which worker should be managed.
+
+This file is usually loaded on start-up. Also, you can reload with reload command from kahua-admin.
+
+
+Followings are forms of app-servers.
+
+ ((<server-type> :arguments <args> :run-by-default <count>
+   [:profiler <base-path>] [:default-database-name <dbname>])
+  ...)
+
+ <server-type>
+
+<server-type> is symbol. You can write type of worker, application name with this.
+
+ <args>
+
+.<args> is the list of arguments. Write only () to set nothing.
+
+ :run-by-default <count>
+
+Set the number of process on kahua-spvr start-up.
+kahua-spvr dispatches the requests from clients to these processes by rotation.
+
+ :profiler <base-path>
+
+Set the base name of output file, in case of using gauche profiler.
+For example, in case of setting as '/usr/local/kahua/logs/profile', the file name will be '/usr/local/kahua/logs/profile.<worker-id>' and result of profile will be output every time certain worker processes 100 requests.
+
+ :default-database-name <dbname>
+
+Set the database name which is used by application by default.
+In case of skip, the file system database will be created at ${working-directory}/db.
+
+
+These setting are ignored, if there are any errors in app-servers file.
+If you see kahua-spvr logs and find error, try to reload with reload command from kahua-admin after modifying app-servers file.
