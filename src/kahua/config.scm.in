@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm.in,v 1.16.2.1 2006/12/27 17:19:14 bizenn Exp $
+;; $Id: config.scm.in,v 1.16.2.2 2006/12/29 11:19:52 bizenn Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -335,7 +335,7 @@
  ;;(<type> :arguments (<arg> ...) :run-by-default <num>
  ;;        :profile <path-to-profile-base>
  ;;        :default-database-name <path-to-database>)
- ) 
+ )
 ")) :mode mode))
 
 (define (create-site-userconf file site mode)
