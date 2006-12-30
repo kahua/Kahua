@@ -1,7 +1,8 @@
 ;; -*- coding: euc-jp; mode: scheme -*-
 ;; test %%_PROJECT_NAME_%% script.
-;; $Id: test.scm.in,v 1.4 2006/12/25 18:34:01 cut-sea Exp $
+;; $Id: test.scm.in,v 1.5 2006/12/27 13:09:21 cut-sea Exp $
 
+(use srfi-1)
 (use gauche.test)
 (use file.util)
 (use text.tree)
@@ -25,8 +26,12 @@
 (sys-mkdir "_work/templates" #o755)
 (sys-mkdir "_work/templates/%%_PROJECT_NAME_%%" #o755)
 
-(copy-file "../plugins/%%_PROJECT_NAME_%%.scm"  "_work/plugins/%%_PROJECT_NAME_%%.scm")
-(copy-file "../templates/page.xml"  "_work/templates/%%_PROJECT_NAME_%%/page.xml")
+(for-each (lambda (f)
+	    (copy-file #`"../plugins/,f"  #`"_work/plugins/,f"))
+	  (remove #/^\.{1,2}$/ (directory-list "../plugins")))
+(for-each (lambda (f)
+	    (copy-file #`"../templates/,f" #`"_work/templates/%%_PROJECT_NAME_%%/,f"))
+	  (remove #/^\.{1,2}$/ (directory-list "../templates")))
 
 (kahua-init *config*)
 

@@ -1,3 +1,9 @@
+2006-12-30  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: skel/test/test.scm.in
+	  modify copy routine plugins and templates.
+	  by this modify, kahua programmer add templates easily.
+	
 2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: kahua.el.in
