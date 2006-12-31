@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.31.2.1 2006/12/30 14:47:39 bizenn Exp $
+;; $Id: elem.scm,v 1.31.2.2 2006/12/31 03:43:21 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -123,7 +123,7 @@
 ;; Special tags
 
 (define (text/ . args)
-  (update (cut append (reverse args) <>)))
+  (update (cut fold cons <> args)))
 
 (define (map/ proc arg1 . args)
   (node-set (apply map proc arg1 args)))
