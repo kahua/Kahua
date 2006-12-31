@@ -1,5 +1,14 @@
 2006-12-31  SHIBATA Tomohisa <shibata@kahua.org>
 
+	* New: src/kahua/css.scm
+	  added new css parser.
+	* New: test/css.scm
+	  added css test.
+	* Change: src/kahua/server.scm
+	  change interp-css to use new css parser.
+
+2006-12-31  SHIBATA Tomohisa <shibata@kahua.org>
+
 	* Fix: src/kahua/server.scm
 	  define-entry support closure bind.
 

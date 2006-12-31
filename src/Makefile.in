@@ -81,7 +81,7 @@ SCMFILES = $(SCM_SCRIPTS) \
 	   kahua/persistence/fs.scm kahua/persistence/efs.scm kahua/persistence/dbi.scm \
 	   kahua/persistence/mysql.scm kahua/persistence/postgresql.scm \
 	   kahua/protocol/worker.scm kahua/protocol/http.scm \
-	   kahua/xml-template.scm
+	   kahua/xml-template.scm kahua/css.scm
 
 CONFFILE = $(sysconfdir)/kahua.conf
 USERCONFFILE = $(localstatedir)/user.conf

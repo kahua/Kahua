@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.92 2006/12/31 08:57:37 shibata Exp $
+;; $Id: server.scm,v 1.93 2006/12/31 09:11:47 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -35,6 +35,7 @@
   (use kahua.user)
   (use kahua.util)
   (use kahua.elem)
+  (extend kahua.css)
   (export kahua-init-server
           kahua-bridge-name
           kahua-server-uri
@@ -1470,10 +1471,10 @@
 ;;
 ;; (define-entry (test.css)
 ;;   `((css
-;;      (:class status-completed
+;;      (.status-completed
 ;;       (background-color "rgb(231,231,231)"))
 ;;
-;;      (:class status-open
+;;      (.status-open
 ;;       (background-color "rgb(255, 225, 225)")))))
 ;;
 ;; (head/ (link/ (@/ (rel "stylesheet") (type "text/css")
@@ -1482,46 +1483,9 @@
 (define-constant *css-media-type* "text/css")
 
 (define (interp-css nodes context cont)
-
-  (define (format-selector selector keyword name)
-    (list selector
-          (if (eq? :id keyword) "#" ".")
-          name))
-
-  (define (format-style style)
-    (receive (selector declarations)
-        (let loop ((style style)
-                   (selector '("")))
-          (if (null? style)
-              (values selector style)
-            (let1 item (car style)
-              (cond ((pair? item)
-                     (values selector style))
-                    ((keyword? item)
-                     (loop (cddr style)
-                           (cons
-                            (format-selector (car selector)
-                                             item
-                                             (cadr style))
-                            (cdr selector))))
-                    (else
-                     (loop (cdr style)
-                           (cons item selector)))))))
-      (list (intersperse " " (reverse selector))
-            "{\n"
-            (format-declarations declarations)
-            "}\n\n")))
-
-  (define (format-declarations decs)
-    (map (lambda (dec)
-           (list (car dec) ":" (intersperse " " (cdr dec))";\n"))
-         decs))
-
   (let1 headers (assoc-ref-car context "extra-headers" '())
     (cont
-     (map (lambda (style)
-            (format-style style))
-          (cdr nodes))
+     (parse-stylesheet (cdr nodes))
      (if (assoc "content-type" headers)
          context
        (cons `("extra-headers"
