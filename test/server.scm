@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.15 2006/07/28 13:09:49 bizenn Exp $
+;; $Id: server.scm,v 1.16 2006/12/31 08:57:37 shibata Exp $
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.
@@ -162,6 +162,20 @@
                         ("z" "zzz")))
           (call-entry 'bar '())
           )))
+
+(test* "define-entry (bind closure)"
+       '(1 2 3)
+       (let ()
+         (eval
+          '(define-entry counter
+             (let1 i 0
+               (entry-lambda ()
+                 (inc! i))))
+          (current-module))
+         (list
+          (call-entry 'counter ())
+          (call-entry 'counter ())
+          (call-entry 'counter ()))))
 
 ;; make sure 'foo' is registered globally.
 (test* "define-entry & session"

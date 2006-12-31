@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.91 2006/12/22 03:04:24 bizenn Exp $
+;; $Id: server.scm,v 1.92 2006/12/31 08:57:37 shibata Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -679,10 +679,11 @@
      (define-entry name (entry-lambda args . body)))
     ((define-entry name expr)
      (define name
-       (let ((x (lambda ()
-                  (parameterize
-                      ((kahua-current-entry-name (symbol->string 'name)))
-                    (expr)))))
+       (let* ((closure expr)
+              (x (lambda ()
+                   (parameterize
+                    ((kahua-current-entry-name (symbol->string 'name)))
+                    (closure)))))
          (add-entry! 'name x)
          x)))
     ))

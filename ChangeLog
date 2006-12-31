@@ -1,3 +1,8 @@
+2006-12-31  SHIBATA Tomohisa <shibata@kahua.org>
+
+	* Fix: src/kahua/server.scm
+	  define-entry support closure bind.
+
 2006-12-30  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Change: skel/test/test.scm.in
