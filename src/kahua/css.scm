@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: css.scm,v 1.1 2006/12/31 09:11:47 shibata Exp $
+;; $Id: css.scm,v 1.2 2007/01/01 02:21:20 shibata Exp $
 
 (define-module kahua.css
   (use util.match)
@@ -44,7 +44,7 @@
 (define (parse-statement exp)
   (match exp
     (('@ at-rule)
-     (list "@" (parse-at-rule at-rule) "\n"))
+     (list "@" (parse-at-rule at-rule) "\n\n"))
     (ruleset
      (parse-ruleset ruleset))))
 
@@ -55,7 +55,9 @@
            (parse-value value)
            (if (null? media) '()
              (list " "
-                   (parse-media (car media))))))
+                   (parse-media (car media))))
+           ";"
+           ))
 
     (('media media ruleset ...)
      (list "media "
@@ -77,7 +79,8 @@
 
     (('charset charset)
      (list "charset "
-           (parse-value charset)))
+           (parse-value charset)
+           ";"))
     ))
 
 (define (parse-media exp)
@@ -117,11 +120,12 @@
      (intersperse " + " (map parse-selector p)))
     (('or p ...)
      (intersperse ", " (map parse-selector p)))
-    ((p ('@ attr ...))
+    (('@ p attr ...)
      (list (parse-selector p)
            (map parse-attribute-selector attr)))
-    ((p arg)
+    (('lang p arg)
      (list (parse-selector p)
+           ":lang"
            "(" arg ")"))
     (p
      (intersperse #\# (string-split (format "~a" p) #\$)))
@@ -129,11 +133,11 @@
 
 (define (parse-attribute-selector exp)
   (match exp
-    ((attr (:space val))
+    ((`~= attr val)
      (list "[" attr "~=\"" val "\"]"))
-    ((attr (:hyphen val))
+    (('-= attr val)
      (list "[" attr "|=\"" val "\"]"))
-    ((attr val)
+    (('= attr val)
      (list "[" attr "=\"" val "\"]"))
     (attr
      (list "[" attr "]"))))
@@ -142,7 +146,7 @@
   (let1 delim (get-optional delimiter "\n")
     (list " {\n"
           (intersperse delim set)
-          "\n}\n")))
+          "\n}\n\n")))
 
 ;;==========================================================
 ;; CSS Color Utility
