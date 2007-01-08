@@ -1,3 +1,8 @@
+2007-01-08  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/INSTALL
+	  Catch up.
+
 2006-12-30  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/elem.scm
