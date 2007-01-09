@@ -1,3 +1,9 @@
+2007-01-10  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/xml-template.scm
+	  New method kahua:xml-template->node/, which return
+	  high-level tag function from XML template.
+
 2007-01-09  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: skel/Makefile.in
