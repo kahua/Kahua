@@ -1,3 +1,11 @@
+2007-01-09  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/Makefile.in
+	  New target install-scripts and uninstall-scripts.
+
+	* Fix: skel/MESSAGES
+	  Drop extra description.
+
 2007-01-08  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: skel/INSTALL
