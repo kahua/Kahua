@@ -1,3 +1,12 @@
+2007-01-11  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/persistence.scm
+	  Change <kahua-proxy> key from "key-of" value to
+	  kahua-persistent-id value.
+
+	* Fix: src/kahua/persistence.scm
+	  Arrange serialize format.
+
 2007-01-10  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Add: src/kahua/xml-template.scm
