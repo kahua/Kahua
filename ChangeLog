@@ -1,5 +1,8 @@
 2007-01-11  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Fix: examples/lambdabools.init
+	  It created database in wrong place when installed to site bundle.
+
 	* Change: src/kahua/persistence.scm
 	  Change <kahua-proxy> key from "key-of" value to
 	  kahua-persistent-id value.
