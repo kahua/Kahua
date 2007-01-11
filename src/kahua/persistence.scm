@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.72.2.1 2007/01/11 05:41:42 bizenn Exp $
+;; $Id: persistence.scm,v 1.72.2.2 2007/01/11 05:58:20 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -625,14 +625,14 @@
 
 (define-class <kahua-proxy> ()
   ((class :init-keyword :class)
-   (key   :init-keyword :key)
+   (ident   :init-keyword :ident)
    ))
 
 (define (kahua-proxy? obj)
   (is-a? obj <kahua-proxy>))
 
 (define-method realize-kahua-proxy ((proxy <kahua-proxy>))
-  (let ((ident (slot-ref proxy 'key))
+  (let ((ident (slot-ref proxy 'ident))
 	(class (slot-ref proxy 'class)))
     (if (integer? ident)
 	(kahua-instance class ident)
@@ -721,7 +721,7 @@
       (display "#,(kahua-proxy ")
       (display (class-name (slot-ref v 'class)))
       (delimit)
-      (write (slot-ref v 'key))
+      (write (slot-ref v 'ident))
       (write-char #\)))
      ((kahua-wrapper? v)
       (serialize-value (slot-ref v 'value)))
@@ -801,8 +801,8 @@
 (define-reader-ctor 'kahua-object2 kahua-object2-read)
 
 ;; kahua-proxy
-(define (kahua-proxy-read cname key)
-  (make <kahua-proxy> :class (find-kahua-class cname) :key key))
+(define (kahua-proxy-read cname ident)
+  (make <kahua-proxy> :class (find-kahua-class cname) :ident ident))
 (define-reader-ctor 'kahua-proxy kahua-proxy-read)
 
 (define (find-instance-generation class class-desc)
@@ -1880,7 +1880,7 @@
    (generation :init-keyword :generation :init-value 0)
    (slot-values :init-keyword :slot-values)))
 (define-class <dbutil:dummy-proxy-class> ()
-  ((key :init-keyword :key)
+  ((ident :init-keyword :ident)
    (class-name :init-keyword :class-name)))
 
 (define (kahua-object-dummy-read class-desc id . vals)
@@ -1893,8 +1893,8 @@
   (let1 obj (apply kahua-object-dummy-read class-desc id vals)
     (slot-set! obj 'removed? removed?)
     obj))
-(define (kahua-proxy-dummy-read cname key)
-  (make <dbutil:dummy-proxy-class> :key key :class-name cname))
+(define (kahua-proxy-dummy-read cname ident)
+  (make <dbutil:dummy-proxy-class> :ident ident :class-name cname))
 
 (define (dbutil:switch-to-dummy-reader-ctor)
   (define-reader-ctor 'kahua-object kahua-object-dummy-read)

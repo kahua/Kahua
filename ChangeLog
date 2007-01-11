@@ -3,6 +3,7 @@
 	* Change: src/kahua/persistence.scm
 	  Change <kahua-proxy> key from "key-of" value to
 	  kahua-persistent-id value.
+	  Change <kahua-proxy> slot name "key" to "ident".
 
 	* Fix: src/kahua/persistence.scm
 	  Arrange serialize format.
