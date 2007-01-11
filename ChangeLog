@@ -1,3 +1,49 @@
+2007-01-11  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/persistence.scm
+	  Change <kahua-proxy> key from "key-of" value to
+	  kahua-persistent-id value.
+	  Change <kahua-proxy> slot name "key" to "ident".
+
+	* Fix: src/kahua/persistence.scm
+	  Arrange serialize format.
+
+2007-01-10  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/xml-template.scm
+	  New method kahua:xml-template->node/, which return
+	  high-level tag function from XML template.
+
+2007-01-09  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/Makefile.in
+	  New target install-scripts and uninstall-scripts.
+
+	* Fix: skel/MESSAGES
+	  Drop extra description.
+
+2007-01-08  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/INSTALL
+	  Catch up.
+
+2006-12-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/elem.scm
+	  text/ reversed arguments.
+
+2006-12-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0 released.
+
+	* Fix: src/kahua/config.scm.in
+	  If -c conf-file or -S /path/to/site is specified, it's prior
+	  to KAHUA_DEFAULT_SITE environment variable.
+
+	* Fix: src/kahua-package
+	  "generate" sub command now handle --creator=... and --mail=...
+	  option properly.
+
 2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: kahua.el.in

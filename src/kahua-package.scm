@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.9 2006/12/27 13:31:06 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.9.2.1 2006/12/27 16:02:57 bizenn Exp $
 (use srfi-13)
 
 (use file.util)
@@ -147,8 +147,8 @@
     (for-each (cut kahua-site-create <> :owner owner :group group :shared? shared) sites)))
 
 (define (generate-skel args)
-  (let-args args ((creator "creator")
-		  (mail "mail")
+  (let-args args ((creator "creator=s")
+		  (mail "mail=s")
 		  . projects)
     (let1 skel (build-path (kahua-etc-directory) "skel") ; FIXME!!
       (for-each (cut generate skel <> creator mail) projects))))
@@ -162,10 +162,11 @@
 	(else (usage))))
 
 (define (main args)
-  (let-args (cdr args) ((conf-file "c|conf-file=s")
-		  (site "S|site=s")
-		  (gosh "gosh=s")
-		  . restargs)
+  (let-args (cdr args)
+      ((conf-file "c|conf-file=s")
+       (site "S|site=s")
+       (gosh "gosh=s")
+       . restargs)
     (if (< (length restargs) 2)
 	(usage)
 	(apply dispatch-command restargs))))

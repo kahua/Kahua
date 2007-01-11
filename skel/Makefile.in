@@ -1,5 +1,5 @@
 # Makefile for %%_PROJECT_NAME_%%
-# $Id: Makefile.in,v 1.9 2006/12/27 12:06:32 cut-sea Exp $
+# $Id: Makefile.in,v 1.10 2006/12/27 13:31:06 cut-sea Exp $
 
 package	          = %%_PROJECT_NAME_%%
 kahua		  = kahua
@@ -101,19 +101,23 @@ install:
 	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t plugin -r $$f $(PLUGINDIR)/$$f;\
 	done
 	mkdir -p $(bindir)
-	for f in $(SCRIPTS); do \
-	  $(INSTALL) -m 555 $$f $(bindir)/$$f;\
-	done
 	for f in $(XMLFILES); do \
 	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t template -r %%_PROJECT_NAME_%%/$$f $(TEMPLATEDIR)/$$f;\
 	done
-	cat MESSAGES
+	@cat MESSAGES
 
-uninstall :
-	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t script $(SCRIPTFILES)
+install-scripts:
+	for f in $(SCRIPTS); do \
+	  $(INSTALL) -m 555 $$f $(bindir)/$$f;\
+	done
+
+uninstall:
 	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t static $(STATICFILES)
 	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t plugin -r $(PLUGINFILE) \
                                         $(PLUGINDIR)/$(PLUGINFILE)
+
+uninstall-scripts:
+	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t script $(SCRIPTFILES)
 
 distclean: clean
 	-rm -rf $(CONFIG_GENERATED)

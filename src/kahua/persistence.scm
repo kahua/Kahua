@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.72 2006/12/26 09:42:13 bizenn Exp $
+;; $Id: persistence.scm,v 1.72.2.2 2007/01/11 05:58:20 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -625,14 +625,18 @@
 
 (define-class <kahua-proxy> ()
   ((class :init-keyword :class)
-   (key   :init-keyword :key)
+   (ident   :init-keyword :ident)
    ))
 
 (define (kahua-proxy? obj)
   (is-a? obj <kahua-proxy>))
 
 (define-method realize-kahua-proxy ((proxy <kahua-proxy>))
-  (find-kahua-instance (ref proxy 'class) (ref proxy 'key)))
+  (let ((ident (slot-ref proxy 'ident))
+	(class (slot-ref proxy 'class)))
+    (if (integer? ident)
+	(kahua-instance class ident)
+	(find-kahua-instance class ident))))
 
 ;; The bottom-level writer ----------------------------------------
 ;;   write-kahua-instance calls kahua-write.
@@ -686,40 +690,53 @@
   (kahua-object2-write obj port))
 
 ;; serialization
+(define delimit (cut write-char #\space))
+
+(define (kahua-atom? v)
+  (any (cut is-a? v <>)
+       (list <boolean> <number> <string> <symbol> <keyword>)))
+
 (define (serialize-value v)
   (let1 v (%sanitize-object v)
     (cond
-     ((any (cut is-a? v <>)
-	   (list <boolean> <number> <string> <symbol> <keyword>))
-      (write v) (display " "))
-     ((null? v) (display "()"))
-     ((pair? v)
-      (display "(")
+     ((kahua-atom? v) (write v))
+     ((list? v)                    (serialize-sequence v))
+     ((vector? v) (write-char #\#) (serialize-sequence v))
+     ((pair? v) ; dotted list
+      (write-char #\()
       (let loop ((v v))
-	(cond ((null? v))
-	      ((pair? v) (serialize-value (car v)) (loop (cdr v)))
-	      (else (display " . ") (serialize-value v))))
-      (display ")"))
-     ((vector? v)
-      (display "#(")
-      (for-each serialize-value v)
-      (display ")"))
+	(cond ((pair? v)
+	       (serialize-value (car v))
+	       (delimit)
+	       (loop (cdr v)))
+	      (else (display ". ") (serialize-value v))))
+      (write-char #\)))
      ((kahua-persistent-base? v)
       (display "#,(kahua-proxy ")
       (display (class-name (class-of v)))
-      (display " ")
-      (write (key-of v))
-      (display " )"))
+      (delimit)
+      (write (kahua-persistent-id v))
+      (write-char #\)))
      ((kahua-proxy? v)
       (display "#,(kahua-proxy ")
-      (display (class-name (ref v 'class)))
-      (display " ")
-      (write (ref v 'key))
-      (display " )"))
+      (display (class-name (slot-ref v 'class)))
+      (delimit)
+      (write (slot-ref v 'ident))
+      (write-char #\)))
      ((kahua-wrapper? v)
-      (serialize-value (ref v 'value)))
+      (serialize-value (slot-ref v 'value)))
      (else
       (error "object not serializable:" v)))))
+
+(define (serialize-sequence seq)
+  (write-char #\()
+  (fold (lambda (e thunk)
+	  (thunk)
+	  (serialize-value e)
+	  delimit)
+	(lambda () #f)
+	seq)
+  (write-char #\)))
 
 (define (kahua-serializable-object? v)
   (or (any (cut is-a? v <>)
@@ -784,8 +801,8 @@
 (define-reader-ctor 'kahua-object2 kahua-object2-read)
 
 ;; kahua-proxy
-(define (kahua-proxy-read cname key)
-  (make <kahua-proxy> :class (find-kahua-class cname) :key key))
+(define (kahua-proxy-read cname ident)
+  (make <kahua-proxy> :class (find-kahua-class cname) :ident ident))
 (define-reader-ctor 'kahua-proxy kahua-proxy-read)
 
 (define (find-instance-generation class class-desc)
@@ -1863,7 +1880,7 @@
    (generation :init-keyword :generation :init-value 0)
    (slot-values :init-keyword :slot-values)))
 (define-class <dbutil:dummy-proxy-class> ()
-  ((key :init-keyword :key)
+  ((ident :init-keyword :ident)
    (class-name :init-keyword :class-name)))
 
 (define (kahua-object-dummy-read class-desc id . vals)
@@ -1876,8 +1893,8 @@
   (let1 obj (apply kahua-object-dummy-read class-desc id vals)
     (slot-set! obj 'removed? removed?)
     obj))
-(define (kahua-proxy-dummy-read cname key)
-  (make <dbutil:dummy-proxy-class> :key key :class-name cname))
+(define (kahua-proxy-dummy-read cname ident)
+  (make <dbutil:dummy-proxy-class> :ident ident :class-name cname))
 
 (define (dbutil:switch-to-dummy-reader-ctor)
   (define-reader-ctor 'kahua-object kahua-object-dummy-read)
