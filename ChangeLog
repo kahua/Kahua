@@ -1,3 +1,8 @@
+2007-01-12  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/protocol/worker.scm
+	  Wrap any error occurred during communication with worker.
+
 2007-01-11  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: examples/lambdabools.init
