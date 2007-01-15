@@ -1,6 +1,12 @@
 2007-01-15  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: skel/proj.conf.in, skel/proj/proj.kahua,
+	          skel/proj/version.kahua, skel/test/test.conf.in
+	          skel/test/test.scm.in
+	  Change file encoding from euc-jp to utf-8.
+
 	* Fix: skel/MESSAGES
+	  Change :run-by-default 0 -> 1.
 
 	* Change: skel/templates/page.xml
 	  Make it well-formed XML(XHTML 1.0 Strict).
