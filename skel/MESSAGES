@@ -3,6 +3,6 @@
 Please edit app-servers in the Kahua working directory to add
  "%%_PROJECT_NAME_%%" entry.
 
-  (%%_PROJECT_NAME_%% :arguments () :run-by-default 0)
+  (%%_PROJECT_NAME_%% :arguments () :run-by-default 1)
 
 ================================================================================

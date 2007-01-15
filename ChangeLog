@@ -1,3 +1,10 @@
+2007-01-15  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/MESSAGES
+
+	* Change: skel/templates/page.xml
+	  Make it well-formed XML(XHTML 1.0 Strict).
+
 2007-01-12  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/protocol/worker.scm
