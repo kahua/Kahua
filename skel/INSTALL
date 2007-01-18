@@ -1,11 +1,11 @@
-$Id: INSTALL,v 1.4 2006/12/27 13:54:05 cut-sea Exp $
+$Id: INSTALL,v 1.4.2.1 2007/01/08 09:59:37 bizenn Exp $
 
 %%_PROJECT_NAME_%% : A simple dummy application of Kahua
 
 [Requirements]
 
-Gauche-0.8.8 or later
-Kahua-1.0 or later
+Gauche-0.8.9 or later
+Kahua-1.0.1 or later
 
 [Installation]
 

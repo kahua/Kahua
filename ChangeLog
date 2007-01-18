@@ -1,5 +1,9 @@
 2007-01-18  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* New: doc/GaucheForKahua.ja
+
+	* Update: INSTALL, doc/Setup.ja, skel/INSTALL, skel/configure.ac
+
 	* Fix: src/kahua/persistence.scm
 	  Now any value that can be serialized, can
 	  also be used as index value.
