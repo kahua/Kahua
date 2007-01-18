@@ -1,6 +1,6 @@
-;; -*- coding: euc-jp; mode: scheme -*-
+;; -*- coding: utf-8; mode: scheme -*-
 ;;
-;; $Id: proj.conf.in,v 1.1.2.2 2006/07/16 16:45:32 cut-sea Exp $
+;; $Id: proj.conf.in,v 1.2 2006/07/28 13:09:38 bizenn Exp $
 
 (make <kahua-config>
   :sockbase             "unix:###%%_PROJECT_NAME_UP_%%_INPLACE_SOCKETBASE###"

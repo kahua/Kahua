@@ -1,3 +1,82 @@
+2007-01-18  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.1 released.
+
+	* New: doc/GaucheForKahua.ja
+
+	* Update: INSTALL, doc/Setup.ja, skel/INSTALL, skel/configure.ac
+
+	* Fix: src/kahua/persistence.scm
+	  Now any value that can be serialized, can
+	  also be used as index value.
+
+2007-01-15  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: skel/proj.conf.in, skel/proj/proj.kahua,
+	          skel/proj/version.kahua, skel/test/test.conf.in
+	          skel/test/test.scm.in
+	  Change file encoding from euc-jp to utf-8.
+
+	* Fix: skel/MESSAGES
+	  Change :run-by-default 0 -> 1.
+
+	* Change: skel/templates/page.xml
+	  Make it well-formed XML(XHTML 1.0 Strict).
+
+2007-01-12  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/protocol/worker.scm
+	  Wrap any error occurred during communication with worker.
+
+2007-01-11  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: examples/lambdabools.init
+	  It created database in wrong place when installed to site bundle.
+
+	* Change: src/kahua/persistence.scm
+	  Change <kahua-proxy> key from "key-of" value to
+	  kahua-persistent-id value.
+	  Change <kahua-proxy> slot name "key" to "ident".
+
+	* Fix: src/kahua/persistence.scm
+	  Arrange serialize format.
+
+2007-01-10  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/xml-template.scm
+	  New method kahua:xml-template->node/, which return
+	  high-level tag function from XML template.
+
+2007-01-09  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/Makefile.in
+	  New target install-scripts and uninstall-scripts.
+
+	* Fix: skel/MESSAGES
+	  Drop extra description.
+
+2007-01-08  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/INSTALL
+	  Catch up.
+
+2006-12-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/elem.scm
+	  text/ reversed arguments.
+
+2006-12-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0 released.
+
+	* Fix: src/kahua/config.scm.in
+	  If -c conf-file or -S /path/to/site is specified, it's prior
+	  to KAHUA_DEFAULT_SITE environment variable.
+
+	* Fix: src/kahua-package
+	  "generate" sub command now handle --creator=... and --mail=...
+	  option properly.
+
 2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: kahua.el.in

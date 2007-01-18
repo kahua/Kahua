@@ -1,7 +1,7 @@
 dnl
 dnl Configuring %%_PROJECT_NAME_%%
 dnl  process this file with "autoconf" to generate 'configure'.
-dnl $Id: configure.ac,v 1.3 2006/12/27 03:13:19 bizenn Exp $
+dnl $Id: configure.ac,v 1.4 2006/12/27 07:42:49 cut-sea Exp $
 AC_PREREQ(2.59)
 AC_INIT(%%_PROJECT_NAME_%%, 0.0.0, %%_EMAIL_ADDRESS_%%)
 
@@ -19,10 +19,10 @@ dnl Check for other program
 AC_PROG_INSTALL
 
 if test X$GOSH = X; then 
-  AC_MSG_ERROR([Cannot find Gauche installed.  Please install Gauche-0.8.8 or later, and make sure to set PATH properly.])
+  AC_MSG_ERROR([Cannot find Gauche installed.  Please install Gauche-0.8.9 or later, and make sure to set PATH properly.])
 fi
 if test X$KAHUA_INSTALL = X; then 
-  AC_MSG_ERROR([Cannot find Kahua installed.  Please install Kahua-1.0 or later, and make sure to set PATH properly.])
+  AC_MSG_ERROR([Cannot find Kahua installed.  Please install Kahua-1.0.1 or later, and make sure to set PATH properly.])
 fi
 
 KAHUACONFIG_OPTION=' -c $(sysconfdir)/kahua.conf'

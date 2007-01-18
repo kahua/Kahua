@@ -1,7 +1,7 @@
 ;; This document is obsoleted.
-;; We should rewrite this until release of 1.0.
+;; We should rewrite this as soon as possible.
 ;;
-;; $Id: hello-kahua.ja,v 1.2 2006/12/13 08:45:39 bizenn Exp $
+;; $Id: hello-kahua.ja,v 1.2.2.1 2006/12/27 17:29:33 bizenn Exp $
 ;;
 hello-kahua
 
