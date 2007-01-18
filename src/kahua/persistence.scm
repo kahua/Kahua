@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.72.2.2 2007/01/11 05:58:20 bizenn Exp $
+;; $Id: persistence.scm,v 1.72.2.3 2007/01/18 04:51:45 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -361,29 +361,10 @@
 	(case directive ((:modify :add) (register-index-cache o sn idx nv)))))))
 
 (define (index-value-write value)
-  (cond ((any (pa$ is-a? value) `(,<string> ,<number> ,<symbol> ,<boolean> ,<keyword>))
-	 (write value))
-	((null? value) (write '()))
-	((pair? value)
-	 (write-char #\()(index-value-write (car value))
-	 (for-each (lambda (e)
-		     (write-char #\space)
-		     (index-value-write e)) (cdr value))
-	 (write-char #\)))
-	((vector? value)
-	 (write-char #\#)
-	 (index-value-write (vector->list value)))
-	(else (kahua-persistence-error "Object ~s cannot be used as index value" value))))
+  (serialize-value value))
 
 (define (kahua-indexable-object? obj)
-  (or (any (pa$ is-a? obj) `(,<string> ,<number> ,<symbol> ,<boolean> ,<keyword>))
-      (and (or (list? obj) (vector? obj))
-	   (let/cc ret
-	     (for-each (lambda (obj)
-			 (unless (kahua-indexable-object? obj)
-			   (ret #f)))
-		       obj)
-	     #t))))
+  (kahua-serializable-object? obj))
 
 (define (drop-all-index-values! obj)
   (let1 class (current-class-of obj)
@@ -495,6 +476,13 @@
 
 (define (kahua-persistent-base? obj)
   (is-a? obj <kahua-persistent-base>))
+
+(define-method object-hash ((obj <kahua-persistent-base>))
+  (hash (with-output-to-string (cut serialize-kahua-proxy obj))))
+
+(define-method object-equal? ((obj1 <kahua-persistent-base>)
+			      (obj2 <kahua-persistent-base>))
+  (= (kahua-persistent-id obj1) (kahua-persistent-id obj2)))
 
 ;; You should not override this method.
 (define-method kahua-persistent-id ((obj <kahua-persistent-base>))
@@ -711,22 +699,10 @@
 	       (loop (cdr v)))
 	      (else (display ". ") (serialize-value v))))
       (write-char #\)))
-     ((kahua-persistent-base? v)
-      (display "#,(kahua-proxy ")
-      (display (class-name (class-of v)))
-      (delimit)
-      (write (kahua-persistent-id v))
-      (write-char #\)))
-     ((kahua-proxy? v)
-      (display "#,(kahua-proxy ")
-      (display (class-name (slot-ref v 'class)))
-      (delimit)
-      (write (slot-ref v 'ident))
-      (write-char #\)))
-     ((kahua-wrapper? v)
-      (serialize-value (slot-ref v 'value)))
-     (else
-      (error "object not serializable:" v)))))
+     ((kahua-persistent-base? v) (serialize-kahua-proxy v))
+     ((kahua-proxy? v)           (serialize-kahua-proxy v))
+     ((kahua-wrapper? v) (serialize-value (slot-ref v 'value)))
+     (else (kahua-persistence-error "Object ~s is not serializable:" v)))))
 
 (define (serialize-sequence seq)
   (write-char #\()
@@ -734,9 +710,27 @@
 	  (thunk)
 	  (serialize-value e)
 	  delimit)
-	(lambda () #f)
+	values
 	seq)
   (write-char #\)))
+
+(define-method serialize-kahua-proxy ((obj <kahua-persistent-base>))
+  (display "#,(kahua-proxy ")
+  (display (class-name (class-of obj)))
+  (delimit)
+  (write (kahua-persistent-id obj))
+  (write-char #\)))
+
+(define-method serialize-kahua-proxy ((obj <kahua-proxy>))
+  (let1 ident (slot-ref obj 'ident)
+    (cond ((string? ident)
+	   (serialize-value (realize-kahua-proxy obj)))
+	  (else
+	   (display "#,(kahua-proxy ")
+	   (display (class-name (slot-ref obj 'class)))
+	   (delim)
+	   (write ident)
+	   (write-char #\))))))
 
 (define (kahua-serializable-object? v)
   (or (any (cut is-a? v <>)
