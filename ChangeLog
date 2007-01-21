@@ -1,3 +1,8 @@
+2007-01-22  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/persistence/postgresql.scm
+	  Passed a wrong keyword.
+
 2007-01-18  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 1.0.1 released.
