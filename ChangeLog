@@ -1,5 +1,9 @@
 2007-01-22  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Fix: src/kahua/persistence/dbi.scm
+	  Lack of connection-of argument.
+	  Arrange with-dbi-transaction to more simple.
+
 	* Fix: src/kahua/persistence/postgresql.scm
 	  Passed a wrong keyword.
 
