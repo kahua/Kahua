@@ -34,8 +34,7 @@
   (format #f "~d-~d" (sys-time) (modulo (sys-random) 1000)))
 
 (define (kahua-dump-user)
-  (with-error-handler
-    (lambda (e) (log-format "user dump failed"))
-    (lambda ()  (log-format "user ~a" (kahua-current-user-name)))))
+  (guard (e (else (log-format "user dump failed")))
+    (log-format "user ~a" (kahua-current-user-name))))
 
 (provide "kahua/error-report")

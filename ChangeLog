@@ -1,3 +1,11 @@
+2007-01-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/persistence/efs.scm
+	  Fix a wrong keyword.
+
+	* Change: src/kahua/developer.scm, src/kahua/error-report.scm
+	  Replace with-error-handler with guard macro.
+
 2007-01-22  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/persistence/dbi.scm
