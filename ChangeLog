@@ -1,3 +1,10 @@
+2007-01-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-httpd.scm
+	  If HTTP client sends request and close connection immediately,
+	  kahua-httpd couldn't recover the error properly.
+	  Reported by Petter Egesund.
+
 2007-01-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/persistence/efs.scm
