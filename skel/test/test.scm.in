@@ -1,6 +1,6 @@
 ;; -*- coding: utf-8; mode: scheme -*-
 ;; test %%_PROJECT_NAME_%% script.
-;; $Id: test.scm.in,v 1.5 2006/12/27 13:09:21 cut-sea Exp $
+;; $Id:$
 
 (use gauche.test)
 (use file.util)

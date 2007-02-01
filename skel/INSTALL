@@ -1,4 +1,4 @@
-$Id: INSTALL,v 1.4.2.1 2007/01/08 09:59:37 bizenn Exp $
+$Id:$
 
 %%_PROJECT_NAME_%% : A simple dummy application of Kahua
 
@@ -27,19 +27,7 @@ And then
 
 Then, edit app-servers in the Kahua working directory to add "%%_PROJECT_NAME_%%" entry.
 
-  (%%_PROJECT_NAME_%% :arguments () :run-by-default 0)
-
-If you want to allow non registered user to edit page, 
-give 'non-member-edit as a argument.
-
-  (%%_PROJECT_NAME_%% :arguments (non-member-edit) :run-by-default 0)
-
-[Invoke %%_PROJECT_NAME_%% in place]
-
-You can invoke the %%_PROJECT_NAME_%% before doing "make install", using
-"%%_PROJECT_NAME_%%-start" script.  This script invoke %%_PROJECT_NAME_%% in the kahua-spvr
-with test HTTP direct mode on 8080 port.  You can also use
-"%%_PROJECT_NAME_%%-stop" to stop process invoked by "%%_PROJECT_NAME_%%-start"
+  (%%_PROJECT_NAME_%% :arguments () :run-by-default 1)
 
 [Information]
 

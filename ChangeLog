@@ -1,3 +1,15 @@
+2007-02-01  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: skel/configure.ac, skel/INSTALL, skel/Makefile.in,
+	          skel/proj/proj.css, skel/proj/proj.kahua,
+	          skel/proj/version.kahua.in, skel/proj.conf.in,
+	          skel/test/test.conf.in, skel/test/test.scm.in
+	  Don't do "keyword substitution" when check in.
+
+
+	* Fix: skel/INSTALL
+	  Update description.
+
 2007-01-29  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua-httpd.scm

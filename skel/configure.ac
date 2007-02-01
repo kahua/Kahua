@@ -1,7 +1,7 @@
 dnl
 dnl Configuring %%_PROJECT_NAME_%%
 dnl  process this file with "autoconf" to generate 'configure'.
-dnl $Id: configure.ac,v 1.4 2006/12/27 07:42:49 cut-sea Exp $
+dnl $Id:$
 AC_PREREQ(2.59)
 AC_INIT(%%_PROJECT_NAME_%%, 0.0.0, %%_EMAIL_ADDRESS_%%)
 

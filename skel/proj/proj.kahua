@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: proj.kahua,v 1.9 2006/12/27 14:23:58 cut-sea Exp $
+;; $Id:$
 ;;
 
 (load "%%_PROJECT_NAME_%%/version.kahua")

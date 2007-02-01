@@ -1,5 +1,5 @@
 # Makefile for %%_PROJECT_NAME_%%
-# $Id: Makefile.in,v 1.10 2006/12/27 13:31:06 cut-sea Exp $
+# $Id:$
 
 package	          = %%_PROJECT_NAME_%%
 kahua		  = kahua
