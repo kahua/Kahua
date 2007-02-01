@@ -3,6 +3,8 @@
 	* Change: emacs/kahua.el
 	  Now run-kahua-shell prompt your site bundle, and work
 	  directory completion.
+	  If you specify host, user(for ssh access), or site bundle,
+	  The value is used as default value at next time.
 
 2007-02-01  Tatsuya BIZENN  <bizenn@arthub.net>
 
