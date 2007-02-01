@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua.el.in,v 1.6 2006/12/27 14:40:26 bizenn Exp $
+;; $Id: kahua.el.in,v 1.6.2.1 2007/02/01 23:05:37 bizenn Exp $
 ;;
 
 (require 'comint)
@@ -85,13 +85,24 @@ Editing commands are similar to those of 'scheme-mode'."
   (if (string-match kahua-worker-prompt-regex string)
       (comint-simple-send "*kahua-shell*" (read-string "select worker: " nil))))
 
-(defun run-kahua-shell (host user)
+(defun kahua-read-server ()
+  (if kahua-ssh-mode
+      (read-string "hostname: " kahua-default-server)
+    ""))
+(defun kahua-read-user (host)
+  (if (and kahua-ssh-mode (not (string= host "")))
+      (read-string "username: " kahua-default-user)
+    ""))
+(defun kahua-read-site ()
+  (let ((insert-default-directory nil))
+    (read-directory-name "site bundle: " nil nil nil kahua-site-bundle)))
+
+(defun run-kahua-shell (host user site)
   (interactive
-   (let* ((host (if kahua-ssh-mode
-                    (read-string "hostname: " kahua-default-server) ""))
-          (user (if (and kahua-ssh-mode (not (string= host "")))
-                    (read-string "username: " kahua-default-user) "")))
-     (list host user)))
+   (let* ((host (kahua-read-server))
+          (user (kahua-read-user host))
+	  (site (kahua-read-site)))
+     (list host user site)))
 
   (unless (get-buffer "*kahua-shell*")
     (let ((add-password-hook?
@@ -108,8 +119,8 @@ Editing commands are similar to those of 'scheme-mode'."
   (if (not (comint-check-proc "*kahua-shell*"))
       (let* ((use-ssh          (and kahua-ssh-mode (not (string= host ""))))
              (program          (if use-ssh "ssh" kahua-shell-command))
-             (kahua-shell-args (if (string= kahua-site-bundle "")
-                                   '() (list "-S" (expand-file-name kahua-site-bundle))))
+             (kahua-shell-args (if (string= site "")
+                                   '() (list "-S" (expand-file-name site))))
              (args             (if use-ssh
                                    `(,@kahua-ssh-opts
                                      ,(if (string= user "")
@@ -122,6 +133,9 @@ Editing commands are similar to those of 'scheme-mode'."
   (pop-to-buffer "*kahua-shell*")
   (make-local-variable 'scheme-program-name)
   (setq scheme-program-name "kahua-shell")
+  (setq kahua-default-server host)
+  (setq kahua-default-user user)
+  (setq kahua-site-bundle site)
   (make-local-variable 'scheme-buffer)
   (setq scheme-buffer "*kahua-shell*"))
 
