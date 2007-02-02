@@ -1,6 +1,10 @@
 2007-02-02  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: emacs/kahua.el
+	  Now run-kahua also work with ssh for remote Kahua.
+	  It works very similarly to run-kahua-shell.
+
+	* Change: emacs/kahua.el
 	  Now run-kahua-shell prompt your site bundle, and work
 	  directory completion.
 	  If you specify host, user(for ssh access), or site bundle,

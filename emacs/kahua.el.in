@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua.el.in,v 1.6.2.1 2007/02/01 23:05:37 bizenn Exp $
+;; $Id: kahua.el.in,v 1.6.2.2 2007/02/02 04:51:44 bizenn Exp $
 ;;
 
 (require 'comint)
@@ -97,13 +97,31 @@ Editing commands are similar to those of 'scheme-mode'."
   (let ((insert-default-directory nil))
     (read-directory-name "site bundle: " nil nil nil kahua-site-bundle)))
 
-(defun run-kahua-shell (host user site)
-  (interactive
-   (let* ((host (kahua-read-server))
-          (user (kahua-read-user host))
-	  (site (kahua-read-site)))
-     (list host user site)))
+(defun kahua-command-buffer-setup (bufname comname command host user site)
+  (if (not (comint-check-proc bufname))
+      (let* ((use-ssh          (and kahua-ssh-mode (not (string= host ""))))
+             (program          (if use-ssh "ssh" command))
+             (kahua-shell-args (if (string= site "")
+                                   '() (list "-S" (expand-file-name site))))
+             (args             (if use-ssh
+                                   `(,@kahua-ssh-opts
+                                     ,(if (string= user "")
+                                          host (concat user "@" host))
+                                     ,command
+                                     ,@kahua-shell-args)
+                                 kahua-shell-args)))
+        (set-buffer (apply 'make-comint comname program nil args))
+        (inferior-scheme-mode)))
+  (pop-to-buffer bufname)
+  (make-local-variable 'scheme-program-name)
+  (setq scheme-program-name comname)
+  (setq kahua-default-server host)
+  (setq kahua-default-user user)
+  (setq kahua-site-bundle site)
+  (make-local-variable 'scheme-buffer)
+  (setq scheme-buffer bufname))
 
+(defun kahua-shell-buffer-setup ()
   (unless (get-buffer "*kahua-shell*")
     (let ((add-password-hook?
            (not (memq 'comint-watch-for-password-prompt
@@ -115,44 +133,28 @@ Editing commands are similar to those of 'scheme-mode'."
       (when add-password-hook?
         (add-hook 'comint-output-filter-functions
                   'comint-watch-for-password-prompt nil t)))
-    )
-  (if (not (comint-check-proc "*kahua-shell*"))
-      (let* ((use-ssh          (and kahua-ssh-mode (not (string= host ""))))
-             (program          (if use-ssh "ssh" kahua-shell-command))
-             (kahua-shell-args (if (string= site "")
-                                   '() (list "-S" (expand-file-name site))))
-             (args             (if use-ssh
-                                   `(,@kahua-ssh-opts
-                                     ,(if (string= user "")
-                                          host (concat user "@" host))
-                                     ,kahua-shell-command
-                                     ,@kahua-shell-args)
-                                 kahua-shell-args)))
-        (set-buffer (apply 'make-comint "kahua-shell" program nil args))
-        (inferior-scheme-mode)))
-  (pop-to-buffer "*kahua-shell*")
-  (make-local-variable 'scheme-program-name)
-  (setq scheme-program-name "kahua-shell")
-  (setq kahua-default-server host)
-  (setq kahua-default-user user)
-  (setq kahua-site-bundle site)
-  (make-local-variable 'scheme-buffer)
-  (setq scheme-buffer "*kahua-shell*"))
+    ))
 
-(defun run-kahua ()
-  (interactive)
+(defun run-kahua-shell (host user site)
+  (interactive
+   (let* ((host (kahua-read-server))
+          (user (kahua-read-user host))
+	  (site (kahua-read-site)))
+     (list host user site)))
+  (kahua-shell-buffer-setup)
+  (kahua-command-buffer-setup "*kahua-shell*" "kahua-shell"
+			      kahua-shell-command host user site))
+
+(defun run-kahua (host user site)
+  (interactive
+   (let* ((host (kahua-read-server))
+	  (user (kahua-read-user host))
+	  (site (kahua-read-site)))
+     (list host user site)))
   (unless (get-buffer "*kahua-admin*")
     (set-buffer (get-buffer-create "*kahua-admin*")))
-  (if (not (comint-check-proc "*kahua-admin*"))
-      (let ((kahua-admin-args (if (string= kahua-site-bundle "")
-				  '() (list "-S" (expand-file-name kahua-site-bundle)))))
-	(set-buffer (apply 'make-comint "kahua-admin" kahua-admin-command nil kahua-admin-args))
-	(inferior-scheme-mode)))
-  (pop-to-buffer "*kahua-admin*")
-  (make-local-variable 'scheme-program-name)
-  (setq scheme-program-name "kahua-admin")
-  (make-local-variable 'scheme-buffer)
-  (setq scheme-buffer "*kahua-admin*"))
+  (kahua-command-buffer-setup "*kahua-admin*" "kahua-admin"
+			      kahua-admin-command host user site))
 
 (provide 'kahua)
 
