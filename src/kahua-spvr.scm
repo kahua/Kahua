@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.27 2006/11/20 10:51:45 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.27.2.1 2007/02/02 09:44:47 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -289,7 +289,8 @@
   (cond ((assq worker-type *worker-types*)
          => (lambda (p)
 	      (let-keywords* (cdr p)
-		  ((args :arguments '())
+		  ((run-by-default 0)	; ignore(to avoid WARNING)
+		   (args :arguments '())
 		   (profile :profile #f)
 		   (dbname :default-database-name #f))
 		(let1 s (kahua-site-root)

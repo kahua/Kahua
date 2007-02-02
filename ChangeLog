@@ -1,5 +1,12 @@
 2007-02-02  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Fix: src/kahua-spvr.scm, src/kahua/developer.scm,
+	       src/kahua/persistence.scm, src/kahua/persistence/efs.scm,
+	       src/kahua/persistence/dbi.scm
+	  Avoid "Unknown keyword WARNING" when work with recent Gauche
+	  CVS HEAD version.  But this fix is very transitional, and
+	  fix again after next Gauche release.
+
 	* Change: emacs/kahua.el
 	  Now run-kahua also work with ssh for remote Kahua.
 	  It works very similarly to run-kahua-shell.

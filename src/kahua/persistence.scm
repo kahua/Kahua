@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.72.2.3 2007/01/18 04:51:45 bizenn Exp $
+;; $Id: persistence.scm,v 1.72.2.4 2007/02/02 09:44:47 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1709,7 +1709,11 @@
 
   (let1 db (current-db)
     (unless db (error "make-kahua-collection: database not active"))
-    (let-keywords* opts ((subclasses? :subclasses #f))
+    (let-keywords* opts ((subclasses? :subclasses #f)
+			 (keys #f)	                ; pass through(to avoid WARNING)
+			 (index #f)			; pass through(to avoid WARNING)
+			 (predicate #f)			; pass through(to avoid WARNING)
+			 (include-removed-object? #f))	; pass through(to avoid WARNING)
       (if subclasses?
           (append-map (lambda (c)
                         (coerce-to <list> (make-kahua-collection db c opts)))
@@ -1726,7 +1730,9 @@
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
-		       (include-removed-object? #f))
+		       (include-removed-object? #f)
+		       (subclasses #f)			; ignore(to avoid WARNING)
+		       )
     (cond ((or include-removed-object? (and index (get-optional may-be-sweep? #f)))
 	   (let1 filter-proc (make-basic-filter class (make-kahua-collection-filter class opts))
 	     (filter-map filter-proc (all-instances-on-id-cache db))))
@@ -1786,7 +1792,9 @@
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
-		       (include-removed-object? #f))
+		       (include-removed-object? #f)
+		       (subclasses #f)			; ignore(to avoid WARNING)
+		       )
     (let* ((index-filter (make-index-filter class index))
 	   (keys-filter (make-keys-filter class keys))
 	   (include-removed-filter (and (not include-removed-object?)

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.9.2.1 2007/01/25 10:10:08 bizenn Exp $
+;; $Id: efs.scm,v 1.9.2.2 2007/02/02 09:44:47 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -529,7 +529,9 @@
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
-		       (include-removed-object? #f))
+		       (include-removed-object? #f)
+		       (subclasses #f)	; ignore(to avoid WARNING)
+		       )
     (let1 cn (class-name class)
       (cond ((or include-removed-object? (and index (get-optional may-be-sweep? #f)))
 	     (kahua-instances-by-id (data-path db cn) file-is-regular?

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: developer.scm,v 1.6.12.1 2007/01/25 10:10:08 bizenn Exp $
+;; $Id: developer.scm,v 1.6.12.2 2007/02/02 09:44:47 bizenn Exp $
 
 
 (define-module kahua.developer
@@ -70,7 +70,7 @@
                 (else (try-lock (- record 1)))))
         (unless (file-exists? lock-file)
           (with-output-to-file lock-file (lambda () (newline))))
-        (set! lock-port (open-output-file lock-file :if-exists? :append))
+        (set! lock-port (open-output-file lock-file :if-exists :append))
         (try-lock 10)))
 
     (define (unlock)

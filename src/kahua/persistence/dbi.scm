@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.16.2.1 2007/01/22 14:48:38 bizenn Exp $
+;; $Id: dbi.scm,v 1.16.2.2 2007/02/02 09:44:47 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -394,7 +394,9 @@
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
-		       (include-removed-object? #f))
+		       (include-removed-object? #f)
+		       (subclasses #f)	; ignore(to avoid WARNING)
+		       )
     (or (and-let* ((tab (kahua-class->table-name db class))
 		   (conn (connection-of db)))
 	  (receive (filter-proc res)
