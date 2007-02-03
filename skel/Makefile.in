@@ -55,15 +55,15 @@ TEMPLATEDIR = templates
 XMLFILES    = page.xml
 
 
-CONFIG_GENERATED = Makefile $(package).conf test/test.scm test/test.conf \
-		   config.log config.status autom4*.cache
-MAKE_GENERATED = $(package)/version.kahua
+ALL_TARGETS = $(SCRIPTS) $(package)/version.kahua $(package).conf \
+		test/test.scm test/test.conf
+CONFIG_GENERATED = Makefile config.log config.status autom4*.cache
+MAKE_GENERATED =  $(ALL_TARGETS) tmp checkout
 TEST_GENERATED = test/_tmp test/_work test/$(package)
 
 .PHONY: all check clean distclean install maintainer-clean
 
-all:	test/test.conf test/test.scm $(SCRIPTS) $(package)/version.kahua $(package).conf
-	test -L checkout || ln -s . checkout
+all: $(ALL_TARGETS)
 
 $(package)-start: $(package)-start.in
 	sed -e "s@###%%_PROJECT_NAME_UP_%%_INPLACE###@$(%%_PROJECT_NAME_UP_%%_INPLACE)@" $? > $@
@@ -91,14 +91,15 @@ $(package).conf: $(package).conf.in
 	    -e "s@###%%_PROJECT_NAME_UP_%%_INPLACE_WORKING###@$(%%_PROJECT_NAME_UP_%%_INPLACE)@" \
 	    -e "s@###%%_PROJECT_NAME_UP_%%_INPLACE_DOCPATH###@$(%%_PROJECT_NAME_UP_%%_INPLACE)@" \
 	    $? > $@
+	test -L checkout || ln -s . checkout
+	test -d tmp || mkdir tmp
 
 check:  all
 	rm -f test/test.log
 	cd test; $(GOSH) -I$(KAHUA_LIB) ./test.scm > test.log
 
 clean:
-	rm -rf core *~ $(package)/*~ test/*~ test/test.log $(SCRIPTS) checkout \
-			$(TEST_GENERATED) $(MAKE_GENERATED)
+	rm -rf core *~ $(package)/*~ test/*~ test/test.log $(TEST_GENERATED) $(MAKE_GENERATED)
 
 install: 
 	$(KAHUA_INSTALL) $(KAHUACONFIG) -t script $(SCRIPTFILES)
