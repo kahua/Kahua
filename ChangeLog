@@ -1,3 +1,8 @@
+2007-02-03  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/Makefile.in
+	  Now clean up properly, and fix some other bugs.
+
 2007-02-02  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua-spvr.scm, src/kahua/developer.scm,
