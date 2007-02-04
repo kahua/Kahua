@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.9.2.1 2006/12/27 16:02:57 bizenn Exp $
+;; $Id: kahua-package.scm,v 1.9.2.2 2007/02/04 07:36:18 bizenn Exp $
 (use srfi-13)
 
 (use file.util)
@@ -49,9 +49,6 @@
 	  (cons #`",|skel|/app-servers" "app-servers")
 	  (cons #`",|skel|/configure.ac" "configure.ac")
 	  (cons #`",|skel|/install-sh" "install-sh")
-	  (cons #`",|skel|/proj-start.in" #`",|proj|-start.in")
-	  (cons #`",|skel|/proj-stop.in" #`",|proj|-stop.in")
-	  (cons #`",|skel|/proj.conf.in" #`",|proj|.conf.in")
 	  (cons #`",|skel|/COPYING" "COPYING")))
   (define get-project-name
     (generate-getter
@@ -118,17 +115,10 @@
      (lambda (match seed)
        (string-append seed creator))
      seed line))
-  (define (replace-proj-up line seed)
-    (regexp-fold
-     #/%%_PROJECT_NAME_UP_%%/
-     replace-creator
-     (lambda (match seed)
-       (string-append seed (string-upcase proj)))
-     seed line))
   (define (replace-proj line seed)
     (regexp-fold
      #/%%_PROJECT_NAME_%%/
-     replace-proj-up
+     replace-creator
      (lambda (match seed)
        (string-append seed proj))
      seed line))

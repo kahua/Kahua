@@ -1,3 +1,12 @@
+2007-02-04  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: skel/INSTALL, skel/Makefile.in, skel/configure.ac,
+	          skel/proj/version.kahua.in, skel/test/test.scm.in,
+	          src/kahua-package.scm
+	* Drop: skel/proj-start.in, skel/proj-stop.in, skel/proj.conf.in
+	  Arrange code and simplify them.  Now drop start/stop scripts
+	  and in-place execution.
+
 2007-02-03  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: skel/Makefile.in

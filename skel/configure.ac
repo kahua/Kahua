@@ -1,9 +1,14 @@
-dnl
+dnl ============================================================
 dnl Configuring %%_PROJECT_NAME_%%
 dnl  process this file with "autoconf" to generate 'configure'.
 dnl $Id:$
+dnl ============================================================
+
 AC_PREREQ(2.59)
 AC_INIT(%%_PROJECT_NAME_%%, 0.0.0, %%_EMAIL_ADDRESS_%%)
+
+AC_SUBST(PACKAGE_NAME)
+AC_SUBST(PACKAGE_VERSION)
 
 dnl Check for programs.  Set up PATH according to prefix.
 if test "$prefix" != NONE; then

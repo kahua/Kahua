@@ -49,8 +49,8 @@
 ;         (make-match&pick w))
 
 ;  (test* "version"
-;        '(html (head (title "%%_PROJECT_NAME_%%: version ##%%_PROJECT_NAME_UP_%%_VERSION##"))
-;               (body (h1 "%%_PROJECT_NAME_%%: version ##%%_PROJECT_NAME_UP_%%_VERSION##")
+;        '(html (head (title "%%_PROJECT_NAME_%%: version ##PROJECT_VERSION##"))
+;               (body (h1 "%%_PROJECT_NAME_%%: version ##PROJECT_VERSION##")
 ;                     (a ?@ ?*)))
 ;        (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
 ;        (make-match&pick w))

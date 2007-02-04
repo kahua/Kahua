@@ -1,7 +1,8 @@
 # Makefile for %%_PROJECT_NAME_%%
 # $Id:$
 
-package	          = %%_PROJECT_NAME_%%
+package	          = @PACKAGE_NAME@
+package_version   = @PACKAGE_VERSION@
 kahua		  = kahua
 SHELL             = @SHELL@
 prefix            = @prefix@
@@ -31,20 +32,11 @@ INSTALL = @INSTALL@
 KAHUA_INSTALL = @KAHUA_INSTALL@
 KAHUA_WORKING = $(localstatedir)
 KAHUA_LIB     = $(libdir)
-
 KAHUACONFIG = @KAHUACONFIG_OPTION@
 
-%%_PROJECT_NAME_UP_%%_INPLACE = $(PWD)
 TEST_DIR    = $(PWD)
 
-%%_PROJECT_NAME_UP_%%_VERSION = $(shell cat $(top_srcdir)/VERSION)
-%%_PROJECT_NAME_UP_%%_WORKING = $(%%_PROJECT_NAME_UP_%%_INPLACE)
-%%_PROJECT_NAME_UP_%%CONFIG = -c $(%%_PROJECT_NAME_UP_%%_INPLACE)/$(package).conf
-
-SCRIPTS	= $(package)-start $(package)-stop
-
 SCRIPTFILES = $(package)/$(package).kahua $(package)/version.kahua
-
 STATICFILES = $(package)/$(package).css
 
 SOURCEDIR   = $(package)
@@ -54,45 +46,29 @@ PLUGINFILE  = $(package).scm
 TEMPLATEDIR = templates
 XMLFILES    = page.xml
 
-
-ALL_TARGETS = $(SCRIPTS) $(package)/version.kahua $(package).conf \
-		test/test.scm test/test.conf
+ALL_TARGETS = $(package)/version.kahua test/test.scm test/test.conf
+DIST_GENERATED = configure VERSION DIST_EXCLUDE_X
 CONFIG_GENERATED = Makefile config.log config.status autom4*.cache
-MAKE_GENERATED =  $(ALL_TARGETS) tmp checkout
+MAKE_GENERATED =  $(ALL_TARGETS) checkout
 TEST_GENERATED = test/_tmp test/_work test/$(package)
 
 .PHONY: all check clean distclean install maintainer-clean
 
 all: $(ALL_TARGETS)
 
-$(package)-start: $(package)-start.in
-	sed -e "s@###%%_PROJECT_NAME_UP_%%_INPLACE###@$(%%_PROJECT_NAME_UP_%%_INPLACE)@" $? > $@
-	chmod +x $@
-
-$(package)-stop: $(package)-stop.in
-	sed -e "s@###%%_PROJECT_NAME_UP_%%_INPLACE###@$(%%_PROJECT_NAME_UP_%%_INPLACE)@" $? > $@
-	chmod +x $@
-
 test/test.conf: test/test.conf.in
 	sed -e "s@##TEST_DIR##@$(TEST_DIR)@" $? > $@
+	test -L checkout || ln -s . checkout
 
 test/test.scm:	test/test.scm.in
 	sed -e "s@##GOSH##@$(GOSH)@" -e "s@##PLUGINS##@$(PLUGINFILES)@" \
 	    -e "s@##KAHUA_WORKING##@$(KAHUA_WORKING)@" \
 	    -e "s@##KAHUA_LIB##@$(KAHUA_LIB)@" \
-	    -e "s@##%%_PROJECT_NAME_UP_%%_VERSION##@$(%%_PROJECT_NAME_UP_%%_VERSION)@" \
+	    -e "s@##PROJECT_VERSION##@$(package_version)@" \
 	    $? > $@
 
 $(package)/version.kahua: $(package)/version.kahua.in
-	sed -e "s@###%%_PROJECT_NAME_UP_%%_VERSION###@$(%%_PROJECT_NAME_UP_%%_VERSION)@" $? > $@
-
-$(package).conf: $(package).conf.in
-	sed -e "s@###%%_PROJECT_NAME_UP_%%_INPLACE_SOCKETBASE###@$(%%_PROJECT_NAME_UP_%%_INPLACE)/tmp@" \
-	    -e "s@###%%_PROJECT_NAME_UP_%%_INPLACE_WORKING###@$(%%_PROJECT_NAME_UP_%%_INPLACE)@" \
-	    -e "s@###%%_PROJECT_NAME_UP_%%_INPLACE_DOCPATH###@$(%%_PROJECT_NAME_UP_%%_INPLACE)@" \
-	    $? > $@
-	test -L checkout || ln -s . checkout
-	test -d tmp || mkdir tmp
+	sed -e "s@##PROJECT_VERSION##@$(package_version)@" $? > $@
 
 check:  all
 	rm -f test/test.log
@@ -116,11 +92,6 @@ install:
 	done
 	@cat MESSAGES
 
-install-scripts:
-	for f in $(SCRIPTS); do \
-	  $(INSTALL) -m 555 $$f $(bindir)/$$f;\
-	done
-
 uninstall:
 	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t static $(STATICFILES)
 	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t plugin -r $(PLUGINFILE) \
@@ -133,4 +104,4 @@ distclean: clean
 	-rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean: clean
-	-rm -rf $(CONFIG_GENERATED) configure VERSION DIST_EXCLUDE_X
+	-rm -rf $(CONFIG_GENERATED) $(DIST_GENERATED)
