@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.9.2.2 2007/02/04 07:36:18 bizenn Exp $
+;; $Id: kahua-package.scm,v 1.9.2.3 2007/02/04 07:44:43 bizenn Exp $
 (use srfi-13)
 
 (use file.util)
@@ -13,9 +13,9 @@
 
 (use kahua.config)
 
-;
-; generate
-;
+;;
+;; generate a skelton application
+;;
 (define (generate-getter prmt rexp)
   (lambda ()
     (let lp ((dat #f))
@@ -124,9 +124,16 @@
      seed line))
   (replace-proj str ""))
 
-;
-; main
-;
+(define (generate-skel args)
+  (let-args args ((creator "creator=s")
+		  (mail "mail=s")
+		  . projects)
+    (let1 skel (build-path (kahua-etc-directory) "skel") ; FIXME!!
+      (for-each (cut generate skel <> creator mail) projects))))
+
+;;
+;; create site bundle
+;;
 
 (define (create-site args)
   (let-args args ((shared "shared")
@@ -136,12 +143,9 @@
 		  . sites)
     (for-each (cut kahua-site-create <> :owner owner :group group :shared? shared) sites)))
 
-(define (generate-skel args)
-  (let-args args ((creator "creator=s")
-		  (mail "mail=s")
-		  . projects)
-    (let1 skel (build-path (kahua-etc-directory) "skel") ; FIXME!!
-      (for-each (cut generate skel <> creator mail) projects))))
+;;
+;; main
+;;
 
 (define *command-table*
   `(("create" ,create-site "create [-shared|-private] [-owner=<owner>] [-group=<group>] <site-to-path>")
