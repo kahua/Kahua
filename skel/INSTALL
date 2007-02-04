@@ -13,29 +13,25 @@ Kahua-1.0.1 or later
   % ./configure [any options if you need]
 
 You have to give some options to specify the same install directories 
-as Kahua installed. For example if you gave --prefix=$HOME to 
-configure script of Kahua when you installed it, you have to give the 
-same option to kahua-web's configure script.
+as Kahua installed. For example if you gave --prefix=/usr/local/kahua
+to configure script of Kahua when you installed it, you have to give
+the same option to kahua-web's configure script.
 
-  % ./configure --prefix=$HOME
+  % ./configure --prefix=/usr/local/kahua
 
-And then
+And if you want to install it into a site bundle, you should give
+a option like:
+
+  % ./configure --prefix=/usr/local/kahua --with-site-bundle=$HOME/work/site
+
+Now go ahead:
 
   % make
   % make check
   % make install
 
-Then, edit app-servers in the Kahua working directory to add "%%_PROJECT_NAME_%%" entry.
+and edit app-servers in the Kahua working directory or the site bundle
+to add "%%_PROJECT_NAME_%%" entry.
 
   (%%_PROJECT_NAME_%% :arguments () :run-by-default 1)
-
-[Information]
-
-You can find some %%_PROJECT_NAME_%%'s information at the Kahua.org site.
-
-Sorry, it is now not updated.  Please participate and post your questions
-to the kahua-dev mailing list.
-
-http://www.kahua.org/cgi-bin/kahua.cgi/kahua-web/show/info/Mailing%20List
-
 
