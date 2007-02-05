@@ -39,7 +39,6 @@
 	          skel/test/test.conf.in, skel/test/test.scm.in
 	  Don't do "keyword substitution" when check in.
 
-
 	* Fix: skel/INSTALL
 	  Update description.
 
