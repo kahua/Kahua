@@ -1,3 +1,8 @@
+2007-02-05  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-server.scm
+	  After reload kahua application module, invoke kahua-db-purge-objs.
+
 2007-02-04  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: skel/INSTALL, skel/Makefile.in, skel/configure.ac,
