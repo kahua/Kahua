@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.scm,v 1.8 2006/10/08 07:32:11 bizenn Exp $
+;; $Id: kahua-admin.scm,v 1.8.2.1 2007/02/05 10:03:39 bizenn Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -179,19 +179,19 @@
 			 (eqv? (get-keyword :worker-count w) t/c)))
 		   workers)))
     (if (null? targets)
-	  (format #t "No such worker: ~a\n" t/c)
-	  (for-each (lambda (w)
-		      (let* ((wid   (get-keyword :worker-id w))
-			     (wtype (get-keyword :worker-type w))
-			     (fs    (map (cut symbol->string <>) files))
-			     (ans   (send-command wid
-						  `(update-server ,@fs))))
-			(if (equal? (caddr ans) "#f")
-			    (begin
-			      (format #t "update failed: ~a(~a)\n" wtype wid)
-			      (format #t "~a\n" (car ans)))
-			    (format #t "update: ~a(~a)\n" wtype wid))))
-		    targets))
+	(format #t "No such worker: ~a\n" t/c)
+	(for-each (lambda (w)
+		    (let* ((wid   (get-keyword :worker-id w))
+			   (wtype (get-keyword :worker-type w))
+			   (fs    (map (cut symbol->string <>) files))
+			   (ans   (send-command wid
+						`(update-server ,@fs))))
+		      (if (equal? (caddr ans) "#f")
+			  (begin
+			    (format #t "update failed: ~a(~a)\n" wtype wid)
+			    (format #t "~a\n" (car ans)))
+			  (format #t "update: ~a(~a)\n" wtype wid))))
+		  targets))
     spvr-command-processor))
 
 ;; Deal with plugin command ------------------------------------

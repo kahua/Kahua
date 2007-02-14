@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.9 2006/12/02 07:11:32 bizenn Exp $
+;; $Id: efs.scm,v 1.9.2.2 2007/02/02 09:44:47 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -461,7 +461,7 @@
 		 (for-each (lambda (id)
 			     (and-let* ((obj (kahua-instance class (x->integer id) #t)))
 			       (and (equal? key (key-of obj)) (ret obj))))
-			   (directory-list (data-path db (class-name class)) :children #t
+			   (directory-list (data-path db (class-name class)) :children? #t
 					   :filter file-is-regular? :filter-add-path? #t))
 		 #f))
       (let1 path (key-path db (class-name class) key)
@@ -529,7 +529,9 @@
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
-		       (include-removed-object? #f))
+		       (include-removed-object? #f)
+		       (subclasses #f)	; ignore(to avoid WARNING)
+		       )
     (let1 cn (class-name class)
       (cond ((or include-removed-object? (and index (get-optional may-be-sweep? #f)))
 	     (kahua-instances-by-id (data-path db cn) file-is-regular?
