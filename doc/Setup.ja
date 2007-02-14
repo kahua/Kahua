@@ -3,7 +3,7 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: Setup.ja,v 1.16 2006/12/27 06:30:02 bizenn Exp $
+;; $Id: Setup.ja,v 1.16.2.2 2007/02/14 07:40:06 bizenn Exp $
 
 * Kahuaをセットアップする
 
@@ -17,20 +17,19 @@
 Kahuaを動かすためには、0.8.8 以降のpthreadをサポートした
 [http://practical-scheme.net/gauche/index-j.html Gauche]
 がインストール済みである必要があります。
+
+ただし、0.8.8には大きなバグがいくつかあるので、0.8.9以降の
+使用を推奨します。自分のシステムにどんなバージョンのGauche
+がインストールされているかは以下のコマンドを実行すればわかり
+ます。
 {{{
 $ gosh -V
-Gauche scheme interpreter, version 0.8.8 [utf-8,pthreads]
+Gauche scheme interpreter, version 0.8.9 [utf-8,pthreads]
 }}}
-なお、0.8.8リリースには、Schemeスクリプト内でエラー/例外が発生し、
-かつスクリプト内でそのエラー/例外が補足されない場合、エラーメッセージを
-表示せずに終了してしまうバグがあります。
-
-http://sourceforge.net/mailarchive/forum.php?thread_id=30949517&forum_id=2043
-
-このパッチを適用してからGaucheをビルドすることを推奨します。
-
 適切なバージョンの Gauche がインストールされていなければ、
 インストールしてください。
+
+参考: [[GaucheForKahua//KahuaのためのGaucheインストール入門]]
 
 ----
 
@@ -42,9 +41,9 @@ http://sourceforge.net/mailarchive/forum.php?thread_id=30949517&forum_id=2043
 しまうことをお薦めします。後述のようなパーミッションやユーザ/グループの
 設定が不要になります。
 {{{
-% tar xvzf Kahua-1.0.tgz
-% cd Kahua-1.0
-% ./configure --prefix=${HOME}/kahua --with-staticdir=${HOME}/public_html/kahua
+% tar xvzf Kahua-1.0.2.tgz
+% cd Kahua-1.0.2
+% ./configure --prefix=${HOME}/kahua
 % make
 % make check
 % make install
@@ -52,10 +51,9 @@ http://sourceforge.net/mailarchive/forum.php?thread_id=30949517&forum_id=2043
 }}}
 
 これでKahuaを動かすのに必要なもの全てとサンプルアプリケーションとが、
-${HOME}/kahua と ${HOME}/public_html/kahuaの下にインストールされます。
-${HOME}/kahua/bin にPATHを通しておくと便利でしょう。
-また、Kahua内蔵のHTTPdを使えば、ApacheなどのWebサーバを別途用意する
-必要はありません。
+${HOME}/kahua の下にインストールされます。${HOME}/kahua/bin にPATHを通
+しておくと便利でしょう。また、Kahua内蔵のHTTPdを使えば、Apacheなどの
+Webサーバを別途用意する必要はありません。
 
 *** Kahuaを起動する
 
@@ -63,18 +61,18 @@ Kahuaを起動するには、以下のコマンドを実行します。
 {{{
 % ($HOME/kahua/bin/kahua-spvr --httpd localhost:8888 >>/tmp/kahua-error.log &)
 }}}
-ポート番号は非特権ポートから適当に決めて下さい。--httpd の引数として
-ポート番号だけを指定した場合は、0.0.0.0(および可能なら[::])にサーバ
-ソケットがbindされます。適切にフィルタリングをしていない場合は外部から
-自由にアクセスできてしまうのでご注意ください。
+ポート番号は非特権ポートから適当に決めて下さい。--httpd(もしくは-H) の
+引数としてポート番号だけを指定した場合は、0.0.0.0(および可能なら[::])に
+サーバソケットがbindされます。適切にフィルタリングをしていない場合は外
+部から自由にアクセスできてしまうのでご注意ください。
 
-ブラウザで http://localhost:8888/ にアクセスしてみましょう。
-サンプルアプリケーションのlambdabooksが表示されたら成功です。
-いろいろ遊んでみてください。サンプルアプリケーションのソースコードは
-$HOME/kahua/var/kahua/checkoutの下にアプリケーション名と同じ名前の
-ディレクトリごとに置かれています。なお、kahua-shell を使ってワーカ
-プロセスに接続したいときは、後述の「開発アカウントを作成する」を参照
-してください。
+ブラウザで http://localhost:8888/ にアクセスしてみましょう。サンプルア
+プリケーションのlambdabooksが表示されたら成功です。いろいろ遊んでみてく
+ださい。サンプルアプリケーションのソースコードは
+$HOME/kahua/var/kahua/checkoutの下にアプリケーション名と同じ名前のディ
+レクトリごとに置かれています。なお、kahua-shell を使ってワーカプロセス
+に接続したいときは、後述の「開発アカウントを作成する」を参照してくださ
+い。
 
 ----
 
@@ -141,14 +139,19 @@ Webサーバの実行ユーザが www だとすると、
 }}}
 で kahua グループに taro を追加することができます。
 
+'''注意:''' usermodコマンドの挙動は、OSごとに微妙に違っています。NetBSDでは
+セカンダリグループを追加するだけですが、Ubuntu Linux や Fedora Coreなどでは
+セカンダリグループを上書きしてしまいます。必ずお使いのusermodコマンドの挙動
+を確認してから実行してください。
+
 *** ビルドする
 
 ビルドといっても、KahuaはほとんどがGaucheスクリプトであり(一部shスクリプト)、
 ./configure のオプションに気をつけさえすれば特に問題はありません。以下は
 筆者があるサイトにKahuaをインストールするためにビルドを行う様子です。
 {{{
-% tar xzvf Kahua-1.0.tgz
-% cd Kahua-1.0
+% tar xzvf Kahua-1.0.2.tgz
+% cd Kahua-1.0.2
 % ./configure \
     --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
     --prefix=/usr/local/kahua \
@@ -340,6 +343,8 @@ Kahua 0.8から、サイトバンドルという機構が組み込まれました。Kahuaサーバ群が
 動作するワーキングディレクトリを抽象化したもので、単一のKahuaインストール
 ベースの下で、複数のKahuaサーバ群(kahua-spvrとその配下のサーバ群)を簡単に
 動かすことができるようになります。
+
+参考: [[Concepts/Site Bundle//サイトバンドル]]
 
 *** サイトバンドルを作る
 

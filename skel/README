@@ -1,10 +1,9 @@
-We are pleased to announce the version 0.0.0 release of Kahua %%_PROJECT_NAME_%%.
-This program is a dummy sample of Kahua applications.
+%%_PROJECT_NAME_%%: a skelton of Kahua application.
 
 See the file INSTALL for building and installation instructions.
 
 Please send all bug reports by electronic mail to:
     %%_EMAIL_ADDRESS_%%
 
-Kahua %%_PROJECT_NAME_%% is opensource software.  
-See the file COPYING for copying conditions.
+%%_PROJECT_NAME_%% is opensource software.  Please
+See the file "COPYING" for copying conditions.

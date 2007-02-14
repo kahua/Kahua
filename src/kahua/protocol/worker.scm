@@ -6,7 +6,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.4 2006/11/20 10:51:46 bizenn Exp $
+;; $Id: worker.scm,v 1.4.2.1 2007/01/12 08:32:28 bizenn Exp $
 (define-module kahua.protocol.worker
   (use util.list)
   (use gauche.net)
@@ -89,17 +89,22 @@
   (make-client-socket (worker-id->sockaddr (and cgsid (gsid->worker-id cgsid)) (kahua-sockbase))))
 
 (define (talk-to-worker cgsid header params)
-  (call-with-client-socket (make-socket-to-worker cgsid)
-    (lambda (w-in w-out)
-      (log-format "C->W header: ~s" header)
-      (log-format "C->W params: ~s" params)
-      (write header w-out)
-      (write params w-out)
-      (flush w-out)
-      (let* ((w-header (read w-in))
-	     (w-body   (read w-in)))
-	(log-format "C<-W header: ~s" w-header)
-	(check-kahua-status w-header w-body)
-	(values w-header w-body)))))
+  (guard (e ((not (kahua-error? e))
+	     (cond ((slot-exists? e 'message)
+		    (log-format "Error: ~a ~s" (class-name (class-of e)) (slot-ref e 'message)))
+		   (else (log-format "Error: ~s" e)))
+	     (error <kahua-worker-not-found> "Worker not found")))
+    (call-with-client-socket (make-socket-to-worker cgsid)
+      (lambda (w-in w-out)
+	(log-format "C->W header: ~s" header)
+	(log-format "C->W params: ~s" params)
+	(write header w-out)
+	(write params w-out)
+	(flush w-out)
+	(let* ((w-header (read w-in))
+	       (w-body   (read w-in)))
+	  (log-format "C<-W header: ~s" w-header)
+	  (check-kahua-status w-header w-body)
+	  (values w-header w-body))))))
 
 (provide "kahua/protocol/worker")

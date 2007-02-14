@@ -1,4 +1,0 @@
-#!/bin/sh
-
-kahua-admin -c ###%%_PROJECT_NAME_UP_%%_INPLACE###/%%_PROJECT_NAME_%%.conf shutdown > /dev/null 2>&1
-

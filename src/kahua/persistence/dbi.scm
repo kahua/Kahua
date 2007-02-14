@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.16 2006/12/12 03:39:17 bizenn Exp $
+;; $Id: dbi.scm,v 1.16.2.2 2007/02/02 09:44:47 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -114,21 +114,16 @@
 (define-method kahua-db-dbi-build-dsn ((db <kahua-db-dbi>) driver options)
   (format "dbi:~a:~a" driver options))
 
-(define transaction-level (make-parameter 0))
+(define transactional? (make-parameter #t))
 (define-method with-dbi-transaction ((db <kahua-db-dbi>) proc)
-  (define (parameter-inc! param)
-    (param (+ 1 (param))))
-  (define (parameter-dec! param)
-    (param (- (param) 1))
-    (param))
   (define (do-start-transaction conn)
-    (when (= 0 (parameter-inc! transaction-level))
+    (when (transactional?)
       (dbi-do conn "start transaction" '(:pass-through #t))))
   (define (do-commit conn)
-    (when (= 0 (parameter-dec! transaction-level))
+    (when (transactional?)
       (dbi-do conn "commit" '(:pass-through #t))))
   (define (do-rollback conn)
-    (when (= 0 (parameter-dec! transaction-level))
+    (when (transactional?)
       (dbi-do conn "rollback" '(:pass-through #t))))
   (let1 conn (connection-of db)
     (guard (e (else
@@ -136,7 +131,8 @@
 	       (raise e)))
       (do-start-transaction conn)
       (begin0
-	(proc conn)
+	(parameterize ((transactional? #f))
+	  (proc conn))
 	(do-commit conn)))))
 
 (define-method lock-db ((db <kahua-db-dbi>)) #t)
@@ -398,7 +394,9 @@
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
-		       (include-removed-object? #f))
+		       (include-removed-object? #f)
+		       (subclasses #f)	; ignore(to avoid WARNING)
+		       )
     (or (and-let* ((tab (kahua-class->table-name db class))
 		   (conn (connection-of db)))
 	  (receive (filter-proc res)
@@ -559,7 +557,7 @@
   (let-keywords* args
       ((nullable? #t)
        (default   #f))
-    (let1 conn (connection-of)
+    (let1 conn (connection-of db)
       (dbi-do conn
 	      (with-output-to-string
 		(lambda ()
