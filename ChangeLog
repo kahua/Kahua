@@ -1,5 +1,9 @@
 2007-02-15  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Add: src/kahua/server.scm
+	  Add "with-validation" as a declarative validation syntax.
+	  It's very experimental.
+
 	* Merged from stable1_0 branch(tagged MERGED_TO_HEAD_20070215).
 
 2007-02-14  Tatsuya BIZENN  <bizenn@arthub.net>

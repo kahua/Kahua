@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.93 2006/12/31 09:11:47 shibata Exp $
+;; $Id: server.scm,v 1.94 2007/02/15 02:54:27 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -75,6 +75,8 @@
           kahua-render
           <json-base>
           x->json
+
+	  with-validation
           )
   )
 (select-module kahua.server)
@@ -1565,5 +1567,20 @@
                 context))))
 
 (add-interp! 'json interp-json)
+
+;; Declarative Validation Syntax (experimental)
+(define-syntax with-validation
+  (syntax-rules (=>)
+    ((_ ((val validator error) ...) => err-hdr body ...)
+     (let1 check (fold (lambda (e r)
+			 (apply (lambda (v vldr err)
+				  (if (vldr v)
+				      r
+				      (cons (err v) r)))
+				e))
+		       '() `((,val ,validator ,error) ...))
+       (if (null? check)
+	   (begin body ...)
+	   (err-hdr (reverse! check)))))))
 
 (provide "kahua/server")
