@@ -1,3 +1,145 @@
+2007-02-15  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Merged from stable1_0 branch(tagged MERGED_TO_HEAD_20070215).
+
+2007-02-14  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Drop: doc/hello-kahua.ja
+	  Because it's obsolete.
+
+2007-02-05  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-server.scm
+	  After reload kahua application module, invoke kahua-db-purge-objs.
+
+2007-02-04  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: skel/INSTALL, skel/Makefile.in, skel/configure.ac,
+	          skel/proj/version.kahua.in, skel/test/test.scm.in,
+	          src/kahua-package.scm
+	* Drop: skel/proj-start.in, skel/proj-stop.in, skel/proj.conf.in
+	  Arrange code and simplify them.  Now drop start/stop scripts
+	  and in-place execution.
+
+2007-02-03  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/Makefile.in
+	  Now clean up properly, and fix some other bugs.
+
+2007-02-02  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-spvr.scm, src/kahua/developer.scm,
+	       src/kahua/persistence.scm, src/kahua/persistence/efs.scm,
+	       src/kahua/persistence/dbi.scm
+	  Avoid "Unknown keyword WARNING" when work with recent Gauche
+	  CVS HEAD version.  But this fix is very transitional, and
+	  fix again after next Gauche release.
+
+	* Change: emacs/kahua.el
+	  Now run-kahua also work with ssh for remote Kahua.
+	  It works very similarly to run-kahua-shell.
+
+	* Change: emacs/kahua.el
+	  Now run-kahua-shell prompt your site bundle, and work
+	  directory completion.
+	  If you specify host, user(for ssh access), or site bundle,
+	  The value is used as default value at next time.
+
+2007-02-01  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: skel/configure.ac, skel/INSTALL, skel/Makefile.in,
+	          skel/proj/proj.css, skel/proj/proj.kahua,
+	          skel/proj/version.kahua.in, skel/proj.conf.in,
+	          skel/test/test.conf.in, skel/test/test.scm.in
+	  Don't do "keyword substitution" when check in.
+
+	* Fix: skel/INSTALL
+	  Update description.
+
+2007-01-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-httpd.scm
+	  If HTTP client sends request and close connection immediately,
+	  kahua-httpd couldn't recover the error properly.
+	  Reported by Petter Egesund.
+
+2007-01-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/persistence/efs.scm
+	  Fix a wrong keyword.
+
+	* Change: src/kahua/developer.scm, src/kahua/error-report.scm
+	  Replace with-error-handler with guard macro.
+
+2007-01-22  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/persistence/dbi.scm
+	  Lack of connection-of argument.
+	  Arrange with-dbi-transaction to more simple.
+
+	* Fix: src/kahua/persistence/postgresql.scm
+	  Passed a wrong keyword.
+
+2007-01-18  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* New: doc/GaucheForKahua.ja
+
+	* Update: INSTALL, doc/Setup.ja, skel/INSTALL, skel/configure.ac
+
+	* Fix: src/kahua/persistence.scm
+	  Now any value that can be serialized, can
+	  also be used as index value.
+
+2007-01-15  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: skel/proj.conf.in, skel/proj/proj.kahua,
+	          skel/proj/version.kahua, skel/test/test.conf.in
+	          skel/test/test.scm.in
+	  Change file encoding from euc-jp to utf-8.
+
+	* Fix: skel/MESSAGES
+	  Change :run-by-default 0 -> 1.
+
+	* Change: skel/templates/page.xml
+	  Make it well-formed XML(XHTML 1.0 Strict).
+
+2007-01-12  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/protocol/worker.scm
+	  Wrap any error occurred during communication with worker.
+
+2007-01-11  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: examples/lambdabools.init
+	  It created database in wrong place when installed to site bundle.
+
+	* Change: src/kahua/persistence.scm
+	  Change <kahua-proxy> key from "key-of" value to
+	  kahua-persistent-id value.
+	  Change <kahua-proxy> slot name "key" to "ident".
+
+	* Fix: src/kahua/persistence.scm
+	  Arrange serialize format.
+
+2007-01-10  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/xml-template.scm
+	  New method kahua:xml-template->node/, which return
+	  high-level tag function from XML template.
+
+2007-01-09  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/Makefile.in
+	  New target install-scripts and uninstall-scripts.
+
+	* Fix: skel/MESSAGES
+	  Drop extra description.
+
+2007-01-08  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/INSTALL
+	  Catch up.
+
 2006-12-31  SHIBATA Tomohisa <shibata@kahua.org>
 
 	* New: src/kahua/css.scm
@@ -18,6 +160,23 @@
 	  modify copy routine plugins and templates.
 	  by this modify, kahua programmer add templates easily.
 	
+2006-12-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/elem.scm
+	  text/ reversed arguments.
+
+2006-12-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0 released.
+
+	* Fix: src/kahua/config.scm.in
+	  If -c conf-file or -S /path/to/site is specified, it's prior
+	  to KAHUA_DEFAULT_SITE environment variable.
+
+	* Fix: src/kahua-package
+	  "generate" sub command now handle --creator=... and --mail=...
+	  option properly.
+
 2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: kahua.el.in

@@ -5,24 +5,13 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.10 2006/11/28 03:52:57 bizenn Exp $
+;; $Id: mysql.scm,v 1.11 2007/02/15 02:18:16 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use srfi-1)
   (use kahua.persistence.dbi))
 
 (select-module kahua.persistence.mysql)
-
-(define *DEBUG* #f)
-(define (debug-write . args)
-  (when *DEBUG*
-    (apply format (current-error-port) args)))
-
-;; Debug Facility
-;(define dbi-do% dbi-do)
-;(define (dbi-do conn sql opts . params)
-;  (format (current-error-port) "SQL: ~a\n" sql)
-;  (apply dbi-do% conn sql opts params))
 
 (define-class <kahua-db-mysql> (<kahua-db-dbi>)
   ;; Now support :MyISAM and :InnoDB

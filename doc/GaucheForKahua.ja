@@ -1,0 +1,179 @@
+;; Gauche for Kahua -*- coding: euc-jp -*-
+;;
+;; Copyright (c) 2007 Kahua Project.
+;;
+;; $Id: GaucheForKahua.ja,v 1.2 2007/02/15 02:18:00 bizenn Exp $
+
+* KahuaのためのGaucheインストール入門
+
+ここでは、Kahuaを気持ちよく使うためにはどのようにGaucheをインストールす
+べきかを説明します。この文書は現在の安定版であるKahua 1.0および1.0.xを
+対象にしており、さらに新しい版ではまた事情が変わることがあるかもしれま
+せん。
+
+参考: http://practical-scheme.net/gauche/download-j.html
+
+** インストールの概要
+
+Kahuaを使用する上でお薦めのGaucheのインストール形態は、
+
+# ソースコード(tarballもしくはCVSリポジトリ)からインストールする。
+# 内部文字エンコーディングはUTF-8を使う。
+# マルチスレッドサポートを有効にする。
+
+今どき1はないんじゃない?、と思われるかもしれません。しかし、Gaucheは比
+較的若いソフトウェアであり、パッケージシステムでのサポート状況がOSごと
+にかなりばらつきがあります。Kahuaが最新のGaucheに追随する形で開発されて
+いることもあって、あえてソースコードからビルドすべきだと思います。
+Gaucheのビルド手順は、UNIX系オープンソースソフトウェアとしてはごく標準
+的なものであり、ハマりどころはそれほどないと思います。
+
+
+** Gauche 0.8.9のインストール
+
+2007年1月18日現在、Gaucheの最新リリースは0.8.9です。Kahua-1.0は、
+Gauche 0.8.8以降で動作しますが、0.8.8には重大なバグがあるので、0.8.9を
+インストールしましょう。
+
+*** ビルドとインストールに必要なソフトウェア
+
+# Cコンパイラ
+# 開発用ライブラリ+ヘッダファイル
+# make
+# patch
+
+最近のLinuxディストリビューションだと、標準インストールではこれらのソフ
+トウェアが入っていないことがあります(特に2)。入っていないようなら追加イ
+ンストールしなければなりません。また、カーネルやライブラリがネイティブ
+POSIXスレッドをサポートしていなければなりません。確認の仕方については後述
+します。
+
+*** Gaucheのソースコードを入手する
+
+[http://prdownloads.sourceforge.net/gauche/Gauche-0.8.9.tgz Gauche-0.8.9.tgz]
+をダウンロードします。
+
+*** ビルドしテストする
+
+{{{
+% tar xzf Gauche-0.8.9.tgz
+% cd Gauche-0.8.9
+% ./configure --enable-threads=pthreads --enable-multibyte=utf-8 \
+  && make && make -s check
+configure: WARNING: you should use --build, --host, --target
+ [中略]
+Testing digest framework ...                                     passed.
+Testing vport ...                                                passed.
+%
+}}}
+
+configureのオプションには、最低限「--enable-threads=pthreads」を指定し
+て、マルチスレッドをサポートする必要があります。また、
+--enable-multibyte=utf-8 として、内部文字エンコーディングをUTF-8に
+明示的に設定しています。OS固有のオプションや、指定すると嬉しいかもしれな
+いオプションについては後述します。make -s checkの結果を良く見て、fail
+していないことを確認するのもお忘れなく。
+
+*** インストールする
+
+{{{
+% su
+Password:
+# make install
+ [中略]
+# exit
+% make install-check
+Testing installed Gauche
+Testing primitive syntax ...                                     passed.
+ [中略]
+Testing digest framework ...                                     passed.
+Testing vport ...                                                passed.
+}}}
+
+これで、基本的には/usr/localの下にGaucheがインストールされ、インストー
+ルされたGaucheのテストも行われます。あらかじめPATHに/usr/local/binが含
+まれていることを確認しておきましょう。
+
+{{{
+% gosh -V
+Gauche scheme interpreter, version 0.8.9 [utf-8,pthreads]
+}}}
+
+これで、Kahuaを使うためのGaucheの準備が整いました。
+
+** OSごとの個別事情
+
+最初に断っておきますが、本稿の著者が実機で確認しているのは、「Mac OS X
+10.4.8(intel)」「NetBSD 3.1_STABLE」だけです。他は全て、Mac OS X上で動
+作する Parallels Desktop のVM上で確認しています。
+
+*** Linux共通
+
+Kahuaの[[/info/Release Note//リリースノート]]にも書いていますが、カーネル
+2.4系列を使う場合、NPTL(Native Posix Thread Library)が組み込まれている
+必要があります。NPTLが使えるかどうかを確認するには、getconfコマンドを使
+います。
+{{{
+% getconf GNU_LIBPTHREAD_VERSION
+NPTL 0.60
+}}}
+もちろん、カーネル2.6系列に上げてしまってもOKです。
+
+*** [http://www.ubuntulinux.jp/ Ubuntu Linux 6.10(i386)日本語ローカライズ版]
+
+カーネルは2.6系列です。makeやpatchコマンドは標準でインストールされるよ
+うですが、libc6-devパッケージはインストールされません。libc6-devを追加
+でインストールする必要があります。GUIを使うならSynapticパッケージマネー
+ジャでlibc6-devパッケージをチェックして「適用」ボタンを押せばよいでしょ
+う。コマンドラインでやるなら、
+{{{
+% sudo apt-get install libc6-dev
+}}}
+でインストールできます。
+
+また、iconvが標準で含まれているため、configureオプション
+に--with-iconv=/usr を指定すれば、iconvサポートを追加することができます。
+もちろん日本語(とASCII文字)の範囲でだけKahuaやGaucheを使うのなら、これ
+は必須ではありません。
+
+*** [http://fedora.redhat.com/ Fedora Core 6(i386)]
+
+インストールする際、パッケージセットを選ぶ際、「ソフトウェア開発」に
+チェックを入れましょう(デフォルトではチェックされていません)。
+
+インストール後にこれらのパッケージ群を追加するには、パッケージマネージャ
+のブラウズタブの左ペインで「開発」を選択し、右ペインで「開発ツール」と
+「開発ライブラリ」にチェックを入れて、「適用」ボタンを押せばインストー
+ルされるはずです。
+
+*** [http://www.freebsd.org/ FreeBSD 6.2 RELEASE(i386)]
+
+portsからソフトウェアを追加する必要はありません。
+
+*** [http://www.netbsd.org/ NetBSD 3.1_STABLE/4.0_BETA2(i386)]
+
+pkgsrcからソフトウェアを追加する必要はありません。また、iconvがOSに標準
+で含まれていますので、configureオプションに--with-iconv=/usrを指定すれ
+ば、iconvサポートを追加することができます。
+
+*** [http://www.apple.com/ Mac OS X 10.4.8(intel)]
+
+あらかじめBSDパッケージと開発環境をBSD SDKつきでインストールしておく必
+要があります。また、iconvがOSに標準で含まれていますので、configureオプ
+ションに--with-iconv=/usrを指定すれば、iconvサポートを追加することがで
+きます。
+
+*** その他のOSについて
+
+試していないのでよくわかりませんが、普通のUNIX系OSであればそうハマると
+ころはないと思います。もしハマるところがあるようなら、次のサイトで何か
+報告されているかもしれません。
+
+http://practical-scheme.net/wiliki/wiliki.cgi?Gauche%3aPlatform
+
+古い情報も残っていたりするので、日付なども確認しましょう。
+
+それでもうまくいかなければ、
+[http://practical-scheme.net/wiliki/wiliki.cgi WiLiKi]に書き込んだり、
+[http://www.lingr.com/room/gauche LingrのGauche部屋]で聞いてみると、
+誰かが教えてくれるかもしれません(し教えてくれないかもしれません)。

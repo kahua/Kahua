@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.init,v 1.6 2006/12/27 00:24:40 bizenn Exp $
+;; $Id: lambdabooks.init,v 1.7 2007/02/15 02:18:11 bizenn Exp $
 
 (use kahua)
 (use file.util)
@@ -17,7 +17,7 @@
 (define (main args)
   (let-args (cdr args) ((conf-file "c=s") (site-bundle "S=s"))
     (kahua-common-init site-bundle conf-file)
-    (let ((dbname (build-path (ref (kahua-config) 'working-directory) "db")))
+    (let1 dbname (kahua-dbpath (kahua-default-database-name))
       (with-db (db dbname)
         (init-books)
         (init-users)

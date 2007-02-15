@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.9 2006/12/27 13:31:06 cut-sea Exp $
+;; $Id: kahua-package.scm,v 1.10 2007/02/15 02:18:12 bizenn Exp $
 (use srfi-13)
 
 (use file.util)
@@ -13,9 +13,9 @@
 
 (use kahua.config)
 
-;
-; generate
-;
+;;
+;; generate a skelton application
+;;
 (define (generate-getter prmt rexp)
   (lambda ()
     (let lp ((dat #f))
@@ -49,9 +49,6 @@
 	  (cons #`",|skel|/app-servers" "app-servers")
 	  (cons #`",|skel|/configure.ac" "configure.ac")
 	  (cons #`",|skel|/install-sh" "install-sh")
-	  (cons #`",|skel|/proj-start.in" #`",|proj|-start.in")
-	  (cons #`",|skel|/proj-stop.in" #`",|proj|-stop.in")
-	  (cons #`",|skel|/proj.conf.in" #`",|proj|.conf.in")
 	  (cons #`",|skel|/COPYING" "COPYING")))
   (define get-project-name
     (generate-getter
@@ -118,25 +115,25 @@
      (lambda (match seed)
        (string-append seed creator))
      seed line))
-  (define (replace-proj-up line seed)
-    (regexp-fold
-     #/%%_PROJECT_NAME_UP_%%/
-     replace-creator
-     (lambda (match seed)
-       (string-append seed (string-upcase proj)))
-     seed line))
   (define (replace-proj line seed)
     (regexp-fold
      #/%%_PROJECT_NAME_%%/
-     replace-proj-up
+     replace-creator
      (lambda (match seed)
        (string-append seed proj))
      seed line))
   (replace-proj str ""))
 
-;
-; main
-;
+(define (generate-skel args)
+  (let-args args ((creator "creator=s")
+		  (mail "mail=s")
+		  . projects)
+    (let1 skel (build-path (kahua-etc-directory) "skel") ; FIXME!!
+      (for-each (cut generate skel <> creator mail) projects))))
+
+;;
+;; create site bundle
+;;
 
 (define (create-site args)
   (let-args args ((shared "shared")
@@ -146,12 +143,9 @@
 		  . sites)
     (for-each (cut kahua-site-create <> :owner owner :group group :shared? shared) sites)))
 
-(define (generate-skel args)
-  (let-args args ((creator "creator")
-		  (mail "mail")
-		  . projects)
-    (let1 skel (build-path (kahua-etc-directory) "skel") ; FIXME!!
-      (for-each (cut generate skel <> creator mail) projects))))
+;;
+;; main
+;;
 
 (define *command-table*
   `(("create" ,create-site "create [-shared|-private] [-owner=<owner>] [-group=<group>] <site-to-path>")
@@ -162,10 +156,11 @@
 	(else (usage))))
 
 (define (main args)
-  (let-args (cdr args) ((conf-file "c|conf-file=s")
-		  (site "S|site=s")
-		  (gosh "gosh=s")
-		  . restargs)
+  (let-args (cdr args)
+      ((conf-file "c|conf-file=s")
+       (site "S|site=s")
+       (gosh "gosh=s")
+       . restargs)
     (if (< (length restargs) 2)
 	(usage)
 	(apply dispatch-command restargs))))

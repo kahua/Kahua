@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software.
 ;;
-;; $Id: xml-template.scm,v 1.6 2006/12/19 10:28:00 bizenn Exp $
+;; $Id: xml-template.scm,v 1.7 2007/02/15 02:18:16 bizenn Exp $
 
 (define-module kahua.xml-template
   (use srfi-1)
@@ -20,6 +20,7 @@
 	  <kahua:xml-template>
 	  kahua:make-xml-template
 	  kahua:xml-template->sxml
+	  kahua:xml-template->node/
 	  ))
 
 (select-module kahua.xml-template)
@@ -81,6 +82,12 @@
 	    ((list? node) (cons (reverse (fold xml-template->sxml-internal '() node)) accum))
 	    (else (cons node accum))))
     (list (reverse (fold xml-template->sxml-internal '() (slot-ref tmpl 'sxml))))))
+
+(define-method kahua:xml-template->node/ ((tmpl <kahua:xml-template>) . args)
+  (let1 sxml (apply kahua:xml-template->sxml tmpl args)
+    (if (null? sxml)
+	empty
+	(update (cut cons (car (rev-nodes sxml)) <>)))))
 
 ;;
 ;; The parser take input port and seed(maybe a nil)

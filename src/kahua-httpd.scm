@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.16 2006/12/18 07:18:27 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.17 2007/02/15 02:18:11 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -351,31 +351,32 @@
 	   (and (with-body?) (cut send-http-body <> encoding w-body)))))
 
 (define (handle-request cs)
-  (call-with-client-socket cs
-    (lambda (in out)
-      (guard (e ((kahua-error? e)
-		 (log-format "Error: ~s" e)
-		 (reply-error e out))
-		(else
-		 (log-format "Unexpected error: ~s" (kahua-error-string e))
-		 (reply-internal-server-error out #f #t)))
-	(log-format "Request start: ~s" cs)
-	(let*-values (((l) (read-line in))
-		      ((m u v) (parse-request-line l)))
-	  (request-line l)
-	  (request-method m)
-	  (request-uri u)
-	  (request-version v)
-	  (cond ((not m) (raise (make-condition <http-bad-request>)))
-		((unsupported-method? m) (raise (make-condition <http-not-implemented>)))
-		(else
-		 (receive (static-path cgsid header params)
-		     (prepare-dispatch-request cs in)
-		   (if static-path
-		       (serve-static-document out static-path)
-		       (serve-via-worker out cgsid header params)))))))
-      (log-format "Request finish: ~s" cs)
-      (flush out)))
+  (guard (e (else (log-format "Request aborted: ~s" cs)))
+    (call-with-client-socket cs
+      (lambda (in out)
+	(guard (e ((kahua-error? e)
+		   (log-format "Error: ~s" e)
+		   (reply-error e out))
+		  (else
+		   (log-format "Unexpected error: ~s" (kahua-error-string e))
+		   (reply-internal-server-error out #f #t)))
+	  (log-format "Request start: ~s" cs)
+	  (let*-values (((l) (read-line in))
+			((m u v) (parse-request-line l)))
+	    (request-line l)
+	    (request-method m)
+	    (request-uri u)
+	    (request-version v)
+	    (cond ((not m) (raise (make-condition <http-bad-request>)))
+		  ((unsupported-method? m) (raise (make-condition <http-not-implemented>)))
+		  (else
+		   (receive (static-path cgsid header params)
+		       (prepare-dispatch-request cs in)
+		     (if static-path
+			 (serve-static-document out static-path)
+			 (serve-via-worker out cgsid header params)))))))
+	(flush out)))
+    (log-format "Request finished: ~s" cs))
   (for-each sys-unlink (cgi-temporary-files)))
 
 (define (run-server tpool socks)
