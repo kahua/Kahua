@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.16.2.2 2007/02/02 09:44:47 bizenn Exp $
+;; $Id: dbi.scm,v 1.16.2.3 2007/02/21 07:12:11 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -178,7 +178,7 @@
 (define-method kahua-db-ping ((db <kahua-db-dbi>))
   (safe-execute (cut dbi-do (connection-of db)
 		     "select class_name from kahua_db_classes where class_name is NULL"
-		     '(pass-through #t))))
+		     '(:pass-through #t))))
 
 (define-generic set-default-character-encoding!)
 
@@ -577,7 +577,7 @@
 (define-method drop-column-from-table ((db <kahua-db-dbi>)
 				       (table <string>)
 				       (colname <string>))
-  (dbi-do (connection-of db) (format "alter table ~a drop ~a" table colname) '(pass-through #t)))
+  (dbi-do (connection-of db) (format "alter table ~a drop ~a" table colname) '(:pass-through #t)))
 
 (define-method add-index-to-table ((db <kahua-db-dbi>)
 				   (table <string>)
