@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua.el.in,v 1.7 2007/02/15 02:18:10 bizenn Exp $
+;; $Id: kahua.el.in,v 1.8 2007/03/07 09:53:54 bizenn Exp $
 ;;
 
 (require 'comint)
@@ -79,6 +79,12 @@
 Editing commands are similar to those of 'scheme-mode'."
   (make-local-variable 'scheme-buffer)
   (setq scheme-buffer "*kahua-shell*"))
+
+(put 'entry-lambda 'scheme-indent-function 1)
+(font-lock-add-keywords
+ 'kahua-mode
+ '(("\\<define-entry\\>" . font-lock-keyword-face)
+   ("\\<entry-lambda\\>" . font-lock-keyword-face)))
 
 (defun kahua-select-worker-prompt (string)
   "Prompt in the minibuffer for selecting worker"
