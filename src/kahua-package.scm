@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.10 2007/02/15 02:18:12 bizenn Exp $
+;; $Id: kahua-package.scm,v 1.11 2007/03/16 17:12:10 cut-sea Exp $
 (use srfi-13)
 
 (use file.util)
@@ -169,7 +169,7 @@
   (with-output-to-port (current-error-port)
     (lambda ()
       (display "Usage: kahua-package <command> [<options>] <args>...\n")
-      (display "Commans:\n")
+      (display "Commands:\n")
       (for-each (lambda (e) (format #t "  ~a\n" (list-ref e 2))) *command-table*)))
   (exit 1))
 

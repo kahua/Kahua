@@ -1,3 +1,8 @@
+2007-03-17  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: src/kahua-package.scm
+	  Modify help message.
+	
 2007-03-16  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: emacs/kahua.el.in
