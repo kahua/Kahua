@@ -41,7 +41,7 @@ STATICFILES = $(package)/$(package).css
 
 SOURCEDIR   = $(package)
 PLUGINDIR   = plugins
-PLUGINFILE  = $(package).scm
+PLUGINFILES = $(package).scm
 
 TEMPLATEDIR = templates
 XMLFILES    = page.xml
@@ -81,8 +81,6 @@ install:
 	$(KAHUA_INSTALL) $(KAHUACONFIG) -t script $(SCRIPTFILES)
 	$(KAHUA_INSTALL) $(KAHUACONFIG) -t script --no-overwrite $(LOCALSCRIPTFILES)
 	$(KAHUA_INSTALL) $(KAHUACONFIG) -t static --no-overwrite $(STATICFILES)
-	$(KAHUA_INSTALL) $(KAHUACONFIG) -t plugin -r $(PLUGINFILE) \
-                                        $(PLUGINDIR)/$(PLUGINFILE)
 	for f in $(PLUGINFILES); do \
 	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t plugin -r $$f $(PLUGINDIR)/$$f;\
 	done
