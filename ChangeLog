@@ -2,6 +2,7 @@
 
 	* Add "HTTP_COOKIE" into *metavariables* at cgi/kahua.cgi.in.
 	* Add kahua-cookie-ref procedure.
+	* Add document of kahua-cookie-ref.
 	
 2007-03-17  Katsutoshi Itoh <cut-sea@kahua.org>
 
