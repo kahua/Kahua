@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.94 2007/02/15 02:54:27 bizenn Exp $
+;; $Id: server.scm,v 1.95 2007/04/11 09:26:48 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -45,6 +45,7 @@
           kahua-current-context
           kahua-context-ref
           kahua-meta-ref
+	  kahua-cookie-ref
           kahua-context-ref*
 	  kahua-local-session-ref
 	  kahua-local-session-set!
@@ -338,6 +339,17 @@
 (define (kahua-header-set! key val)
   (hash-table-put! (kahua-context-ref "x-kahua-headers")
                    key val))
+
+;; KAHUA-COOKIE-REF key [default]
+;;
+;; Gets CGI metavariable as HTTP_COOKIE
+;; and get cookie's key value
+;;
+(define (kahua-cookie-ref key . maybe-default)
+  (let1 maybe-default (get-optional maybe-default #f)
+    (let ((regex (string->regexp #`",|key|=([^\; ]*)")))
+      (cond ((regex (kahua-meta-ref "HTTP_COOKIE")) => (cut <> 1))
+	    (else maybe-default)))))
 
 ;; KAHUA-CONTEXT-REF* key [default]
 ;;

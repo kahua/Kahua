@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.44 2006/11/20 10:51:45 bizenn Exp $
+;; $Id: kahua.cgi.in,v 1.45 2007/04/11 09:26:48 cut-sea Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -60,6 +60,7 @@
     "HTTP_ACCEPT_CHARSET"
     "HTTP_ACCEPT_ENCODING"
     "HTTP_ACCEPT_LANGUAGE"
+    "HTTP_COOKIE"
     "HTTP_HOST"
     "HTTP_KEEP_ALIVE"
     "HTTP_USER_AGENT"

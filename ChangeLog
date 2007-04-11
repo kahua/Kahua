@@ -1,3 +1,8 @@
+2007-04-11  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Add "HTTP_COOKIE" into *metavariables* at cgi/kahua.cgi.in.
+	* Add kahua-cookie-ref procedure.
+	
 2007-03-17  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Fix: src/kahua-package.scm
