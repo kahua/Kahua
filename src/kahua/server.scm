@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.95 2007/04/11 09:26:48 cut-sea Exp $
+;; $Id: server.scm,v 1.96 2007/04/11 13:59:30 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1246,17 +1246,19 @@
                           (cdr clause) 'a/cont)))
         (format "~a/~a~a" (kahua-worker-type) id argstr)))
 
-    (let* ((server-type (car clause))
-           (cont-id (cadr clause))
-           (return  (return-cont-uri))
-           (argstr  (receive (pargs kargs)
-                        (extract-cont-args (cddr clause) 'a/cont)
-                      (build-argstr pargs
-                                    (if return
-                                        `(("return-cont" . ,return) ,@kargs)
-                                      kargs)))))
-      (format "~a/~a/~a~a~a"
-              (kahua-bridge-name) server-type cont-id argstr (fragment auxs)))))
+    (match clause
+      (((? string? ret)) (format "~a/~a" (kahua-bridge-name) ret))
+      (else (let* ((server-type (car clause))
+		   (cont-id (cadr clause))
+		   (return  (return-cont-uri))
+		   (argstr  (receive (pargs kargs)
+				(extract-cont-args (cddr clause) 'a/cont)
+			      (build-argstr pargs
+					    (if return
+						`(("return-cont" . ,return) ,@kargs)
+						kargs)))))
+	      (format "~a/~a/~a~a~a"
+		      (kahua-bridge-name) server-type cont-id argstr (fragment auxs)))))))
 
 (define-element a/cont (attrs auxs contents context cont)
 

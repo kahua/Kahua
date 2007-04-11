@@ -1,3 +1,9 @@
+2007-04-11  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm
+	  Now if "return-cont" keyword parameter is passed to entry,
+	  the entry can pass it as "remote-cont" value.
+
 2007-04-11  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Add "HTTP_COOKIE" into *metavariables* at cgi/kahua.cgi.in.
