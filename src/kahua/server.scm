@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.96 2007/04/11 13:59:30 bizenn Exp $
+;; $Id: server.scm,v 1.97 2007/04/11 17:13:05 cut-sea Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -348,7 +348,9 @@
 (define (kahua-cookie-ref key . maybe-default)
   (let1 maybe-default (get-optional maybe-default #f)
     (let ((regex (string->regexp #`",|key|=([^\; ]*)")))
-      (cond ((regex (kahua-meta-ref "HTTP_COOKIE")) => (cut <> 1))
+      (cond ((and-let* ((cookie (kahua-meta-ref "HTTP_COOKIE"))
+			(match (regex cookie)))
+	       match) => (cut <> 1))
 	    (else maybe-default)))))
 
 ;; KAHUA-CONTEXT-REF* key [default]
