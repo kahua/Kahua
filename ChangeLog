@@ -13,7 +13,7 @@
 
 	* Fix: src/kahua/server.scm
 	  bug fix for kahua-cookie-ref at the case that
-	  retuan #f from (kahua-meta-ref "HTTP_COOKIE").
+	  return #f from (kahua-meta-ref "HTTP_COOKIE").
 
 2007-04-11  Tatsuya BIZENN  <bizenn@arthub.net>
 
