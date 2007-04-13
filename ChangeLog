@@ -1,3 +1,14 @@
+2007-04-13  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-httpd.scm, cgi/kahua.cgi.in
+	  Support X-Forwarded-For HTTP header.
+	  If X-Forwarded-For header in HTTP request, it
+	  adds to x-kahua-metavariables as "HTTP_X_FORWARDED_FOR"
+	  record, and its first (leftmost) address is set
+	  to x-kahua-remote-addr.  Note that REMOATE_ADDR
+	  in x-kahua-metavariables is not changed.
+	  NB: this feature is not tested yet.
+
 2007-04-12  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Fix: src/kahua/server.scm

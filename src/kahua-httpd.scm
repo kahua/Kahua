@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.17 2007/02/15 02:18:11 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.18 2007/04/13 06:04:05 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -106,8 +106,8 @@
 	 (values (string->symbol method) uri (string->symbol version)))
 	(else (values #f #f #f)))))
 
-(define (parse-header in)
-  (rfc822-header->list in))
+(define http-header-parse rfc822-header->list)
+(define http-header-ref rfc822-header-ref)
 
 (define (parse-uri uri)
   (cond ((string-null? uri) (values #f #f #f #f "/" #f #f))
@@ -287,7 +287,7 @@
 
   (let*-values (((method request-uri version) (values (request-method) (request-uri) (request-version)))
 		((scheme user host port path query frag) (parse-uri request-uri))
-		((http-header) (parse-header in))
+		((http-header) (http-header-parse in))
 		((path-info) (path->path-info path))
 		((abs-path) (path-info->abs-path path-info))
 		((path-translated) (static-document-path-info path-info (kahua-static-document-url))))
@@ -295,6 +295,10 @@
 	(values path-translated #f #f #f)
 	(let* ((local-port (x->string (sockaddr-port (socket-getsockname cs))))
 	       (remote-ipaddr (sockaddr->ipaddr (socket-getpeername cs)))
+	       (client-ipaddr (or (and-let* ((xff (http-header-ref http-header "x-forwarded-for"))
+					     (hops (string-split xff #/\, */)))
+				    (and (pair? hops) (car hops)))
+				  remote-ipaddr))
 	       (http-host (rfc822-header-ref http-header "host"))
 	       (server-uri #`",(or scheme \"http\")://,|http-host|")
 	       (script-name "") ; DUMMY
@@ -322,7 +326,7 @@
 			      (path-info->worker-name path-info) path-info
 			      :server-uri server-uri
 			      :metavariables metavars
-			      :remote-addr remote-ipaddr
+			      :remote-addr client-ipaddr
 			      :bridge script-name
 			      :sgsid state-gsid :cgsid cont-gsid)))
 	  (for-each (lambda (f) (and (file-exists? f) (sys-chmod f #o660))) (cgi-temporary-files))
