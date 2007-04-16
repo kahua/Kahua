@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.73 2007/02/15 02:18:16 bizenn Exp $
+;; $Id: persistence.scm,v 1.74 2007/04/16 03:53:33 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -392,8 +392,8 @@
 
 (define create-index-cache (cut make-hash-table 'equal?))
 (define (clear-index-cache! class)
-  (let1 cache (slot-ref class 'index-cache)
-    (hash-table-for-each cache (lambda (k _) (hash-table-delete! cache k)))))
+  (slot-set! class 'index-cache
+	     (make-hash-table (hash-table-type (slot-ref class 'index-cache)))))
 (define (clear-all-index-cache!)
   (for-each (compose clear-index-cache! cdr) (persistent-class-alist)))
 
