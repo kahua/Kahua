@@ -1,3 +1,10 @@
+2007-04-19  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: emacs/kahua.el.in
+	  Now default "kahua-site-bundle" value is nil.
+	  If it's nil, it means that kahua command is
+	  invoked without -S option.
+
 2007-04-13  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua-httpd.scm, cgi/kahua.cgi.in
