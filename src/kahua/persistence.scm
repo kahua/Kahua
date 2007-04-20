@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.74 2007/04/16 03:53:33 bizenn Exp $
+;; $Id: persistence.scm,v 1.75 2007/04/20 11:41:56 cut-sea Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1774,7 +1774,7 @@
 	   (persistent-list (kahua-persistent-instances db class opts persistent-sweep?)))
       (make <kahua-collection>
 	:class class
-	:instances (append! cached-list persistent-list)))))
+	:instances (append cached-list persistent-list)))))
 
 (define (make-index-filter class index-cond)
   (and-let* (((pair? index-cond))
