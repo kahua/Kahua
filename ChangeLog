@@ -1,3 +1,67 @@
+2007-04-23  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Merge: from HEAD.
+	  ChangeLog entries from 2007-03-07 to 2007-04-20 are
+	  merged from HEAD.
+
+2007-04-20  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: src/persistent.scm
+	  bug fix for make-kahua-collection with :index :any.
+	  When make-kahua-collection with :index :any, then,
+	  index cache was destroyed.
+	
+2007-04-19  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: emacs/kahua.el.in
+	  Now default "kahua-site-bundle" value is nil.
+	  If it's nil, it means that kahua command is
+	  invoked without -S option.
+
+2007-04-13  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-httpd.scm, cgi/kahua.cgi.in
+	  Support X-Forwarded-For HTTP header.
+	  If X-Forwarded-For header in HTTP request, it
+	  adds to x-kahua-metavariables as "HTTP_X_FORWARDED_FOR"
+	  record, and its first (leftmost) address is set
+	  to x-kahua-remote-addr.  Note that REMOATE_ADDR
+	  in x-kahua-metavariables is not changed.
+	  NB: this feature is not tested yet.
+
+2007-04-12  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: src/kahua/server.scm
+	  bug fix for kahua-cookie-ref at the case that
+	  return #f from (kahua-meta-ref "HTTP_COOKIE").
+
+2007-04-11  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm
+	  Now if "return-cont" keyword parameter is passed to entry,
+	  the entry can pass it as "remote-cont" value.
+
+2007-04-11  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Add "HTTP_COOKIE" into *metavariables* at cgi/kahua.cgi.in.
+	* Add kahua-cookie-ref procedure.
+	* Add document of kahua-cookie-ref.
+	
+2007-03-17  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: src/kahua-package.scm
+	  Modify help message.
+	
+2007-03-16  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: emacs/kahua.el.in
+	  Add more keywords.
+
+2007-03-07  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: emacs/kahua.el.in
+	  Add font lock face customization and indentation.
+
 2007-02-21  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/persistence/dbi.scm

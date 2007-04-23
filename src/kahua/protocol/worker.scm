@@ -6,9 +6,10 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.4.2.1 2007/01/12 08:32:28 bizenn Exp $
+;; $Id: worker.scm,v 1.4.2.2 2007/04/23 03:24:11 bizenn Exp $
 (define-module kahua.protocol.worker
   (use util.list)
+  (use util.match)
   (use gauche.net)
   (use gauche.logger)
   (use kahua.gsid)
@@ -69,20 +70,14 @@
 ;; Too ugly. FIXME!!
 (define (check-kahua-status kheader kbody)
   (or (and-let* ((kahua-status (assoc-ref kheader "x-kahua-status")))
-	(if (null? kahua-status)
-	    (error <kahua-worker-unknown-error> "Unknown worker error")
-	    (case (string->symbol (car kahua-status))
-	      ((OK)         #t)
-	      ((SPVR-ERROR)
-	       (if (null? (cdr kahua-status))
-		   (error <kahua-worker-unknown-error> "Unknown worker error")
-		   (case (cadr kahua-status)
-		     ((<kahua-worker-not-found>) (error <kahua-worker-not-found> "Worker not found"))
-		     ((<kahua-worker-not-respond>) (error <kahua-worker-not-respond> "Worker not respond"))
-		     (else (error <kahua-worker-unknown-error> "Unknown worker error")))))
-	      (else
-	       (log-format "Unknown x-kahua-status: ~s" kahua-status)
-	       (error <kahua-worker-unknown-error> "Unknown worker error")))))
+	(match kahua-status
+	  (("OK" _ ...) #t)
+	  (("SPVR-ERROR" e) (=> break)
+	   (case e
+	     ((<kahua-worker-not-found>)   (error <kahua-worker-not-found> "Worker not found"))
+	     ((<kahua-worker-not-respond>) (error <kahua-worker-not-respond> "Worker not respond"))
+	     (else (break))))
+	  (else                            (error <kahua-worker-unknown-error> "Unknown worker error"))))
       #t))
 
 (define (make-socket-to-worker cgsid)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua.el.in,v 1.6.2.3 2007/02/02 05:54:24 bizenn Exp $
+;; $Id: kahua.el.in,v 1.6.2.4 2007/04/23 03:24:02 bizenn Exp $
 ;;
 
 (require 'comint)
@@ -49,7 +49,7 @@
   :type 'string
   :group 'kahua)
 
-(defcustom kahua-site-bundle ""
+(defcustom kahua-site-bundle nil
   "Site Bundle for kahua-shell and kahua-admin."
   :type 'string
   :group 'kahua)
@@ -80,6 +80,15 @@ Editing commands are similar to those of 'scheme-mode'."
   (make-local-variable 'scheme-buffer)
   (setq scheme-buffer "*kahua-shell*"))
 
+(put 'entry-lambda 'scheme-indent-function 1)
+(font-lock-add-keywords
+ 'kahua-mode
+ '(("\\<define-entry\\>" . font-lock-keyword-face)
+   ("\\<entry-lambda\\>" . font-lock-keyword-face)
+   ("\\<reset/pc\\>" . font-lock-keyword-face)
+   ("\\<call/pc\\>" . font-lock-keyword-face)
+   ("\\<let/pc\\>" . font-lock-keyword-face)))
+
 (defun kahua-select-worker-prompt (string)
   "Prompt in the minibuffer for selecting worker"
   (if (string-match kahua-worker-prompt-regex string)
@@ -95,13 +104,16 @@ Editing commands are similar to those of 'scheme-mode'."
     ""))
 (defun kahua-read-site ()
   (let ((insert-default-directory nil))
-    (read-directory-name "site bundle: " nil nil nil kahua-site-bundle)))
+    (let ((site (read-directory-name "site bundle: " nil nil nil kahua-site-bundle)))
+      (if (string= site "")
+	  nil
+	site))))
 
 (defun kahua-command-buffer-setup (bufname comname command host user site)
   (if (not (comint-check-proc bufname))
       (let* ((use-ssh          (and kahua-ssh-mode (not (string= host ""))))
              (program          (if use-ssh "ssh" command))
-             (kahua-shell-args (if (string= site "")
+             (kahua-shell-args (if (or (not site) (string= site ""))
                                    '() (list "-S" (expand-file-name site))))
              (args             (if use-ssh
                                    `(,@kahua-ssh-opts
