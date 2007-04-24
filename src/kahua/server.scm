@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.97 2007/04/11 17:13:05 cut-sea Exp $
+;; $Id: server.scm,v 1.98 2007/04/24 08:47:11 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -931,12 +931,13 @@
                 (contents (sxml:content node)))
             (if (not-accessible? auxs context)
                 (cont "" context)
-                (cond ((get-element-handler name)
-                       => (cut <> attrs auxs contents context
+                (cond ((and (not (assq 'expand-finished auxs))
+			    (get-element-handler name))
+                       => (cut <> name attrs auxs contents context
                                (lambda (nds cntx)
                                  (handle-element-contents nds cntx cont))))
 		      ((memq name '(script style))
-		       (script-element-handler name attrs contents context cont))
+		       (script-element-handler name attrs auxs contents context cont))
                       (else 
                        (default-handler name attrs contents context cont)))
                 )))
@@ -978,35 +979,39 @@
              "</" ,tag "\n>")
            context))))
 
-(define (script-element-handler tag attrs content context cont)
+(define (script-element-handler tag attrs _ content context cont)
   (define (string->script-string str)
     (with-string-io str
       (lambda ()
-	(letrec ((in-code (lambda (c)
-			    (unless (eof-object? c)
-			      (write-char c)
-			      (case c
-				((#\") (in-string (read-char)))
-				(else  (in-code (read-char)))))))
-		 (in-string (lambda (c)
-			      (unless (eof-object? c)
-				(write-char c)
-				(case c
-				  ((#\\) (escape-char (read-char)))
-				  ((#\<) (maybe-escape (read-char)))
-				  ((#\") (in-code (read-char)))
-				  (else (in-string (read-char)))))))
-		 (escape-char (lambda (c)
-				(unless (eof-object? c)
-				  (write-char c)
-				  (in-string (read-char)))))
-		 (maybe-escape (lambda (c)
-				 (unless (eof-object? c)
-				   (when (char=? #\/ c)
-				     (write-char #\\))
-				   (write-char c)
-				   (in-string (read-char))))))
-	  (in-code (read-char))))))
+	(with-port-locking (current-input-port)
+	  (lambda ()
+	    (with-port-locking (current-output-port)
+	      (lambda ()
+		(letrec ((in-code (lambda (c)
+				    (unless (eof-object? c)
+				      (write-char c)
+				      (case c
+					((#\") (in-string (read-char)))
+					(else  (in-code (read-char)))))))
+			 (in-string (lambda (c)
+				      (unless (eof-object? c)
+					(write-char c)
+					(case c
+					  ((#\\) (escape-char (read-char)))
+					  ((#\<) (maybe-escape (read-char)))
+					  ((#\") (in-code (read-char)))
+					  (else (in-string (read-char)))))))
+			 (escape-char (lambda (c)
+					(unless (eof-object? c)
+					  (write-char c)
+					  (in-string (read-char)))))
+			 (maybe-escape (lambda (c)
+					 (unless (eof-object? c)
+					   (when (char=? #\/ c)
+					     (write-char #\\))
+					   (write-char c)
+					   (in-string (read-char))))))
+		  (in-code (read-char))))))))))
   (define (proc-content c)
     (cond ((null? c) c)
 	  ((pair? c) (map proc-content c))
@@ -1122,7 +1127,9 @@
 
 (define-syntax define-element
   (syntax-rules ()
-    ((define-element name args . body)
+    ((_ name proc)
+     (add-element! 'name proc))
+    ((_ name args . body)
      (add-element! 'name (lambda args . body)))))
 
 (define-values (add-element! get-element-handler)
@@ -1227,6 +1234,9 @@
                   kargs)
              "&"))))))
 
+(define (remove-attrs attrs . names)
+  (remove (lambda (x) (memq (car x) names)) attrs))
+
 (define (fragment auxs)
   (cond ((assq-ref auxs 'fragment)
          => (lambda (p) #`"#,(uri-encode-string (car p))"))
@@ -1262,18 +1272,21 @@
 	      (format "~a/~a/~a~a~a"
 		      (kahua-bridge-name) server-type cont-id argstr (fragment auxs)))))))
 
-(define-element a/cont (attrs auxs contents context cont)
+(define (%a/cont-handler _ attrs auxs contents context cont)
+  (define (auxs->path auxs)
+    (cond ((assq-ref auxs 'cont)        => (local-cont  auxs))
+	  ((assq-ref auxs 'remote-cont) => (remote-cont auxs))
+	  (else (kahua-self-uri (fragment auxs)))))
 
-  (define (nodes path)
-    (cont `((a (@ ,@(cons `(href ,path)
-                          (remove (lambda (x)
-                                    (eq? 'href (car x))) attrs)))
+  (define (nodes href)
+    (cont `((a (@@ (expand-finished))
+	       (@ ,href ,@(remove-attrs attrs 'href))
                ,@contents)) context))
 
-  (cond ((assq-ref auxs 'cont) => (compose nodes (local-cont auxs)))
-        ((assq-ref auxs 'remote-cont) => (compose nodes (remote-cont auxs)))
-        (else (nodes (kahua-self-uri (fragment auxs)))))
-  )
+  (nodes (or (assq 'href attrs) `(href ,(auxs->path auxs)))))
+
+(define-element a/cont %a/cont-handler)
+(define-element a      %a/cont-handler)
 
 ;;
 ;; form/cont
@@ -1284,7 +1297,7 @@
 ;;  keyword arguments.  If so, the value of the form's QUERY_STRING
 ;;  is taken.
 
-(define-element form/cont (attrs auxs contents context cont)
+(define-element form/cont (_ attrs auxs contents context cont)
 
   (define (build-argstr&hiddens cont-args)
     (receive (pargs kargs) (extract-cont-args cont-args 'form/cont)
@@ -1300,12 +1313,9 @@
          (id     (if clause (session-cont-register (car clause)) ""))
          (argstr (if clause (build-argstr&hiddens (cdr clause)) '(""))))
     (cont
-     `((form (@ ,@(append `((method "POST") 
-                              (action ,(kahua-self-uri 
-                                        (string-append id (car argstr)))))
-                            (remove (lambda (x)
-                                      (or (eq? 'method (car x))
-                                          (eq? 'action (car x)))) attrs)))
+     `((form (@ ,@(list* '(method "POST")
+			 `(action ,(kahua-self-uri (string-append id (car argstr))))
+			 (remove-attrs attrs 'method 'action)))
              ,@(cdr argstr)
              ,@contents))
      context)))
@@ -1316,7 +1326,7 @@
 ;; `(frame/cont (@@ (cont ,closure [arg ...])))
 ;;
 
-(define-element frame/cont (attrs auxs contents context cont)
+(define-element frame/cont (_ attrs auxs contents context cont)
   (let* ((clause (assq-ref auxs 'cont))
          (id     (if clause (session-cont-register (car clause)) "")))
     (cont `((frame (@ ,@attrs (src ,(kahua-self-uri id))))) context)))
@@ -1352,7 +1362,7 @@
 ;; `(extra-header (@ (name ,name) (value ,value)))
 ;;
 
-(define-element extra-header (attrs auxs contents context cont)
+(define-element extra-header (_ attrs auxs contents context cont)
   (let* ((name    (assq-ref-car attrs 'name))
          (value   (assq-ref-car attrs 'value))
          (headers (assoc-ref-car context "extra-headers" '())))
@@ -1371,7 +1381,7 @@
 ;; <!--[if gte IE 5.5000]> IE 5.5 - 6.x
 ;; <!--[if lt IE 6]>IE 5.0 - 5.5
 
-(define-element with-ie (attrs auxs contents context cont)
+(define-element with-ie (_ attrs auxs contents context cont)
   (let1 condition (assq-ref-car attrs 'condition "IE")
     (cont `(,(make-no-escape-text-element (format "<!--[if ~a]>" condition))
             ,@contents
@@ -1386,7 +1396,7 @@
 
 ;; character entity reference
 ;;
-(define-element & (attrs auxs contents context cont)
+(define-element & (_ attrs auxs contents context cont)
   (cont (list (apply make-no-escape-text-element
 		     (map (lambda (c)
 			    #`"&,|c|;")
