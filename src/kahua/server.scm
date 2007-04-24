@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.98 2007/04/24 08:47:11 bizenn Exp $
+;; $Id: server.scm,v 1.99 2007/04/24 14:42:56 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -936,8 +936,6 @@
                        => (cut <> name attrs auxs contents context
                                (lambda (nds cntx)
                                  (handle-element-contents nds cntx cont))))
-		      ((memq name '(script style))
-		       (script-element-handler name attrs auxs contents context cont))
                       (else 
                        (default-handler name attrs contents context cont)))
                 )))
@@ -978,48 +976,6 @@
              ,@stree
              "</" ,tag "\n>")
            context))))
-
-(define (script-element-handler tag attrs _ content context cont)
-  (define (string->script-string str)
-    (with-string-io str
-      (lambda ()
-	(with-port-locking (current-input-port)
-	  (lambda ()
-	    (with-port-locking (current-output-port)
-	      (lambda ()
-		(letrec ((in-code (lambda (c)
-				    (unless (eof-object? c)
-				      (write-char c)
-				      (case c
-					((#\") (in-string (read-char)))
-					(else  (in-code (read-char)))))))
-			 (in-string (lambda (c)
-				      (unless (eof-object? c)
-					(write-char c)
-					(case c
-					  ((#\\) (escape-char (read-char)))
-					  ((#\<) (maybe-escape (read-char)))
-					  ((#\") (in-code (read-char)))
-					  (else (in-string (read-char)))))))
-			 (escape-char (lambda (c)
-					(unless (eof-object? c)
-					  (write-char c)
-					  (in-string (read-char)))))
-			 (maybe-escape (lambda (c)
-					 (unless (eof-object? c)
-					   (when (char=? #\/ c)
-					     (write-char #\\))
-					   (write-char c)
-					   (in-string (read-char))))))
-		  (in-code (read-char))))))))))
-  (define (proc-content c)
-    (cond ((null? c) c)
-	  ((pair? c) (map proc-content c))
-	  (else (string->script-string (x->string c)))))
-  (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
-	  ,(proc-content content)
-	  "</" ,tag "\n>")
-	context))
 
 (define (handle-element-contents contents context cont)
   (if (null? contents)
@@ -1297,10 +1253,9 @@
 ;;  keyword arguments.  If so, the value of the form's QUERY_STRING
 ;;  is taken.
 
-(define-element form/cont (_ attrs auxs contents context cont)
-
+(define (%form/cont-handler name attrs auxs contents context cont)
   (define (build-argstr&hiddens cont-args)
-    (receive (pargs kargs) (extract-cont-args cont-args 'form/cont)
+    (receive (pargs kargs) (extract-cont-args cont-args name)
       (cons
        (string-join (map uri-encode-string pargs) "/" 'prefix)
        (filter-map (lambda (karg)
@@ -1319,6 +1274,8 @@
              ,@(cdr argstr)
              ,@contents))
      context)))
+
+(define-element form/cont %form/cont-handler)
 
 ;;
 ;; frame/cont
@@ -1355,6 +1312,60 @@
         ((assq-ref auxs 'remote-cont) => (compose nodes (remote-cont auxs)))
         (else (nodes (kahua-self-uri (fragment auxs))))))
 
+
+;;
+;; script
+;; style
+;;
+(define (%script-element-handler tag attrs _ content context cont)
+  (define (string->script-string str)
+    (with-string-io str
+      (lambda ()
+	(with-port-locking (current-input-port)
+	  (lambda ()
+	    (with-port-locking (current-output-port)
+	      (lambda ()
+		(letrec ((in-code (lambda (c)
+				    (unless (eof-object? c)
+				      (write-char c)
+				      (case c
+					((#\") (in-string (read-char)))
+					(else  (in-code (read-char)))))))
+			 (in-string (lambda (c)
+				      (unless (eof-object? c)
+					(write-char c)
+					(case c
+					  ((#\\) (escape-char (read-char)))
+					  ((#\<) (maybe-escape (read-char)))
+					  ((#\") (in-code (read-char)))
+					  (else (in-string (read-char)))))))
+			 (escape-char (lambda (c)
+					(unless (eof-object? c)
+					  (write-char c)
+					  (in-string (read-char)))))
+			 (maybe-escape (lambda (c)
+					 (unless (eof-object? c)
+					   (when (char=? #\/ c)
+					     (write-char #\\))
+					   (write-char c)
+					   (in-string (read-char))))))
+		  (in-code (read-char))))))))))
+  (define (make-cdata-node str)
+    (list '%%CDATA str))
+  (define (proc-content c)
+    (cond ((null? c) c)
+	  ((pair? c) (map proc-content c))
+	  (else (make-cdata-node (string->script-string (x->string c))))))
+  (cont `((,tag (@@ (expand-finished))
+		(@ ,@attrs)
+		,@(proc-content content)))
+	context))
+
+(define-element style %script-element-handler)
+(define-element script %script-element-handler)
+
+(define-element %%CDATA (_ attrs auxs contents context cont)
+  (cont (list (apply make-no-escape-text-element contents)) context))
 
 ;;
 ;; extra-header - inserts protocol header to the reply message
