@@ -2,7 +2,7 @@
 ;;; -*- mode: scheme; coding: utf-8 -*-
 ;;
 ;; script checking version and threading type.
-;; $Id: check.scm,v 1.1 2007/04/24 02:15:27 bizenn Exp $
+;; $Id: check.scm,v 1.1.2.1 2007/04/24 02:24:38 bizenn Exp $
 
 (use gauche.threads)
 (use gauche.version)

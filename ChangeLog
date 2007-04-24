@@ -1,3 +1,10 @@
+2007-04-24  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: check.scm
+	  Change: configure.ac
+	  Check Gauche version and its threading type, and
+	  system thread type on Linux.
+
 2007-04-23  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Merge: from HEAD.
