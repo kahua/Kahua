@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.99 2007/04/24 14:42:56 bizenn Exp $
+;; $Id: server.scm,v 1.100 2007/04/25 06:48:21 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1175,27 +1175,37 @@
 
 ;; utils
 (define (build-argstr pargs kargs)
-  (string-concatenate
-   `(,(string-join (map uri-encode-string pargs) "/" 'prefix)
-     ,@(if (null? kargs)
-           '()
-         `("?"
-           ,(string-join
-             (map (lambda (karg)
-                    (if (null? (cdr karg))
-                        (uri-encode-string (car karg))
-                      (format "~a=~a"
-                              (uri-encode-string (car karg))
-                              (uri-encode-string (cdr karg)))))
-                  kargs)
-             "&"))))))
+  (define delimit-/ (cut write-char #\/))
+  (define delimit-? (cut write-char #\?))
+  (define delimit-& (cut write-char #\&))
+  (with-output-to-string
+    (lambda ()
+      (with-port-locking (current-output-port)
+	(lambda ()
+	  (for-each (lambda (p)
+		      (delimit-/)
+		      (display (uri-encode-string p)))
+		    pargs)
+	  (fold (lambda (k delimit)
+		  (delimit)
+		  (if (null? (cdr k))
+		      (display (uri-encode-string (car k)))
+		      (format #t "~a=~a" (uri-encode-string (car k)) (uri-encode-string (cdr k))))
+		  delimit-&)
+		delimit-?
+		kargs))))))
 
 (define (remove-attrs attrs . names)
   (remove (lambda (x) (memq (car x) names)) attrs))
 
 (define (fragment auxs)
   (cond ((assq-ref auxs 'fragment)
-         => (lambda (p) #`"#,(uri-encode-string (car p))"))
+         => (lambda (p)
+	      (cond ((null? p) "")
+		    ((car p) =>
+		     (lambda (f)
+		       (format "#~a" (uri-encode-string (x->string f)))))
+		    (else      ""))))
         (else "")))
 
 (define (local-cont auxs)
