@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.75 2007/04/20 11:41:56 cut-sea Exp $
+;; $Id: persistence.scm,v 1.76 2007/04/25 08:41:53 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -19,6 +19,7 @@
 	  kahua-persistence-error
 	  <kahua-persistent-meta>
 	  <kahua-persistent-base>
+	  kahua-persistent-base?
           <kahua-persistent-metainfo>
 	  kahua-persistent-id path-of
           key-of find-kahua-class

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.100 2007/04/25 06:48:21 bizenn Exp $
+;; $Id: server.scm,v 1.101 2007/04/25 08:41:53 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1108,24 +1108,21 @@
             *class&id-delim*
             (key-of obj)))
 
-  (define (val v)
+  (define (canonicalize v)
+    (define stringnizable? (any-pred string? symbol? number?))
     (cond ((not v) #f) ;; giving value #f makes keyword arg omitted
-          ((is-a? v <kahua-persistent-base>)
-           (obj->uri v))
-          ((or (string? v) (symbol? v) (number? v))
-           (x->string v))
-          (else
-           (errorf "bad continuation argument ~a in element ~a" v form))))
+          ((kahua-persistent-base? v) (obj->uri v))
+          ((stringnizable? v)         (x->string v))
+          (else (errorf "bad continuation argument ~a in element ~a" v form))))
   (receive (kargs pargs) (partition pair? args)
-    (values (map val pargs)
+    (values (map canonicalize pargs)
             (filter-map (lambda (p)
                           (and-let* ((v (if (null? (cdr p))
-                                          '()
-                                          (val (cadr p)))))
+					    '()
+					    (let1 vlist (filter-map canonicalize (cdr p))
+					      (and (pair? vlist) vlist)))))
                             (cons (x->string (car p)) v)))
                         kargs))))
-
-
 
 ;;-----------------------------------------------------------
 ;; Pre-defined element handlers
@@ -1186,11 +1183,17 @@
 		      (delimit-/)
 		      (display (uri-encode-string p)))
 		    pargs)
-	  (fold (lambda (k delimit)
-		  (delimit)
-		  (if (null? (cdr k))
-		      (display (uri-encode-string (car k)))
-		      (format #t "~a=~a" (uri-encode-string (car k)) (uri-encode-string (cdr k))))
+	  (fold (lambda (karg delimit)
+		  (let ((key (uri-encode-string (car karg)))
+			(vlist (map uri-encode-string (cdr karg))))
+		    (delimit)
+		    (if (null? vlist)
+			(display key)
+			(fold (lambda (v delimit)
+				(delimit) (format #t "~a=~a" key v)
+				delimit-&)
+			      (lambda _ #f)
+			      vlist)))
 		  delimit-&)
 		delimit-?
 		kargs))))))
@@ -1233,7 +1236,7 @@
 				(extract-cont-args (cddr clause) 'a/cont)
 			      (build-argstr pargs
 					    (if return
-						`(("return-cont" . ,return) ,@kargs)
+						`(("return-cont" ,return) ,@kargs)
 						kargs)))))
 	      (format "~a/~a/~a~a~a"
 		      (kahua-bridge-name) server-type cont-id argstr (fragment auxs)))))))
@@ -1271,7 +1274,7 @@
        (filter-map (lambda (karg)
                      (and (not (null? (cdr karg)))
                           `(input (@ (type "hidden") (name ,(car karg))
-                                     (value ,(cdr karg))))))
+                                     (value ,(cadr karg))))))
                    kargs))))
 
   (let* ((clause (assq-ref auxs 'cont))
