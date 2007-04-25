@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.102 2007/04/25 09:44:27 bizenn Exp $
+;; $Id: server.scm,v 1.103 2007/04/25 10:40:55 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1270,7 +1270,7 @@
   (define (kargs->hiddens kargs)
     (fold-right (lambda (karg accum)
 		  (if (null? (cdr karg))
-		      accum
+		      accum		; is this right?
 		      (fold-right (lambda (v accum)
 				    (cons `(input (@ (type "hidden")
 						     (name ,(car karg))
@@ -1280,22 +1280,19 @@
 				  (cdr karg))))
 		'()
 		kargs))
-  (define (build-argstr&hiddens cont-args)
-    (receive (pargs kargs) (extract-cont-args cont-args name)
-      (cons
-       (string-join (map uri-encode-string pargs) "/" 'prefix)
-       (kargs->hiddens kargs))))
-
   (let* ((clause (assq-ref auxs 'cont))
-         (id     (if clause (session-cont-register (car clause)) ""))
-         (argstr (if clause (build-argstr&hiddens (cdr clause)) '(""))))
-    (cont
-     `((form (@ ,@(list* '(method "POST")
-			 `(action ,(kahua-self-uri (string-append id (car argstr))))
-			 (remove-attrs attrs 'method 'action)))
-             ,@(cdr argstr)
-             ,@contents))
-     context)))
+         (id     (if clause (session-cont-register (car clause)) "")))
+    (receive (pargs kargs) (extract-cont-args (cdr clause) name)
+      (let ((pargstr (build-argstr pargs '()))
+	    (hiddens (kargs->hiddens kargs))
+	    (method (or (assq-ref-car attrs 'method) "POST")))
+	(cont `((form (@@ (expand-finished))
+		      (@ ,@(list* `(method ,method)
+				  `(action ,(kahua-self-uri (string-append id pargstr)))
+				  (remove-attrs attrs 'method 'action)))
+		      ,@hiddens
+		      ,@contents))
+	      context)))))
 
 (define-element form/cont %form/cont-handler)
 
