@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.103 2007/04/25 10:40:55 bizenn Exp $
+;; $Id: server.scm,v 1.104 2007/04/25 14:28:29 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1211,14 +1211,18 @@
 		    (else      ""))))
         (else "")))
 
-(define (local-cont auxs)
+(define (local-cont auxs . maybe-params-proc)
   (lambda (clause)
-    (let ((id     (session-cont-register (car clause)))
-          (argstr ((compose build-argstr extract-cont-args)
-                   (cdr clause) 'a/cont)))
-      (kahua-self-uri #`",|id|,|argstr|,(fragment auxs)"))))
+    (receive (pargs kargs) (extract-cont-args (cdr clause) 'a/cont)
+      (let* ((id (session-cont-register (car clause)))
+	     (params-proc (get-optional maybe-params-proc #f))
+	     (argstr (build-argstr pargs (if params-proc '() kargs)))
+	     (uri (kahua-self-uri #`",|id|,|argstr|,(fragment auxs)")))
+	(if params-proc
+	    (values uri (params-proc kargs))
+	    uri)))))
 
-(define (remote-cont auxs)
+(define (remote-cont auxs . maybe-params-proc)
   (lambda (clause)
     (define (return-cont-uri)
       (and-let* ((clause (assq-ref auxs 'return-cont))
@@ -1229,17 +1233,18 @@
 
     (match clause
       (((? string? ret)) (format "~a/~a" (kahua-bridge-name) ret))
-      (else (let* ((server-type (car clause))
-		   (cont-id (cadr clause))
-		   (return  (return-cont-uri))
-		   (argstr  (receive (pargs kargs)
-				(extract-cont-args (cddr clause) 'a/cont)
-			      (build-argstr pargs
-					    (if return
-						`(("return-cont" ,return) ,@kargs)
-						kargs)))))
-	      (format "~a/~a/~a~a~a"
-		      (kahua-bridge-name) server-type cont-id argstr (fragment auxs)))))))
+      (else (receive (pargs kargs) (extract-cont-args (cddr clause) 'a/cont)
+	      (let* ((server-type (car clause))
+		     (cont-id (cadr clause))
+		     (return  (return-cont-uri))
+		     (kargs (if return (cons `("return-cont" ,return) kargs) kargs))
+		     (params-proc (get-optional maybe-params-proc #f))
+		     (argstr (build-argstr pargs (if params-proc '() kargs)))
+		     (uri (format "~a/~a/~a~a~a"
+				  (kahua-bridge-name) server-type cont-id argstr (fragment auxs))))
+		(if params-proc
+		    (values uri (params-proc kargs))
+		    uri)))))))
 
 (define (%a/cont-handler _ attrs auxs contents context cont)
   (define (auxs->path auxs)
@@ -1280,21 +1285,26 @@
 				  (cdr karg))))
 		'()
 		kargs))
-  (let* ((clause (assq-ref auxs 'cont))
-         (id     (if clause (session-cont-register (car clause)) "")))
-    (receive (pargs kargs) (extract-cont-args (cdr clause) name)
-      (let ((pargstr (build-argstr pargs '()))
-	    (hiddens (kargs->hiddens kargs))
-	    (method (or (assq-ref-car attrs 'method) "POST")))
-	(cont `((form (@@ (expand-finished))
-		      (@ ,@(list* `(method ,method)
-				  `(action ,(kahua-self-uri (string-append id pargstr)))
-				  (remove-attrs attrs 'method 'action)))
-		      ,@hiddens
-		      ,@contents))
-	      context)))))
+  (define (auxs->path&hiddens auxs)
+    (cond ((assq-ref auxs 'cont)        => (local-cont auxs kargs->hiddens))
+	  ((assq-ref auxs 'remote-cont) => (remote-cont auxs kargs->hiddens))
+	  (else                            (values (kahua-self-uri (fragment auxs)) '()))))
+  (define (nodes uri method hiddens)
+    (cont `((form (@@ (expand-finished))
+		  (@ ,@(list* `(method ,method)
+			      `(action ,uri)
+			      (remove-attrs attrs 'method 'action)))
+		  ,@hiddens
+		  ,@contents))
+	  context))
+
+  (receive (uri hiddens) (cond ((assq-ref-car attrs 'action)
+				=> (cut values <> '()))
+			       (else (auxs->path&hiddens auxs)))
+    (nodes uri (or (assq-ref-car attrs 'method) "POST") hiddens)))
 
 (define-element form/cont %form/cont-handler)
+(define-element form %form/cont-handler)
 
 ;;
 ;; frame/cont
