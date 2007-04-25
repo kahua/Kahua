@@ -1,3 +1,8 @@
+2007-04-26  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/server.scm
+	  Integrate a and a/cont, form and form/cont.
+
 2007-04-24  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Add: check.scm
