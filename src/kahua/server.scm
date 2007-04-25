@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.104 2007/04/25 14:28:29 bizenn Exp $
+;; $Id: server.scm,v 1.105 2007/04/25 16:12:33 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1250,7 +1250,7 @@
   (define (auxs->path auxs)
     (cond ((assq-ref auxs 'cont)        => (local-cont  auxs))
 	  ((assq-ref auxs 'remote-cont) => (remote-cont auxs))
-	  (else (kahua-self-uri (fragment auxs)))))
+	  (else                            (kahua-self-uri (fragment auxs)))))
 
   (define (nodes href)
     (cont `((a (@@ (expand-finished))
@@ -1312,10 +1312,17 @@
 ;; `(frame/cont (@@ (cont ,closure [arg ...])))
 ;;
 
-(define-element frame/cont (_ attrs auxs contents context cont)
-  (let* ((clause (assq-ref auxs 'cont))
-         (id     (if clause (session-cont-register (car clause)) "")))
-    (cont `((frame (@ ,@attrs (src ,(kahua-self-uri id))))) context)))
+(define (%frame/cont-handler name attrs auxs contents context cont)
+  (define (auxs->uri auxs)
+    (cond ((assq-ref auxs 'cont)        => (local-cont  auxs))
+	  ((assq-ref auxs 'remote-cont) => (remote-cont auxs))
+	  (else                            (kahua-self-uri (fragment auxs)))))
+  (cont `((frame (@@ (expand-finished))
+		 (@ ,(or (assq 'src attrs) `(src ,(auxs->uri auxs)))
+		    ,@(remove-attrs attrs 'src)))) context))
+
+(define-element frame/cont %frame/cont-handler)
+(define-element frame %frame/cont-handler)
 
 ;;
 ;; redirect/cont
