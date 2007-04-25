@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.101 2007/04/25 08:41:53 bizenn Exp $
+;; $Id: server.scm,v 1.102 2007/04/25 09:44:27 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1267,15 +1267,24 @@
 ;;  is taken.
 
 (define (%form/cont-handler name attrs auxs contents context cont)
+  (define (kargs->hiddens kargs)
+    (fold-right (lambda (karg accum)
+		  (if (null? (cdr karg))
+		      accum
+		      (fold-right (lambda (v accum)
+				    (cons `(input (@ (type "hidden")
+						     (name ,(car karg))
+						     (value ,v)))
+					  accum))
+				  accum
+				  (cdr karg))))
+		'()
+		kargs))
   (define (build-argstr&hiddens cont-args)
     (receive (pargs kargs) (extract-cont-args cont-args name)
       (cons
        (string-join (map uri-encode-string pargs) "/" 'prefix)
-       (filter-map (lambda (karg)
-                     (and (not (null? (cdr karg)))
-                          `(input (@ (type "hidden") (name ,(car karg))
-                                     (value ,(cadr karg))))))
-                   kargs))))
+       (kargs->hiddens kargs))))
 
   (let* ((clause (assq-ref auxs 'cont))
          (id     (if clause (session-cont-register (car clause)) ""))
