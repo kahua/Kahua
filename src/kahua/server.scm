@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.107 2007/04/26 03:56:21 bizenn Exp $
+;; $Id: server.scm,v 1.108 2007/04/26 06:07:26 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1253,7 +1253,7 @@
 		    uri)))))))
 
 (define (%a/cont-handler _ attrs auxs contents context cont)
-  (define (auxs->path auxs)
+  (define (auxs->uri auxs)
     (cond ((assq-ref auxs 'cont)        => (local-cont  auxs))
 	  ((assq-ref auxs 'remote-cont) => (remote-cont auxs))
 	  (else                            (kahua-self-uri (fragment auxs)))))
@@ -1263,7 +1263,7 @@
 	       (@ ,href ,@(remove-attrs attrs 'href))
                ,@contents)) context))
 
-  (nodes (or (assq 'href attrs) `(href ,(auxs->path auxs)))))
+  (nodes (or (assq 'href attrs) `(href ,(auxs->uri auxs)))))
 
 (define-element a/cont %a/cont-handler)
 (define-element a      %a/cont-handler)
@@ -1291,7 +1291,7 @@
 				  (cdr karg))))
 		'()
 		kargs))
-  (define (auxs->path&hiddens auxs)
+  (define (auxs->uri&hiddens auxs)
     (cond ((assq-ref auxs 'cont)        => (local-cont auxs kargs->hiddens))
 	  ((assq-ref auxs 'remote-cont) => (remote-cont auxs kargs->hiddens))
 	  (else                            (values (kahua-self-uri (fragment auxs)) '()))))
@@ -1306,7 +1306,7 @@
 
   (receive (uri hiddens) (cond ((assq-ref-car attrs 'action)
 				=> (cut values <> '()))
-			       (else (auxs->path&hiddens auxs)))
+			       (else (auxs->uri&hiddens auxs)))
     (nodes uri (or (assq-ref-car attrs 'method) "POST") hiddens)))
 
 (define-element form/cont %form/cont-handler)
@@ -1329,6 +1329,24 @@
 
 (define-element frame/cont %frame/cont-handler)
 (define-element frame %frame/cont-handler)
+
+;;
+;; img/cont
+;;
+;; `(img/cont (@@ (cont ,closure [arg ...])))
+;;
+
+(define (%img/cont-handler name attrs auxs contents context cont)
+  (define (auxs->uri auxs)
+    (cond ((assq-ref auxs 'cont)        => (local-cont  auxs))
+	  ((assq-ref auxs 'remote-cont) => (remote-cont auxs))
+	  (else                            (kahua-self-uri (fragment auxs)))))
+  (cont `((img (@@ (expand-finished))
+	       (@ ,(or (assq 'src attrs) `(src ,(auxs->uri auxs)))
+		  ,@(remove-attrs attrs 'src)))) context))
+
+(define-element img/cont %img/cont-handler)
+(define-element img      %img/cont-handler)
 
 ;;
 ;; redirect/cont
