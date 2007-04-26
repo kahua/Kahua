@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.10 2006/12/12 08:06:07 bizenn Exp $
+;; $Id: kahua-keyserv.scm,v 1.11 2007/04/26 14:23:42 bizenn Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -48,6 +48,7 @@
 (use gauche.logger)
 (use gauche.selector)
 (use util.list)
+(use util.match)
 (use srfi-27)
 (use kahua.config)
 (use kahua.util)
@@ -69,27 +70,24 @@
     (let* ((wid (make-worker-id "%keyserv"))
            (sockaddr (worker-id->sockaddr wid (kahua-sockbase)))
 	   (tpool (make-thread-pool 10)))
-      (let1 ret
-	  (call/cc
-	   (lambda (bye)
-	     (set-signal-handler! *TERMINATION-SIGNALS* (lambda _ (bye 0)))
-	     (set-signal-handler! SIGPIPE #f)
-	     (set! *default-sigmask* (sys-sigmask 0 #f))
-	     (with-error-handler
-	       (lambda (e)
-		 (log-format "~a" (kahua-error-string e #t))
-		 (log-format "Exitting by error")
-		 (bye 70))
-	       (lambda ()
-		 (run-server wid sockaddr tpool)
-		 (bye 0)))))
-	(when (is-a? sockaddr <sockaddr-un>)
-	  (sys-unlink (sockaddr-name sockaddr)))
-	(wait-all tpool)
-	(finish-all tpool)
-	(sys-unlink (kahua-keyserv-pidpath))
-	ret))
-    ))
+      (unwind-protect
+       (call/cc
+	(lambda (bye)
+	  (set-signal-handler! *TERMINATION-SIGNALS* (lambda _ (bye 0)))
+	  (set-signal-handler! SIGPIPE #f)
+	  (set! *default-sigmask* (sys-sigmask 0 #f))
+	  (guard (e (else
+		     (log-format "~a" (kahua-error-string e #t))
+		     (log-format "Exitting by error")
+		     (bye 70)))
+	    (run-server wid sockaddr tpool)
+	    (bye 0))))
+       (begin
+	 (when (is-a? sockaddr <sockaddr-un>)
+	   (sys-unlink (sockaddr-name sockaddr)))
+	 (wait-all tpool)
+	 (finish-all tpool)
+	 (sys-unlink (kahua-keyserv-pidpath)))))))
 
 (define (usage)
   (print "kahua-keyserv [-c <conf-file>][-user <user>]")
@@ -119,51 +117,36 @@
     ))
 
 (define (handle-request client)
-  (let* ((input  (socket-input-port client :buffered? #f))
-         (output (socket-output-port client))
-         (request #f))
-    (with-error-handler
-      (lambda (e)
-	(log-format "~a" (kahua-error-string e #t))
-	(socket-shutdown client 2))
-      (lambda ()
-	(set! request (read input))
-	(with-error-handler
-	  (lambda (e)
-	    (log-format "~a" (kahua-error-string e #t))
-	    (display "#f\n" output)
-	    (flush output)
-	    (socket-shutdown client 2)
-	    (socket-close client))
-	  (lambda ()
-	    (let1 result 
-		(if (and (pair? request)
-			 (>= (length request) 1))
-		    (case (car request)
-		      ((flush)
-		       (sweep-objects (x->integer (and (pair? (cdr request))
-						       (cadr request))))
-		       (list (num-objects)))
-		      ((stat) (list (num-objects)))
-		      ((keys) (all-keys))
-		      ((ref) (ref-object (cadr request)))
-		      (else
-		       (handle-object-command request)))
-		    #f)
-	      (write result output) (newline output)
-	      (flush output)
-	      (socket-shutdown client 2)
-	      (socket-close client)))
-	  )))
-    0))
+  (call-with-client-socket client
+    (lambda (input output)
+      (guard (e (else #f))
+	(unwind-protect
+	 (guard (e (else
+		    (log-format "~a" (kahua-error-string e #t))
+		    (display "#f\n" output)))
+	   (let* ((request (read input))
+		  (result (match request
+			    (('flush . maybe-sec)
+			     (sweep-objects (x->integer (get-optional maybe-sec #f)))
+			     (list (num-objects)))
+			    (('stat) (list (num-objects)))
+			    (('keys) (all-keys))
+			    (('ref key) (ref-object key))
+			    ((key . attrs) (handle-object-command key attrs))
+			    (else    #f))))
+	     (write result output) (newline output)))
+	 (begin
+	   (flush output)
+	   (socket-shutdown client 2))))))
+  0)
 
-(define (handle-object-command request)
-  (let loop ((obj (get-object (car request)))
-             (attrs (cdr request)))
+(define (handle-object-command key attrs)
+  (let loop ((obj (get-object key))
+             (attrs attrs))
     (if (null? attrs)
-      obj
-      (begin (set-cdr! obj (assq-set! (cdr obj) (caar attrs) (cdar attrs)))
-             (loop obj (cdr attrs))))))
+	obj
+	(begin (set-cdr! obj (assq-set! (cdr obj) (caar attrs) (cdar attrs)))
+	       (loop obj (cdr attrs))))))
 
 ;; Object pool -------------------------------------------
 
