@@ -2,6 +2,7 @@
 
 	* Change: src/kahua/server.scm
 	  Integrate a and a/cont, form and form/cont, frame and frame/cont.
+	  Change define-element syntax and add backward compatibility.
 
 2007-04-24  Tatsuya BIZENN  <bizenn@arthub.net>
 

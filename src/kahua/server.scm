@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.105 2007/04/25 16:12:33 bizenn Exp $
+;; $Id: server.scm,v 1.106 2007/04/26 01:56:35 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1085,8 +1085,14 @@
   (syntax-rules ()
     ((_ name proc)
      (add-element! 'name proc))
-    ((_ name args . body)
-     (add-element! 'name (lambda args . body)))))
+    ;; for backward compatibility
+    ((_ name (attrs auxs contents context cont) . body)
+     (define-element name (_ attrs auxs contents context cont) . body))
+    ;; new syntax
+    ((_ name (n attrs auxs contents context cont) . body)
+     (add-element! 'name (lambda (n attrs auxs contents context cont) . body)))
+    ((_ . _)
+     (syntax-error "malformed define-element"))))
 
 (define-values (add-element! get-element-handler)
   (let ((table (make-hash-table)))
@@ -1409,7 +1415,7 @@
 ;; `(extra-header (@ (name ,name) (value ,value)))
 ;;
 
-(define-element extra-header (_ attrs auxs contents context cont)
+(define-element extra-header (attrs auxs contents context cont)
   (let* ((name    (assq-ref-car attrs 'name))
          (value   (assq-ref-car attrs 'value))
          (headers (assoc-ref-car context "extra-headers" '())))
@@ -1428,7 +1434,7 @@
 ;; <!--[if gte IE 5.5000]> IE 5.5 - 6.x
 ;; <!--[if lt IE 6]>IE 5.0 - 5.5
 
-(define-element with-ie (_ attrs auxs contents context cont)
+(define-element with-ie (attrs auxs contents context cont)
   (let1 condition (assq-ref-car attrs 'condition "IE")
     (cont `(,(make-no-escape-text-element (format "<!--[if ~a]>" condition))
             ,@contents
@@ -1443,7 +1449,7 @@
 
 ;; character entity reference
 ;;
-(define-element & (_ attrs auxs contents context cont)
+(define-element & (attrs auxs contents context cont)
   (cont (list (apply make-no-escape-text-element
 		     (map (lambda (c)
 			    #`"&,|c|;")
