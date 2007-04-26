@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.91.2.1 2007/04/23 03:24:03 bizenn Exp $
+;; $Id: server.scm,v 1.91.2.2 2007/04/26 04:46:26 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -1385,7 +1385,10 @@
 (define-element & (attrs auxs contents context cont)
   (cont (list (apply make-no-escape-text-element
 		     (map (lambda (c)
-			    #`"&,|c|;")
+			    (cond ((or (string? c) (symbol? c)) (format "&~a;" c))
+				  ((char?   c) (format "&#x~x;" (char->ucs c)))
+				  ((integer? c) (format "&#x~x;" c))
+				  (else (error "& node require string or symbol(character name), integer(character code) or character itself, but got " c))))
 			  contents)))
 	context))
 
