@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm.in,v 1.17 2007/02/15 02:18:16 bizenn Exp $
+;; $Id: config.scm.in,v 1.18 2007/04/27 13:52:15 bizenn Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -103,6 +103,9 @@
    ;;     Default database path is $(database-directory)/db
    (database-directory :init-keyword :database-directory
 		       :init-value "" :place :wdir)
+
+   ;; data-directory - where generic files store.
+   (data-directory :init-keyword :data-directory :init-value "data" :place :wdir)
 
    ;; temporary-directory - where bridges and workers share to read/write
    ;;                       temporary files.
@@ -253,6 +256,7 @@
 	      plugin-directory
 	      template-directory
 	      database-directory
+	      data-directory
 	      temporary-directory
 	      log-directory
 	      run-directory
@@ -366,6 +370,8 @@
 			   :shared-mode #o771 :private-mode #o700 :creator ,create-site-child-dir)
     (database-directory    :value "database"
 			   :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
+    (data-directory        :value "data"
+			   :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
     (temporary-directory   :value "tmp"
 			   :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
     (log-directory         :value "logs"

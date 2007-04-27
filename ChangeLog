@@ -1,3 +1,9 @@
+2007-04-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/config.scm.in
+	  Add "data" configuration slot. it has file strage directory
+	  path.  The directory is placed in working directory.
+
 2007-04-26  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/elem.scm, src/kahua/server.scm
