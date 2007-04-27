@@ -3,10 +3,10 @@ dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-dnl $Id: configure.ac,v 1.46.2.8 2007/04/27 01:45:09 bizenn Exp $
+dnl $Id: configure.ac,v 1.46.2.9 2007/04/27 05:20:50 bizenn Exp $
 dnl
 AC_PREREQ(2.54)
-AC_INIT(kahua, 1.0.3_pre1, info@kahua.org)
+AC_INIT(kahua, 1.0.3, info@kahua.org)
 AC_GAUCHE_INIT_EXT
 
 REQUIRED_GAUCHE_VERSION=0.8.8
