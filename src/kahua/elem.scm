@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.31 2006/12/26 11:02:47 bizenn Exp $
+;; $Id: elem.scm,v 1.31.2.3 2007/04/26 04:46:26 bizenn Exp $
 
 ;; This module implements tags of SXML as functions
 
@@ -89,6 +89,12 @@
 (define (no-escape? node)
   (is-a? node <no-escape>))
 
+(define (entity->string val)
+  (cond ((char? val) (format "#x~x" (char->ucs val))) ; character itself
+	((integer? val) (format "#x~x" val))	      ; character code
+	((or (string? val) (symbol? val)) val)	      ; character name
+	(else (error "& node require string or symbol(character name), integer(character code) or character itself, but got " val))))
+
 ;; -------------------------------------------------------------------------
 ;; State thread : State -> State
 ;; This state thread is a spcial case of the state monad :
@@ -123,16 +129,13 @@
 ;; Special tags
 
 (define (text/ . args)
-  (update (cut append args <>)))
+  (update (cut fold cons <> args)))
 
 (define (map/ proc arg1 . args)
   (node-set (apply map proc arg1 args)))
 
 (define (&/ . args)
-  (define (val->string val)
-    (cond ((number? val) (format "#~x" val))
-	  (else val)))
-  (update (cut cons `(& ,@(exec '() (node-set (map val->string args)))) <>)))
+  (update (cut cons `(& ,@(exec '() (node-set (map entity->string args)))) <>)))
 
 (define-syntax when/
   (syntax-rules ()
@@ -237,10 +240,7 @@
   (node-list-to-node-set (apply map proc arg1 args)))
 
 (define (&: . arg)
-  (define (val->string val)
-    (cond ((number? val) (format "#~x" val))
-	  (else val)))
-  `(& ,@(flatten (map val->string arg))))
+  `(& ,@(flatten (map entity->string arg))))
 
 (define-syntax when:
   (syntax-rules ()

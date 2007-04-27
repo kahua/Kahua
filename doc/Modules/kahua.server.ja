@@ -2,7 +2,7 @@
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.server.ja,v 1.9 2006/12/26 11:36:55 bizenn Exp $
+;; $Id: kahua.server.ja,v 1.9.2.1 2007/04/23 03:24:02 bizenn Exp $
 
 * [module] kahua.server
 
@@ -156,6 +156,11 @@ kahua-context-refとよく似ていますが、該当するコンテキスト情報が
 *** [procedure] kahua-meta-ref ''key'' . maybe-default
 
 contextから、CGIメタ変数を取り出します。maybe-defaultが省略された時は
+#fが渡されたのと同じです。
+
+*** [procedure] kahua-cookie-ref ''key'' . maybe-default
+
+contextから、COOKIEの値を取り出します。maybe-defaultが省略された時は
 #fが渡されたのと同じです。
 
 

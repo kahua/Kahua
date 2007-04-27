@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.10 2006/12/02 07:11:32 bizenn Exp $
+;; $Id: postgresql.scm,v 1.10.2.1 2007/01/21 15:47:33 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -184,7 +184,7 @@ create table ~a (
 	(tabname (kahua-class->table-name* db class))
 	(colname (slot-name->column-name slot-name)))
     (dbi-do conn (format "drop index \"~a\"" (make-index-name tabname colname))
-	    '(pass-through #t))
+	    '(:pass-through #t))
     (dbi-do conn (format "alter table ~a drop ~a" tabname colname) '(:pass-through #t))))
 
 ;;=================================================================

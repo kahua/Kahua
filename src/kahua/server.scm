@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.91 2006/12/22 03:04:24 bizenn Exp $
+;; $Id: server.scm,v 1.91.2.2 2007/04/26 04:46:26 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -44,6 +44,7 @@
           kahua-current-context
           kahua-context-ref
           kahua-meta-ref
+	  kahua-cookie-ref
           kahua-context-ref*
 	  kahua-local-session-ref
 	  kahua-local-session-set!
@@ -335,6 +336,19 @@
 (define (kahua-header-set! key val)
   (hash-table-put! (kahua-context-ref "x-kahua-headers")
                    key val))
+
+;; KAHUA-COOKIE-REF key [default]
+;;
+;; Gets CGI metavariable as HTTP_COOKIE
+;; and get cookie's key value
+;;
+(define (kahua-cookie-ref key . maybe-default)
+  (let1 maybe-default (get-optional maybe-default #f)
+    (let ((regex (string->regexp #`",|key|=([^\; ]*)")))
+      (cond ((and-let* ((cookie (kahua-meta-ref "HTTP_COOKIE"))
+			(match (regex cookie)))
+	       match) => (cut <> 1))
+	    (else maybe-default)))))
 
 ;; KAHUA-CONTEXT-REF* key [default]
 ;;
@@ -1230,17 +1244,19 @@
                           (cdr clause) 'a/cont)))
         (format "~a/~a~a" (kahua-worker-type) id argstr)))
 
-    (let* ((server-type (car clause))
-           (cont-id (cadr clause))
-           (return  (return-cont-uri))
-           (argstr  (receive (pargs kargs)
-                        (extract-cont-args (cddr clause) 'a/cont)
-                      (build-argstr pargs
-                                    (if return
-                                        `(("return-cont" . ,return) ,@kargs)
-                                      kargs)))))
-      (format "~a/~a/~a~a~a"
-              (kahua-bridge-name) server-type cont-id argstr (fragment auxs)))))
+    (match clause
+      (((? string? ret)) (format "~a/~a" (kahua-bridge-name) ret))
+      (else (let* ((server-type (car clause))
+		   (cont-id (cadr clause))
+		   (return  (return-cont-uri))
+		   (argstr  (receive (pargs kargs)
+				(extract-cont-args (cddr clause) 'a/cont)
+			      (build-argstr pargs
+					    (if return
+						`(("return-cont" . ,return) ,@kargs)
+						kargs)))))
+	      (format "~a/~a/~a~a~a"
+		      (kahua-bridge-name) server-type cont-id argstr (fragment auxs)))))))
 
 (define-element a/cont (attrs auxs contents context cont)
 
@@ -1369,7 +1385,10 @@
 (define-element & (attrs auxs contents context cont)
   (cont (list (apply make-no-escape-text-element
 		     (map (lambda (c)
-			    #`"&,|c|;")
+			    (cond ((or (string? c) (symbol? c)) (format "&~a;" c))
+				  ((char?   c) (format "&#x~x;" (char->ucs c)))
+				  ((integer? c) (format "&#x~x;" c))
+				  (else (error "& node require string or symbol(character name), integer(character code) or character itself, but got " c))))
 			  contents)))
 	context))
 

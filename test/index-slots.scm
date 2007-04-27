@@ -1,7 +1,7 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
 ;; Tests for Index Slots
 ;;
-;; $Id: index-slots.scm,v 1.4 2006/12/02 07:11:36 bizenn Exp $
+;; $Id: index-slots.scm,v 1.4.2.1 2007/01/18 04:51:45 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -200,6 +200,47 @@
 		     equal?))
 	    '("a0" "a1" "a2" "a3" "a4" "a5" "a6" "a7" "a8")
 	    '(#f   #f   #f   "a3" "a4" "a5" "a6" "a7" #f))
+  )
+
+(define-class <index-test> (<kahua-persistent-base>)
+  ((a :init-keyword :a :allocation :persistent :index :unique)
+   (b :init-keyword :b :allocation :persistent :index :any)
+   (c :init-keyword :c :allocation :persistent)))
+
+(with-db (_ *dbname*)
+  (kahua-db-purge-objs)			; clear cache.
+  (make <index-test> :a "a0" :b #f :c "boolean")
+  (make <index-test> :a "a1" :b 1  :c "integer")
+  (make <index-test> :a "a2" :b "b" :c "string")
+  (let1 obj (find-kahua-instance <index-test> 'a "a3")
+    (slot-set! obj 'b 'b)
+    (slot-set! obj 'c "symbol"))
+  (let1 obj (find-kahua-instance <index-test> 'a "a4")
+    (slot-set! obj 'b :b)
+    (slot-set! obj 'c "keyword"))
+  (let1 obj (find-kahua-instance <index-test> 'a "a5")
+    (slot-set! obj 'b obj)
+    (slot-set! obj 'c "self"))
+  (let1 obj (find-kahua-instance <index-test> 'a "a6")
+    (slot-set! obj 'b '("a" "b" "c"))
+    (slot-set! obj 'c "list"))
+  (let1 obj (find-kahua-instance <index-test> 'a "a7")
+    (slot-set! obj 'b '#("a" "b" "c"))
+    (slot-set! obj 'c "vector"))
+  )
+
+(with-db (_ *dbname*)
+  (for-each (lambda (b result)
+	      (test* "index value" result
+		     (map (cut slot-ref <> 'a)
+			  (make-kahua-collection <index-test> :index `(b . ,b)))
+		     equal?))
+	    '(#f 1 "b" b :b ("a" "b" "c") #("a" "b" "c"))
+	    '(("a0") ("a1") ("a2") ("a3") ("a4") ("a6") ("a7")))
+  (let1 obj (find-kahua-instance <index-test> 'a "a5")
+    (test* "self as index value" (list obj)
+	   (map identity (make-kahua-collection <index-test> :index `(b . ,obj)))
+	   equal?))
   )
 
 (test-end)
