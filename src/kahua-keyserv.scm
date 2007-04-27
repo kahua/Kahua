@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.11 2007/04/26 14:23:42 bizenn Exp $
+;; $Id: kahua-keyserv.scm,v 1.12 2007/04/27 13:49:51 bizenn Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -124,20 +124,22 @@
 	 (guard (e (else
 		    (log-format "~a" (kahua-error-string e #t))
 		    (display "#f\n" output)))
-	   (let* ((request (read input))
-		  (result (match request
-			    (('flush . maybe-sec)
-			     (sweep-objects (x->integer (get-optional maybe-sec #f)))
-			     (list (num-objects)))
-			    (('stat) (list (num-objects)))
-			    (('keys) (all-keys))
-			    (('ref key) (ref-object key))
-			    ((key . attrs) (handle-object-command key attrs))
-			    (else    #f))))
-	     (write result output) (newline output)))
-	 (begin
-	   (flush output)
-	   (socket-shutdown client 2))))))
+	   (let loop ((request (read input)))
+	     (unless (eof-object? request)
+	       (let1 result (match request
+			      (('flush . maybe-sec)
+			       (sweep-objects (x->integer (get-optional maybe-sec #f)))
+			       (list (num-objects)))
+			      (('stat) (list (num-objects)))
+			      (('keys) (all-keys))
+			      (('ref key) (ref-object key))
+			      ((key . attrs) (handle-object-command key attrs))
+			      (else    #f))
+		 (write result output)
+		 (newline output)
+		 (flush output)
+		 (loop (read input))))))
+	 (socket-shutdown client 2)))))
   0)
 
 (define (handle-object-command key attrs)

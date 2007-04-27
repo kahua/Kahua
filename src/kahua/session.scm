@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.15 2006/07/28 13:09:43 bizenn Exp $
+;; $Id: session.scm,v 1.16 2007/04/27 13:49:51 bizenn Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -270,15 +270,18 @@
 
 ;; Communicate to keyserver
 (define (keyserver request)
-  (call-with-client-socket
-      (make-client-socket (worker-id->sockaddr (session-server-id)
-                                               (kahua-sockbase)))
-    (lambda (in out)
-      (write request out) (flush out)
-      (let1 result (read in)
-        (when (not (pair? result))
-          (error "keyserver failure: check log file"))
-        result))))
+  (let1 client (make-client-socket
+		(worker-id->sockaddr (session-server-id) (kahua-sockbase)))
+    (call-with-client-socket client
+      (lambda (in out)
+	(unwind-protect
+	 (begin
+	   (write request out) (flush out)
+	   (let1 result (read in)
+	     (when (not (pair? result))
+	       (error "keyserver failure: check log file"))
+	     result))
+	 (socket-shutdown client))))))
 
 ;; SESSION-STATE-REGISTER [id]
 ;;   Register a new session state.  Returns a state session ID.
