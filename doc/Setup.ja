@@ -3,7 +3,7 @@
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: Setup.ja,v 1.16.2.2 2007/02/14 07:40:06 bizenn Exp $
+;; $Id: Setup.ja,v 1.16.2.3 2007/04/27 01:39:43 bizenn Exp $
 
 * Kahuaをセットアップする
 
@@ -19,15 +19,19 @@ Kahuaを動かすためには、0.8.8 以降のpthreadをサポートした
 がインストール済みである必要があります。
 
 ただし、0.8.8には大きなバグがいくつかあるので、0.8.9以降の
-使用を推奨します。自分のシステムにどんなバージョンのGauche
-がインストールされているかは以下のコマンドを実行すればわかり
-ます。
+最新リリース版の使用を推奨します。自分のシステムにどんなバー
+ジョンのGaucheがインストールされているかは以下のコマンドを
+実行すればわかります。
 {{{
 $ gosh -V
-Gauche scheme interpreter, version 0.8.9 [utf-8,pthreads]
+Gauche scheme interpreter, version 0.8.10 [utf-8,pthreads]
 }}}
 適切なバージョンの Gauche がインストールされていなければ、
 インストールしてください。
+
+Kahuaのこのバージョン(1.0.3)から、正しいバージョンのGaucheが
+pthreadサポートつきでインストールされているかどうかをconfigure
+スクリプトがチェックするようになりました。
 
 参考: [[GaucheForKahua//KahuaのためのGaucheインストール入門]]
 
@@ -41,8 +45,8 @@ Gauche scheme interpreter, version 0.8.9 [utf-8,pthreads]
 しまうことをお薦めします。後述のようなパーミッションやユーザ/グループの
 設定が不要になります。
 {{{
-% tar xvzf Kahua-1.0.2.tgz
-% cd Kahua-1.0.2
+% tar xvzf Kahua-1.0.3.tgz
+% cd Kahua-1.0.3
 % ./configure --prefix=${HOME}/kahua
 % make
 % make check
@@ -150,8 +154,8 @@ Webサーバの実行ユーザが www だとすると、
 ./configure のオプションに気をつけさえすれば特に問題はありません。以下は
 筆者があるサイトにKahuaをインストールするためにビルドを行う様子です。
 {{{
-% tar xzvf Kahua-1.0.2.tgz
-% cd Kahua-1.0.2
+% tar xzvf Kahua-1.0.3.tgz
+% cd Kahua-1.0.3
 % ./configure \
     --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
     --prefix=/usr/local/kahua \

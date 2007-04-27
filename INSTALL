@@ -1,7 +1,7 @@
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
-;; $Id: INSTALL,v 1.14.2.2 2007/02/14 07:40:06 bizenn Exp $
+;; $Id: INSTALL,v 1.14.2.3 2007/04/27 01:39:43 bizenn Exp $
 
 * Setup Kahua
 
@@ -11,14 +11,14 @@
 
 To use Kahua, you need Gauche 0.8.8 or later that supports pthread.
 But Gauche 0.8.8 has several serious bugs, so we strongly recommend
-to use Gauche 0.8.9 or later.
+to use Gauche 0.8.9 or later(latest release version).
 {{{
 $ gosh -V
-Gauche scheme interpreter, version 0.8.9 [utf-8,pthreads]
+Gauche scheme interpreter, version 0.8.10 [utf-8,pthreads]
 }}}
 
 If you have not installed proper version of Gauche, please install new
-version.
+version.  Now configure script check above condition.
 
 ----
 ** Let's try Kahua
@@ -30,8 +30,8 @@ under your home directroy.  By this way you don't need to
 care about permissions and user/group settings.
 
 {{{
-% tar xvzf Kahua-1.0.2.tgz
-% cd Kahua-1.0.2
+% tar xvzf Kahua-1.0.3.tgz
+% cd Kahua-1.0.3
 % ./configure --prefix=$HOME/kahua
 % make
 % make check
@@ -130,8 +130,8 @@ scripts, but its configuration requires a careful attention.
 
 This is configuration and building process on a real site.
 {{{
-% tar xzvf Kahua-1.0.2.tgz
-% cd Kahua-1.0.2
+% tar xzvf Kahua-1.0.3.tgz
+% cd Kahua-1.0.3
 % ./configure \
     --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
     --prefix=/usr/local/kahua \
