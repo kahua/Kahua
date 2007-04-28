@@ -152,8 +152,10 @@ clean:
 install: all
 	$(INSTALL) -m 0755 -d $(sysconfdir) $(libexecdir)
 	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0775 -d $(localstatedir)
-	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0770 -d $(localstatedir)/checkout $(localstatedir)/logs
-	$(INSTALL) $(KAHUA_USER_OPTION) $(KAHUA_GROUP_OPTION) -m 0770 -d $(SOCKET_BASE_DIR) $(TMP_BASE_DIR)
+	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0770 -d $(localstatedir)/checkout \
+		   $(localstatedir)/logs $(localstatedir)/data
+	$(INSTALL) $(KAHUA_USER_OPTION) $(KAHUA_GROUP_OPTION) -m 0770 -d \
+		   $(SOCKET_BASE_DIR) $(TMP_BASE_DIR)
 	@if test "$(KAHUA_STATICDIR)" != ""; then \
 	  $(INSTALL) $(KAHUA_GROUP_OPTION) -m 0775 -d $(KAHUA_STATICDIR); \
         fi
