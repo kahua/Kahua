@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.16 2007/04/27 13:49:51 bizenn Exp $
+;; $Id: session.scm,v 1.17 2007/04/28 08:15:08 bizenn Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -278,10 +278,10 @@
 	 (begin
 	   (write request out) (flush out)
 	   (let1 result (read in)
-	     (when (not (pair? result))
+	     (unless (pair? result)
 	       (error "keyserver failure: check log file"))
 	     result))
-	 (socket-shutdown client))))))
+	 (socket-shutdown client 2))))))
 
 ;; SESSION-STATE-REGISTER [id]
 ;;   Register a new session state.  Returns a state session ID.
