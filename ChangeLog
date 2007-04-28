@@ -1,3 +1,8 @@
+2007-04-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/config.scm.in
+	  Add kahua-datapath utility.
+
 2007-04-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/config.scm.in
