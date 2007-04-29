@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.14 2006/08/31 04:15:16 bizenn Exp $
+;; $Id: worker.scm,v 1.15 2007/04/29 03:36:19 bizenn Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -117,16 +117,16 @@
   (and-let* ((p (ref worker 'worker-process)))
     (set! (ref worker 'worker-process) #f)
     (set! (ref worker 'worker-id) #f)
-    (process-send-signal p SIGINT)
+    (process-send-signal p SIGTERM)
     (process-wait p)))
 
 (define-syntax with-worker
   (syntax-rules ()
-    ((with-worker (w command) body ...)
-     (let ((w (run-worker command)))
-       (with-error-handler
-           (lambda (e) (shutdown-worker w) (raise e))
-         (lambda () body ... (shutdown-worker w)))))))
+    ((_ (w command) body ...)
+     (let1 w (run-worker command)
+       (unwind-protect
+	(begin body ...)
+	(shutdown-worker w))))))
 
 ;; Returns a procedure that can be used as the fourth arg of test*
 ;; to match the resulting xml, as well as to save the session id
