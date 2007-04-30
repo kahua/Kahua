@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.29 2007/04/30 09:10:18 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.30 2007/04/30 09:36:47 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -833,8 +833,8 @@
 	  (when (is-a? sockaddr <sockaddr-un>)
 	    (sys-unlink (sockaddr-name sockaddr)))
 	  (nuke-all-workers spvr)
-	  (wait-all tpool)
-	  (finish-all tpool)
+	  (thread-pool-wait-all tpool)
+	  (thread-pool-finish-all tpool)
 	  (stop-httpd spvr)
 	  (stop-keyserv spvr)
 	  (log-format "[spvr] exitting")

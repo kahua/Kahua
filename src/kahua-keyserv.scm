@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.13 2007/04/30 09:10:18 bizenn Exp $
+;; $Id: kahua-keyserv.scm,v 1.14 2007/04/30 09:36:47 bizenn Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -85,8 +85,8 @@
        (begin
 	 (when (is-a? sockaddr <sockaddr-un>)
 	   (sys-unlink (sockaddr-name sockaddr)))
-	 (wait-all tpool)
-	 (finish-all tpool)
+	 (thread-pool-wait-all tpool)
+	 (thread-pool-finish-all tpool)
 	 (sys-unlink (kahua-keyserv-pidpath)))))))
 
 (define (usage)

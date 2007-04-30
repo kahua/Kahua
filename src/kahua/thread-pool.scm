@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: thread-pool.scm,v 1.3 2007/04/30 09:10:18 bizenn Exp $
+;; $Id: thread-pool.scm,v 1.4 2007/04/30 09:36:47 bizenn Exp $
 
 (define-module kahua.thread-pool
   (use srfi-1)
@@ -16,8 +16,8 @@
 	  thread-pool-add-task
 	  thread-pool-inc!
 	  thread-pool-dec!
-	  wait-all
-	  finish-all))
+	  thread-pool-wait-all
+	  thread-pool-finish-all))
 (select-module kahua.thread-pool)
 
 (define-class <thread-pool> ()
@@ -96,7 +96,7 @@
 			 (thread-specific-set! (car pool) #f)
 			 (loop (- num 1) (cdr pool)))))))))
 
-(define-method wait-all ((tp <thread-pool>) . maybe-interval)
+(define (thread-pool-wait-all tp . maybe-interval)
   (let ((mutex (slot-ref tp 'mutex))
 	(cv    (slot-ref tp 'cv))
 	(queue (slot-ref tp 'queue))
@@ -107,15 +107,15 @@
 		   (lambda () (when (queue-empty? queue) (done))))
 		 (sleep))))))
 
-(define-method finish-all ((tp <thread-pool>) . maybe-timeout)
-  (let1 timeout (get-optional maybe-timeout #f)
-    (let ((pool (slot-ref tp 'pool))
-	  (cv   (slot-ref tp 'cv)))
-      (for-each (lambda (t) (thread-specific-set! t #t)) pool)
-      (for-each (lambda (t)
-		  (condition-variable-broadcast! cv)
-		  (unless (thread-join! t timeout #f)
-		    (thread-terminate! t)))
-		pool))))
+(define (thread-pool-finish-all tp . maybe-timeout)
+  (let ((timeout (get-optional maybe-timeout #f))
+	(pool (slot-ref tp 'pool))
+	(cv   (slot-ref tp 'cv)))
+    (for-each (lambda (t) (thread-specific-set! t #t)) pool)
+    (for-each (lambda (t)
+		(condition-variable-broadcast! cv)
+		(unless (thread-join! t timeout #f)
+		  (thread-terminate! t)))
+	      pool)))
 
 (provide "kahua/thread-pool")

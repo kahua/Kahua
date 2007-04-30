@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.19 2007/04/30 09:10:17 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.20 2007/04/30 09:36:47 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -469,7 +469,7 @@ Options:
 	       (run-server tpool socks))
 	     (bye 0)))
 	(for-each socket-close socks)
-	(wait-all tpool)
+	(thread-pool-wait-all tpool)
 	(log-format "Finish")
 	(when (condition? ret) (raise ret))
 	ret)

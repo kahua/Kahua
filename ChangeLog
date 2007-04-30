@@ -2,7 +2,9 @@
 
 	* Add: src/kahua/thread-pool.scm
 	  New function thread-pool-inc! and thread-pool-dec!, and
-	  change method add into function thread-pool-add-task.
+	  change method add, wait-all and finish-all into function
+	  thread-pool-add, thread-pool-wait-all and thread-pool-finish-all
+	  respectively.
 
 2007-04-28  Tatsuya BIZENN  <bizenn@arthub.net>
 
