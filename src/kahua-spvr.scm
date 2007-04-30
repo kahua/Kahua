@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.28 2007/02/15 02:18:12 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.29 2007/04/30 09:10:18 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -734,7 +734,7 @@
 		   (socket-fd kahua-sock)
 		   (lambda (fd flags)
 		     (let1 client (socket-accept kahua-sock)
-		       (add tpool (cut handle-kahua spvr client))))
+		       (thread-pool-add-task tpool (cut handle-kahua spvr client))))
 		   '(r)))
   (when use-listener
     (let* ((listener (make <listener> :prompter (lambda () (display "kahua> "))))

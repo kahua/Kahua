@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.18 2007/04/13 06:04:05 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.19 2007/04/30 09:10:17 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -390,7 +390,7 @@
 		(selector-add! selector (socket-fd ss)
 			       (lambda (fd flag)
 				 (let1 sock (socket-accept ss)
-				   (add tpool (cut handle-request sock))))
+				   (thread-pool-add-task tpool (cut handle-request sock))))
 			       '(r)))
 	      socks)
     (do () (#f)

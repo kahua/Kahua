@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: thread-pool.scm,v 1.2 2006/07/28 13:09:43 bizenn Exp $
+;; $Id: thread-pool.scm,v 1.3 2007/04/30 09:10:18 bizenn Exp $
 
 (define-module kahua.thread-pool
   (use srfi-1)
@@ -13,7 +13,9 @@
   (extend gauche.threads)
   (export <thread-pool>
 	  make-thread-pool
-	  add
+	  thread-pool-add-task
+	  thread-pool-inc!
+	  thread-pool-dec!
 	  wait-all
 	  finish-all))
 (select-module kahua.thread-pool)
@@ -22,7 +24,8 @@
   ((pool  :init-keyword :pool  :init-value '())
    (queue :init-keyword :queue :init-form (make-queue))
    (mutex :init-keyword :mutex :init-form (make-mutex))
-   (cv    :init-keyword :cv    :init-form (make-condition-variable))))
+   (cv    :init-keyword :cv    :init-form (make-condition-variable))
+   (task  :init-keyword :task)))
 
 (define (make-thread-pool num)
   (define (do-task queue mutex cv)
@@ -43,17 +46,19 @@
   (let* ((queue (make-queue))
 	 (mutex (make-mutex))
 	 (cv    (make-condition-variable))
+	 (task  (cute do-task queue mutex cv))
 	 (pool  (list-tabulate num (lambda _
-				     (let1 t (make-thread (cute do-task queue mutex cv))
+				     (let1 t (make-thread task)
 				       (thread-specific-set! t #f)
 				       (thread-start! t))))))
     (make <thread-pool>
       :pool pool
       :queue queue
       :mutex mutex
-      :cv cv)))
+      :cv cv
+      :task task)))
 
-(define-method add ((tp <thread-pool>) thunk)
+(define (thread-pool-add-task tp thunk)
   (let ((queue (slot-ref tp 'queue))
 	(mutex (slot-ref tp 'mutex))
 	(cv    (slot-ref tp 'cv)))
@@ -61,6 +66,35 @@
       (lambda ()
 	(enqueue! queue thunk)
 	(condition-variable-signal! cv)))))
+
+(define (thread-pool-inc! tp . maybe-num)
+  (let ((task (slot-ref tp 'task))
+	(mutex (slot-ref tp 'mutex)))
+    (with-locking-mutex mutex
+      (lambda ()
+	(slot-set! tp 'pool
+		   (let loop ((num (get-optional maybe-num 1))
+			      (pool (slot-ref tp 'pool)))
+		     (if (<= num 0)
+			 pool
+			 (loop (- num 1)
+			       (cons (let1 t (make-thread task)
+				       (thread-specific-set! t #f)
+				       (thread-start! t)
+				       t)
+				     pool)))))))))
+
+(define (thread-pool-dec! tp . maybe-num)
+  (with-locking-mutex (slot-ref tp 'mutex)
+    (lambda ()
+      (slot-set! tp 'pool
+		 (let loop ((num (get-optional maybe-num 1))
+			    (pool (slot-ref tp 'pool)))
+		   (if (or (<= num 0) (null? pool))
+		       pool
+		       (begin
+			 (thread-specific-set! (car pool) #f)
+			 (loop (- num 1) (cdr pool)))))))))
 
 (define-method wait-all ((tp <thread-pool>) . maybe-interval)
   (let ((mutex (slot-ref tp 'mutex))

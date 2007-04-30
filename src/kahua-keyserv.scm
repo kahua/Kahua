@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.12 2007/04/27 13:49:51 bizenn Exp $
+;; $Id: kahua-keyserv.scm,v 1.13 2007/04/30 09:10:18 bizenn Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -98,7 +98,7 @@
   (let ((sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
         (selector (make <selector>)))
     (define (accept-handler fd flag)
-      (add tpool (cute handle-request (socket-accept sock))))
+      (thread-pool-add-task tpool (cute handle-request (socket-accept sock))))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
