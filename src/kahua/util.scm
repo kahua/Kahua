@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.9 2006/11/19 22:02:25 bizenn Exp $
+;; $Id: util.scm,v 1.10 2007/04/30 09:01:46 bizenn Exp $
 
 ;; This module contains generally useful routines, which don't belong to
 ;; a particular module.
@@ -58,11 +58,8 @@
     (ref e 'message)))
 
 (define (with-sigmask how mask thunk)
-  (let1 old_sigset #f
-    (dynamic-wind
-	(lambda () (set! old_sigset (sys-sigmask how mask)))
-	thunk
-	(lambda () (sys-sigmask SIG_SETMASK old_sigset)))))
+  (let1 old_sigset (sys-sigmask how mask)
+    (unwind-protect (thunk) (sys-sigmask SIG_SETMASK old_sigset))))
 
 (define-method filter-map1 (f (c <collection>))
   (reverse!
