@@ -1,3 +1,13 @@
+2007-05-03  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: src/kahua/persistence/efs.scm
+	  When class redefined, index cache confusion occured.
+	  Check to syncronize between index-cache and persistence
+	  at kahua-instances-by-index.
+	  For this purpose, import read-index-cache & register-index-cache
+	  from persistence.scm with little bit change.
+	  In future, Maybe we export cache APIs from kahua.persistence.
+	
 2007-04-30  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Add: src/kahua/thread-pool.scm
