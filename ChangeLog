@@ -1,3 +1,8 @@
+2007-05-18  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-server.scm
+	  Unsafe implementation of kahua-write-static-file.
+
 2007-04-27  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 1.0.3 released.
