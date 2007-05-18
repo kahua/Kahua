@@ -84,7 +84,6 @@ install:
 	for f in $(PLUGINFILES); do \
 	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t plugin -r $$f $(PLUGINDIR)/$$f;\
 	done
-	mkdir -p $(bindir)
 	for f in $(XMLFILES); do \
 	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t template -r $(package)/$$f $(TEMPLATEDIR)/$$f;\
 	done
