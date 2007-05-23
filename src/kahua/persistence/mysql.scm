@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: mysql.scm,v 1.10.2.1 2007/01/11 06:43:30 bizenn Exp $
+;; $Id: mysql.scm,v 1.10.2.2 2007/05/23 16:03:02 bizenn Exp $
 
 (define-module kahua.persistence.mysql
   (use srfi-1)
@@ -218,8 +218,9 @@ create table ~a (
 		      (o (read-from-string (dbi-get-value r 1))))
 		  (dbi-do conn update-table '() (ref o 'id) k)))
 	      (dbi-do conn select-table '()))
-    (guard (e (else (warn tabname e)))
-      (dbi-do conn set-primary-key '(:pass-through #t)))
+    (guard (e (else (warn tabname e) #f))
+      (dbi-do conn set-primary-key '(:pass-through #t))
+      #t)
     ))
 
 (provide "kahua/persistence/mysql")

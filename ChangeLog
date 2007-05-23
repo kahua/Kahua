@@ -1,3 +1,10 @@
+2007-05-24  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/persistence.scm, src/kahua/persistence/dbi.scm,
+	       src/kahua/persistence/mysql.scm, src/kahua/persistence/postgresql.scm
+	  kahua-dbutil was broken against Kahua 0.7 or prior version
+	  database on MySQL or PostgreSQL.
+
 2007-05-18  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua-server.scm

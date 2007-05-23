@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.10.2.1 2007/01/21 15:47:33 bizenn Exp $
+;; $Id: postgresql.scm,v 1.10.2.2 2007/05/23 16:03:03 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))
@@ -199,25 +199,30 @@ create table ~a (
   (last-value-of-sequence db *kahua-db-idcount*))
 
 (define-method dbutil:fix-kahua-db-idcount ((db <kahua-db-postgresql>) n)
-  (initialize-kahua-db-idcount db n))
+  (initialize-kahua-db-idcount db n)
+  #t)
 
 (define-method dbutil:create-kahua-db-idcount ((db <kahua-db-postgresql>) n)
   (let1 conn (connection-of db)
-    (guard (e ((<dbi-exception> e) #f))
-      (dbi-do conn (format "drop table ~a" *kahua-db-idcount*) '()))
-    (guard (e ((<dbi-exception> e) #f))
-      (dbi-do conn (format "create sequence ~a start ~d minvalue 0" *kahua-db-idcount* n)
-	      '(:pass-through #t)))))
+    (and (guard (e ((<dbi-exception> e) #f))
+	   (dbi-do conn (format "drop table ~a" *kahua-db-idcount*) '())
+	   #t)
+	 (guard (e ((<dbi-exception> e) #f))
+	   (dbi-do conn (format "create sequence ~a start ~d minvalue 0" *kahua-db-idcount* n)
+		   '(:pass-through #t))
+	   #t))))
 
 (define-method dbutil:current-kahua-db-classcount ((db <kahua-db-postgresql>))
   (last-value-of-sequence db *kahua-db-classcount*))
 
 (define-method dbutil:fix-kahua-db-classcount ((db <kahua-db-postgresql>) n)
-  (initialize-kahua-db-classcount db n))
+  (initialize-kahua-db-classcount db n)
+  #t)
 
 (define-method dbutil:create-kahua-db-classcount ((db <kahua-db-postgresql>) n)
   (create-kahua-db-classcount db)
-  (dbutil:fix-kahua-db-classcount db n))
+  (dbutil:fix-kahua-db-classcount db n)
+  #t)
 
 (define-method dbutil:fix-instance-table-structure ((db <kahua-db-postgresql>) tabname)
   (define (warn tabname e) (format (current-error-port) "Fail: ~a: ~a\n" tabname (ref e 'message)))
@@ -241,6 +246,6 @@ create table ~a (
 	      (dbi-do conn select '()))
     (dbi-do conn add-primary-key '(:pass-through #t))
     (dbi-do conn drop-default '(:pass-through #t))
-    ))
+    #t))
 
 (provide "kahua/persistence/postgresql")
