@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.18 2007/02/21 07:13:33 bizenn Exp $
+;; $Id: dbi.scm,v 1.19 2007/05/23 15:58:12 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -605,13 +605,15 @@
 			(dbi-do (connection-of db) "select value from kahua_db_classcount" '())))))
 
 (define-method dbutil:fix-kahua-db-classcount ((db <kahua-db-dbi>) n)
-  (dbi-do (connection-of db) "update kahua_db_classcount set value=?" '() n))
+  (dbi-do (connection-of db) "update kahua_db_classcount set value=?" '() n)
+  #t)
 
 (define-method dbutil:create-kahua-db-classcount ((db <kahua-db-dbi>) n)
   (let1 conn (connection-of db)
     (guard (e ((<dbi-exception> e) #t))
       (create-kahua-db-classcount db))
-    (initialize-kahua-db-classcount db n)))
+    (initialize-kahua-db-classcount db n))
+  #t)
 
 (define-method dbutil:check-class-counter ((db <kahua-db-dbi>) do-fix?)
   (define (max-class-id cn r)
@@ -637,12 +639,14 @@
 			(dbi-do (connection-of db) "select value from kahua_db_idcount" '())))))
 
 (define-method dbutil:fix-kahua-db-idcount ((db <kahua-db-dbi>) n)
-  (dbi-do (connection-of db) "update kahua_db_idcount set value = ?" '() n))
+  (dbi-do (connection-of db) "update kahua_db_idcount set value = ?" '() n)
+  #t)
 
 (define-method dbutil:create-kahua-db-idcount ((db <kahua-db-dbi>) n)
   (let1 conn (connection-of db)
     (safe-execute (cut create-kahua-db-idcount db))
-    (initialize-kahua-db-idcount db n)))
+    (initialize-kahua-db-idcount db n)
+    #t))
 
 (define-method dbutil:check-id-counter ((db <kahua-db-dbi>) do-fix?)
   (define (max-id cn r)
@@ -680,7 +684,8 @@
     (dbi-do conn (format "alter table ~a add removed smallint not null default 0" tabname)
 	    '(:pass-through #t))
     (dbi-do conn (format "create index idx_rmd_~a on ~a (removed)" tabname tabname)
-	    '(:pass-through #t)))
+	    '(:pass-through #t))
+    #t)
   (dbutil:persistent-classes-fold db check-removed-flag-column 'OK))
 
 (define-generic dbutil:fix-instance-table-structure)
@@ -711,5 +716,11 @@
 		(writer "\n")))
 	    *proc-table*)
   )
+
+(define-method dbutil:class-names ((db <kahua-db-dbi>))
+  (map (lambda (row)
+	 (string->symbol (dbi-get-value row 0)))
+       (dbi-do (connection-of db)
+	       "select class_name from kahua_db_classes")))
 
 (provide "kahua/persistence/dbi")

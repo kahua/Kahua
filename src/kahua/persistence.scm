@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.76 2007/04/25 08:41:53 bizenn Exp $
+;; $Id: persistence.scm,v 1.77 2007/05/23 15:58:12 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -90,6 +90,7 @@
 	  dbutil:check-alive-directory
 
 	  dbutil:with-dummy-reader-ctor
+	  dbutil:class-names
 	  dbutil:persistent-classes-fold
 	  dbutil:check&fix-database
 	  dbutil:kahua-db-fs->efs
@@ -1914,12 +1915,15 @@
       thunk
       dbutil:restore-reader-ctor))
 
+(define-method dbutil:class-names ((db <kahua-db>))
+  (cons '<kahua-persistent-metainfo>
+	(map (cut ref <> 'name) (make-kahua-collection db <kahua-persistent-metainfo>
+						       '(:include-removed-object? #t)))))
+
 (define-method dbutil:persistent-classes-fold ((db <kahua-db>) proc knil)
-  (let1 classes (map (cut ref <> 'name) (make-kahua-collection db <kahua-persistent-metainfo>
-							       '(:include-removed-object? #t)))
-    (dbutil:with-dummy-reader-ctor
-     (lambda ()
-       (fold proc knil (cons '<kahua-persistent-metainfo> classes))))))
+  (dbutil:with-dummy-reader-ctor
+   (lambda ()
+     (fold proc knil (dbutil:class-names db)))))
 
 (define-generic dbutil:kahua-db-fs->efs)
 
