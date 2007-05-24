@@ -3,11 +3,12 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-dbutil.scm,v 1.6 2006/10/30 07:02:40 bizenn Exp $
+;; $Id: kahua-dbutil.scm,v 1.7 2007/05/24 02:12:14 bizenn Exp $
 
 (use gauche.parseopt)
 (use kahua.persistence)
 (use kahua.persistence.efs)
+(use kahua.config)
 
 (define (msg fmt . args)
   (apply format #t fmt args))
@@ -27,7 +28,10 @@
 
 (define (main args)
   (let-args (cdr args)
-      ((gosh "gosh=s") . args)
+      ((site "S=s")
+       (conf-file "c=s")
+       (gosh "gosh=s") . args)
+    (kahua-common-init site conf-file)
     (let* ((cmd (car args))
 	   (do-fix? (cond ((string=? cmd "check") #f)
 			  ((string=? cmd "fix" )  #t)
