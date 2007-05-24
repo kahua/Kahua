@@ -1,5 +1,9 @@
 2007-05-24  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Fix: src/kahua-dbutil.scm
+	  Add support for -S and -c command line options.
+	  It make kahua-dbutil can run in source tree (w/o install).
+
 	* Fix: src/kahua/persistence.scm, src/kahua/persistence/dbi.scm,
 	       src/kahua/persistence/mysql.scm, src/kahua/persistence/postgresql.scm
 	  kahua-dbutil was broken against Kahua 0.7 or prior version
