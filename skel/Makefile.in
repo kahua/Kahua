@@ -37,8 +37,8 @@ KAHUACONFIG = @KAHUACONFIG_OPTION@
 TEST_DIR    = $(PWD)
 
 SOURCEDIR   = src
-SCRIPTFILES = src/$(package).kahua src/version.kahua
-STATICFILES = src/$(package).css
+SCRIPTFILES = $(package).kahua version.kahua
+STATICFILES = $(package).css
 
 PLUGINDIR   = plugins
 PLUGINFILES = $(package).scm
@@ -59,6 +59,7 @@ all: $(ALL_TARGETS)
 test/test.conf: test/test.conf.in
 	sed -e "s@##TEST_DIR##@$(TEST_DIR)@" $? > $@
 	test -L checkout || ln -s . checkout
+	test -L $(package) || ln -s src $(package)
 
 test/test.scm:	test/test.scm.in
 	sed -e "s@##GOSH##@$(GOSH)@" -e "s@##PLUGINS##@$(PLUGINFILES)@" \
@@ -78,9 +79,12 @@ clean:
 	rm -rf core *~ src/*~ test/*~ test/test.log $(TEST_GENERATED) $(MAKE_GENERATED)
 
 install: 
-	$(KAHUA_INSTALL) $(KAHUACONFIG) -t script $(SCRIPTFILES)
-	$(KAHUA_INSTALL) $(KAHUACONFIG) -t script --no-overwrite $(LOCALSCRIPTFILES)
-	$(KAHUA_INSTALL) $(KAHUACONFIG) -t static --no-overwrite $(STATICFILES)
+	for f in $(SCRIPTFILES); do \
+	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t script -r $(package)/$$f $(SOURCEDIR)/$$f;\
+	done
+	for f in $(STATICFILES); do \
+	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t static -r $(package)/$$f --no-overwrite $(SOURCEDIR)/$$f;\
+	done
 	for f in $(PLUGINFILES); do \
 	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t plugin -r $$f $(PLUGINDIR)/$$f;\
 	done
@@ -90,12 +94,12 @@ install:
 	@cat MESSAGES
 
 uninstall:
-	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t static $(STATICFILES)
+	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t static $(package)/$(STATICFILES)
 	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t plugin -r $(PLUGINFILE) \
                                         $(PLUGINDIR)/$(PLUGINFILE)
 
 uninstall-scripts:
-	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t script $(SCRIPTFILES)
+	$(KAHUA_INSTALL) -U $(KAHUACONFIG) -t script $(package)/$(SCRIPTFILES)
 
 distclean: clean
 	-rm -rf $(CONFIG_GENERATED)

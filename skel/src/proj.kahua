@@ -3,10 +3,10 @@
 ;;  Copyright (c) 2005 Kahua.Org, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: proj.kahua,v 1.1 2007/05/25 01:49:53 cut-sea Exp $
+;; $Id: proj.kahua,v 1.2 2007/05/25 02:51:51 cut-sea Exp $
 ;;
 
-(load "src/version.kahua")
+(load "%%_PROJECT_NAME_%%/version.kahua")
 
 (define page-template
   (kahua:make-xml-template
