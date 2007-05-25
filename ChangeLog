@@ -1,3 +1,8 @@
+2007-05-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/test/worker.scm
+	  Lack of flush after send request to worker.
+
 2007-05-24  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua-dbutil.scm
