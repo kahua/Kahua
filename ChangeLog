@@ -1,5 +1,10 @@
 2007-05-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Fix: src/kahua-keyserv.scm
+	  Drop sending extra data to worker when a exception
+	  raised while request handling.  This behavior caused
+	  unexpected exception raising.
+
 	* Fix: src/kahua/test/worker.scm
 	  Lack of flush after send request to worker.
 

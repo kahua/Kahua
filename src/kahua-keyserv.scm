@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.14 2007/04/30 09:36:47 bizenn Exp $
+;; $Id: kahua-keyserv.scm,v 1.15 2007/05/25 09:12:08 bizenn Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -121,9 +121,7 @@
     (lambda (input output)
       (guard (e (else #f))
 	(unwind-protect
-	 (guard (e (else
-		    (log-format "~a" (kahua-error-string e #t))
-		    (display "#f\n" output)))
+	 (guard (e (else (log-format "~a" (kahua-error-string e #t))))
 	   (let loop ((request (read input)))
 	     (unless (eof-object? request)
 	       (let1 result (match request
