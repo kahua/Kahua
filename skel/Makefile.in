@@ -36,21 +36,21 @@ KAHUACONFIG = @KAHUACONFIG_OPTION@
 
 TEST_DIR    = $(PWD)
 
-SCRIPTFILES = $(package)/$(package).kahua $(package)/version.kahua
-STATICFILES = $(package)/$(package).css
+SOURCEDIR   = src
+SCRIPTFILES = src/$(package).kahua src/version.kahua
+STATICFILES = src/$(package).css
 
-SOURCEDIR   = $(package)
 PLUGINDIR   = plugins
 PLUGINFILES = $(package).scm
 
 TEMPLATEDIR = templates
 XMLFILES    = page.xml
 
-ALL_TARGETS = $(package)/version.kahua test/test.scm test/test.conf
+ALL_TARGETS = src/version.kahua test/test.scm test/test.conf
 DIST_GENERATED = configure VERSION DIST_EXCLUDE_X
 CONFIG_GENERATED = Makefile config.log config.status autom4*.cache
 MAKE_GENERATED =  $(ALL_TARGETS) checkout
-TEST_GENERATED = test/_tmp test/_work test/$(package)
+TEST_GENERATED = test/_tmp test/_work test/src
 
 .PHONY: all check clean distclean install maintainer-clean
 
@@ -67,7 +67,7 @@ test/test.scm:	test/test.scm.in
 	    -e "s@##PROJECT_VERSION##@$(package_version)@" \
 	    $? > $@
 
-$(package)/version.kahua: $(package)/version.kahua.in
+src/version.kahua: src/version.kahua.in
 	sed -e "s@##PROJECT_VERSION##@$(package_version)@" $? > $@
 
 check:  all
@@ -75,7 +75,7 @@ check:  all
 	cd test; $(GOSH) -I$(KAHUA_LIB) ./test.scm > test.log
 
 clean:
-	rm -rf core *~ $(package)/*~ test/*~ test/test.log $(TEST_GENERATED) $(MAKE_GENERATED)
+	rm -rf core *~ src/*~ test/*~ test/test.log $(TEST_GENERATED) $(MAKE_GENERATED)
 
 install: 
 	$(KAHUA_INSTALL) $(KAHUACONFIG) -t script $(SCRIPTFILES)

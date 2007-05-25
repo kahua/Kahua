@@ -1,3 +1,10 @@
+2007-05-25  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: skel/proj => skel/src directory
+	* Change: src/kahua-package.scm, Makefile.in
+	* Change: skel/Makefile.in
+	  modify skel's source code directory tree.
+
 2007-05-24  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua-dbutil.scm
