@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.108 2007/04/26 06:07:26 bizenn Exp $
+;; $Id: server.scm,v 1.109 2007/05/28 06:53:57 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -225,6 +225,27 @@
 		      (string-append (get-output-string error-output)
 				     (get-output-string std-output)
 				     result))))))
+
+    ;; FIXME!!
+    (define (make-context state header body)
+      (list*
+       `("session-state" ,state)
+       `("x-kahua-path-info"
+	 ,(drop* (assoc-ref-car header "x-kahua-path-info"
+				'())
+		 2))
+       `("x-kahua-path-full-info"
+	 ,(assoc-ref-car header "x-kahua-path-info"
+			 '()))
+       `("x-kahua-metavariables"
+	 ,(assoc-ref-car header "x-kahua-metavariables"
+			 '()))
+       `("x-kahua-headers" ,(make-hash-table 'string=?))
+       `("x-kahua-remote-addr"
+	 ,(assoc-ref-car header "x-kahua-remote-addr"))
+       `("x-kahua-worker-uri"
+	 ,(assoc-ref-car header "x-kahua-worker-uri"))
+       body))
      
     ;; Main dispatcher body
     (receive (state-id cont-id) (get-gsid-from-header header)
@@ -246,23 +267,7 @@
 		  (run-cont (if cont-id
 				(or (session-cont-get cont-id) stale-proc)
 				default-proc)
-			    (list*
-			     `("session-state" ,state)
-			     `("x-kahua-path-info"
-			       ,(drop* (assoc-ref-car header "x-kahua-path-info"
-						      '())
-				       2))
-			     `("x-kahua-path-full-info"
-			       ,(assoc-ref-car header "x-kahua-path-info"
-					       '()))
-			     `("x-kahua-metavariables"
-			       ,(assoc-ref-car header "x-kahua-metavariables"
-					       '()))
-			     `("x-kahua-headers" ,(make-hash-table 'string=?))
-			     `("x-kahua-worker-uri"
-			       ,(assoc-ref-car header "x-kahua-worker-uri"
-					       #f))
-			     body))
+			    (make-context state header body))
 		(let1 extra-headers
 		    (assoc-ref-car context "extra-headers" '())
 		  (lambda ()
