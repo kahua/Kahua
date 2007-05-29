@@ -1,10 +1,10 @@
 ;;
 ;; Kahua client interface for Emacs
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua.el.in,v 1.6.2.4 2007/04/23 03:24:02 bizenn Exp $
+;; $Id: kahua.el.in,v 1.6.2.5 2007/05/29 07:59:20 bizenn Exp $
 ;;
 
 (require 'comint)
@@ -93,6 +93,10 @@ Editing commands are similar to those of 'scheme-mode'."
   "Prompt in the minibuffer for selecting worker"
   (if (string-match kahua-worker-prompt-regex string)
       (comint-simple-send "*kahua-shell*" (read-string "select worker: " nil))))
+
+;; for compatibility with Emacs 21
+(unless (functionp 'read-directory-name)
+  (defalias 'read-directory-name 'read-file-name))
 
 (defun kahua-read-server ()
   (if kahua-ssh-mode
