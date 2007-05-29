@@ -1,7 +1,7 @@
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
-;; $Id: INSTALL,v 1.14.2.3 2007/04/27 01:39:43 bizenn Exp $
+;; $Id: INSTALL,v 1.14.2.4 2007/05/29 14:02:23 bizenn Exp $
 
 * Setup Kahua
 
@@ -9,9 +9,8 @@
 
 *** Installing Gauche
 
-To use Kahua, you need Gauche 0.8.8 or later that supports pthread.
-But Gauche 0.8.8 has several serious bugs, so we strongly recommend
-to use Gauche 0.8.9 or later(latest release version).
+To use Kahua, you need Gauche 0.8.9 or later(the latest release version
+recommended) that supports pthread.
 {{{
 $ gosh -V
 Gauche scheme interpreter, version 0.8.10 [utf-8,pthreads]
@@ -30,8 +29,8 @@ under your home directroy.  By this way you don't need to
 care about permissions and user/group settings.
 
 {{{
-% tar xvzf Kahua-1.0.3.tgz
-% cd Kahua-1.0.3
+% tar xvzf Kahua-1.0.4.tgz
+% cd Kahua-1.0.4
 % ./configure --prefix=$HOME/kahua
 % make
 % make check
@@ -130,8 +129,8 @@ scripts, but its configuration requires a careful attention.
 
 This is configuration and building process on a real site.
 {{{
-% tar xzvf Kahua-1.0.3.tgz
-% cd Kahua-1.0.3
+% tar xzvf Kahua-1.0.4.tgz
+% cd Kahua-1.0.4
 % ./configure \
     --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
     --prefix=/usr/local/kahua \
