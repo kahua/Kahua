@@ -5,7 +5,7 @@
 ;;
 ;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.13 2006/12/12 08:06:19 bizenn Exp $
+;; $Id: sandbox.scm,v 1.14 2007/05/30 08:46:56 bizenn Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)
@@ -82,7 +82,6 @@
         (use kahua.developer)
         (use kahua.elem)
 	(use kahua.xml-template)
-        (use kahua.error-report)
 
         ;; for class redefinition.
         ;; require is done at compile time but also clear
