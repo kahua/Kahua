@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-admin.scm,v 1.9 2007/02/15 02:18:11 bizenn Exp $
+;; $Id: kahua-admin.scm,v 1.10 2007/05/30 07:54:12 bizenn Exp $
 
 (use srfi-1)
 (use gauche.net)
@@ -16,27 +16,24 @@
 (use gauche.process)
 
 (define last-command (make-parameter ""))
-(define *redo-command* ":")
+(define-constant *redo-command* ":")
 
 ;; Deal with supervisor command -----------------------------------
 (define (spvr-command-processor)
-  (with-error-handler
-      (lambda (e)
-        (print "ERROR: " (ref e 'message))
-        spvr-command-processor)
-    (lambda ()
-      (format #t "spvr> ")
-      (flush)
-      (let1 line (read-line)
-        (if (equal? line *redo-command*)
-	    (set! line (last-command)) ;; use last command
-	    (last-command line))       ;; set last command
-        (if (eof-object? line)
-          (exit 0)
-          (let1 cmd (call-with-input-string line port->sexp-list)
-            (if (null? cmd)
-              spvr-command-processor
-              (dispatch-spvr-command cmd))))))))
+  (define (parse-command-line line)
+    (cond ((eof-object? line)                 (exit 0))
+	  ((equal? line *redo-command*) (last-command))
+	  (else              (last-command line) line)))
+  (guard (e (else
+	     (print "ERROR: " (ref e 'message))
+	     spvr-command-processor))
+    (format #t "spvr> ")
+    (let1 cmd (call-with-input-string
+		  (parse-command-line (read-line))
+		port->sexp-list)
+      (if (null? cmd)
+	  spvr-command-processor
+	  (dispatch-spvr-command cmd)))))
 
 (define (dispatch-spvr-command cmd)
   (case (car cmd)
@@ -136,27 +133,22 @@
 
 (define (make-worker-command-processor type wid)
   (rec (worker-processor)
-    (with-error-handler
-        (lambda (e)
-          (display (ref e 'message)) (flush)
-          worker-processor)
-      (lambda ()
-        (format #t "~a(~a)> " type wid)
-        (flush)
-        (let1 expr (read)
-          (cond
-           ((eof-object? expr) (exit 0))
-           ((memq expr '(disconnect bye)) spvr-command-processor)
-           (else
-            ;; NB: the first two elts of reply is error-output and std-output
-            (let1 reply (send-command wid expr)
-              (display (car reply)) (display (cadr reply))
-              (for-each (lambda (r) (display r) (newline)) (cddr reply))
-              worker-processor))
-           ))
-        ))
-    ))
-
+       (guard (e (else
+		  (display (ref e 'message))
+		  worker-processor))
+	 (format #t "~a(~a)> " type wid)
+	 (let1 expr (read)
+	   (cond
+	    ((eof-object? expr) (exit 0))
+	    ((memq expr '(disconnect bye)) spvr-command-processor)
+	    (else
+	     ;; NB: the first two elts of reply is error-output and std-output
+	     (let1 reply (send-command wid expr)
+	       (display (car reply)) (display (cadr reply))
+	       (for-each (lambda (r) (display r) (newline)) (cddr reply))
+	       worker-processor))
+	    ))
+        )))
 
 (define (update-worker-files wtype . files)
   (let* ((workers (send-command #f '(ls)))
@@ -262,6 +254,7 @@
     (set-signal-handler! SIGINT  (lambda _ (exit 0)))
     (set-signal-handler! SIGTERM (lambda _ (exit 0)))
     (kahua-common-init site conf-file)
+    (set! (port-buffering (current-output-port)) :none)
     (cond
      ((null? args) ;; interactive mode
       (let loop ((command-processor spvr-command-processor))

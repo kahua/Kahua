@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.26 2007/05/18 08:15:27 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.27 2007/05/30 07:54:12 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -123,13 +123,11 @@
 (define (default-handler) ((main-proc)))
 
 (define (load-kahua-module mod)
-  (with-error-handler
-      (lambda (e)
-	(report-error e)
-        (print "ERROR loading module")
-        (exit 0))
-    (lambda ()
-      (load mod :environment kahua-app-server))))
+  (guard (e (else
+	     (report-error e)
+	     (print "ERROR loading module")
+	     (exit 0)))
+    (load mod :environment kahua-app-server)))
 
 (define (run-server worker-id sockaddr profile)
   (let ((sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
@@ -173,6 +171,7 @@
     (guard (e (else (report-error e) #f))
       (begin0
 	(load mod :environment kahua-app-server)
+	;; FIXME!! This is to avoid inconsistency of memory cache.
 	(kahua-db-purge-objs))))
 
   (if (pair? files)
@@ -232,16 +231,14 @@
 	     (log-format "[~a] ~a" worker-name (sys-signal-name sig)) (bye 0))
 	   (log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
 	   (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
-	   (with-error-handler
-	     (lambda (e)
-	       (log-format "[server] error in main:\n~a"
-			   (kahua-error-string e #t))
-	       (report-error e)
-	       (bye 70))
-	     (lambda ()
-	       (log-format "[~a] start" worker-name)
-	       (run-server worker-id sockaddr profile)
-	       (bye 0)))))
+	   (guard (e (else
+		      (log-format "[server] error in main:\n~a"
+				  (kahua-error-string e #t))
+		      (report-error e)
+		      (bye 70)))
+	     (log-format "[~a] start" worker-name)
+	     (run-server worker-id sockaddr profile)
+	     (bye 0))))
 	(cleanup))
       )))
 

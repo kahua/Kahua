@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-install.scm,v 1.6 2006/12/25 14:10:57 cut-sea Exp $
+;; $Id: kahua-install.scm,v 1.7 2007/05/30 07:54:12 bizenn Exp $
 
 ;; Installs Kahua's application server materials according to
 ;; the kahua.conf configuration settings.
@@ -68,19 +68,13 @@
   (let* ((target     (target-path material-type (or rename file)))
          (target-dir (sys-dirname target)))
     (when (file-exists? target)
-      (with-error-handler
-          (lambda (e)
-            (warn "couldn't uninstall ~a: ~a" target (ref e 'message)))
-        (lambda ()
-          (sys-unlink target))))
+      (guard (e (else (warn "couldn't uninstall ~a: ~a" target (ref e 'message))))
+	(sys-unlink target)))
     (when (and (file-is-directory? target-dir)
                (equal? (sys-readdir target-dir) '("." "..")))
-      (with-error-handler
-          (lambda (e)
-            (warn "couldn't remove the directory ~a: ~a"
-                  target-dir (ref e 'message)))
-        (lambda ()
-          (sys-rmdir target-dir))))))
+      (guard (e (else (warn "couldn't remove the directory ~a: ~a"
+			    target-dir (ref e 'message))))
+	(sys-rmdir target-dir)))))
 
 ;; NB: uninstalling dirs isn't implemented yet, since it can be
 ;; pretty dangerous operation.
