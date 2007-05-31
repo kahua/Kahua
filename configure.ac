@@ -3,11 +3,13 @@ dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-dnl $Id: configure.ac,v 1.45 2006/12/27 03:57:03 bizenn Exp $
+dnl $Id: configure.ac,v 1.46.2.12 2007/05/31 05:20:21 bizenn Exp $
 dnl
-AC_PREREQ(2.54)
-AC_INIT(kahua, 1.0rc, info@kahua.org)
+AC_PREREQ(2.59)
+AC_INIT(kahua, 1.0.4, info@kahua.org)
 AC_GAUCHE_INIT_EXT
+
+REQUIRED_GAUCHE_VERSION=0.8.9
 
 dnl Sets the default value of INSTALL_TYPE macro.
 AC_GAUCHE_INSTALL_TYPE(site)
@@ -20,6 +22,30 @@ dnl Check for other programs.
 AC_PROG_INSTALL
 AC_CHECK_PROGS(MAKEINFO, makeinfo)
 AC_CHECK_PROGS(GZIP_PROGRAM, gzip)
+
+dnl Check Gauche version and threading support type.
+dnl Kahua require threading support 'pthread' type,
+dnl and if on Linux, Kahua require NPTL.
+AC_MSG_CHECKING(check Gauche version and thread type)
+gosh check.scm $REQUIRED_GAUCHE_VERSION
+case "$?" in
+  0);;
+  1) AC_MSG_ERROR(
+You must install Gauche $REQUIRED_GAUCHE_VERSION or later which was built with
+                  --enable-threads=pthreads configure option.
+, 1) ;;
+  *) AC_MSG_ERROR("Unknown arguments", 70) ;;
+esac
+case "$target" in
+  *-*-linux)
+  if sh -c 'getconf GNU_LIBPTHREAD_VERSION|grep -vq NPTL'; then
+      AC_MSG_ERROR(
+NPTL(Native POSIX Thread Library) required.  We recommend Linux kernel 2.6.x.
+, 1)
+  fi
+  ;;
+esac
+AC_MSG_RESULT(seem good)
 
 dnl Sets some additional installation destination
 KAHUA_CGIDIR=$libexecdir/kahua
@@ -109,6 +135,10 @@ AC_ARG_WITH(cgi-user,
     esac
   ])
 AC_SUBST(CGI_USER_OPTION)
+
+AC_ARG_WITH(site-bundle,
+  AC_HELP_STRING([--with-site-bundle=/path/to/site],
+                 [Examples installed into /path/to/bundle. Default: none]),[])
 
 dnl Add more test
 
