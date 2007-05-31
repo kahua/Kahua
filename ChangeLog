@@ -1,3 +1,14 @@
+2007-05-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.4 released.
+
+	* Change: src/kahua/user.scm
+	  Export kahua-current-user-class.
+
+	* Change: doc/*.ja doc/*/*.ja
+	  Convert their character encoding from euc-jp to utf-8.
+	  Rewrote almost half of doc/Setup.ja.
+
 2007-05-29  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: emacs/kahua.el.in
