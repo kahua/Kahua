@@ -1,18 +1,18 @@
-;; Modules/kahua.server -*- mode:text; coding: euc-jp -*-
+;; Modules/kahua.server -*- mode:text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.server.ja,v 1.9.2.1 2007/04/23 03:24:02 bizenn Exp $
+;; $Id: kahua.server.ja,v 1.9.2.2 2007/05/31 03:48:10 bizenn Exp $
 
 * [module] kahua.server
 
-���Υ⥸�塼���[[../Scripts/kahua-server]]�β���ư��륢�ץꥱ������
-�󥳡��ɤ򵭽Ҥ���ݤˡ�¾���͡���kahua.*�⥸�塼��ؤΥ��ץꥱ�������
-�����Ф��������ݤˡ��͡���kahua.* �⥸�塼��ؤΥ��󥿥ե������Ȥʤ�
-��쥤��API���󶡤��ޤ���
+このモジュールは[[../Scripts/kahua-server]]の下で動作するアプリケーショ
+ンコードを記述する際に、他の様々なkahua.*モジュールへのアプリケーション
+サーバを作成する際に、様々なkahua.* モジュールへのインタフェースとなる
+高レイヤAPIを提供します。
 
-API�ˤ��礭��ʬ���ơ����ץꥱ�������ץ������ (*.kahua��񤯿�) ����
-�Ѥ����³���ȡ�kahua-server���Υ�����ץȤ����Ѥ����³���Ȥ�����ޤ���
+APIには大きく分けて、アプリケーションプログラマ (*.kahuaを書く人) が使
+用する手続きと、kahua-server等のスクリプトが使用する手続きとがあります。
 {{{
              kahua-server
                   |
@@ -24,215 +24,215 @@ API�ˤ��礭��ʬ���ơ����ץꥱ�������ץ������ (*.kahua��񤯿�) ����
                 |   v
           applications *.kahua
 }}}
-�ʹߡ�API�򤳤���ĤΥ����פ�ʬ�����������ޤ������ץꥱ�������ץ�����
-�ޤϡ�API for applications�ι�����ɤ�С�kahua.server�⥸�塼��ε�ǽ
-��Ȥ����Ȥ��Ǥ���Ǥ��礦��
+以降、APIをこの二つのタイプに分けて説明します。アプリケーションプログラ
+マは、API for applicationsの項だけ読めば、kahua.serverモジュールの機能
+を使うことができるでしょう。
 
 * API for Applications
 
-Kahua���ץꥱ�������򵭽Ҥ���ݤ˻��Ѥ���API�Ǥ������̤Υ��ץꥱ������
-��ץ�����ޤϡ�������ʬ���İ����Ƥ���������פǤ���
+Kahuaアプリケーションを記述する際に使用するAPIです。普通のアプリケーショ
+ンプログラマは、この部分を把握しておけば大丈夫です。
 
-** �Ķ����䤤��碌
+** 環境の問い合わせ
 
 *** [procedure] kahua-worker-type
 
-���������Ϳ����줿''worker-type''���֤��ޤ����㤨��"kahua-web"�Ȥ���
-���ץꥱ����������Ǥϡ�"kahua-web"�Ȥ���ʸ�����֤�ޤ���
+初期化時に与えられた''worker-type''を返します。例えば"kahua-web"という
+アプリケーションの中では、"kahua-web"という文字列が返ります。
 
 *** [procedure] kahua-bridge-name
 
-���Υ��ץꥱ�������ؤΥ�����Хå���URI�Ȥ��������ߤ������ˡ�URI
-�Υ١����Ȥʤ�ʸ������֤��ޤ����㤨�С�/cgi-bin/kahua.cgi�ǸƤӽФ���
-��CGI�֥�å����ͳ���ƥ����������줿��硢"/cgi-bin/kahua.cgi"���֤��
-������������kahua-shell���椫��ƤӽФ������ϡ����ߡ��ͤȤ��ơ�
-"/kahua.cgi"���֤���ޤ���
+このアプリケーションへのコールバックをURIとして埋め込みたい場合に、URI
+のベースとなる文字列を返します。例えば、/cgi-bin/kahua.cgiで呼び出され
+るCGIブリッジを経由してアクセスされた場合、"/cgi-bin/kahua.cgi"が返りま
+す。ただし、kahua-shellの中から呼び出した場合は、ダミー値として、
+"/kahua.cgi"が返されます。
 
 *** [procedure] kahua-server-uri
 
-Kahua�����Ф������黲�Ȥ��뤿���uri ("scheme://server:port") ���֤�
-�ޤ�����������kahua-shell���椫��ƤӽФ��줿���ϡ����ߡ��ͤȤ��ơ�
-"http://localhost" ���֤���ޤ���
+Kahuaサーバを外部から参照するためのuri ("scheme://server:port") を返し
+ます。ただし、kahua-shellの中から呼び出された場合は、ダミー値として、
+"http://localhost" が返されます。
 
 *** [procedure] kahua-self-uri . ''path-components''
 *** [procedure] kahua-self-uri-full . ''path-components''
 
-'''���ߤΥ��ץꥱ������󥵡�����Υ꥽����'''��URI��
-''path-components''���鹽�ۤ��ޤ���kahua-self-uri��URI�Υѥ���ʬ��
-kahua-self-uri-full�ϥ������ࡢ������̾���ݡ����ֹ��ޤ᤿����URI����
-���ޤ���
+'''現在のアプリケーションサーバ内のリソース'''のURIを、
+''path-components''から構築します。kahua-self-uriはURIのパス部分、
+kahua-self-uri-fullはスキーム、サーバ名、ポート番号を含めた絶対URIを返
+します。
 
 *** [procedure] kahua-current-entry-name
 
-���߸ƤӽФ���Ƥ��륨��ȥ�̾��ʸ����Ǽ������ޤ���well-known����ȥ�
-�Ǥʤ����϶�ʸ����""���֤�ޤ���
+現在呼び出されているエントリ名を文字列で取得します。well-knownエントリ
+でない場合は空文字列""が返ります。
 
-** �桼��ǧ��
+** ユーザ認証
 
 *** [procedure] kahua-login username password
 
-[[kahua.user]]�ε�ǽ��Ȥä�ǧ�ڤ�Ԥ���ǧ�ڤ����������� kahua-current-user
-�˥桼�����֥������Ȥ򥻥åȤ������Υ��֥������Ȥ��֤��ޤ������Ԥ����� #f
-���֤�ޤ�������ϡ�kahua-current-user��[[kahua.user]]�ε�ǽ��ʰפ˻Ȥ������
-��åѡ���³���Ǥ���
+[[kahua.user]]の機能を使って認証を行い、認証に成功したら kahua-current-user
+にユーザオブジェクトをセットし、そのオブジェクトを返します。失敗したら #f
+が返ります。これは、kahua-current-userと[[kahua.user]]の機能を簡易に使うための
+ラッパー手続きです。
 
 *** [procedure] kahua-logout
 
-(current-kahua-user) �� #f �����ꤹ���åѡ��ؿ��Ǥ����������Ū�ˡ֥桼
-���������󥻥å����ν�λ�פ򼨤��ˤϤ�����μ�³����Ȥ����Ȥ�侩���ޤ���
+(current-kahua-user) に #f を設定するラッパー関数です。より明示的に「ユー
+ザログインセッションの終了」を示すにはこちらの手続きを使うことを推奨します。
 
 *** [procedure] kahua-authorized? . roles
 
-[[kahua.user]]�ε�ǽ��Ȥ������Ǥ�Ŭ�ڤʸ��¤���ĥ桼���Ȥ��ƥ�������
-���֤ˤ���� #t �򡢤����Ǥʤ���� #f ���֤��ޤ���roles���Ϥ��줿���ϡ�
-ǧ�ںѤߤΥ桼�����Ϥ��줿roles�Τɤ줫�ҤȤİʾ�˽�°���Ƥ��뤫�ɤ�����
-�Τ�����ޤ���
+[[kahua.user]]の機能を使い、すでに適切な権限を持つユーザとしてログイン
+状態にあれば #t を、そうでなければ #f を返します。rolesが渡された場合は、
+認証済みのユーザが渡されたrolesのどれかひとつ以上に所属しているかどうかが
+確かめられます。
 
 *** [procedure] kahua-current-user ''context''
 *** [procedure] (setter kahua-current-user) ''context'' ''user''
 
-session-state���ݻ�����Ƥ��롢�ָ��ߤΥ桼���׾����get/set���뤿���
-��쥤���³���Ǥ�session-state�ϰ���Ū�ˤϥ��饤����ȤΥ��å����˷��
-�Ĥ���줿�������¸���Ƥ��ޤ�([[kahua.session]]����)��
+session-stateに保持されている、「現在のユーザ」情報をget/setするための
+低レイヤ手続きですsession-stateは一般的にはクライアントのクッキーに結び
+つけられた情報を保存しています([[kahua.session]]参照)。
 
-�ָ��ߤΥ桼���פϡ����Υ桼��������ݻ����Ƥ����ǡ����١����ȥ桼��̾
-�Ȥ�ڥ��ˤ��ơ����Υ桼����Ʊ��Ǥ��뤫�ɤ��������ꤷ�ޤ���
+「現在のユーザ」は、そのユーザ情報を保持していたデータベースとユーザ名
+とをペアにして、そのユーザが同一であるかどうかを特定します。
 
-(kahua-current-user) ��ƤӽФ��ȡ����ߤΥǡ����١���((current-db)��
-������ǡ����١���)��ͳ�褹��桼�����󤬡ָ��ߤΥ桼���פȤ���
-�ݻ�����Ƥ��뤫�ɤ�����Ĵ�١����Ĥ���Ф���� <kahua-user> ���֥�������
-�Ȥ����֤��ޤ������Ĥ���ʤ���� #f ���֤��ޤ���
+(kahua-current-user) を呼び出すと、現在のデータベース((current-db)で
+得られるデータベース)に由来するユーザ情報が「現在のユーザ」として
+保持されているかどうかを調べ、見つかればそれを <kahua-user> オブジェクト
+として返します。見つからなければ #f を返します。
 
-(set! (kahua-current-user) user) �Τ褦���Ѥ���ȡ��ָ��ߤΥ桼���פ�
-���ꤹ�뤳�Ȥ��Ǥ��ޤ���user�ˤ�<kahua-user>���֥������Ȥ��桼��̾��
-ɽ��ʸ���󡢤⤷���� #f ���Ϥ��ޤ����桼��̾���Ϥ�����硢Kahua��
-���ߤΥǡ����١����⤫�餳�Υ桼��̾�����ꤵ��� kahua-user> ����
-���󥹤򸡺��������Ĥ���Ф����ָ��ߤΥ桼���פȤ������ꤷ��
-���Ĥ���ʤ���� #f ��ָ��ߤΥ桼���פȤ������ꤷ�ޤ���
+(set! (kahua-current-user) user) のように用いると、「現在のユーザ」を
+設定することができます。userには<kahua-user>オブジェクトかユーザ名を
+表す文字列、もしくは #f を渡します。ユーザ名を渡した場合、Kahuaは
+現在のデータベース内からこのユーザ名で特定される kahua-user> インス
+タンスを検索し、見つかればそれを「現在のユーザ」として設定し、
+見つからなければ #f を「現在のユーザ」として設定します。
 
-�����μ�³���ϥǡ����١����˥�����������Τǡ�with-db�Υ����ʥߥå���
-�����ƥ����ǸƤФ�ʤ���Фʤ�ޤ��� ([[kahua.persistence]]����)��
+これらの手続きはデータベースにアクセスするので、with-dbのダイナミックエ
+クステント内で呼ばれなければなりません ([[kahua.persistence]]参照)。
 
-����Ū�ˤϡ�Kahua�� <session-state> ���֥������Ȥ� login-states �����å�
-�ˡ��桼��̾�ȥǡ����١����ѥ��Υڥ��Υꥹ�Ȥ��ݻ����Ƥ��ޤ���
+内部的には、Kahuaは <session-state> オブジェクトの login-states スロット
+に、ユーザ名とデータベースパスのペアのリストを保持しています。
 
 <<<
- ����꡼��0.7������ΥС�������Kahua�Ǥϡ��ָ��ߤΥ桼���פ�ñ��
-   <session-state> ���֥������Ȥ� user �����åȤˡ��桼��̾���ݻ����Ƥ���
-   �����Ǥ���������Ǥϡ�ͳ�褹��桼���ǡ����١������㤦�ˤ⤫����餺��
-   ��������̾��Ʊ���Ǥ����Ʊ���桼���ȸ��ʤ���Ƥ��ޤ����������ƥ���
-   ���꤬���뤿�ᡢ0.7���鸽�ߤλ��ͤ��ѹ�����ޤ�����
+ ※リリース0.7より前のバージョンのKahuaでは、「現在のユーザ」は単に
+   <session-state> オブジェクトの user スロットに、ユーザ名を保持していた
+   だけでした。これでは、由来するユーザデータベースが違うにもかかわらず、
+   ログイン名が同じであれば同じユーザと見なされてしまい、セキュリティ上
+   問題があるため、0.7から現在の仕様に変更されました。
 >>>
 
-** ���饤����Ⱦ�����䤤��碌
+** クライアント情報の問い合わせ
 
-Kahua���饤����Ȥ����Ϥ��줿����ϡ�kahua-server����Kahua���ץꥱ�������
-��context�Ȥ����ϤäƤ��ޤ��������ǾҲ𤹤��³����Ȥäơ�context�˥�������
-���뤳�Ȥ��Ǥ��ޤ���
+Kahuaクライアントから渡された情報は、kahua-serverからKahuaアプリケーション
+にcontextとして渡ってきます。ここで紹介する手続きを使って、contextにアクセス
+することができます。
 
 *** [procedure] kahua-context-ref ''key'' . ''maybe-default''
 
-���ץꥱ������󥵡��ФΥϥ�ɥ���Ϥ���륳��ƥ����Ⱦ����
-�����������뤿��δؿ��Ǥ���''key''��ʸ����ޤ��ϥ���ܥ�Ǥ���
+アプリケーションサーバのハンドラに渡されるコンテキスト情報に
+アクセスするための関数です。''key''は文字列またはシンボルです。
 
-����ƥ����Ⱦ���ˤϡ��㤨�Хե���������Ϥ��줿�� (key��name°����Ϳ��
-��ʸ����)��HTTP�Υإå�����state session�����Ǵ�������륯�饤�����
-����("session-state"�Ȥ��������ǥ���������ǽ)�ʤɤ��ޤޤ�ޤ���
-maybe-default�Ͼ�ά��ǽ�ʰ����ǡ��������륳��ƥ����Ⱦ���¸�ߤ��ʤ�����
-�֤��ͤ��Ϥ��ޤ�����ά�������� #f �����ꤵ�줿�Τ�Ʊ���Ǥ���
+コンテキスト情報には、例えばフォームで入力された値 (keyはname属性に与え
+た文字列)やHTTPのヘッダ情報、state sessionキーで管理されるクライアント
+情報("session-state"というキーでアクセス可能)などが含まれます。
+maybe-defaultは省略可能な引数で、該当するコンテキスト情報が存在しない場合に
+返す値を渡します。省略した場合は #f が指定されたのと同じです。
 
-���μ�³���ϡ�����ƥ����Ⱦ����ͤ��ꥹ�ȤǤ����硢���Υꥹ�Ȥ�
-�ǽ�����Ǥ��֤��ޤ���
+この手続きは、コンテキスト情報値がリストである場合、そのリストの
+最初の要素を返します。
 
-���������ե�������Ϥ����ѥ�᡼���򰷤��ʤ顢��ҤΥ���ȥ�ݥ����
-�Υѥ�᡼���Ȥ��ư������������Ǥ���
+ただし、フォームで渡されるパラメータを扱うなら、後述のエントリポイント
+のパラメータとして扱う方が自然です。
 
 *** [procedure] kahua-context-ref* ''key'' . ''maybe-default''
 
-kahua-context-ref�Ȥ褯���Ƥ��ޤ������������륳��ƥ����Ⱦ���
-�ꥹ�ȤȤ����֤���뤳�ȡ�maybe-default���ά�����Ȥ��Υǥե�����ͤ�
-()�Ǥ��뤳�Ȥ��㤤�ޤ���
+kahua-context-refとよく似ていますが、該当するコンテキスト情報が
+リストとして返されること、maybe-defaultを省略したときのデフォルト値が
+()であることが違います。
 
 *** [procedure] kahua-meta-ref ''key'' . maybe-default
 
-context���顢CGI�᥿�ѿ�����Ф��ޤ���maybe-default����ά���줿����
-#f���Ϥ��줿�Τ�Ʊ���Ǥ���
+contextから、CGIメタ変数を取り出します。maybe-defaultが省略された時は
+#fが渡されたのと同じです。
 
 *** [procedure] kahua-cookie-ref ''key'' . maybe-default
 
-context���顢COOKIE���ͤ���Ф��ޤ���maybe-default����ά���줿����
-#f���Ϥ��줿�Τ�Ʊ���Ǥ���
+contextから、COOKIEの値を取り出します。maybe-defaultが省略された時は
+#fが渡されたのと同じです。
 
 
-** ��³����ȥ�ݥ���Ȥ�����
+** 継続エントリポイントの設定
 
-��������������������ݥ���Ȥ��������API�Ǥ���Web���ץꥱ�������
-�ξ�硢����ϡ�worker type(���ץꥱ�������̾)�μ��ˤ���ѥ����ǤȤ���
-ɽ������ޤ���
+外部からの制御を受け取るポイントを定義するAPIです。Webアプリケーション
+の場合、これは、worker type(アプリケーション名)の次にくるパス要素として
+表現されます。
 
 *** [macro] entry-lambda ''entry-formals'' . ''body''
 
-̵̾�η�³����ȥ�ݥ���Ȥ�������ޤ���Kahua�������ˤ����Ƥϡ�����ϰ�
-����Ȥ�ʤ���³���Ȥ���ɽ������ޤ������μ�³����Kahua���ץꥱ�������
-���ɾ�������ȡ�Kahua���ץꥱ�������kahua-server����������context
-�˽��ä�entry-formals�˴ޤޤ��ѥ�᡼����«������body��ɾ�����ޤ���
+無名の継続エントリポイントを作成します。Kahuaの内部においては、これは引
+数をとらない手続きとして表現されます。この手続きがKahuaアプリケーション
+内で評価されると、Kahuaアプリケーションがkahua-serverから受け取るcontext
+に従ってentry-formalsに含まれるパラメータを束縛し、bodyを評価します。
 
-��³����ȥ�ݥ���Ȥγ���ɽ���ϡ�URL�˥ѥ����ǤȤ��������ޤ줿�����
-��ʸ����Ǥ��������˳��������Τ뤳�ȤϤǤ�������󥯤Ȥ��Ƥ��ɤ뤳�Ȥ�
-���Ǥ��ޤ��󡣤��Τ��ᡢ��Ҥ�define-entry��̾����Ĥ���줿��³�����
-��ݥ���Ȥ��Ф���'''̵̾�η�³����ȥ�ݥ����'''�ȸƤ�Ǥ��ޤ���
+継続エントリポイントの外部表現は、URLにパス要素として埋め込まれたある種
+の文字列です。事前に外部から知ることはできず、リンクとしてたどることし
+かできません。このため、後述のdefine-entryで名前をつけられた継続エント
+リポイントに対して'''無名の継続エントリポイント'''と呼んでいます。
 
-entry-formals�ϡ����ϥѥ�᡼����ѥ����Ǥ������뤿��β������Τ褦��
-�����ޤ����񼰤ˤĤ��Ƥϡ�����define-entry�������򻲾Ȥ��Ƥ���������
+entry-formalsは、入力パラメータやパス要素を受け取るための仮引数のように
+扱われます。書式については、次のdefine-entryの説明を参照してください。
 
 *** [macro] define-entry (''entry-name'' . ''entry-formals'') . ''body''
 *** [macro] define-entry ''entry-name'' (entry-lambda ...)
 
-''entry-formals''������Ȥ���''body''��������ƤȤ����³��³�����������
-�����ȥåץ�٥��''entry-name''�Ȥ���̾����«�����ޤ����ޤ���
-''entry-name'' �򡢳������������������뤿��Υ���ȥ�ݥ����̾
-�Ȥ�����Ͽ���ޤ���������������쥯�Ȥˤ��Υ���ȥ�ݥ���Ȥ�ƤӽФ�����
-���Ǥ��ޤ������Τ���well-known����ȥ�Ȥ�permanent����ȥ�ȸƤФ�뤳��
-�⤢��ޤ���
+''entry-formals''を引数とし、''body''を処理内容とする継続手続きを作成し、
+それをトップレベルで''entry-name''という名前に束縛します。また、
+''entry-name'' を、外部からの制御を受け取るためのエントリポイント名
+として登録します。外部からダイレクトにこのエントリポイントを呼び出すこと
+ができます。このためwell-knownエントリとかpermanentエントリと呼ばれること
+もあります。
 
-�ֳ�������������������פȤϡ�define-entry�ǻ��ꤵ����³��³����
-�㤨�м���URL�ǵ�ư�Ǥ���Ȥ������ȤǤ���
+「外部からの制御を受け取る」とは、define-entryで指定される継続手続きを、
+例えば次のURLで起動できるということです。
 
 {{{
   http://servername/cgi-bin/kahua.cgi/''worker-type''/''entry-name''
 }}}
 
-�ޤ���''entry-name''��«�����줿��³��³���ϡ��ü��SXML�Ρ��ɤǤ���
-a/cont, form/cont �ʤɤȰ��˻Ȥ����Ȥǡ���³�Ϥ���������ǤΥ��ץ�
-��������󵭽Ҥ��ǽ�ˤ��ޤ���
+また、''entry-name''に束縛された継続手続きは、特殊なSXMLノードである
+a/cont, form/cont などと一緒に使うことで、継続渡しスタイルでのアプリ
+ケーション記述を可能にします。
 
-''entry-formals'' �ϼ��Τ褦�ʷ����ΰ����ꥹ�ȤǤ���
-([...]��...����ά��ǽ�Ǥ��뤳�Ȥ򼨤��ޤ�)
+''entry-formals'' は次のような形式の引数リストです。
+([...]は...が省略可能であることを示します)
 {{{
   ([''arg'' ... ][:keyword ''karg'' ... ][:mvkeyword ''mvkarg'' ... ][:rest ''restarg''])
 }}}
-''arg'' ... �ˤϡ�URI��''entry-name'' �θ�����Ϥ����ѥ����Ǥ�
-ʸ����Ȥ���«�����졢�ѥ�᡼����«�����졢''karg'' ... �ˤ�
-HTTP�ꥯ�����ȤΥ�����ѥ�᡼����ʬ��«������ޤ����ޤ���1�Ĥ�
-�ѥ�᡼��̾��ʣ�����ͤ��ϤäƤ����ǽ����������ϡ�''mvkarg'' ...
-�ˤ�äơ���(ʸ����)�Υꥹ�ȤȤ��Ƽ�����뤳�Ȥ��Ǥ��ޤ���
-�ѥ����Ǥο���''arg'' ... ���¿����''restarg''�����ꤵ��Ƥ�����ϡ�
-''restarg''�˻Ĥ꤬�ꥹ�ȤȤ���«������ޤ���
+''arg'' ... には、URIの''entry-name'' の後ろに渡されるパス要素が
+文字列として束縛され、パラメータが束縛され、''karg'' ... には
+HTTPリクエストのクエリパラメータ部分が束縛されます。また、1つの
+パラメータ名に複数の値が渡ってくる可能性がある場合は、''mvkarg'' ...
+によって、値(文字列)のリストとして受け取ることができます。
+パス要素の数が''arg'' ... より多く、''restarg''が指定されている場合は、
+''restarg''に残りがリストとして束縛されます。
 
-�㤨�С����Τ褦�ʥ���ȥ����������Ȥ��ޤ���
+例えば、次のようなエントリ定義があるとします。
 
 {{{
   (define-entry (name parg1 parg2 :keyword karg1 karg2 :restarg rarg)
      ...)
 }}}
 
-�����ǡ����Τ褦��uri���������������ȡ�
+ここで、次のようなuriがアクセスされると：
 
 {{{
   http://host/kahua.cgi/app-type/name/foo/bar/baz/boz?karg1=aa&karg2=bb
 }}}
 
-define-entry�����Τϡ����Τ褦���ѿ�«���Τ�Ȥ�ɾ������ޤ���
+define-entryの本体は、次のような変数束縛のもとで評価されます。
 
 {{{
   parg1 = "foo"
@@ -242,25 +242,25 @@ define-entry�����Τϡ����Τ褦���ѿ�«���Τ�Ȥ�ɾ������ޤ���
   rarg = ("baz" "boz")
 }}}
 
-���������б������ͤ�Ϳ�����ʤ��ä���硢�������ˤ�#f��«������ޤ���
-(â����mvkargs��rarg�ϡ��ͤ�Ϳ�����ʤ�����()��«������ޤ�)��
-�б����벾�������ʤ��ͤϼΤƤ��ޤ���
+仮引数に対応する値が与えられなかった場合、仮引数には#fに束縛されます。
+(但し、mvkargsとrargは、値が与えられない場合は()が束縛されます)。
+対応する仮引数がない値は捨てられます。
 
-Scheme���鸫��ȡ�''entry-name''��«��������³��³����
-��������ʤ�����������Ǥ�����³��³���ϡ�����������
-kahua-context-ref��Ȥäƥ��饤����Ȥ����Ϥ��줿�������Ф���
-�������ؤ�«����ԤäƤ��ޤ���
+Schemeから見ると、''entry-name''に束縛される継続手続きは
+引数を取らないクロージャです。継続手続きは、その内部で
+kahua-context-refを使ってクライアントから渡された情報を取り出し、
+仮引数への束縛を行っています。
 
-�ʤ���''entry-formals''��''body''����η�³��³����
-�����ϡ����Ҥ�entry-lambda�ޥ����ˤ�äƹԤ��Ƥ��ޤ���
-entry-lambda�ޥ�����ľ�ܻȤ����Ȥˤ�ꡢ̵̾�η�³��³����
-��ñ�˺����Ǥ��ޤ���
+なお、''entry-formals''と''body''からの継続手続きの
+作成は、前述のentry-lambdaマクロによって行われています。
+entry-lambdaマクロを直接使うことにより、無名の継続手続きを
+簡単に作成できます。
 
 *** [procedure] kahua-call-with-current-context proc
 *** [procedure] kall/cc proc
 
-���ߤ�context�ȤȤ�˷�³����ª���ޤ������Τ褦�ʥ���ץ륳���ɤξ���
-�ͤ��Ƥߤޤ��礦��
+現在のcontextとともに継続を捕捉します。次のようなサンプルコードの場合を
+考えてみましょう。
 {{{
 (define counter-page
   (let1 *counter* 0
@@ -287,90 +287,90 @@ entry-lambda�ޥ�����ľ�ܻȤ����Ȥˤ�ꡢ̵̾�η�³��³����
 
 (initialize-main-proc caller)
 }}}
-�㤨�� http://localhost:8080/kallcc �Ȥ������ץꥱ���������ä��Ȥ���ȡ�
-�ǽ�ϡ�counter-page��������줿�ڡ��������Υ�󥯤򤿤ɤ��callee��
-������줿�ڡ�����ɽ������ޤ���callee�Υڡ����ǥ�󥯤򤿤ɤ��counter-page
-�����ޤ����������󥿡��Ͽʤ�Ǥ����ޤ����Ĥޤꡢcontext����¸�����ޤޡ�
-counter-page���¹Ԥ���Ƥ���ΤǤ���
+例えば http://localhost:8080/kallcc というアプリケーションだったとすると、
+最初は、counter-pageで定義されたページ、そのリンクをたどるとcalleeで
+定義されたページが表示されます。calleeのページでリンクをたどるとcounter-page
+に戻りますが、カウンターは進んでいきます。つまり、contextを保存したまま、
+counter-pageが実行されているのです。
 
 *** [procedure] initialize-main-proc ''thunk''
 
-���ץꥱ������󤬥���ȥ�̾�ʤ��ǸƤФ줿���˵�ư���������Ȥ�ʤ���
-³��''thunk''�����ץ���������Ͽ���ޤ���thunk�Ϸ�³����ȥ�ݥ����
-(̵ͭ̾̾����鷺) �Ǥ⡢�����Υ��󥯤Ǥ⤫�ޤ��ޤ���
+アプリケーションがエントリ名なしで呼ばれた時に起動する引数をとらない手
+続き''thunk''をワーカプロセスに登録します。thunkは継続エントリポイント
+(有名無名を問わず) でも、ただのサンクでもかまいません。
 
-�����μ�³����kahua.server�⥸�塼����������Ƥ����ΤǤϤʤ���
-[[../Scripts/kahua-server]]����������Ƥ���������³���Ǥ��������ץꥱ��
-����󵭽Ҥκݤ˻��Ѥ��뤿�ᡢ�����������򤷤ޤ���
+※この手続きはkahua.serverモジュールで定義されているものではなく、
+[[../Scripts/kahua-server]]内で定義されている内部手続きですが、アプリケー
+ション記述の際に使用するため、ここで説明をします。
 
 
 * API for Scripts
 
-kahua-server���Ȥ�API�Ǥ���kahua-server�ˤ���륢�ץꥱ������󥵡��Ф�
-�񤯤ΤǤʤ���С��ä˻Ȥ�ɬ�פ�����ޤ���
+kahua-serverが使うAPIです。kahua-serverにかわるアプリケーションサーバを
+書くのでなければ、特に使う必要がありません。
 
 *** [procedure] kahua-init-server ''worker-type'' [''session-server-id'']
 
-kahua.server�ե졼�������������ޤ���''worker-type''�ˤ�
-���ץꥱ������󥵡��ФΥ����פ򼨤�ʸ������Ϥ��ޤ���
-���μ�³�������worker id���������졢[[kahua.session]]��
-session-manager-init���ƤФ�ޤ���
-�������줿worker id���֤��ޤ���
+kahua.serverフレームワークを初期化します。''worker-type''には
+アプリケーションサーバのタイプを示す文字列を渡します。
+この手続きの中でworker idが作成され、[[kahua.session]]の
+session-manager-initが呼ばれます。
+作成されたworker idを返します。
 
-''session-server-id''�ˤϡ�session gsid���������[[../Scripts/kahua-keyserv]]
-��worker id���Ϥ��ޤ����̾�α��ѤǤϡ�''session-server-id''��
-[[../Scripts/kahua-spvr]]��kahua-server��ư����ݤ�
-���ޥ�ɥ饤�󥪥ץ������̤����Ϥ���ޤ���
+''session-server-id''には、session gsidを管理する[[../Scripts/kahua-keyserv]]
+のworker idを渡します。通常の運用では、''session-server-id''は
+[[../Scripts/kahua-spvr]]がkahua-serverを起動する際に
+コマンドラインオプションを通じて渡されます。
 
 
 *** [procedure] kahua-default-handler ''header'' ''body'' ''reply-cont'' ''default-proc'' &keyword ''stale-proc'' ''wrapper-proc'' ''error-proc'' ''eval-proc'' ''eval-environment''
 
-���ץꥱ������󥵡��Ф�handle-request����ƤӽФ��졢
-���å���󥭡�����η�³��³���Υǥ����ѥå�����Ԥ��ޤ���
+アプリケーションサーバのhandle-requestから呼び出され、
+セッションキーからの継続手続きのディスパッチ等を行います。
 
-''header'', ''body'', ''reply-cont'' �ˤ�handle-request���Ϥ��줿
-��Τ򤽤Τޤ��Ϥ��ޤ���
+''header'', ''body'', ''reply-cont'' にはhandle-requestに渡された
+ものをそのまま渡します。
 
-kahua-default-handler��''header''����continuation gsid����Ф���
-[[kahua.session]]��session-cont-register����Ͽ���줿�б�����
-��³��³�������ơ�''body''��ȼ�äƤ����ƤӽФ��ޤ���
+kahua-default-handlerは''header''からcontinuation gsidを取り出し、
+[[kahua.session]]のsession-cont-registerで登録された対応する
+継続手続きを得て、''body''を伴ってそれを呼び出します。
 
-��³��³�����������ͤϡ��ޤ�''wrapper-proc''���Ϥ���ޤ���
-''wrapper-proc''�Υǥե���Ȥ�identity�Ǥ��������ץꥱ������󥵡��Ф�
-�����Ƕ��̤Υڡ����ƥ�ץ졼������Ȥ����Ȥ��Ǥ��ޤ���
-kahua-default-handler�ϡ�''wrapper-proc''���֤��ͤ�''reply-cont''��
-body�Ȥ����Ϥ��ޤ���
+継続手続きからの戻り値は、まず''wrapper-proc''に渡されます。
+''wrapper-proc''のデフォルトはidentityですが、アプリケーションサーバは
+ここで共通のページテンプレート等を使うことができます。
+kahua-default-handlerは、''wrapper-proc''の返り値を''reply-cont''に
+bodyとして渡します。
 
-''header''��continuation gsid��Ϳ�����Ƥ��ʤ����ϡ�
-''default-proc''����³��³�����ؤ���''body''��ȼ�äƸƤӽФ���ޤ���
+''header''にcontinuation gsidが与えられていない場合は、
+''default-proc''が継続手続きの替わりに''body''を伴って呼び出されます。
 
-continuation gsid���б������³��³����̵���ä���硢
-''stale-proc''��Ϳ����줿��³�����ؤ��˸ƤӽФ���ޤ���
+continuation gsidに対応する継続手続きが無かった場合、
+''stale-proc''に与えられた手続きが替わりに呼び出されます。
 
-''default-proc'', ''stale-proc'', ''wrapper-proc''����
-��­����ʤ����顼��ȯ��������硢''error-proc''�����顼�㳰��
-ȼ�äƸƤӽФ���ޤ���''error-proc''��Ŭ�ڤʥ��顼�ڡ�����ɽ������
-S�����֤��ͤФʤ�ޤ���
+''default-proc'', ''stale-proc'', ''wrapper-proc''等で
+補足されないエラーが発生した場合、''error-proc''がエラー例外を
+伴って呼び出されます。''error-proc''は適切なエラーページを表現する
+S式を返さねばなりません。
 
-''default-proc''����ӷ�³��³�����Ϥ����context�ϥꥹ�Ȥ�
-�ꥹ�Ȥǡ��ƥꥹ�Ȥ�car�ˤϥѥ�᡼��̾����cadr�ˤ����ͤ���
-����ʸ�����Ϳ�����ޤ����̾�ե����फ���submit��
-���ä����ˤϡ��ե�����ѥ�᡼�����Ȼפ����ɤ��Ǥ��礦��
-kahua-default-handler�Ϥ�����ɲä��ơ�"session-state"�Ȥ���
-�ѥ�᡼�����Ϥ��ޤ��������ͤ�state session ID�ȷ�ӤĤ���줿
-<session-state>���֥������ȤǤ�([[kahua.session]]����)��
+''default-proc''および継続手続きに渡されるcontextはリストの
+リストで、各リストのcarにはパラメータ名が、cadrにその値が、
+共に文字列で与えられます。通常、フォームからのsubmitが
+あった場合には、フォームパラメータだと思えば良いでしょう。
+kahua-default-handlerはそれに追加して、"session-state"という
+パラメータを渡します。その値はstate session IDと結びつけられた
+<session-state>オブジェクトです([[kahua.session]]参照)。
 
-''header''��"x-kahua-eval"��Ϳ����줿���ϡ��嵭�Υᥫ�˥���
-�ǤϤʤ���''body''��S���Ȥ���ɾ�����졢���η�̤�''reply-cont''�ؤ�
-�Ϥ���ޤ�������ϡ����ץꥱ������󥵡��Фδ����ѥ��󥿥ե������Ǥ���
-(����ϡ����餫��ǧ�ڥᥫ�˥����Ƴ�����뤫�⤷��ޤ���)��
-ɾ���ϡ�''eval-proc''�ǻ��ꤵ�줿��³���ˤ��Ԥ��ޤ���
-''eval-proc''��''body''���Ϥ��줿S���������''eval-environment''��
-�Ϥ��줿�⥸�塼��������ꡢ2�Ĥ��ͤ��֤��ͤФʤ�ޤ���
-�ǽ���ͤϡ�ɾ�������������#t, ���顼��ȯ�������#f�Ǥ���
-�����ͤϡ�ɾ���������������ϳ��ͤ�ʸ����ɽ��������ΤΥꥹ�ȡ�
-ɾ�������Ԥ������ϥ��顼��å������Ǥ���
-''eval-proc''�ˤ�Ŭ�ڤʥǥե���Ȥμ�³�������ꤵ��Ƥ���Τǡ�
-�̾��''eval-environment''������Ϳ���Ƥ����ɤ��Ǥ��礦��
-''eval-environment''�Υǥե���Ȥ�user�⥸�塼��Ǥ���
+''header''に"x-kahua-eval"が与えられた場合は、上記のメカニズム
+ではなく、''body''がS式として評価され、その結果が''reply-cont''へと
+渡されます。これは、アプリケーションサーバの管理用インタフェースです。
+(将来は、何らかの認証メカニズムを導入するかもしれません)。
+評価は、''eval-proc''で指定された手続きにより行われます。
+''eval-proc''は''body''に渡されたS式、および''eval-environment''に
+渡されたモジュールを受け取り、2つの値を返さねばなりません。
+最初の値は、評価が成功すれば#t, エラーが発生すれば#fです。
+次の値は、評価が成功した場合は各値を文字列表現したもののリスト、
+評価が失敗した場合はエラーメッセージです。
+''eval-proc''には適切なデフォルトの手続きが設定されているので、
+通常は''eval-environment''だけを与えてやれば良いでしょう。
+''eval-environment''のデフォルトはuserモジュールです。
 

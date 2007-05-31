@@ -1,16 +1,16 @@
-;; -*- coding: euc-jp -*-
+;; -*- coding: utf-8 -*-
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-keyserv.ja,v 1.2 2006/09/29 06:06:09 bizenn Exp $
+;; $Id: kahua-keyserv.ja,v 1.2.2.1 2007/05/31 03:48:10 bizenn Exp $
 
 * kahua-keyserv [-c conf-file]
 
-State session ID¤Ë·ë¤Ó¤Ä¤±¤é¤ì¤¿¥»¥Ã¥·¥ç¥ó¾ğÊó¤òÊİÂ¸¡¢´ÉÍı¤¹¤ë¤¿¤á¤Î¥µ¡¼¥Ğ¡£
-ÄÌ¾ï¤Ï [[kahua-spvr]] ¤Ë¤è¤Ã¤Æµ¯Æ°¤µ¤ì¤ë¡£
+State session IDã«çµã³ã¤ã‘ã‚‰ã‚ŒãŸã‚»ãƒƒã‚·ãƒ§ãƒ³æƒ…å ±ã‚’ä¿å­˜ã€ç®¡ç†ã™ã‚‹ãŸã‚ã®ã‚µãƒ¼ãƒã€‚
+é€šå¸¸ã¯ [[kahua-spvr]] ã«ã‚ˆã£ã¦èµ·å‹•ã•ã‚Œã‚‹ã€‚
 
-Æ±¤¸ [[kahua-spvr]] ¤«¤éµ¯Æ°¤µ¤ì¤¿ [[kahua-server]] ¤Ï¡¢¥í¥°¥¤¥ó¾õÂÖ¤Ê¤É¤Î
-state session¤Ë·ë¤Ó¤Ä¤±¤é¤ì¤¿¾ğÊó¤ò¤³¤Î¥µ¡¼¥Ğ¤ËÊİÂ¸¤¹¤ë¡£
+åŒã˜ [[kahua-spvr]] ã‹ã‚‰èµ·å‹•ã•ã‚ŒãŸ [[kahua-server]] ã¯ã€ãƒ­ã‚°ã‚¤ãƒ³çŠ¶æ…‹ãªã©ã®
+state sessionã«çµã³ã¤ã‘ã‚‰ã‚ŒãŸæƒ…å ±ã‚’ã“ã®ã‚µãƒ¼ãƒã«ä¿å­˜ã™ã‚‹ã€‚
