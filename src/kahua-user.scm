@@ -1,10 +1,10 @@
-;; Kahua user (<kahua-user> instance) management tool
+;; kahua-web user management
 ;;
 ;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-user.scm,v 1.1 2007/05/31 14:18:43 bizenn Exp $
+;; $Id: kahua-user.scm,v 1.1.2.1 2007/05/31 14:26:15 bizenn Exp $
 
 (use kahua.user)
 (use kahua.persistence)

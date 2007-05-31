@@ -2,6 +2,10 @@
 
 	* 1.0.4 released.
 
+	* New: src/kahua-user.scm
+	  New command-line user(<kahua-user> instances) management
+	  tool.  This is imported from kahua-web CVS HEAD(0.3_pre10).
+
 	* Change: src/kahua/user.scm
 	  Export kahua-current-user-class.
 
