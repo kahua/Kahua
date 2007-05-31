@@ -55,7 +55,8 @@ SH_SCRIPTS  = kahua-spvr    \
 	      kahua-httpd \
 	      kahua-dbutil \
               kahua-config \
-              kahua-package
+	      kahua-package \
+              kahua-user
 
 SCM_SCRIPTS  = kahua-spvr.scm    \
                kahua-admin.scm   \
@@ -66,7 +67,8 @@ SCM_SCRIPTS  = kahua-spvr.scm    \
 	       kahua-httpd.scm   \
 	       kahua-dbutil.scm  \
                kahua-config.scm  \
-               kahua-package.scm
+               kahua-package.scm \
+	       kahua-user.scm
 
 SCMFILES = $(SCM_SCRIPTS) \
            kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
@@ -119,6 +121,9 @@ kahua-config :
 
 kahua-package :
 	$(MAKE_SH_SCRIPT) kahua-package
+
+kahua-user :
+	$(MAKE_SH_SCRIPT) kahua-user
 
 kahua/config.scm: kahua/config.scm.in
 	test ! -f $@ || chmod +w $@
