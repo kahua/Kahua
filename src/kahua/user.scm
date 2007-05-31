@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.9 2006/12/22 05:01:26 bizenn Exp $
+;; $Id: user.scm,v 1.10 2007/05/31 10:52:58 bizenn Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -15,7 +15,7 @@
   (export <kahua-user> kahua-add-user kahua-check-user kahua-find-user
           kahua-user-password-change kahua-user-password-change-force
 	  kahua-user-has-role? kahua-user-add-role! kahua-user-drop-role!
-	  dbpath-of inactive? active? name-of roles-of
+	  dbpath-of inactive? active? name-of roles-of kahua-current-user-class
 	  ))
 (select-module kahua.user)
 

@@ -1,3 +1,8 @@
+2007-05-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/user.scm
+	  Export kahua-current-user-class.
+
 2007-05-30  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua-admin.scm, src/kahua-install.scm,
