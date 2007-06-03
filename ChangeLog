@@ -1,3 +1,14 @@
+2007-06-02  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-user.scm
+	  Replace function names kahua-web-{adduser,deluser,lsuser}
+	  with kahua-{adduser,deluser,lsuser}.
+	  Command ls's output is now alphabetically sorted.
+
+	* Change: src/kahua/server.scm
+	  If a user is deactivated during login, he/she is immediately
+	  logout.
+
 2007-05-31  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 1.0.4 released.

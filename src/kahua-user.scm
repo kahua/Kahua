@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-user.scm,v 1.1.2.1 2007/05/31 14:26:15 bizenn Exp $
+;; $Id: kahua-user.scm,v 1.1.2.2 2007/06/03 13:48:42 bizenn Exp $
 
 (use kahua.user)
 (use kahua.persistence)
@@ -49,15 +49,15 @@
     (kahua-common-init site-dir conf-file)
     (let1 thunk
 	(let-optionals* rargs ((command "help") . rargs)
-	  (cond ((string=? command "add") (cut apply kahua-web-adduser rargs))
-		((string=? command "del") (cut apply kahua-web-deluser rargs))
-		((string=? command "ls")  (cut apply kahua-web-lsuser rargs))
+	  (cond ((string=? command "add") (cut apply kahua-adduser rargs))
+		((string=? command "del") (cut apply kahua-deluser rargs))
+		((string=? command "ls")  (cut apply kahua-lsuser rargs))
 		(else                     (usage))))
       (with-db (db (kahua-dbpath (or dbpath (kahua-default-database-name))))
 	(thunk))))
   0)
 
-(define (kahua-web-adduser . args)
+(define (kahua-adduser . args)
   (define (parse-roles roles)
     (if roles
 	(map string->symbol (string-split roles #[ ,]))
@@ -69,7 +69,7 @@
 	    (format (current-error-port) "\nCreate user: ~a\n" user)
 	    (format (current-error-port) "\nUser already exists: ~a\n" user))))))
 
-(define (kahua-web-deluser . args)
+(define (kahua-deluser . args)
   (cond ((get-optional args (usage))
 	 => (lambda (uname)
 	      (cond ((kahua-find-user uname)
@@ -79,10 +79,11 @@
 		    (else (format #t "No such user: ~a\n" uname)))))
 	(else (usage))))
 
-(define (kahua-web-lsuser . _)
+(define (kahua-lsuser . _)
   (for-each (lambda (u)
 	      (format #t "~16a ~s\n" (slot-ref u 'login-name) (slot-ref u 'role-alist)))
-	    (make-kahua-collection (kahua-current-user-class))))
+	    (sort (coerce-to <list> (make-kahua-collection (kahua-current-user-class)))
+		  (lambda (a b) (string<? (name-of a) (name-of b))))))
 
 (define (prompt&read-line port prompt)
   (format #t "~a: " prompt)
