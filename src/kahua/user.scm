@@ -1,9 +1,9 @@
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.10 2007/05/31 10:52:58 bizenn Exp $
+;; $Id: user.scm,v 1.11 2007/06/03 13:46:37 bizenn Exp $
 
 (define-module kahua.user
   (use kahua.persistence)

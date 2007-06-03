@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.109 2007/05/28 06:53:57 bizenn Exp $
+;; $Id: server.scm,v 1.110 2007/06/03 13:46:37 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -487,13 +487,15 @@
 (define kahua-current-user
   (getter-with-setter
    (lambda ()
-     (and-let* ((u (find-login-state (path-of (current-db)))))
-       (kahua-find-user (car u))))
+     (and-let* ((u (find-login-state (path-of (current-db))))
+		(user (kahua-find-user (car u))))
+       (cond ((active? user) user)
+	     (else (register-login-state #f (path-of (current-db))) #f))))
    (lambda (user)
      (let1 u (cond ((is-a? user <kahua-user>) user)
 		   ((string? user) (kahua-find-user user))
 		   (else #f))
-       (if u
+       (if (and u (active? u))
 	   (register-login-state (ref u 'login-name) (dbpath-of u))
 	   (register-login-state #f (path-of (current-db))))))
    ))
@@ -521,7 +523,8 @@
 ;;
 
 (define (kahua-login user-name password)
-  (and-let* ((u (kahua-check-user user-name password)))
+  (and-let* ((u (kahua-check-user user-name password))
+	     ((active? u)))
     (set! (kahua-current-user) u)
     u))
 
@@ -529,7 +532,8 @@
   (set! (kahua-current-user) #f))
 
 (define (kahua-authorized? . roles)
-  (and-let* ((u (kahua-current-user)))
+  (and-let* ((u (kahua-current-user))
+	     ((active? u)))
     (or (null? roles)
 	(kahua-user-has-role? u roles))))
 
