@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.72.2.6 2007/05/23 16:03:02 bizenn Exp $
+;; $Id: persistence.scm,v 1.72.2.7 2007/06/07 10:49:38 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1920,9 +1920,10 @@
 						       '(:include-removed-object? #t)))))
 
 (define-method dbutil:persistent-classes-fold ((db <kahua-db>) proc knil)
-  (dbutil:with-dummy-reader-ctor
-   (lambda ()
-     (fold proc knil (dbutil:class-names db)))))
+  (let1 cnames (dbutil:class-names db)
+    (dbutil:with-dummy-reader-ctor
+     (lambda ()
+       (fold proc knil cnames)))))
 
 (define-generic dbutil:kahua-db-fs->efs)
 
