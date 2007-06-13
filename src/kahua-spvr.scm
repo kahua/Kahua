@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.27.2.1 2007/02/02 09:44:47 bizenn Exp $
+;; $Id: kahua-spvr.scm,v 1.27.2.2 2007/06/13 03:50:42 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.
@@ -783,6 +783,7 @@
        (logfile   "l|logfile=s")  ;; overrides conf file settings
        (gosh      "gosh=s")  ;; wrapper script adds this.
        (httpd     "H|httpd=s") ;; standalone httpd mode
+       (thnum     "t|threads=i" #f)
        (help      "h|help" => usage)
        (else _ (app-error "Unknown option.  Try --help for the usage."))
        )
@@ -804,7 +805,7 @@
                          :gosh-path gosh
                          :lib-path lib-path))
              (kahua-sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
-	     (tpool (make-thread-pool (kahua-spvr-concurrency))))
+	     (tpool (make-thread-pool (or thnum (kahua-spvr-concurrency)))))
         (set! *spvr* spvr)
         ;; hack
         (when (is-a? sockaddr <sockaddr-un>)
