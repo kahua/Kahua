@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.20 2007/04/30 09:36:47 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.21 2007/06/13 03:49:07 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -447,7 +447,7 @@ Options:
        (conf-file "c|conf-file=s")
        (logfile   "l|logfile=s" #t)
        (port      "p|port=i" 80)
-       (thnum     "t:threads=i" 10)
+       (thnum     "t:threads=i" #f)
        (help      "h|help" => usage)
        (else _ (error "Unknown option.  Try --help for the usage."))
        . hosts)
@@ -455,7 +455,7 @@ Options:
     (log-open logfile :prefix log-prefix)
     (log-format "Start with ~d threads" thnum)
     (for-each (pa$ log-format  "listen: ~s") hosts)
-    (let* ((tpool (make-thread-pool thnum))
+    (let* ((tpool (make-thread-pool (or thnum (kahua-httpd-concurrency))))
 	   (hosts (map (cut parse-host-spec <> port) (if (null? hosts) '(#f) hosts)))
 	   (socks (kahua-make-server-sockets hosts)))
       (setuidgid! runas)

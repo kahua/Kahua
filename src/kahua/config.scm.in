@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: config.scm.in,v 1.19 2007/04/28 01:03:44 bizenn Exp $
+;; $Id: config.scm.in,v 1.20 2007/06/13 03:49:13 bizenn Exp $
 ;;
 ;; This is intended to be loaded by kahua servers to share common
 ;; configuration parameters.
@@ -50,6 +50,8 @@
 	  kahua-auto-restart
 	  kahua-secure-sandbox
 	  kahua-spvr-concurrency
+	  kahua-httpd-concurrency
+	  kahua-keyserv-concurrency
           kahua-config-file
 
 	  ;; Utilities
@@ -150,6 +152,10 @@
 		  :init-value "##localstatedir##/user.conf" :place :site)
 
    (spvr-concurrency :init-keyword :spvr-concurrency :init-value 10)
+
+   (httpd-concurrency :init-keyword :httpd-concurrency :init-value 10)
+
+   (keyserv-concurrency :init-keyword :keyserv-concurrency :init-value 10)
 
    ;; internal
    (user-mode :init-value #f)
@@ -278,6 +284,8 @@
 	      userconf-file
 	      secure-sandbox
 	      spvr-concurrency
+	      httpd-concurrency
+	      keyserv-concurrency
 	      config-file)
 
 ;; Utilities
