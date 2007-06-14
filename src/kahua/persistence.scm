@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.72.2.7 2007/06/07 10:49:38 bizenn Exp $
+;; $Id: persistence.scm,v 1.72.2.8 2007/06/14 03:17:06 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -58,6 +58,7 @@
 
 	  read-id-cache
 	  read-key-cache
+	  read-index-cache
 	  index-value-write
 	  kahua-update-index!
 
