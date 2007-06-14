@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.11 2007/05/06 01:30:28 cut-sea Exp $
+;; $Id: efs.scm,v 1.12 2007/06/14 03:16:17 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -501,48 +501,18 @@
 
 (define-method kahua-persistent-instances ((db <kahua-db-efs>) class opts . may-be-sweep?)
   (define (kahua-instances-by-index slot-name slot-value filter-proc)
-    ;; Import from persistence.scm and a bit modify.
-    ;; but, because it's recursive references.
-    ;; In future, we rewrite this.
-    ;; Maybe, To export cache APIs from kahua.persistence is good.
-    (define (read-index-cache class slot-name value)
-      (and-let* ((slot (class-slot-definition class slot-name))
-		 (index (slot-definition-option slot :index #f)))
-	(hash-table-get (slot-ref class 'index-cache) (cons slot-name value) #f)))
-    (define (register-index-cache obj slot-name value)
-      (define (get-index-type class slot-name)
-	(slot-definition-option (class-slot-definition class slot-name) :index #f))
-      (let* ((class (current-class-of obj))
-	     (idxcache (slot-ref class 'index-cache))
-	     (key (cons slot-name value))
-	     (index (get-index-type class slot-name)))
-	(case index
-	  ((:unique)
-	   (or (and-let* ((v (hash-table-get idxcache key #f)))
-		 (if (eq? v obj)
-		     #t			; do nothing
-		     (kahua-persistence-error "~s: index slot ~s conflict with ~s" obj key v)))
-	       (hash-table-put! idxcache key obj)))
-	  ((:any)
-	   (hash-table-update! idxcache key
-			       (lambda (objs)
-				 (if (memq obj objs) objs (cons obj objs)))
-			       '()))
-	  (else (kahua-persistence-error "Unknown index type: ~s" index)))))
-
     (let ((index-path (index-full-path db (class-name class) slot-name slot-value))
 	  (encoding (character-encoding-of db)))
       (if (file-is-directory? index-path)
 	  (directory-fold index-path
 			  (lambda (path r)
 			    (or (and-let* ((oid (x->integer (sys-basename (sys-readlink path))))
-					   ;; bug fix.
+					   ;; bug fix.  but object which isn't on index cache
+					   ;; should be on id cache.  FIXME!!
 					   ;;((not (read-id-cache db oid)))
 					   ((not (read-index-cache class slot-name slot-value)))
 					   (obj (read-from-file path :encoding encoding))
 					   ((filter-proc obj)))
-				  ;; register to cache, but don't work it. why?
-				  (register-index-cache obj slot-name slot-value)
 				  (cons obj r))
 				r))
 			  '())
