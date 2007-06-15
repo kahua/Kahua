@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.80 2007/06/14 22:52:32 bizenn Exp $
+;; $Id: persistence.scm,v 1.81 2007/06/15 01:26:08 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1351,8 +1351,8 @@
 (define-class <kahua-db> ()
   ((path       :init-keyword :path :init-value #f :accessor path-of)
    (active     :init-keyword :active :init-value #f :accessor active?)
-   (instance-by-id  :init-form (create-id-cache) :accessor id-cache-of)
-   (instance-by-key :init-form (create-key-cache) :accessor key-cache-of)
+   (id-cache   :init-form (create-id-cache) :accessor id-cache-of)
+   (key-cache  :init-form (create-key-cache) :accessor key-cache-of)
    (modified-instances :init-form '() :accessor modified-instances-of)
    (current-transaction-id :init-value 0)
    (floated-modified-instances :init-value '()) ;; modified, but...

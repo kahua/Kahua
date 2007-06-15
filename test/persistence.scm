@@ -2,7 +2,7 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.20 2006/12/02 07:11:36 bizenn Exp $
+;; $Id: persistence.scm,v 1.21 2007/06/15 01:26:08 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -370,15 +370,15 @@
 	       (map kahua-persistent-id
 		    (make-kahua-collection <kahua-test-sub> :keys '("wooboo" "wooobooo"))))))
 
-;; This tests instance-by-key table initialization protocol
+;; This tests key-cache table initialization protocol
 ;; 永続コレクションの作成時に、in-memoryデータベースのインデックスハッシュが
 ;; 正しくセットアップされることを確認する。
 (test* "kahua-test-sub" '((<kahua-test-sub> . "wooboo")
                           (<kahua-test-sub> . "wooobooo"))
        (with-clean-db (db *dbname*)
          (make-kahua-collection <kahua-test-sub>)
-         (sort (hash-table-keys (ref db 'instance-by-key))
-               (lambda (a b) (string<? (cdr a) (cdr b))))))
+         (sort (hash-table-keys (with-module kahua.persistence (key-cache-of db)))
+	       (lambda (a b) (string<? (cdr a) (cdr b))))))
 
 ;; <kahua-test>と，そのsubclassである<kahua-test-sub>両者ともの
 ;; 永続インスタンスのコレクションを，<kahua-test>に対する
