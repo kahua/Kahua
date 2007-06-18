@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.27 2007/05/30 07:54:12 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.28 2007/06/18 05:50:19 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -169,10 +169,7 @@
 (define (update-server . files)
   (define (load-k-module mod)
     (guard (e (else (report-error e) #f))
-      (begin0
-	(load mod :environment kahua-app-server)
-	;; FIXME!! This is to avoid inconsistency of memory cache.
-	(kahua-db-purge-objs))))
+      (load mod :environment kahua-app-server)))
 
   (if (pair? files)
       (every (lambda (f) (load-k-module f)) files)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.81 2007/06/15 01:26:08 bizenn Exp $
+;; $Id: persistence.scm,v 1.82 2007/06/18 05:50:20 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -56,6 +56,10 @@
 	  dump-id-cache
 	  dump-key-cache
 	  dump-index-cache
+
+	  invert-id-cache
+	  invert-key-cache
+	  check-cache-integrity
 
 	  read-id-cache
 	  read-key-cache
@@ -1614,6 +1618,46 @@
 
 (define (dump-key-cache db)
   (hash-table-map (key-cache-of db) cons))
+
+;; for Debugging...
+
+(define (invert-hash-table src . kargs)
+  (let-keywords kargs ((pred? (lambda _ #t))
+		       (valid? (lambda _ #t))
+		       (put! hash-table-put!))
+    (let1 ht (make-hash-table)
+      (values ht (hash-table-fold src
+		   (lambda (k v r)
+		     (cond ((not (pred? k v r)) r)
+			   ((valid? k v r)
+			    (put! ht v k) r)
+			   (else (acons v k r))))
+		   '())))))
+
+(define (invert-id-cache db . maybe-pred?)
+  (invert-hash-table (id-cache-of db)
+		     :pred? (get-optional maybe-pred? (lambda _ #t))
+		     :valid? (lambda (k v r)
+			       (= k (kahua-persistent-id v)))))
+
+(define (invert-key-cache db . maybe-pred?)
+  (invert-hash-table (key-cache-of db)
+		     :pred? (get-optional maybe-pred? (lambda _ #t))
+		     :valid? (lambda (k v r)
+			       (and (eq? (car k) (class-name (class-of v)))
+				    (string=? (cdr k) (key-of v))))))
+
+(define (check-cache-integrity db)
+  (let-values (((ict icl) (invert-id-cache db))
+	       ((kct kcl) (invert-key-cache db)))
+    (let* ((kl (fold (lambda (i r)
+		       (cond ((hash-table-get kct i)
+			      (hash-table-delete! kct i) r)
+			     (else (cons i r))))
+		     '()
+		     (hash-table-keys ict)))
+	   (il (hash-table-keys kct)))
+      (values icl kl kcl il))))
 
 ;;
 ;; cache consistency management -----------------------------------
