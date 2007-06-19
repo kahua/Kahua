@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-user.scm,v 1.1.2.2 2007/06/03 13:48:42 bizenn Exp $
+;; $Id: kahua-user.scm,v 1.1.2.3 2007/06/19 23:15:57 bizenn Exp $
 
 (use kahua.user)
 (use kahua.persistence)
@@ -29,7 +29,7 @@
     add [-r role1,role2,...] <username> [<password>]
 
  Command \"del\" usage:
-    del <username>
+    del [-p] <username>
 
  Command \"ls\" usage:
     ls
@@ -70,14 +70,17 @@
 	    (format (current-error-port) "\nUser already exists: ~a\n" user))))))
 
 (define (kahua-deluser . args)
-  (cond ((get-optional args (usage))
-	 => (lambda (uname)
-	      (cond ((kahua-find-user uname)
-		     => (lambda (u)
-			 (remove-kahua-instance u)
-			 (display "done\n")))
-		    (else (format #t "No such user: ~a\n" uname)))))
-	(else (usage))))
+  (let-args args ((preserve? "p") . args)
+    (cond ((get-optional args (usage))
+	   => (lambda (uname)
+		(cond ((kahua-find-user uname)
+		       => (lambda (u)
+			    (if preserve?
+				(slot-set! u 'inactive #t)
+				(remove-kahua-instance u))
+			    (display "done\n")))
+		      (else (format #t "No such user: ~a\n" uname)))))
+	  (else (usage)))))
 
 (define (kahua-lsuser . _)
   (for-each (lambda (u)
