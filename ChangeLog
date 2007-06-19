@@ -1,3 +1,9 @@
+2007-06-20  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-user.scm
+	  Add -p(preserve) option to del sub-command.  It only deactivate user
+	  instead of deletion.
+
 2007-06-19  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix&Change: src/kahua/persistence.scm, src/kahua/persistence/efs.scm,
