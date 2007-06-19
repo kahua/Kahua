@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.82 2007/06/18 05:50:20 bizenn Exp $
+;; $Id: persistence.scm,v 1.83 2007/06/19 03:55:40 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -144,7 +144,7 @@
                   :init-keyword :write-syncer)
    (read-syncer   :init-value :auto
                   :init-keyword :read-syncer)
-   (index-cache   :init-form (create-index-cache))
+   (index-cache   :init-value #f)
    ))
 
 (define-method make ((class <kahua-persistent-meta>) . initargs)
@@ -398,36 +398,37 @@
 ;;   value: (object ...)
 
 (define-method index-cache-of ((class <kahua-persistent-meta>))
+  (cond ((slot-ref class 'index-cache) => identity)
+	(else
+	 (and-let* ((db (current-db)))
+	   (%index-cache-init class db)))))
+
+(define-method %index-cache-init ((class <kahua-persistent-meta>) db)
   (define (index-slot-names class)
     (filter-map (lambda (s)
 		  (and-let* ((si (slot-definition-option s :index #f))
 			     (sn (slot-definition-name s)))
 		    (cons sn si)))
 		(class-slots class)))
-  (let1 ic (slot-ref class 'index-cache)
-    (cond ((hash-table? ic) ic)
-	  ((list? ic)
-	   (let ((ht (create-index-cache))
-		 (index-slots (index-slot-names class)))
-	     (for-each (lambda (obj)
-			 (and-let* ((db (slot-ref obj '%kahua-persistent-base::db))
-				    ((active? db))
-				    ((read-id-cache db (kahua-persistent-id obj))))
-			   (for-each (lambda (s)
-				       (let1 sn (car s)
-					 (when (slot-bound? obj sn)
-					   (%register-index-cache ht obj sn (cdr s)
-								  (slot-ref obj sn)))))
-				     index-slots)))
-		       ic)
-	     (slot-set! class 'index-cache ht)
-	     ht))
-	  (else (kahua-persistence-error
-		 "index-cache must be a hash-table or list but got ~s" ic)))))
+
+  (let ((ht (create-index-cache))
+	(index-slots (index-slot-names class)))
+    (slot-set! class 'index-cache ht)
+    (for-each (lambda (obj)
+		(when (and (not (removed? obj))
+			   (eq? (class-of obj) class))
+		  (for-each (lambda (s)
+			      (let1 sn (car s)
+				(when (slot-bound? obj sn)
+				  (%register-index-cache ht obj sn (cdr s)
+							 (slot-ref obj sn)))))
+			    index-slots)))
+	      (hash-table-values (id-cache-of db)))
+    ht))
 
 (define create-index-cache (cut make-hash-table 'equal?))
 (define (clear-index-cache! class)
-  (slot-set! class 'index-cache (create-index-cache)))
+  (slot-set! class 'index-cache #f))
 (define (clear-all-index-cache!)
   (for-each (compose clear-index-cache! cdr) (persistent-class-alist)))
 
@@ -1363,6 +1364,11 @@
    )
   :metaclass <kahua-db-meta>)
 
+(define-method initialize ((obj <kahua-db>) initargs)
+  (begin0
+    (next-method)
+    (clear-all-index-cache!)))
+
 (define-generic kahua-db-create)
 
 (define (kahua-concrete-db-class dbtype)
@@ -1883,29 +1889,6 @@
 ;;
 ;; Support for Class Redefinition
 ;;
-
-;; Need to autoload class-redefinition.
-(define %%original-class-redefinition class-redefinition)
-
-(define-method class-redefinition ((old-class <kahua-persistent-meta>)
-				   (new-class <kahua-persistent-meta>))
-  (define (instances-on-index-cache class)
-    (define (push-unique obj ls)
-      (if (memq obj ls)
-	  ls
-	  (cons obj ls)))
-    (hash-table-fold (index-cache-of class)
-      (lambda (k v r)
-	(if (list? v)
-	    (fold push-unique r v)
-	    (push-unique v r)))
-      '()))
-
-  (begin0
-    (next-method)
-    (let1 ls (instances-on-index-cache old-class)
-      (unless (null? ls)
-	(slot-set! new-class 'index-cache ls)))))
 
 (define instance-changing-class-stack (make-parameter '()))
 
