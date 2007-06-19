@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.9.2.3 2007/06/14 03:17:06 bizenn Exp $
+;; $Id: efs.scm,v 1.9.2.4 2007/06/19 05:36:31 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -507,10 +507,7 @@
 	  (directory-fold index-path
 			  (lambda (path r)
 			    (or (and-let* ((oid (x->integer (sys-basename (sys-readlink path))))
-					   ;; bug fix.  but object which isn't on index cache
-					   ;; should be on id cache.  FIXME!!
-					   ;;((not (read-id-cache db oid)))
-					   ((not (read-index-cache class slot-name slot-value)))
+					   ((not (read-id-cache db oid)))
 					   (obj (read-from-file path :encoding encoding))
 					   ((filter-proc obj)))
 				  (cons obj r))

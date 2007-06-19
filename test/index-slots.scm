@@ -1,7 +1,7 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
 ;; Tests for Index Slots
 ;;
-;; $Id: index-slots.scm,v 1.4.2.1 2007/01/18 04:51:45 bizenn Exp $
+;; $Id: index-slots.scm,v 1.4.2.2 2007/06/19 05:36:31 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)
@@ -21,12 +21,11 @@
    (b :init-keyword :b :init-value "b" :allocation :persistent :index :any)
    (c :init-keyword :c :init-value "c" :allocation :persistent)))
 
-(test* "Initial index cache status" '() (dump-index-cache <index-test>) eq?)
-
 (test-section "Create instances")
 
 ;; from creating instances to committing them
 (with-db (_ *dbname*)
+  (test* "Initial index cache status" '() (dump-index-cache <index-test>) eq?)
   (test-section "Collect them before committing")
   (test* "No initialize arguments" <index-test> (class-of (make <index-test>)) eq?)
   (for-each (lambda (a)
@@ -208,7 +207,6 @@
    (c :init-keyword :c :allocation :persistent)))
 
 (with-db (_ *dbname*)
-  (kahua-db-purge-objs)			; clear cache.
   (make <index-test> :a "a0" :b #f :c "boolean")
   (make <index-test> :a "a1" :b 1  :c "integer")
   (make <index-test> :a "a2" :b "b" :c "string")

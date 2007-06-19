@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.24.2.2 2007/05/18 08:19:12 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.24.2.3 2007/06/19 05:36:30 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -171,9 +171,7 @@
 (define (update-server . files)
   (define (load-k-module mod)
     (guard (e (else (report-error e) #f))
-      (begin0
-	(load mod :environment kahua-app-server)
-	(kahua-db-purge-objs))))
+      (load mod :environment kahua-app-server)))
 
   (if (pair? files)
       (every (lambda (f) (load-k-module f)) files)

@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.72.2.8 2007/06/14 03:17:06 bizenn Exp $
+;; $Id: persistence.scm,v 1.72.2.9 2007/06/19 05:36:30 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -139,7 +139,7 @@
                   :init-keyword :write-syncer)
    (read-syncer   :init-value :auto
                   :init-keyword :read-syncer)
-   (index-cache   :init-form (create-index-cache))
+   (index-cache   :init-value #f)
    ))
 
 (define-method make ((class <kahua-persistent-meta>) . initargs)
@@ -392,10 +392,38 @@
 ;;   key:   (slot-name . index-value)
 ;;   value: (object ...)
 
+(define-method index-cache-of ((class <kahua-persistent-meta>))
+  (cond ((slot-ref class 'index-cache) => identity)
+	(else
+	 (and-let* ((db (current-db)))
+	   (%index-cache-init class db)))))
+
+(define-method %index-cache-init ((class <kahua-persistent-meta>) db)
+  (define (index-slot-names class)
+    (filter-map (lambda (s)
+		  (and-let* ((si (slot-definition-option s :index #f))
+			     (sn (slot-definition-name s)))
+		    (cons sn si)))
+		(class-slots class)))
+
+  (let ((ht (create-index-cache))
+	(index-slots (index-slot-names class)))
+    (slot-set! class 'index-cache ht)
+    (for-each (lambda (obj)
+		(when (and (not (removed? obj))
+			   (eq? (class-of obj) class))
+		  (for-each (lambda (s)
+			      (let1 sn (car s)
+				(when (slot-bound? obj sn)
+				  (%register-index-cache ht obj sn (cdr s)
+							 (slot-ref obj sn)))))
+			    index-slots)))
+	      (hash-table-values (id-cache-of db)))
+    ht))
+
 (define create-index-cache (cut make-hash-table 'equal?))
 (define (clear-index-cache! class)
-  (slot-set! class 'index-cache
-	     (make-hash-table (hash-table-type (slot-ref class 'index-cache)))))
+  (slot-set! class 'index-cache #f))
 (define (clear-all-index-cache!)
   (for-each (compose clear-index-cache! cdr) (persistent-class-alist)))
 
@@ -405,31 +433,31 @@
 (define (read-index-cache class slot-name value)
   (and-let* ((slot (class-slot-definition class slot-name))
 	     (index (slot-definition-option slot :index #f)))
-    (hash-table-get (slot-ref class 'index-cache) (index-cache-key slot-name value) #f)))
+    (hash-table-get (index-cache-of class) (index-cache-key slot-name value) #f)))
 
-(define (%register-index-cache class obj slot-name index value)
-  (let* ((idxcache (slot-ref class 'index-cache))
-	 (key (index-cache-key slot-name value)))
+(define (%register-index-cache ht obj slot-name index value)
+  (let1 key (index-cache-key slot-name value)
     (case index
       ((:unique)
-       (or (and-let* ((v (hash-table-get idxcache key #f)))
+       (or (and-let* ((v (hash-table-get ht key #f)))
 	     (if (eq? v obj)
 		 #t			; do nothing
 		 (kahua-persistence-error "~s: index slot ~s conflict with ~s" obj key v)))
-	   (hash-table-put! idxcache key obj)))
+	   (hash-table-put! ht key obj)))
       ((:any)
-       (hash-table-update! idxcache key
+       (hash-table-update! ht key
 			   (lambda (objs)
 			     (if (memq obj objs) objs (cons obj objs)))
 			   '()))
       (else (kahua-persistence-error "Unknown index type: ~s" index)))))
 
 (define (register-index-cache obj slot-name index value)
-  (%register-index-cache (current-class-of obj) obj slot-name index value))
+  (%register-index-cache (index-cache-of (current-class-of obj))
+			 obj slot-name index value))
 
 (define (unregister-index-cache obj slot-name index value)
   (let* ((class (current-class-of obj))
-	 (idxcache (slot-ref class 'index-cache))
+	 (idxcache (index-cache-of class))
 	 (key (index-cache-key slot-name value)))
     (case index
       ((:unique)
@@ -443,7 +471,7 @@
        (kahua-persistence-error "Unknown index type: ~s" index)))))
 
 (define (dump-index-cache class)
-  (hash-table-map (slot-ref class 'index-cache) cons))
+  (hash-table-map (index-cache-of class) cons))
 
 ;;=========================================================
 ;; Persistent baseclass
@@ -1323,13 +1351,18 @@
 (define-class <kahua-db> ()
   ((path       :init-keyword :path :init-value #f :accessor path-of)
    (active     :init-keyword :active :init-value #f :accessor active?)
-   (instance-by-id  :init-form (create-id-cache))
-   (instance-by-key :init-form (create-key-cache))
+   (id-cache   :init-form (create-id-cache) :accessor id-cache-of)
+   (key-cache  :init-form (create-key-cache) :accessor key-cache-of)
    (modified-instances :init-form '() :accessor modified-instances-of)
    (current-transaction-id :init-value 0)
    (floated-modified-instances :init-value '()) ;; modified, but...
    )
   :metaclass <kahua-db-meta>)
+
+(define-method initialize ((obj <kahua-db>) initargs)
+  (begin0
+    (next-method)
+    (clear-all-index-cache!)))
 
 (define-generic kahua-db-create)
 
@@ -1525,16 +1558,16 @@
 (define create-id-cache (cut make-hash-table 'eqv?))
 
 (define (clear-id-cache! db)
-  (slot-set! db 'instance-by-id (create-id-cache)))
+  (set! (id-cache-of db) (create-id-cache)))
 
 (define-method register-id-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
-  (hash-table-put! (slot-ref db 'instance-by-id) (kahua-persistent-id obj) obj))
+  (hash-table-put! (id-cache-of db) (kahua-persistent-id obj) obj))
 
 (define-method unregister-id-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
-  (hash-table-delete! (slot-ref db 'instance-by-id) (kahua-persistent-id obj)))
+  (hash-table-delete! (id-cache-of db) (kahua-persistent-id obj)))
 
 (define-method read-id-cache ((db <kahua-db>) (id <integer>))
-  (hash-table-get (slot-ref db 'instance-by-id) id #f))
+  (hash-table-get (id-cache-of db) id #f))
 
 (define-method on-id-cache? ((db <kahua-db>) (id <integer>) slot-name slot-value)
   (and-let* ((obj (read-id-cache db id))
@@ -1545,10 +1578,10 @@
 	 obj)))
 
 (define (dump-id-cache db)
-  (hash-table-map (slot-ref db 'instance-by-id) cons))
+  (hash-table-map (id-cache-of db) cons))
 
 (define (all-instances-on-id-cache db)
-  (hash-table-values (slot-ref db 'instance-by-id)))
+  (hash-table-values (id-cache-of db)))
 
 ;;
 ;; On Memory Cache (by Key)
@@ -1557,23 +1590,23 @@
 (define create-key-cache (cut make-hash-table 'equal?))
 
 (define (clear-key-cache! db)
-  (slot-set! db 'instance-by-key (create-key-cache)))
+  (set! (key-cache-of db) (create-key-cache)))
 
 (define make-cache-key cons)
 
 (define-method register-key-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
   (let1 key (key-of obj)
     (slot-set! obj '%persistent-key key)
-    (hash-table-put! (slot-ref db 'instance-by-key)
+    (hash-table-put! (key-cache-of db)
 		     (make-cache-key (class-name (class-of obj)) key)
 		     obj)))
 
 (define-method unregister-key-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
-  (hash-table-delete! (slot-ref db 'instance-by-key)
+  (hash-table-delete! (key-cache-of db)
 		      (make-cache-key (class-name (class-of obj)) (key-of obj))))
 
 (define-method read-key-cache ((db <kahua-db>) (cn <symbol>) key)
-  (hash-table-get (slot-ref db 'instance-by-key)
+  (hash-table-get (key-cache-of db)
 		  (make-cache-key cn key) #f))
 
 (define-method on-key-cache? ((db <kahua-db>) (cn <symbol>) key slot-name slot-value)
@@ -1585,7 +1618,7 @@
 	 obj)))
 
 (define (dump-key-cache db)
-  (hash-table-map (slot-ref db 'instance-by-key) cons))
+  (hash-table-map (key-cache-of db) cons))
 
 ;;
 ;; cache consistency management -----------------------------------

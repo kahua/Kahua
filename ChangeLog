@@ -1,3 +1,10 @@
+2007-06-19  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix&Change: src/kahua/persistence.scm, src/kahua/persistence/efs.scm,
+	              src/kahua-server.scm, test/index-slots.scm,
+	              test/persistence.scm
+	  Improve keeping consistency between index-caches and id-cache.
+
 2007-06-13  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/config.scm.in, src/kahua-keyserv.scm,
