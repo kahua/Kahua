@@ -5,7 +5,8 @@
 
 	* Change: src/kahua/user.scm, test/user.scm
 	  Change index "login-name" to unique index slot, and drop definition
-	  of "key-of" method on <kahua-user>.
+	  of "key-of" method on <kahua-user>.  Override method "find-kahua-instance"
+	  for <kahua-user> to keep backward compatibility.
 
 	* Change: src/kahua-user.scm
 	  Add -p(preserve) option to del sub-command.  It only deactivate user

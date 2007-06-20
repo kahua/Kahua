@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.12 2007/06/20 06:12:42 bizenn Exp $
+;; $Id: user.scm,v 1.13 2007/06/20 06:57:44 bizenn Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -38,6 +38,11 @@
    (inactive      :allocation :persistent :accessor inactive?
                   :init-keyword :inactive :init-value #f)
    ))
+
+(define-method find-kahua-instance ((user-class <kahua-user-meta>)
+				    (login-name <string>)
+				    . args)
+  (apply find-kahua-instance user-class 'login-name login-name))
 
 (define-method dbpath-of ((user <kahua-user>))
   (path-of (ref user '%kahua-persistent-base::db)))
