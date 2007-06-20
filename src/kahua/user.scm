@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.11 2007/06/03 13:46:37 bizenn Exp $
+;; $Id: user.scm,v 1.12 2007/06/20 06:12:42 bizenn Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -30,7 +30,7 @@
 
 (define-class <kahua-user> (<kahua-persistent-base> <kaua-user-mixin>)
   ((login-name    :allocation :persistent :accessor name-of
-                  :init-keyword :login-name :init-value #f)
+                  :init-keyword :login-name :index :unique)
    (password-hash :allocation :persistent
                   :init-keyword :password-hash :init-value #f)
    (role-alist    :allocation :persistent :accessor roles-of
@@ -42,14 +42,11 @@
 (define-method dbpath-of ((user <kahua-user>))
   (path-of (ref user '%kahua-persistent-base::db)))
 
-(define-method key-of ((self <kahua-user>))
-  (ref self 'login-name))
-
 (define (kahua-current-user-class)
   (ref <kahua-user> '%user-class))
 
 (define (kahua-find-user login-name)
-  (find-kahua-instance (kahua-current-user-class) login-name))
+  (find-kahua-instance (kahua-current-user-class) 'login-name login-name))
 
 (define (kahua-add-user login-name password . kargs)
   (if (kahua-find-user login-name)

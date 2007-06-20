@@ -1,5 +1,5 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
-;; $Id: user.scm,v 1.7 2006/11/19 22:04:17 bizenn Exp $
+;; $Id: user.scm,v 1.8 2007/06/20 06:12:42 bizenn Exp $
 
 ;; test kahua.user
 
@@ -64,14 +64,14 @@
 
 (test* "kahua-user-password-change" "shiro"
        (with-db (db *dbname*)
-		(let1 user (find-kahua-instance <kahua-user> "shiro")
+		(let1 user (kahua-find-user "shiro")
 		      (kahua-user-password-change user "manapua" "manahune")
 		      (and-let* ((u (kahua-check-user "shiro" "manahune")))
 				(ref u 'login-name)))))
 
 (test* "kahua-user-password-change-force" "shiro"
        (with-db (db *dbname*)
-		(let1 user (find-kahua-instance <kahua-user> "shiro")
+		(let1 user (kahua-find-user "shiro")
 		      (kahua-user-password-change-force user "urashima")
 		      (and-let* ((u (kahua-check-user "shiro" "urashima")))
 				(ref u 'login-name)))))
