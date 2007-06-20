@@ -1,5 +1,8 @@
 2007-06-20  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: src/kahua/dbm.scm
+	  Modernized.
+
 	* Change: src/kahua/user.scm, test/user.scm
 	  Change index "login-name" to unique index slot, and drop definition
 	  of "key-of" method on <kahua-user>.
