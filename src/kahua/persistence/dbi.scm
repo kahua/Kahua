@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.19 2007/05/23 15:58:12 bizenn Exp $
+;; $Id: dbi.scm,v 1.20 2007/06/23 09:50:46 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -340,7 +340,7 @@
 
 (define-method read-kahua-instance ((db <kahua-db-dbi>)
                                     (class <kahua-persistent-meta>)
-                                    (key <string>) . may-be-include-removed-object?)
+                                    (key <string>) . maybe-include-removed-object?)
   (define (query tab)
     (format "select dataval from ~a where keyval=?" tab))
   (define (query-removed tab)
@@ -351,7 +351,7 @@
 		   (rv  (map (cut dbi-get-value <> 0) r))
 		   ((not (null? rv))))
 	  (read-from-string (car rv)))
-	(and (get-optional may-be-include-removed-object? #f)
+	(and (get-optional maybe-include-removed-object? #f)
 	     (and-let* ((r (dbi-do conn (query-removed tab) '()))
 			(rv (map (cut dbi-get-value <> 0) r))
 			((not (null? rv))))
@@ -362,7 +362,7 @@
 			   rv)
 		 #f))))))
 
-(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class opts . may-be-sweep?)
+(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class opts . maybe-sweep?)
   (define (%select-instances tabname where-clause)
     (format "select id, dataval from ~a ~a" tabname where-clause))
   (define (%make-where-clause index keys)
@@ -400,7 +400,7 @@
     (or (and-let* ((tab (kahua-class->table-name db class))
 		   (conn (connection-of db)))
 	  (receive (filter-proc res)
-	      (cond ((or include-removed-object? (and index (get-optional may-be-sweep? #f)))
+	      (cond ((or include-removed-object? (and index (get-optional maybe-sweep? #f)))
 		     (values (make-kahua-collection-filter class opts)
 			     (dbi-do conn (%select-instances tab "") '())))
 		    (else
