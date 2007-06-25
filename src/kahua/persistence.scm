@@ -1,10 +1,10 @@
 ;; Persistent metaclass
 ;;
-;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.72.2.9 2007/06/19 05:36:30 bizenn Exp $
+;; $Id: persistence.scm,v 1.72.2.10 2007/06/25 03:53:29 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -51,6 +51,8 @@
           kahua-check-transaction!
 	  kahua-write
 	  kahua-interp-index-translator
+
+	  check-index-cache/cont
 
 	  dump-id-cache
 	  dump-key-cache
@@ -472,6 +474,15 @@
 
 (define (dump-index-cache class)
   (hash-table-map (index-cache-of class) cons))
+
+(define (check-index-cache/cont db oid class slot-name slot-value cont)
+  (cond ((read-id-cache db oid) =>
+	 (lambda (obj)
+	   (and (not (eq? obj (read-index-cache class slot-name slot-value)))
+		(ensure-transaction obj)
+		(eq? obj (read-index-cache class slot-name slot-value))
+		obj)))
+	(else (cont))))
 
 ;;=========================================================
 ;; Persistent baseclass

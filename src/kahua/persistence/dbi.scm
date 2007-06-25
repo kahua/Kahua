@@ -1,11 +1,11 @@
 ;;; -*- mode: scheme; coding: utf-8 -*-
 ;; Persistent on DBI abstract storage
 ;;
-;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.16.2.4 2007/05/23 16:03:02 bizenn Exp $
+;; $Id: dbi.scm,v 1.16.2.5 2007/06/25 03:53:29 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -340,7 +340,7 @@
 
 (define-method read-kahua-instance ((db <kahua-db-dbi>)
                                     (class <kahua-persistent-meta>)
-                                    (key <string>) . may-be-include-removed-object?)
+                                    (key <string>) . maybe-include-removed-object?)
   (define (query tab)
     (format "select dataval from ~a where keyval=?" tab))
   (define (query-removed tab)
@@ -351,7 +351,7 @@
 		   (rv  (map (cut dbi-get-value <> 0) r))
 		   ((not (null? rv))))
 	  (read-from-string (car rv)))
-	(and (get-optional may-be-include-removed-object? #f)
+	(and (get-optional maybe-include-removed-object? #f)
 	     (and-let* ((r (dbi-do conn (query-removed tab) '()))
 			(rv (map (cut dbi-get-value <> 0) r))
 			((not (null? rv))))
@@ -362,7 +362,7 @@
 			   rv)
 		 #f))))))
 
-(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class opts . may-be-sweep?)
+(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class opts . maybe-sweep?)
   (define (%select-instances tabname where-clause)
     (format "select id, dataval from ~a ~a" tabname where-clause))
   (define (%make-where-clause index keys)
@@ -384,10 +384,13 @@
 	  (cons (with-output-to-string
 		  (cut index-value-write (cdr index))) keys)
 	  keys)))
-  (define (%find-kahua-instance row filter-proc)
+  (define (%find-kahua-instance row index filter-proc)
     (and-let* ((id (x->integer (dbi-get-value row 0)))
-	       ((not (read-id-cache db id)))
-	       (obj (read-from-string (dbi-get-value row 1))))
+	       (cont (lambda () (read-from-string (dbi-get-value row 1))))
+	       (obj (if index
+			(check-index-cache/cont db id class (car index) (cdr index) cont)
+			(and (not (read-id-cache db id))
+			     (cont)))))
       (filter-proc obj)))
 
   ;; main
@@ -400,14 +403,17 @@
     (or (and-let* ((tab (kahua-class->table-name db class))
 		   (conn (connection-of db)))
 	  (receive (filter-proc res)
-	      (cond ((or include-removed-object? (and index (get-optional may-be-sweep? #f)))
+	      (cond ((or include-removed-object? (and index (get-optional maybe-sweep? #f)))
 		     (values (make-kahua-collection-filter class opts)
 			     (dbi-do conn (%select-instances tab "") '())))
 		    (else
-		     (values (make-kahua-collection-filter class `(:predicate ,predicate))
-			     (apply dbi-do conn (%select-instances tab (%make-where-clause index keys))
+		     (values (make-kahua-collection-filter
+			      class `(:predicate ,predicate
+				      :include-removed-object? ,include-removed-object?))
+			     (apply dbi-do conn (%select-instances
+						 tab (%make-where-clause index keys))
 				    '() (%make-sql-parameters index keys)))))
-	    (filter-map1 (cut %find-kahua-instance <> filter-proc) res)))
+	    (filter-map1 (cut %find-kahua-instance <> index filter-proc) res)))
 	'())))
 
 (define-method write-kahua-instance ((db <kahua-db-dbi>)

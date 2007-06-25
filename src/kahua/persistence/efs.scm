@@ -1,11 +1,11 @@
 ;;; -*- mode: scheme; coding: utf-8 -*-
 ;; Extended File System Database
 ;;
-;;  Copyright (c) 2006 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2006-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2006-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.9.2.4 2007/06/19 05:36:31 bizenn Exp $
+;; $Id: efs.scm,v 1.9.2.5 2007/06/25 03:53:29 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -507,8 +507,9 @@
 	  (directory-fold index-path
 			  (lambda (path r)
 			    (or (and-let* ((oid (x->integer (sys-basename (sys-readlink path))))
-					   ((not (read-id-cache db oid)))
-					   (obj (read-from-file path :encoding encoding))
+					   (obj (check-index-cache/cont
+						 db oid class slot-name slot-value
+						 (cut read-from-file path :encoding encoding)))
 					   ((filter-proc obj)))
 				  (cons obj r))
 				r))
