@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.84 2007/06/21 07:00:55 bizenn Exp $
+;; $Id: persistence.scm,v 1.85 2007/06/25 01:38:56 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -483,13 +483,10 @@
 (define (check-index-cache/cont db oid class slot-name slot-value cont)
   (cond ((read-id-cache db oid) =>
 	 (lambda (obj)
-	   (if (eq? obj (read-index-cache class slot-name slot-value))
-	       #f
-	       (begin
-		 (ensure-transaction obj)
-		 (if (eq? obj (read-index-cache class slot-name slot-value))
-		     obj
-		     #f)))))
+	   (and (not (eq? obj (read-index-cache class slot-name slot-value)))
+		(ensure-transaction obj)
+		(eq? obj (read-index-cache class slot-name slot-value))
+		obj)))
 	(else (cont))))
 
 ;;=========================================================
