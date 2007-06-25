@@ -1,7 +1,7 @@
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
-;; $Id: INSTALL,v 1.14.2.4 2007/05/29 14:02:23 bizenn Exp $
+;; $Id: INSTALL,v 1.14.2.5 2007/06/25 04:51:01 bizenn Exp $
 
 * Setup Kahua
 
@@ -29,8 +29,8 @@ under your home directroy.  By this way you don't need to
 care about permissions and user/group settings.
 
 {{{
-% tar xvzf Kahua-1.0.4.tgz
-% cd Kahua-1.0.4
+% tar xvzf Kahua-1.0.5.tgz
+% cd Kahua-1.0.5
 % ./configure --prefix=$HOME/kahua
 % make
 % make check
@@ -129,8 +129,8 @@ scripts, but its configuration requires a careful attention.
 
 This is configuration and building process on a real site.
 {{{
-% tar xzvf Kahua-1.0.4.tgz
-% cd Kahua-1.0.4
+% tar xzvf Kahua-1.0.5.tgz
+% cd Kahua-1.0.5
 % ./configure \
     --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
     --prefix=/usr/local/kahua \
