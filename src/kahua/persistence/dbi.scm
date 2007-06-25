@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.20 2007/06/23 09:50:46 bizenn Exp $
+;; $Id: dbi.scm,v 1.21 2007/06/25 03:06:52 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -384,10 +384,13 @@
 	  (cons (with-output-to-string
 		  (cut index-value-write (cdr index))) keys)
 	  keys)))
-  (define (%find-kahua-instance row filter-proc)
+  (define (%find-kahua-instance row index filter-proc)
     (and-let* ((id (x->integer (dbi-get-value row 0)))
-	       ((not (read-id-cache db id)))
-	       (obj (read-from-string (dbi-get-value row 1))))
+	       (cont (lambda () (read-from-string (dbi-get-value row 1))))
+	       (obj (if index
+			(check-index-cache/cont db id class (car index) (cdr index) cont)
+			(and (not (read-id-cache db id))
+			     (cont)))))
       (filter-proc obj)))
 
   ;; main
@@ -404,10 +407,13 @@
 		     (values (make-kahua-collection-filter class opts)
 			     (dbi-do conn (%select-instances tab "") '())))
 		    (else
-		     (values (make-kahua-collection-filter class `(:predicate ,predicate))
-			     (apply dbi-do conn (%select-instances tab (%make-where-clause index keys))
+		     (values (make-kahua-collection-filter
+			      class `(:predicate ,predicate
+				      :include-removed-object? ,include-removed-object?))
+			     (apply dbi-do conn (%select-instances
+						 tab (%make-where-clause index keys))
 				    '() (%make-sql-parameters index keys)))))
-	    (filter-map1 (cut %find-kahua-instance <> filter-proc) res)))
+	    (filter-map1 (cut %find-kahua-instance <> index filter-proc) res)))
 	'())))
 
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
