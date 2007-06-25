@@ -1,7 +1,8 @@
 2007-06-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
-	* Change: src/kahua/persistence/dbi.scm
-	  Fit to 2007-06-19 change.
+	* Change: src/kahua/persistence/dbi.scm, src/kahua/persistence/efs.scm,
+	          src/kahua/persistence.scm
+	  Improve more to keep consistency between index-caches and id-cache.
 
 2007-06-20  Tatsuya BIZENN  <bizenn@arthub.net>
 

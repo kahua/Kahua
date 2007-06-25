@@ -1,11 +1,11 @@
 ;;; -*- mode: scheme; coding: utf-8 -*-
 ;; Persistent on DBI abstract storage
 ;;
-;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.21 2007/06/25 03:06:52 bizenn Exp $
+;; $Id: dbi.scm,v 1.22 2007/06/25 03:49:26 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
