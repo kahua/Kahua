@@ -1,12 +1,19 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8 ; mode: scheme-*-
 ;; lazy-nqueen.kahua
-;; $Id: lazy-nqueen.kahua,v 1.5 2005/07/03 04:02:56 nobsun Exp $
+;;
+;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: lazy-nqueen.kahua,v 1.6 2007/06/27 07:20:51 bizenn Exp $
 ;;
 ;; This example shows how to lazy style works.
 ;; 
 
 (use srfi-1)
+(use util.list)
 (use gauche.collection)
+(use gauche.sequence)
 
 ;; lazy-queens
 
@@ -65,76 +72,44 @@
 
 (define (simple-page-template ttl)
   (lambda (elems)
-    `((html (head (title ,ttl))
-	    (body (@ (bgcolor "white"))
-		  (h1 ,ttl)
-		  ,@elems)))))
+    (html/ (head/ (title/ ttl))
+	   (body/ (@/ (bgcolor "white"))
+		  (h1/ ttl)
+		  elems))))
 
 (define (lister q n s items template)
   (define (show-ans ans)
     (define (show-row r)
-      (let1 vec (make-vector q (td: "°˚"))
+      (let1 vec (make-vector q "‚óã")
 	(begin
-	  (vector-set! vec (- (cdr r) 1) (td: "°¸"))
-	  (vector->list vec))))
-    (apply table: (@: (border "1")) 
-	   (map (lambda (l) (apply tr: (show-row l))) ans)))
+	  (vector-set! vec (- (cdr r) 1) "‚óè")
+	  (map/ td/ vec))))
+    (table/ (@/ (border "1")) 
+	    (map/ (lambda (l) (tr/ (show-row l))) ans)))
   (lambda ()
     (let* ((curnext (lazy-split-at items n))
 	   (cur (lazy-car curnext))
 	   (next (lazy-cdr curnext)))
       (template
-       (list (apply p:
-		    (x->string (+ s 1))
-		    "∏ƒÃ‹§Œ≤Ú"
-		    (append (map show-ans (nf cur))
-			    (let1 enext (whnf next)
-				  (if (null? enext) 
-				      '() 
-				      (list
-				       (a/cont: (@@: (cont 
-						      (lister q n (+ s n) 
-							      enext template)))
-						"Next"))))
-			    (list " | "
-				  (a/cont:
-				   (@@: 
-				    (cont (nqueens-start
-					   (simple-page-template "N-Queens"))))
-				   "Restart")))))))))
+       (p/ (x->string (+ s 1)) "ÂÄãÁõÆ„ÅÆËß£"
+	   (map/ show-ans (nf cur))
+	   (let1 enext (whnf next)
+	     (unless/ (null? enext) 
+	       (a/cont/ (@@/ (cont (lister q n (+ s n) enext template))) "Next")))
+	   " | "
+	   (a/cont/ (@@/ (cont (nqueens-start (simple-page-template "N-Queens"))))
+		    "Restart"))))))
 
 (define (nqueens-start template)
+  (define (make-link n q)
+    (let1 title #`",|n|-Queens"
+      (a/cont/ (@@/ (cont (lister n 1 0 q (simple-page-template title)))) title)))
   (lambda ()
     (template 
-     (list 
-      (a/cont: (@@: (cont (lister 6 1 0 q6 
-				  (simple-page-template "6-Queens"))))
-		    "6-Queens")
-      " , "
-      (a/cont: (@@: (cont (lister 7 1 0 q7 
-				  (simple-page-template "6-Queens"))))
-		    "7-Queens")
-      " , "
-      (a/cont: (@@: (cont (lister 8 1 0 q8
- 				  (simple-page-template "8-Queens"))))
- 	       "8-Queens")
-      " , "
-      (a/cont: (@@: (cont (lister 9 1 0 q9
-				  (simple-page-template "9-Queens"))))
- 	       "9-Queens")
-      " , "
-      (a/cont: (@@: (cont (lister 10 1 0 q10
-				  (simple-page-template "10-Queens"))))
-	       "10-Queens")
-      " , "
-      (a/cont: (@@: (cont (lister 11 1 0 q11
-				  (simple-page-template "11-Queens"))))
-	       "11-Queens")
-      " , "
-      (a/cont: (@@: (cont (lister 12 1 0 q12
-				  (simple-page-template "12-Queens"))))
-	       "12-Queens")
-      ))))
+     (node-set
+      (intersperse " , " (map (cut make-link <> <>)
+			      '(6 7 8 9 10 11 12)
+			      `(,q6 ,q7 ,q8 ,q9 ,q10 ,q11 ,q12)))))))
 
 (initialize-main-proc (nqueens-start (simple-page-template "N-Queens")))
 
