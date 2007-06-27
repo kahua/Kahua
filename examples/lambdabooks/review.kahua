@@ -1,15 +1,15 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8 ; mode: kahua -*-
 ;; Example kahua application (lambdabooks)
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: review.kahua,v 1.6 2005/07/03 04:02:55 nobsun Exp $
+;; $Id: review.kahua,v 1.7 2007/06/27 08:34:03 bizenn Exp $
 
 (define-class <review> (<kahua-persistent-base>)
   ((about     :init-keyword :about  :init-value #f
-              :allocation :persistent) ;; back link to <book>
+              :allocation :persistent :index :any) ;; back link to <book>
    (author    :init-keyword :author :init-value #f
               :allocation :persistent) ;; <user>
    (evaluation :init-keyword :evaluation :init-value 1
@@ -41,26 +41,26 @@
         (td:
          (apply table:
           (tr: (th: (@: (style "background-color:#dddddd; width:7em"))
-		    "¥ì¥Ó¥å¡¼¥¢")
+		    "ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚¢")
 	       (td: ;(@: (style "width:35em"))
                   (cond ((ref self 'author) => (cut ref <> 'login-name))
 			(else "guest"))))
-          (tr: (th: (@: (style "background-color:#dddddd")) "É¾²Á(1¡Á5)")
-	       (apply td: (make-list (ref self 'evaluation) "¡ú")))
-          (tr: (th: (@: (style "background-color:#dddddd")) "¥³¥á¥ó¥È")
+          (tr: (th: (@: (style "background-color:#dddddd")) "è©•ä¾¡(1ã€œ5)")
+	       (apply td: (make-list (ref self 'evaluation) "â˜…")))
+          (tr: (th: (@: (style "background-color:#dddddd")) "ã‚³ãƒ¡ãƒ³ãƒˆ")
 	       (td: (ref self 'comment)))
           (cond-list
 	   ((and (kahua-current-user)
 		 (equal? (key-of (kahua-current-user))
 			 (key-of (ref self 'author))))
 	    (tr: (th:) (td: (a/cont: (@@: (cont delete-review))
-				     "[¥ì¥Ó¥å¡¼¤òºï½ü]")))))))))
+				     "[ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’å‰Šé™¤]")))))))))
   )
 
 (define (show-reviews key cont)
   (let ((book (find-kahua-instance <book> key)))
     (if (not book)
-      (cont (list (p: "(½ñÀÒ¥Ç¡¼¥¿¤¬¤¢¤ê¤Ş¤»¤ó)")))
+      (cont (list (p: "(æ›¸ç±ãƒ‡ãƒ¼ã‚¿ãŒã‚ã‚Šã¾ã›ã‚“)")))
       ((lister (map key-of (ref book 'reviews))
 	       (lambda (key count)
 		 (format-review (find-kahua-instance <review> key)
@@ -68,11 +68,11 @@
 	       :table-attrs (@: (style "border-collapse: collapse; width:95%")))
        (lambda (nodes)
 	 (cont (cons
-		(h2: (ref book 'title) "¤ËÂĞ¤¹¤ëÆÉ¼Ô¥ì¥Ó¥å¡¼")
+		(h2: (ref book 'title) "ã«å¯¾ã™ã‚‹èª­è€…ãƒ¬ãƒ“ãƒ¥ãƒ¼")
 		(append nodes
 			(list
 			 (a/cont: (@@: (cont books (key-of book)))
-				  "[½ñÀÒ¾ğÊó¤ËÌá¤ë]")
+				  "[æ›¸ç±æƒ…å ±ã«æˆ»ã‚‹]")
 			 (book-review-link (key-of book) cont))))))))))
 
 (define (write-review key cont)
@@ -91,28 +91,28 @@
                  (ref book 'reviews)))
           (kahua-db-sync)
           (show-reviews key cont))
-        (cont (list (p: "(½ñÀÒ¥Ç¡¼¥¿¤¬¤¢¤ê¤Ş¤»¤ó)"))))))
+        (cont (list (p: "(æ›¸ç±ãƒ‡ãƒ¼ã‚¿ãŒã‚ã‚Šã¾ã›ã‚“)"))))))
   
   (let ((book (find-kahua-instance <book> key))
         (user (kahua-current-user)))
     (if (not book)
-      (cont (list (p: "(½ñÀÒ¥Ç¡¼¥¿¤¬¤¢¤ê¤Ş¤»¤ó)")))
+      (cont (list (p: "(æ›¸ç±ãƒ‡ãƒ¼ã‚¿ãŒã‚ã‚Šã¾ã›ã‚“)")))
       (cont (list
-	     (h2: (ref book 'title) "¤Ë¤Ä¤¤¤Æ¤Î¥ì¥Ó¥å¡¼¤ò½ñ¤¯")
+	     (h2: (ref book 'title) "ã«ã¤ã„ã¦ã®ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’æ›¸ã")
 	     (form/cont:
 	      (@@: (cont commit-review))
 	      (table:
-	       (tr: (th: "¥ì¥Ó¥å¡¼¥¢")
+	       (tr: (th: "ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚¢")
                     (td: (if user (ref user 'login-name) "guest")))
-	       (tr: (th: "É¾²Á")
+	       (tr: (th: "è©•ä¾¡")
                     (td: (apply select: (@: (name "evaluation"))
                                 (map (lambda (s) `(option ,s))
 				     '("1" "2" "3" "4" "5")))))
-	       (tr: (th: "¥³¥á¥ó¥È")
+	       (tr: (th: "ã‚³ãƒ¡ãƒ³ãƒˆ")
                     (td: (textarea: (@: (name "comment") (cols 40)))))
 	       (tr: (th:)
                     (td: (input: (@: (type "submit") (name "submit")
-				     (value "¥ì¥Ó¥å¡¼¤òÁ÷¿®"))))))))
+				     (value "ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’é€ä¿¡"))))))))
             )))
   )
 

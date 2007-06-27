@@ -1,11 +1,11 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8; mode: kahua -*-
 ;; Example kahua application (lambdabooks)
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: useradmin.kahua,v 1.8 2005/07/03 04:02:55 nobsun Exp $
+;; $Id: useradmin.kahua,v 1.9 2007/06/27 08:34:03 bizenn Exp $
 
 ;; User administration ----------------------------------------
 ;;  Manages user information.
@@ -16,13 +16,13 @@
   (define (auth-error)
     (cont
      (list
-      (h2: "Ç§¾Ú¥¨¥é¡¼")
-      (p: "¤¢¤Ê¤¿¤Ï»ØÄê¤Î¥³¥ó¥Æ¥ó¥Ä¤Ë¥¢¥¯¥»¥¹¤¹¤ë¸¢¸Â¤ò»ı¤Ã¤Æ¤¤¤Ş¤»¤ó¡£"
-          "¤â¤·¡¢ÉáÄÌ¤ÎÁàºî¤Ë¤è¤Ã¤Æ¤³¤Î²èÌÌ¤ËÅşÃ£¤·¤¿¤Î¤Ê¤é¡¢"
-          "¥µ¥¤¥È¹½ÃÛ¤Î¥ß¥¹¤Ç¤¢¤ë²ÄÇ½À­¤¬¹â¤¤¤Ç¤¹¡£"
-          (a: (@: (href "mailto:admin@kahua.org")) "¥µ¥¤¥È´ÉÍı¼Ô")
-          "¤ËÏ¢Íí¤·¤Æ²¼¤µ¤¤¡£")
-      (a/cont: "[¥È¥Ã¥×¥Ú¡¼¥¸¤ËÌá¤ë]"))
+      (h2: "èªè¨¼ã‚¨ãƒ©ãƒ¼")
+      (p: "ã‚ãªãŸã¯æŒ‡å®šã®ã‚³ãƒ³ãƒ†ãƒ³ãƒ„ã«ã‚¢ã‚¯ã‚»ã‚¹ã™ã‚‹æ¨©é™ã‚’æŒã£ã¦ã„ã¾ã›ã‚“ã€‚"
+          "ã‚‚ã—ã€æ™®é€šã®æ“ä½œã«ã‚ˆã£ã¦ã“ã®ç”»é¢ã«åˆ°é”ã—ãŸã®ãªã‚‰ã€"
+          "ã‚µã‚¤ãƒˆæ§‹ç¯‰ã®ãƒŸã‚¹ã§ã‚ã‚‹å¯èƒ½æ€§ãŒé«˜ã„ã§ã™ã€‚"
+          (a: (@: (href "mailto:admin@kahua.org")) "ã‚µã‚¤ãƒˆç®¡ç†è€…")
+          "ã«é€£çµ¡ã—ã¦ä¸‹ã•ã„ã€‚")
+      (a/cont: "[ãƒˆãƒƒãƒ—ãƒšãƒ¼ã‚¸ã«æˆ»ã‚‹]"))
      ))
 
   ;; For now, we hardcode roles
@@ -67,31 +67,31 @@
       (if (kahua-user-has-role? (kahua-current-user) '(admin))
         (cont
 	 (cons
-	  (h2: "¥æ¡¼¥¶¡¼" logname "¤Î¾ğÊó")
+	  (h2: "ãƒ¦ãƒ¼ã‚¶ãƒ¼" logname "ã®æƒ…å ±")
           (append
 	   (cond-list
-	    (edited? (p: (font: (@: (color "#ff3535")) "¾ğÊó¤òÊÑ¹¹¤·¤Ş¤·¤¿"))))
+	    (edited? (p: (font: (@: (color "#ff3535")) "æƒ…å ±ã‚’å¤‰æ›´ã—ã¾ã—ãŸ"))))
            (list
 	    (form/cont:
             (@@: (cont (cut user-commit logname)))
             (table:
-             (tr: (th: (@: (style "background-color:#d8d2c9")) "¥í¥°¥¤¥óÌ¾")
+             (tr: (th: (@: (style "background-color:#d8d2c9")) "ãƒ­ã‚°ã‚¤ãƒ³å")
 		  (td: (@: (style "background-color:#ffd6b2;width:20em"))
 		       (p: logname)))
-             (tr: (th: (@: (style "background-color:#d8d2c9")) "Èó¥¢¥¯¥Æ¥£¥Ö")
+             (tr: (th: (@: (style "background-color:#d8d2c9")) "éã‚¢ã‚¯ãƒ†ã‚£ãƒ–")
 		  (td: (@: (style "background-color:#ffd6b2;width:20em"))
 		       (input: (if (ref user 'inactive)
 				   (@: (type "checkbox") (name "inactive")
 				       (checked "checked"))
 				   (@: (type "checkbox") (name "inactive"))))))
-             (tr: (th: (@: (style "background-color:#d8d2c9")) "Ìò³ä")
+             (tr: (th: (@: (style "background-color:#d8d2c9")) "å½¹å‰²")
 		  (td: (@: (style "background-color:#ffd6b2;width:20em"))
 		       (apply p: (make-role-checkboxes (ref user 'role-alist)))))
              (tr: (td: (@: (align "center") (bgcolor "#d8d2c9") (colspan 2))
 		       (input: (@: (type "submit") (name "submit")
-				   (value "ÊÑ¹¹")))))))
+				   (value "å¤‰æ›´")))))))
 	    (a/cont: (@@: (cont user-admin-page))
-		     "[¥æ¡¼¥¶¡¼°ìÍ÷¤Ø]"))))
+		     "[ãƒ¦ãƒ¼ã‚¶ãƒ¼ä¸€è¦§ã¸]"))))
          )
         (auth-error))))
   
@@ -114,9 +114,9 @@
 	       :header-formatter
 	       (lambda ()
 		 (list
-		  (tr: (th: "¥í¥°¥¤¥óÌ¾") (th: "activeness") (th: "Ìò³ä")))))
+		  (tr: (th: "ãƒ­ã‚°ã‚¤ãƒ³å") (th: "activeness") (th: "å½¹å‰²")))))
        (lambda (nodes)
-	 (cont (cons (h2: "ÅĞÏ¿¥æ¡¼¥¶¡¼°ìÍ÷") nodes)))
+	 (cont (cons (h2: "ç™»éŒ²ãƒ¦ãƒ¼ã‚¶ãƒ¼ä¸€è¦§") nodes)))
        )
       (auth-error)))
   )

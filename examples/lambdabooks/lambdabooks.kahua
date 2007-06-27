@@ -1,11 +1,11 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8; mode: kahua -*-
 ;; sample kahua application using kahua.app.elua.alt
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.8 2005/07/03 04:02:55 nobsun Exp $
+;; $Id: lambdabooks.kahua,v 1.9 2007/06/27 08:34:03 bizenn Exp $
 
 (use srfi-1)
 (use gauche.collection)
@@ -82,9 +82,9 @@
      (tr: (td: (user-box standard-frame standard-page)))
      (tr: (td: (a/cont: (@@: (cont books)) "Books")))
      (tr: (td: (a/cont: (@@: (cont partner-page)) "Partnership")))
-     ;; admin role¤Î¥æ¡¼¥¶¡¼¤Ë¤Î¤ß¡¢¥ê¥ó¥¯¤ò¸«¤»¤ë
+     ;; admin roleã®ãƒ¦ãƒ¼ã‚¶ãƒ¼ã«ã®ã¿ã€ãƒªãƒ³ã‚¯ã‚’è¦‹ã›ã‚‹
      (tr: (@@: (require-role 'admin))
-	  (td: (a/cont: (@@: (cont user-admin-page)) "[¥æ¡¼¥¶´ÉÍı]"))))))
+	  (td: (a/cont: (@@: (cont user-admin-page)) "[ãƒ¦ãƒ¼ã‚¶ç®¡ç†]"))))))
 
 (define (standard-footer)
   (list
@@ -97,23 +97,23 @@
     (list
      (tr: (td: (b: (ref book 'title))))
      (tr: (td: (@: (style "text-align: right"))
-	       (ref book 'authors) "Ãø"))
+	       (ref book 'authors) "è‘—"))
      (tr: (td: (@: (style "text-align: right"))
-	       "¥­¥ã¥ó¥Ú¡¼¥ó²Á³Ê¡§" (ref book 'price) "±ß"))
+	       "ã‚­ãƒ£ãƒ³ãƒšãƒ¼ãƒ³ä¾¡æ ¼ï¼š" (ref book 'price) "å††"))
      (tr: (td: (@: (style "text-align: right"))
-	       (a/cont: (@@: (cont books key)) "¾Ü¤·¤¤¾ğÊó¤ò¸«¤ë...")))))
+	       (a/cont: (@@: (cont books key)) "è©³ã—ã„æƒ…å ±ã‚’è¦‹ã‚‹...")))))
 
   (list
-   (h2: "ºÇ¿·¥Ë¥å¡¼¥¹")
-   (p: "ËÜ¥µ¥¤¥È¤Ï¡¢Kahua¥Õ¥ì¡¼¥à¥ï¡¼¥¯¤Î¥Ç¥â¥µ¥¤¥È¤Ç¤¹¡£")
-   (h2: "¿·´©¾ğÊó")
-   (p: "¥µ¥¤¥È³«Àßµ­Ç°ÆÃÊÌ¥­¥ã¥ó¥Ú¡¼¥ó²Á³Ê¤Ë¤ÆÈÎÇäÃæ!")
-   ;; ¥À¥ß¡¼¥Ç¡¼¥¿¡£ºÇ½é¤Î2ºı¤òÉ½¼¨
+   (h2: "æœ€æ–°ãƒ‹ãƒ¥ãƒ¼ã‚¹")
+   (p: "æœ¬ã‚µã‚¤ãƒˆã¯ã€Kahuaãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¯ãƒ¼ã‚¯ã®ãƒ‡ãƒ¢ã‚µã‚¤ãƒˆã§ã™ã€‚")
+   (h2: "æ–°åˆŠæƒ…å ±")
+   (p: "ã‚µã‚¤ãƒˆé–‹è¨­è¨˜å¿µç‰¹åˆ¥ã‚­ãƒ£ãƒ³ãƒšãƒ¼ãƒ³ä¾¡æ ¼ã«ã¦è²©å£²ä¸­!")
+   ;; ãƒ€ãƒŸãƒ¼ãƒ‡ãƒ¼ã‚¿ã€‚æœ€åˆã®2å†Šã‚’è¡¨ç¤º
    (let ((book1 (find-kahua-instance <book> "0"))
 	 (book2 (find-kahua-instance <book> "1")))
      (if (and book1 book2)
          (apply table:
 		(append-map new-title (list "0" "1") (list book1 book2)))
-	 (p: "(½ñÀÒ¥Ç¡¼¥¿¤¬¤¢¤ê¤Ş¤»¤ó)")))))
+	 (p: "(æ›¸ç±ãƒ‡ãƒ¼ã‚¿ãŒã‚ã‚Šã¾ã›ã‚“)")))))
 
 (initialize-main-proc (cut standard-page '()))
