@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua,v 1.9 2007/06/27 08:34:03 bizenn Exp $
+;; $Id: login.kahua,v 1.10 2007/06/28 08:20:32 bizenn Exp $
 
 ;; User login management ----------------------------------------
 ;;   Receives two continuation procedure.
@@ -18,7 +18,8 @@
      (list 
       (if logname
 	  (p: "ユーザー名、またはパスワードが違います")
-	  (p: "ユーザー登録がお済みの方は、ユーザー名とパスワードを入力して「ログイン」ボタンをクリックして下さい"))
+	  (p: "ユーザー登録がお済みの方は、ユーザー名とパスワードを入力して"
+	      "「ログイン」ボタンをクリックして下さい"))
       (form/cont:
        (@@: (cont login-check '(logname) '(pass)))
        (table:
@@ -42,11 +43,9 @@
 
   (define login-check
     (entry-lambda (:keyword logname pass)
-      (if (kahua-check-user logname pass)
-        (begin
-          (set! (kahua-current-user) logname)
-          (final-cont '()))
-        (login-dialog logname pass))))
+      (if (kahua-login logname pass)
+          (final-cont '())
+	  (login-dialog logname pass))))
 
   (define (new-user logname pass)
     (transient-cont
@@ -57,24 +56,25 @@
           (if (#/\w+/ logname)
             (p: "そのユーザー名は既に登録されています。異なるユーザー名を選んで下さい。")
             (p: "ユーザー名はアルファベット、数字、'_'の組合せにして下さい。")))
-        (p: "ユーザー名とパスワードを選び、入力して下さい。パスワードは確認のため2度入力して下さい。"))
-      (form/cont:
-       (@@: (cont user-registration '(logname) '(pass) '(pass2)))
-        (table:
-         (tr: (th: "ユーザー名")
-	      (td: (input: (@: (type "text") (name "logname")
-			       (value (or logname ""))))))
-         (tr: (th: "パスワード")
-	      (td: (input: (@: (type "password") (name "pass")
-			       (value "")))))
-         (tr: (th: "パスワード(確認)")
-	      (td: (input: (@: (type "password") (name "pass2")
-			       (value "")))))
-         (tr: (th:)
-	      (td: (input: (@: (type "submit") (name "submit")
-                           (value "登録")))))))
-      (p: "プライバシーポリシー：本サイトはデモ用のサイトであり、あなたの入力したデータはテスト目的にのみ使用され、テスト終了時に破棄されます。"))
-     ))
+        (p: "ユーザー名とパスワードを選び、入力して下さい。"
+	    "パスワードは確認のため2度入力して下さい。"))
+      (form/cont: (@@: (cont user-registration))
+		  (table:
+		   (tr: (th: "ユーザー名")
+			(td: (input: (@: (type "text") (name "logname")
+					 (value (or logname ""))))))
+		   (tr: (th: "パスワード")
+			(td: (input: (@: (type "password") (name "pass")
+					 (value "")))))
+		   (tr: (th: "パスワード(確認)")
+			(td: (input: (@: (type "password") (name "pass2")
+					 (value "")))))
+		   (tr: (th:)
+			(td: (input: (@: (type "submit") (name "submit")
+					 (value "登録")))))))
+      (p: "プライバシーポリシー：本サイトはデモ用のサイトであり、"
+	  "あなたの入力したデータはテスト目的にのみ使用され、"
+	  "テスト終了時に破棄されます。"))))
 
   (define user-registration
     (entry-lambda (:keyword logname pass pass2)
@@ -87,19 +87,17 @@
         (new-user logname pass)) ;; passwords don't match
        (else
         (kahua-add-user logname pass)
-        (kahua-db-sync)
-        (set! (kahua-current-user) logname)
+	(kahua-login logname pass)
         (final-cont '())))))
 
   (define (logout)
-    (set! (kahua-current-user) #f)
+    (kahua-logout)
     (final-cont '()))
 
-  (let ((user (kahua-current-user)))
+  (let1 user (kahua-current-user)
     (if user
 	(table: (tr: (td: "Welcome, " (ref user 'login-name)))
 		(tr: (td: (@: (style "font-size:small; text-align:right"))
 			  (a/cont: (@@: (cont logout)) "logout"))))
 	(a/cont: (@@: (cont (cut login-dialog #f #f)))
-		 "ログイン/新規登録")))
-  )
+		 "ログイン/新規登録"))))

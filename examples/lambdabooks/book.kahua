@@ -5,11 +5,11 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: book.kahua,v 1.9 2007/06/27 08:34:03 bizenn Exp $
+;; $Id: book.kahua,v 1.10 2007/06/28 08:20:32 bizenn Exp $
 
 (define-class <book> (<kahua-persistent-base>)
   ((product-id :init-keyword :product-id :init-value 0
-               :allocation :persistent)
+               :allocation :persistent :index :unique)
    (authors   :init-keyword :authors :init-value ""
               :allocation :persistent)
    (title     :init-keyword :title :init-value ""
@@ -24,13 +24,10 @@
               :allocation :persistent) ;; list of <review>
    ))
 
-(define-method key-of ((self <book>))
-  (x->string (ref self 'product-id)))
-
 (define-method format-for-list ((self <book>) cont)
   (list
    (tr: (td: (@: (colspan 2) (style "background-color:#92bae5"))
-	     (a/cont: (@@: (cont books (key-of self))) (ref self 'title))))
+	     (a/cont: (@@: (cont books (slot-ref self 'product-id))) (ref self 'title))))
    (tr: (td: (@: (style "background-color:#bed0e2"))
 	     (ref self 'authors))
         (td: (@: (style "background-color:#bed0e2; text-align:right"))
@@ -49,34 +46,34 @@
    (p: (x->string (length (ref self 'reviews))) "件の読者レビューがあります。"
        (if (null? (ref self 'reviews))
 	   ""
-	   (a/cont: (@@: (cont (cute show-reviews (key-of self) cont)))
+	   (a/cont: (@@: (cont (cut show-reviews self cont)))
 		    "[読者レビューを読む]")))
-   (book-review-link (key-of self) cont)
+   (book-review-link self cont)
    (p: (@: (style "text-align:right"))
        (a/cont: (@@: (cont books)) "[書籍一覧へ]"))))
 
-(define (book-review-link key cont)
+(define (book-review-link book cont)
   (apply p: (if (kahua-current-user)
 		(list 
-		 (a/cont: (@@: (cont (cute write-review key cont)))
+		 (a/cont: (@@: (cont (cut write-review book cont)))
 			  "[この本についてのレビューを書く]"))
 		(list 
 		 "("
 		 (user-box cont
-			   (lambda (nodes) (show-book-detail key cont)))
+			   (lambda (nodes) (show-book-detail (slot-ref book 'product-id) cont)))
 		 "すると、この本についてのレビューを書くことができます)"))))
 
 (define (show-book-list cont)
-  ((lister (map key-of (make-kahua-collection <book>))
-	   (lambda (key count)
-	     (format-for-list (find-kahua-instance <book> key) cont)))
+  ((lister (map values (make-kahua-collection <book>))
+	   (lambda (book count)
+	     (format-for-list book cont)))
    (lambda (nodes)
      (cont (cons (h2: "書籍リスト") nodes))))
   )
 
-(define (show-book-detail key cont)
-  (let ((book (find-kahua-instance <book> key)))
+(define (show-book-detail pid cont)
+  (let1 book (find-kahua-instance <book> 'product-id pid)
     (if book
-      (cont (format-for-detail book cont))
-      (cont (list (p: "(書籍データがありません)"))))))
+	(cont (format-for-detail book cont))
+	(cont (list (p: "(書籍データがありません)"))))))
 

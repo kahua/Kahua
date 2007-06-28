@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.9 2007/06/27 08:34:03 bizenn Exp $
+;; $Id: lambdabooks.kahua,v 1.10 2007/06/28 08:20:32 bizenn Exp $
 
 (use srfi-1)
 (use gauche.collection)
@@ -67,8 +67,8 @@
 
 (define-entry (books book-key)
   (if book-key
-    (show-book-detail book-key standard-page)
-    (show-book-list standard-page)))
+      (show-book-detail (x->integer book-key) standard-page)
+      (show-book-list standard-page)))
 
 (define-entry (user-admin-page)
   (user-admin-panel standard-page))
@@ -109,8 +109,8 @@
    (h2: "新刊情報")
    (p: "サイト開設記念特別キャンペーン価格にて販売中!")
    ;; ダミーデータ。最初の2冊を表示
-   (let ((book1 (find-kahua-instance <book> "0"))
-	 (book2 (find-kahua-instance <book> "1")))
+   (let ((book1 (find-kahua-instance <book> 'product-id 0))
+	 (book2 (find-kahua-instance <book> 'product-id 1)))
      (if (and book1 book2)
          (apply table:
 		(append-map new-title (list "0" "1") (list book1 book2)))

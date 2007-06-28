@@ -5,10 +5,12 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: useradmin.kahua,v 1.9 2007/06/27 08:34:03 bizenn Exp $
+;; $Id: useradmin.kahua,v 1.10 2007/06/28 08:20:32 bizenn Exp $
 
 ;; User administration ----------------------------------------
 ;;  Manages user information.
+
+(use srfi-1)
 
 (define (user-admin-panel cont)
 
@@ -26,98 +28,80 @@
      ))
 
   ;; For now, we hardcode roles
-  (define roles '(admin developer editor))
+  (define allowed-roles '(admin developer editor))
 
   (define (make-role-checkboxes user-roles)
     (append-map 
      (lambda (role)
        (list 
-	(input: (if (memq role user-roles)
-		    (@: (type "checkbox") (name #`"role-,role")
-                        (checked "checked"))
-		    (@: (type "checkbox") (name #`"role-,role"))))
+	(input: (@: (type "checkbox") (name "roles") (value role)
+		    (checked (and (memq role user-roles) "checked"))))
 	(x->string role)
 	(br:)))
-     roles))
+     allowed-roles))
 
-  (define (get-roles)
-    (filter-map (lambda (role)
-                  (and (kahua-context-ref #`"role-,role") role))
-                roles))
+  (define (user-commit user inactive? roles)
+    (let ((logname (slot-ref user 'login-name))
+	  (roles (map string->symbol roles)))
+      (cond ((kahua-authorized? 'admin)
+	     (if (equal? logname "admin")
+		 (unless (memq 'admin roles)
+		   (push! roles 'admin))
+		 (slot-set! user 'inactive inactive?))
+	     (slot-set! user 'role-alist roles)
+	     (user-edit-panel user #t))
+	    (else (auth-error)))))
 
-  (define (user-commit logname)
-    (let* ((roles    (get-roles))
-           (inactive (not (not (kahua-context-ref "inactive"))))
-           (user     (kahua-find-user logname)))
-      (if (kahua-user-has-role? (kahua-current-user) '(admin))
-        (begin
-          ;; kludge: make sure "admin" user won't lose admin priviledge
-          (when (and (equal? logname "admin")
-                     (not (memq 'admin roles)))
-            (push! roles 'admin))
-          (set! (ref user 'role-alist) roles)
-          (unless (equal? logname "admin")
-            (set! (ref user 'inactive) inactive))
-          (kahua-db-sync)
-          (user-edit-panel logname #t))
-        (auth-error))))
-
-  (define (user-edit-panel logname edited?)
-    (let ((user (kahua-find-user logname)))
-      (if (kahua-user-has-role? (kahua-current-user) '(admin))
-        (cont
-	 (cons
-	  (h2: "ユーザー" logname "の情報")
-          (append
-	   (cond-list
-	    (edited? (p: (font: (@: (color "#ff3535")) "情報を変更しました"))))
-           (list
-	    (form/cont:
-            (@@: (cont (cut user-commit logname)))
-            (table:
-             (tr: (th: (@: (style "background-color:#d8d2c9")) "ログイン名")
-		  (td: (@: (style "background-color:#ffd6b2;width:20em"))
-		       (p: logname)))
-             (tr: (th: (@: (style "background-color:#d8d2c9")) "非アクティブ")
-		  (td: (@: (style "background-color:#ffd6b2;width:20em"))
-		       (input: (if (ref user 'inactive)
-				   (@: (type "checkbox") (name "inactive")
-				       (checked "checked"))
-				   (@: (type "checkbox") (name "inactive"))))))
-             (tr: (th: (@: (style "background-color:#d8d2c9")) "役割")
-		  (td: (@: (style "background-color:#ffd6b2;width:20em"))
-		       (apply p: (make-role-checkboxes (ref user 'role-alist)))))
-             (tr: (td: (@: (align "center") (bgcolor "#d8d2c9") (colspan 2))
-		       (input: (@: (type "submit") (name "submit")
-				   (value "変更")))))))
-	    (a/cont: (@@: (cont user-admin-page))
-		     "[ユーザー一覧へ]"))))
-         )
-        (auth-error))))
+  (define (user-edit-panel user edited?)
+    (if (kahua-authorized? 'admin)
+	(let1 logname (slot-ref user 'login-name)
+	  (cont
+	   (cons
+	    (h2: "ユーザー" logname "の情報")
+	    (append
+	     (cond-list
+	      (edited? (p: (font: (@: (color "#ff3535")) "情報を変更しました"))))
+	     (list
+	      (form/cont:
+	       (@@: (cont (entry-lambda (:keyword inactive :mvkeyword roles)
+			    (user-commit user (equal? "yes" inactive) roles))))
+	       (table:
+		(tr: (th: (@: (style "background-color:#d8d2c9")) "ログイン名")
+		     (td: (@: (style "background-color:#ffd6b2;width:20em"))
+			  (p: logname)))
+		(tr: (th: (@: (style "background-color:#d8d2c9")) "非アクティブ")
+		     (td: (@: (style "background-color:#ffd6b2;width:20em"))
+			  (input: (@: (type "checkbox") (name "inactive") (value "yes")
+				      (checked (and (ref user 'inactive) "checked"))))))
+		(tr: (th: (@: (style "background-color:#d8d2c9")) "役割")
+		     (td: (@: (style "background-color:#ffd6b2;width:20em"))
+			  (apply p: (make-role-checkboxes (ref user 'role-alist)))))
+		(tr: (td: (@: (align "center") (bgcolor "#d8d2c9") (colspan 2))
+			  (input: (@: (type "submit") (name "submit")
+				      (value "変更")))))))
+	      (a/cont: (@@: (cont user-admin-page))
+		       "[ユーザー一覧へ]"))))))
+	(auth-error)))
   
   (define (format-user-info user count)
     (define c (if (even? count) "#ffbbbb" "#ffdddd"))
     (list 
      (tr: (td: (@: (style #`"background-color:,|c|;width:8em"))
-	       (a/cont: (@@: (cont (cute user-edit-panel (key-of user) #f)))
+	       (a/cont: (@@: (cont (cute user-edit-panel user #f)))
 			     (ref user 'login-name)))
           (td: (@: (style: #`"background-color:,|c|"))
                (if (ref user 'inactive) "inactive" "active"))
           (td: (@: (style #`"background-color:,|c|;width:25em"))
 	       (string-join (map x->string (ref user 'role-alist)) ", ")))))
 
-  (let* ((user (kahua-current-user)))
-    (if (kahua-user-has-role? user '(admin))
-      ((lister (map key-of (make-kahua-collection <kahua-user>))
-	       (lambda (key count)
-		 (format-user-info (kahua-find-user key) count))
-	       :header-formatter
-	       (lambda ()
-		 (list
-		  (tr: (th: "ログイン名") (th: "activeness") (th: "役割")))))
-       (lambda (nodes)
-	 (cont (cons (h2: "登録ユーザー一覧") nodes)))
-       )
+  (if (kahua-authorized? 'admin)
+      (let1 user (kahua-current-user)
+	((lister (map values (make-kahua-collection <kahua-user>))
+		 format-user-info
+		 :header-formatter
+		 (lambda ()
+		   (list
+		    (tr: (th: "ログイン名") (th: "activeness") (th: "役割")))))
+	 (lambda (nodes)
+	   (cont (cons (h2: "登録ユーザー一覧") nodes)))))
       (auth-error)))
-  )
-

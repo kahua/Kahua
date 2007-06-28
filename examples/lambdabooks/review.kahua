@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: review.kahua,v 1.7 2007/06/27 08:34:03 bizenn Exp $
+;; $Id: review.kahua,v 1.8 2007/06/28 08:20:32 bizenn Exp $
 
 (define-class <review> (<kahua-persistent-base>)
   ((about     :init-keyword :about  :init-value #f
@@ -20,21 +20,14 @@
 
 (define-method format-review ((self <review>) cont)
   (define (delete-review)
-    (let* ((rev  (find-kahua-instance <review> (key-of self)))
-           (book (and rev (ref rev 'about))))
-      ;; NB: currently, kahua.persistence can't delete an instance.
-      ;; we just remove invalidate its data and links so that it
-      ;; becomes invisible.
-      (when rev
-        (set! (ref rev 'author) #f)
-        (set! (ref rev 'about) #f))
+    (let1 book (and self (ref self 'about))
       (when book
         (set! (ref book 'reviews)
-              (delete rev (ref book 'reviews))))
-      (kahua-db-sync)
+              (delete self (ref book 'reviews))))
+      (remove-kahua-instance self)
       (if book
-        (show-reviews (key-of book) cont)
-        (cont '()))))
+	  (show-reviews book cont)
+	  (cont '()))))
   
   (list
    (tr: (@: (style "border-bottom: 2px solid black"))
@@ -50,35 +43,31 @@
           (tr: (th: (@: (style "background-color:#dddddd")) "コメント")
 	       (td: (ref self 'comment)))
           (cond-list
-	   ((and (kahua-current-user)
-		 (equal? (key-of (kahua-current-user))
-			 (key-of (ref self 'author))))
+	   ((and (kahua-authorized?)
+		 (eq? (kahua-current-user) (slot-ref self 'author)))
 	    (tr: (th:) (td: (a/cont: (@@: (cont delete-review))
 				     "[レビューを削除]")))))))))
   )
 
-(define (show-reviews key cont)
-  (let ((book (find-kahua-instance <book> key)))
-    (if (not book)
+(define (show-reviews book cont)
+  (if (not book)
       (cont (list (p: "(書籍データがありません)")))
-      ((lister (map key-of (ref book 'reviews))
-	       (lambda (key count)
-		 (format-review (find-kahua-instance <review> key)
-				cont))
+      ((lister (map values (ref book 'reviews))
+	       (lambda (rev count)
+		 (format-review rev cont))
 	       :table-attrs (@: (style "border-collapse: collapse; width:95%")))
        (lambda (nodes)
 	 (cont (cons
 		(h2: (ref book 'title) "に対する読者レビュー")
 		(append nodes
 			(list
-			 (a/cont: (@@: (cont books (key-of book)))
+			 (a/cont: (@@: (cont books (slot-ref book 'product-id)))
 				  "[書籍情報に戻る]")
-			 (book-review-link (key-of book) cont))))))))))
+			 (book-review-link book cont)))))))))
 
-(define (write-review key cont)
+(define (write-review book cont)
   (define (commit-review)
-    (let ((book (find-kahua-instance <book> key))
-          (user (kahua-current-user))
+    (let ((user (kahua-current-user))
           (eval (kahua-context-ref "evaluation"))
           (comment (kahua-context-ref "comment")))
       (if book
@@ -89,12 +78,10 @@
                        :evaluation (or (string->number eval) 3)
                        :comment comment)
                  (ref book 'reviews)))
-          (kahua-db-sync)
-          (show-reviews key cont))
+          (show-reviews book cont))
         (cont (list (p: "(書籍データがありません)"))))))
   
-  (let ((book (find-kahua-instance <book> key))
-        (user (kahua-current-user)))
+  (let1 user (kahua-current-user)
     (if (not book)
       (cont (list (p: "(書籍データがありません)")))
       (cont (list
