@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test lambdabooks scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: lambdabooks.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: lambdabooks.scm,v 1.4 2007/06/28 14:08:20 bizenn Exp $
 
 (use srfi-2)
 (use srfi-11)
@@ -30,6 +30,8 @@
 (define *config* "./test.conf")
 
 (kahua-init *config*)
+
+(debug-print-width #f)
 
 ;;------------------------------------------------------------
 ;; Page pattern

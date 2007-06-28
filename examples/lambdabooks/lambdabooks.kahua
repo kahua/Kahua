@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.10 2007/06/28 08:20:32 bizenn Exp $
+;; $Id: lambdabooks.kahua,v 1.11 2007/06/28 14:08:20 bizenn Exp $
 
 (use srfi-1)
 (use gauche.collection)
@@ -29,45 +29,43 @@
 
 ;; Standard page construction ----------------------------
 (define (imgpath filename)
-  (kahua-static-document-url #`"lambdabooks/images/,filename"))
+  (kahua-static-document-url "lambdabooks" "images" filename))
 
 (define (img-logo)
-  (img: (@: (src (imgpath "lambda-books-logo.png")) (alt "[lambda books]")
+  (img/ (@/ (src (imgpath "lambda-books-logo.png")) (alt "[lambda books]")
 	    (border "0") (width 216) (height 47))))
 
 (define (img-separator)
-  (img: (@: (src (imgpath "separator.jpg")) (alt "[separator]")
+  (img/ (@/ (src (imgpath "separator.jpg")) (alt "[separator]")
 	    (width 480) (height 4))))
 
 ;; standard-frame :: [SXML] -> [SXML]
 (define (standard-frame contents)
-  (list
-   (html:
-     (head: (title: "Lambda books"))
-     (apply body: 
-	    (@: (style "background-color: #ffffff"))
-            (append (standard-header)
-		    contents
-		    (standard-footer))))))
+  (html/
+   (head/ (title/ "Lambda books"))
+   (body/ (@/ (style "background-color: #ffffff"))
+	  (standard-header)
+	  contents
+	  (standard-footer))))
 
 ;; standard-page :: [SXML] -> [SXML]
 (define (standard-page contents)
-  (standard-frame (list
-		   (table: (tr: (apply td: (@: (valign "top")) (standard-menu))
-				(apply td: (@: (valign "top"))
-				           (if (null? contents)
-					       (default-contents)
-					       contents)))))))
+  (standard-frame
+   (table/ (tr/ (td/ (@/ (valign "top"))
+		     (standard-menu))
+		(td/ (@/ (valign "top"))
+		     (if (eq? contents empty)
+			 (default-contents)
+			 contents))))))
 
 (define (standard-header)
-  (list
-   (a/cont: (img-logo))
-   (br:)
-   (img-separator)))
+  (node-set/ (a/cont/ (img-logo))
+	     (br/)
+	     (img-separator)))
 
-(define-entry (books book-key)
-  (if book-key
-      (show-book-detail (x->integer book-key) standard-page)
+(define-entry (books pid)
+  (if pid
+      (show-book-detail (x->integer pid) standard-page)
       (show-book-list standard-page)))
 
 (define-entry (user-admin-page)
@@ -77,43 +75,42 @@
   (partnership-info standard-page))
 
 (define (standard-menu)
-  (list
-   (table:
-     (tr: (td: (user-box standard-frame standard-page)))
-     (tr: (td: (a/cont: (@@: (cont books)) "Books")))
-     (tr: (td: (a/cont: (@@: (cont partner-page)) "Partnership")))
-     ;; admin roleのユーザーにのみ、リンクを見せる
-     (tr: (@@: (require-role 'admin))
-	  (td: (a/cont: (@@: (cont user-admin-page)) "[ユーザ管理]"))))))
+  (table/
+   (tr/ (td/ (user-box standard-frame standard-page)))
+   (tr/ (td/ (a/cont/ (@@/ (cont books)) "Books")))
+   (tr/ (td/ (a/cont/ (@@/ (cont partner-page)) "Partnership")))
+   ;; admin roleのユーザーにのみ、リンクを見せる
+   (tr/ (@@/ (require-role 'admin))
+	(td/ (a/cont/ (@@/ (cont user-admin-page)) "[ユーザ管理]")))))
 
 (define (standard-footer)
-  (list
+  (node-set/
    (img-separator)
-   (div: (@: (style "text-align: right"))
-         "Powered by " (a: (@: (href "http://www.kahua.org/")) "Kahua"))))
+   (div/ (@/ (style "text-align: right"))
+	 "Powered by "
+	 (a/ (@/ (href "http://www.kahua.org/")) "Kahua"))))
 
 (define (default-contents)
-  (define (new-title key book)
-    (list
-     (tr: (td: (b: (ref book 'title))))
-     (tr: (td: (@: (style "text-align: right"))
+  (define (new-title book)
+    (node-set/
+     (tr/ (td/ (b/ (ref book 'title))))
+     (tr/ (td/ (@/ (style "text-align: right"))
 	       (ref book 'authors) "著"))
-     (tr: (td: (@: (style "text-align: right"))
+     (tr/ (td/ (@/ (style "text-align: right"))
 	       "キャンペーン価格：" (ref book 'price) "円"))
-     (tr: (td: (@: (style "text-align: right"))
-	       (a/cont: (@@: (cont books key)) "詳しい情報を見る...")))))
+     (tr/ (td/ (@/ (style "text-align: right"))
+	       (a/cont/ (@@/ (cont books (slot-ref book 'product-id)))
+			"詳しい情報を見る...")))))
 
-  (list
-   (h2: "最新ニュース")
-   (p: "本サイトは、Kahuaフレームワークのデモサイトです。")
-   (h2: "新刊情報")
-   (p: "サイト開設記念特別キャンペーン価格にて販売中!")
+  (node-set/
+   (h2/ "最新ニュース")
+   (p/ "本サイトは、Kahuaフレームワークのデモサイトです。")
+   (h2/ "新刊情報")
+   (p/ "サイト開設記念特別キャンペーン価格にて販売中!")
    ;; ダミーデータ。最初の2冊を表示
-   (let ((book1 (find-kahua-instance <book> 'product-id 0))
-	 (book2 (find-kahua-instance <book> 'product-id 1)))
-     (if (and book1 book2)
-         (apply table:
-		(append-map new-title (list "0" "1") (list book1 book2)))
-	 (p: "(書籍データがありません)")))))
+   (let1 dummy-books (filter-map (cut find-kahua-instance <book> 'product-id <>) '(0 1))
+     (if (pair? dummy-books)
+         (table/ (map/ new-title dummy-books))
+	 (p/ "(書籍データがありません)")))))
 
-(initialize-main-proc (cut standard-page '()))
+(initialize-main-proc (cut standard-page empty))

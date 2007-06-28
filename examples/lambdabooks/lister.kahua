@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lister.kahua,v 1.7 2007/06/27 08:34:03 bizenn Exp $
+;; $Id: lister.kahua,v 1.8 2007/06/28 14:08:20 bizenn Exp $
 
 ;; Lister -------------------------------------------------------
 ;;
@@ -36,27 +36,19 @@
 
       (define (show-list prev-show lis)
 	(receive (cur-items next-items) (split-at* lis items-per-page)
-	  (cont
-	   (list
-	    (apply table:
-		   (append
-		    (cond-list (table-attrs))
-		    (if header-formatter (header-formatter) '())
-		    (append-map elt-formatter cur-items (iota items-per-page))))
-	    (apply p:
-		   (cond-list
-		    (prev-show
-		     (a/cont: (@@: (cont prev-show))
-			      #`"[前の,|items-per-page|項目]"))
-		    ((not (null? next-items))
-		     (a/cont: (@@: (cont (lambda ()
-					   (show-list 
-					    (lambda ()
-					      (show-list prev-show lis))
-					    next-items))))
-			      #`"[次の,|items-per-page|項目]")))))
-	   )))
-    
-      (show-list #f elts)))
-  )
+	  (cont (node-set/
+		 (table/ (when/ table-attrs (table-attrs))
+			 (when/ header-formatter (header-formatter))
+			 (map/ elt-formatter cur-items (iota items-per-page)))
+		 (p/ (when/ prev-show (a/cont/ (@@/ (cont prev-show))
+					      #`"[前の,|items-per-page|項目]"))
+		     (when/ (pair? next-items)
+		       (a/cont/ (@@/ (cont (lambda ()
+					     (show-list 
+					      (lambda ()
+						(show-list prev-show lis))
+					      next-items))))
+				#`"[次の,|items-per-page|項目]")))))))
+
+      (show-list #f elts))))
 

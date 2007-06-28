@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua,v 1.10 2007/06/28 08:20:32 bizenn Exp $
+;; $Id: login.kahua,v 1.11 2007/06/28 14:08:20 bizenn Exp $
 
 ;; User login management ----------------------------------------
 ;;   Receives two continuation procedure.
@@ -15,64 +15,60 @@
 (define (user-box transient-cont final-cont)
   (define (login-dialog logname pass)
     (transient-cont 
-     (list 
+     (node-set/
       (if logname
-	  (p: "ユーザー名、またはパスワードが違います")
-	  (p: "ユーザー登録がお済みの方は、ユーザー名とパスワードを入力して"
+	  (p/ "ユーザー名、またはパスワードが違います")
+	  (p/ "ユーザー登録がお済みの方は、ユーザー名とパスワードを入力して"
 	      "「ログイン」ボタンをクリックして下さい"))
-      (form/cont:
-       (@@: (cont login-check '(logname) '(pass)))
-       (table:
-         (tr: (th: "ユーザー名")
-	      (td: (input: (@: (type "text") (name "logname")
+      (form/cont/
+       (@@/ (cont login-check))
+       (table/
+         (tr/ (th/ "ユーザー名")
+	      (td/ (input/ (@/ (type "text") (name "logname")
 			       (value (or logname ""))))))
-         (tr: (th: "パスワード")
-	      (td: (input: (@: (type "password") (name "pass")
-			       (value (or pass ""))))))
-         (tr: (th:)
-	      (td: (input: (@: (type "submit") (name "submit")
+         (tr/ (th/ "パスワード")
+	      (td/ (input/ (@/ (type "password") (name "pass")))))
+         (tr/ (th/)
+	      (td/ (input/ (@/ (type "submit") (name "submit")
 			       (value "ログイン")))))))
-      (p: "ユーザー登録がお済みでない方は、"
-          (a/cont: (@@: (cont (cut new-user #f #f))) "新規ユーザー登録")
+      (p/ "ユーザー登録がお済みでない方は、"
+          (a/cont/ (@@/ (cont (cut new-user #f #f))) "新規ユーザー登録")
           "で登録を行うか、"
-          (a/cont: (@@: (cont (cut final-cont '())))
+          (a/cont/ (@@/ (cont (cut final-cont empty)))
 		   "ログインせずにサイトを利用する")
           "ことができます。"
-          "(ログインしない場合は、一部の機能が使えません)"))
-     ))
+          "(ログインしない場合は、一部の機能が使えません)"))))
 
   (define login-check
     (entry-lambda (:keyword logname pass)
       (if (kahua-login logname pass)
-          (final-cont '())
+          (final-cont empty)
 	  (login-dialog logname pass))))
 
   (define (new-user logname pass)
     (transient-cont
-     (list 
+     (node-set/
       (if logname
-        (if pass
-          (p: "2つのパスワードが異なります。同じパスワードを入力して下さい。")
-          (if (#/\w+/ logname)
-            (p: "そのユーザー名は既に登録されています。異なるユーザー名を選んで下さい。")
-            (p: "ユーザー名はアルファベット、数字、'_'の組合せにして下さい。")))
-        (p: "ユーザー名とパスワードを選び、入力して下さい。"
-	    "パスワードは確認のため2度入力して下さい。"))
-      (form/cont: (@@: (cont user-registration))
-		  (table:
-		   (tr: (th: "ユーザー名")
-			(td: (input: (@: (type "text") (name "logname")
+	  (if pass
+	      (p/ "2つのパスワードが異なります。同じパスワードを入力して下さい。")
+	      (if (#/\w+/ logname)
+		  (p/ "そのユーザー名は既に登録されています。異なるユーザー名を選んで下さい。")
+		  (p/ "ユーザー名はアルファベット、数字、'_'の組合せにして下さい。")))
+	  (p/ "ユーザー名とパスワードを選び、入力して下さい。"
+	      "パスワードは確認のため2度入力して下さい。"))
+      (form/cont/ (@@/ (cont user-registration))
+		  (table/
+		   (tr/ (th/ "ユーザー名")
+			(td/ (input/ (@/ (type "text") (name "logname")
 					 (value (or logname ""))))))
-		   (tr: (th: "パスワード")
-			(td: (input: (@: (type "password") (name "pass")
-					 (value "")))))
-		   (tr: (th: "パスワード(確認)")
-			(td: (input: (@: (type "password") (name "pass2")
-					 (value "")))))
-		   (tr: (th:)
-			(td: (input: (@: (type "submit") (name "submit")
+		   (tr/ (th/ "パスワード")
+			(td/ (input/ (@/ (type "password") (name "pass")))))
+		   (tr/ (th/ "パスワード(確認)")
+			(td/ (input/ (@/ (type "password") (name "pass2")))))
+		   (tr/ (th/)
+			(td/ (input/ (@/ (type "submit") (name "submit")
 					 (value "登録")))))))
-      (p: "プライバシーポリシー：本サイトはデモ用のサイトであり、"
+      (p/ "プライバシーポリシー：本サイトはデモ用のサイトであり、"
 	  "あなたの入力したデータはテスト目的にのみ使用され、"
 	  "テスト終了時に破棄されます。"))))
 
@@ -88,16 +84,16 @@
        (else
         (kahua-add-user logname pass)
 	(kahua-login logname pass)
-        (final-cont '())))))
+        (final-cont empty)))))
 
   (define (logout)
     (kahua-logout)
-    (final-cont '()))
+    (final-cont empty))
 
   (let1 user (kahua-current-user)
     (if user
-	(table: (tr: (td: "Welcome, " (ref user 'login-name)))
-		(tr: (td: (@: (style "font-size:small; text-align:right"))
-			  (a/cont: (@@: (cont logout)) "logout"))))
-	(a/cont: (@@: (cont (cut login-dialog #f #f)))
+	(table/ (tr/ (td/ "Welcome, " (ref user 'login-name)))
+		(tr/ (td/ (@/ (style "font-size:small; text-align:right"))
+			  (a/cont/ (@@/ (cont logout)) "logout"))))
+	(a/cont/ (@@/ (cont (cut login-dialog #f #f)))
 		 "ログイン/新規登録"))))
