@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: wiki-iki.kahua,v 1.12 2007/06/26 05:44:23 bizenn Exp $
+;; $Id: wiki-iki.kahua,v 1.13 2007/06/29 05:02:48 bizenn Exp $
 
 (use srfi-1)
 (use srfi-13)
@@ -259,20 +259,28 @@
 (define (create-welcome-page)
   (make <page>
     :name *welcome-page*
-    :body "* Wiki Ikiへようこそ
-これは、簡単なWikiWikiWebのKahuaフレームワークによる実装です。
-(Wiki ikiとは「小さなWiki」という意味です)。
+    :body "* Welcome to Wiki Iki
+This is simple WikiWikiWeb by Kahua framework.
+Wiki iki means small Wiki.
 
-** ページの編集
-ページを編集するには、下の[編集]リンクをクリックして下さい。
-空行がパラグラフの区切りに、'[['と
-']]'ではさまれた部分が他のページへの参照に、
-'* ', '** ', '*** ' 等で始まる行が見出しになります(アスタリスクの後に
-空白が必要です)。
-** ページの作成
-存在しないページに対する参照を作ると、その名前のページを作成することができます。
-例：[[最初は存在しないページ]]
-"))
+** Edit Page
+To edit the page, click [edit] link bellow.
+
+The empty line is to be paragraph separator,
+the part binded by '[[' and
+']]' is to be page reference and the line from
+'* ', '** ', '*** ' is to be index.
+
+** Create Page
+Create nonexistent page reference.
+You can create the page which name is the part
+binded by '[[' and
+']]'.
+
+ex: [[Page that doesn't exist]]
+
+"
+))
    
 (initialize-main-proc show-page)
 
