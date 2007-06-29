@@ -1,7 +1,7 @@
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
-;; $Id: INSTALL,v 1.14.2.6 2007/06/29 04:22:13 bizenn Exp $
+;; $Id: INSTALL,v 1.14.2.7 2007/06/29 04:24:51 bizenn Exp $
 
 * Setup Kahua
 
@@ -64,8 +64,8 @@ your home directory.  By this way you don't need to care about
 permissions and user/group settings.
 
 {{{
-% tar xvzf Kahua-1.0.4.tgz
-% cd Kahua-1.0.4
+% tar xvzf Kahua-1.0.5.tgz
+% cd Kahua-1.0.5
 % ./configure --prefix=${HOME}/kahua
 % make
 % make check
@@ -89,8 +89,8 @@ Following example shows that install to the site-bundle called
 $Home/site.
 
 {{{
-% tar xvzf Kahua-1.0.4.tgz
-% cd Kahua-1.0.4
+% tar xvzf Kahua-1.0.5.tgz
+% cd Kahua-1.0.5
 % ./configure --prefix=/usr/local/kahua --with-site-bundle=$HOME/site
 % make
 % make check
@@ -327,8 +327,8 @@ scripts, but its configuration requires a careful attention.
 This is configuration and building process on a real site. 
 
 {{{
-% tar xzvf Kahua-1.0.4.tgz
-% cd Kahua-1.0.4
+% tar xzvf Kahua-1.0.5.tgz
+% cd Kahua-1.0.5
 % ./configure \
     --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
     --prefix=/usr/local/kahua \
