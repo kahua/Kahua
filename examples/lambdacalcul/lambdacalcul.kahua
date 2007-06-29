@@ -1,59 +1,59 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8 ; mode: kahua -*-
 ;; lambdacalcul.kahua
 ;;
-;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdacalcul.kahua,v 1.3 2005/07/03 04:02:55 nobsun Exp $
+;; $Id: lambdacalcul.kahua,v 1.3.10.1 2007/06/29 08:03:31 bizenn Exp $
 ;;
 ;; This example shows simple application by kahua.
 ;;
 
 (use srfi-1)
 
-;; ¥°¥í¡¼¥Ğ¥ëÊÑ¿ô (free variable)
+;; ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•° (free variable)
 (define-class <var> ()
   ((var :init-keyword :var)
    (val :init-keyword :val)
    ))
 
-;; ¥í¡¼¥«¥ëÊÑ¿ô (bound variable)
+;; ãƒ­ãƒ¼ã‚«ãƒ«å¤‰æ•° (bound variable)
 (define-class <lvar> ()
   ((var :init-keyword :var)
    (id  :init-keyword :id)
    ))
 
-;; ¥¯¥í¡¼¥¸¥ã
+;; ã‚¯ãƒ­ãƒ¼ã‚¸ãƒ£
 (define-class <closure> ()
   ((arg  :init-keyword :arg)
    (body :init-keyword :body)
    (env  :init-keyword :env))
   )
 
-;; ¥Ç¥Õ¥©¥ë¥È¤Î¥°¥í¡¼¥Ğ¥ëÄêµÁ¡£
+;; ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ã‚°ãƒ­ãƒ¼ãƒãƒ«å®šç¾©ã€‚
 (define *definitions*
-  '(;; ¥Ö¡¼¥ëÂå¿ô
-    (true  (¦Ë t ¦Ë f t))
-    (false (¦Ë t ¦Ë f f))
-    (if    (¦Ë t ¦Ë a ¦Ë b t a b))
-    (and   (¦Ë a ¦Ë b a b false))
-    (or    (¦Ë a ¦Ë b a true b))
-    (not   (¦Ë a a false true))
-    ;; ¥Ú¥¢
-    (pair  (¦Ë ca ¦Ë cd ¦Ë b b ca cd))
-    (car   (¦Ë p p true))
-    (cdr   (¦Ë p p false))
+  '(;; ãƒ–ãƒ¼ãƒ«ä»£æ•°
+    (true  (Î» t Î» f t))
+    (false (Î» t Î» f f))
+    (if    (Î» t Î» a Î» b t a b))
+    (and   (Î» a Î» b a b false))
+    (or    (Î» a Î» b a true b))
+    (not   (Î» a a false true))
+    ;; ãƒšã‚¢
+    (pair  (Î» ca Î» cd Î» b b ca cd))
+    (car   (Î» p p true))
+    (cdr   (Î» p p false))
     ;; church numerals
-    (zero  (¦Ë s ¦Ë z z))
-    (one   (¦Ë s ¦Ë z s z))
-    (two   (¦Ë s ¦Ë z s (s z)))
-    (succ  (¦Ë n ¦Ë s ¦Ë z s (n s z)))
-    (+     (¦Ë m ¦Ë n ¦Ë s ¦Ë z m s (n s z)))
+    (zero  (Î» s Î» z z))
+    (one   (Î» s Î» z s z))
+    (two   (Î» s Î» z s (s z)))
+    (succ  (Î» n Î» s Î» z s (n s z)))
+    (+     (Î» m Î» n Î» s Î» z m s (n s z)))
     )
   )
 
-;; Îã¤È¤·¤Æ¼¨¤¹¼°¡£
+;; ä¾‹ã¨ã—ã¦ç¤ºã™å¼ã€‚
 (define *examples*
   '((if true X Y)
     (car (pair X Y))
@@ -62,24 +62,23 @@
     (succ one)
     (+ one two)))
 
-;; ¥Ø¥ë¥×
+;; ãƒ˜ãƒ«ãƒ—
 (define *help*
-  (node-set:
-   (h3: "¥Ø¥ë¥×")
-   (ul:
-    (li: "¦Ë¼°  '" (tt: "¦Ëx.x y") "' ¤Ï (¦Ë x x y) Åù¤ÈÉ½¸½¤µ¤ì¤Ş¤¹¡£")
-    (li: "ÄêµÁ¤òÄÉ²Ã¤¹¤ë¤Ë¤Ï¡¢(def ¥·¥ó¥Ü¥ë ¦Ë¼°) ¤òÆşÎÏ¤·¤Ş¤¹¡£")
-    (li: "free variable¤Ï°ì¼ï¤ÎÄê¿ô¤È¤·¤Æ°·¤ï¤ì¤Ş¤¹¡£"
-         "free variable¤¬¥°¥í¡¼¥Ğ¥ë¤ÊÄêµÁ¤ò»ı¤Ä¾ì¹ç¤Ï¤½¤³¤Ë¥ê¥ó¥¯¤¬¸½¤ì¡¢"
-         "¥¯¥ê¥Ã¥¯¤¹¤ë¤ÈÄêµÁ¤ËÃÖ´¹¤µ¤ì¤Ş¤¹¡£")
-    (li: "Å¬ÍÑ²ÄÇ½¤Ê¦Ë¼°¤Ë¤Ï¡¢¡Ö¦Ë¡×¤Î¤È¤³¤í¤Ë¥ê¥ó¥¯¤¬¸½¤ì¤Ş¤¹¡£"
-         "¥¯¥ê¥Ã¥¯¤¹¤ë¤È¡¢¦Ë¼°¤ÎÅ¬ÍÑ¤ò¹Ô¤¤¤Ş¤¹¡£"))))
+  (node-set/
+   (h3/ "ãƒ˜ãƒ«ãƒ—")
+   (ul/
+    (li/ "Î»å¼  '" (tt/ "Î»x.x y") "' ã¯ (Î» x x y) ç­‰ã¨è¡¨ç¾ã•ã‚Œã¾ã™ã€‚")
+    (li/ "å®šç¾©ã‚’è¿½åŠ ã™ã‚‹ã«ã¯ã€(def ã‚·ãƒ³ãƒœãƒ« Î»å¼) ã‚’å…¥åŠ›ã—ã¾ã™ã€‚")
+    (li/ "free variableã¯ä¸€ç¨®ã®å®šæ•°ã¨ã—ã¦æ‰±ã‚ã‚Œã¾ã™ã€‚"
+         "free variableãŒã‚°ãƒ­ãƒ¼ãƒãƒ«ãªå®šç¾©ã‚’æŒã¤å ´åˆã¯ãã“ã«ãƒªãƒ³ã‚¯ãŒç¾ã‚Œã€"
+         "ã‚¯ãƒªãƒƒã‚¯ã™ã‚‹ã¨å®šç¾©ã«ç½®æ›ã•ã‚Œã¾ã™ã€‚")
+    (li/ "é©ç”¨å¯èƒ½ãªÎ»å¼ã«ã¯ã€ã€ŒÎ»ã€ã®ã¨ã“ã‚ã«ãƒªãƒ³ã‚¯ãŒç¾ã‚Œã¾ã™ã€‚"
+         "ã‚¯ãƒªãƒƒã‚¯ã™ã‚‹ã¨ã€Î»å¼ã®é©ç”¨ã‚’è¡Œã„ã¾ã™ã€‚"))))
 
 (define (page contents)
-  (node-set:
-   (html:
-    (head: (title: "Lambda Calculator"))
-    (body: (h1: "¦Ë·×»»µ¡") contents))))
+  (html/
+   (head/ (title/ "Lambda Calculator"))
+   (body/ (h1/ "Î»è¨ˆç®—æ©Ÿ") contents)))
 
 (define-entry (start)
   (let ((definitions *definitions*))
@@ -87,7 +86,7 @@
     (define calcul
       (entry-lambda (:keyword expr)
         (let1 x (with-error-handler
-                    (lambda (e) (input "Ê¸Ë¡¤¬ÉÔÀµ¤Ç¤¹" expr))
+                    (lambda (e) (input "æ–‡æ³•ãŒä¸æ­£ã§ã™" expr))
                   (lambda () (read-from-string expr)))
           (cond ((eof-object? x) (input "" ""))
                 ((and (pair? x)
@@ -95,7 +94,7 @@
                  (if (and (= (length x) 3)
                           (symbol? (cadr x)))
                    (definition x)
-                   (input "ÄêµÁ¤Ï¡¢ (def <¥·¥ó¥Ü¥ë> <¦Ë¼°>) ¤Ç¤¹" expr)))
+                   (input "å®šç¾©ã¯ã€ (def <ã‚·ãƒ³ãƒœãƒ«> <Î»å¼>) ã§ã™" expr)))
                 (else (render (parse x '())))
                 ))))
 
@@ -104,16 +103,16 @@
       (input "" ""))
 
     (define (show-defs)
-      (node-set:
-       (hr:)
-       (p: "´û¤Ë¤¢¤ëÄêµÁ"
-           (apply pre: (map (lambda (p)
-                              (format "(def ~s ~s)\n" (car p) (cadr p)))
-                            definitions)))))
+      (node-set/
+       (hr/)
+       (p/ "æ—¢ã«ã‚ã‚‹å®šç¾©"
+           (pre/ (map/ (lambda (p)
+			 (format "(def ~s ~s)\n" (car p) (cadr p)))
+		       definitions)))))
 
-    ;; parse ¤Ï¡¢¥æ¡¼¥¶¤¬ÆşÎÏ¤·¤¿¼°¤ò¥È¥é¥Ğ¡¼¥¹¤·¤Æ¡¢ÆâÉôÉ½¸½¤ËÄ¾¤¹¡£
-    ;; ÆâÉôÉ½¸½¤Î´ğËÜ¤ÏS¼°¤À¤¬¡¢ÊÑ¿ô¤ª¤è¤Ó¥¯¥í¡¼¥¸¥ã¤¬¹½Â¤ÂÎ¤ËÃÖ¤­´¹¤ï¤Ã¤Æ¤¤¤ë¡£
-    ;; env¤ÏÀÅÅª´Ä¶­¤ÇÂ«Çû¤µ¤ì¤Æ¤¤¤ë<lvar>¤Î¥ê¥¹¥È¡£
+    ;; parse ã¯ã€ãƒ¦ãƒ¼ã‚¶ãŒå…¥åŠ›ã—ãŸå¼ã‚’ãƒˆãƒ©ãƒãƒ¼ã‚¹ã—ã¦ã€å†…éƒ¨è¡¨ç¾ã«ç›´ã™ã€‚
+    ;; å†…éƒ¨è¡¨ç¾ã®åŸºæœ¬ã¯Så¼ã ãŒã€å¤‰æ•°ãŠã‚ˆã³ã‚¯ãƒ­ãƒ¼ã‚¸ãƒ£ãŒæ§‹é€ ä½“ã«ç½®ãæ›ã‚ã£ã¦ã„ã‚‹ã€‚
+    ;; envã¯é™çš„ç’°å¢ƒã§æŸç¸›ã•ã‚Œã¦ã„ã‚‹<lvar>ã®ãƒªã‚¹ãƒˆã€‚
     (define (parse x env)
       (cond
        ((symbol? x)
@@ -123,7 +122,7 @@
                     (make <var> :var x :val (parse (cadr def) '()))))
               (else x)))
        ((not (pair? x)) x)
-       ((and (eq? (car x) '¦Ë)
+       ((and (eq? (car x) 'Î»)
              (pair? (cdr x)))
         (let* ((arg (cadr x))
                (id (count (lambda (v) (eq? (ref v 'var) arg)) env))
@@ -132,10 +131,10 @@
             :arg lvar :env env :body (parse (cddr x) (cons lvar env)))))
        (else (map (cut parse <> env) x))))
 
-    ;; ¼°¤ÎÊÑ´¹
-    ;; ¥æ¡¼¥¶¤Î¥¢¥¯¥·¥ç¥ó¤Ë¤è¤Ã¤Æ¼°¤òÊÑ´¹¤¹¤ë¡£
+    ;; å¼ã®å¤‰æ›
+    ;; ãƒ¦ãƒ¼ã‚¶ã®ã‚¢ã‚¯ã‚·ãƒ§ãƒ³ã«ã‚ˆã£ã¦å¼ã‚’å¤‰æ›ã™ã‚‹ã€‚
 
-    ;; ¥°¥í¡¼¥Ğ¥ëÊÑ¿ôÃÖ´¹
+    ;; ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°ç½®æ›
     (define (substitute-var tree var)
       (cond ((eq? tree var) (ref var 'val))
             ((is-a? tree <closure>)
@@ -145,7 +144,7 @@
              (map (cut substitute-var <> var) tree))
             (else tree)))
 
-    ;; ´Ø¿ôÅ¬ÍÑ
+    ;; é–¢æ•°é©ç”¨
     (define (apply-closure tree clo)
       (cond ((and (pair? tree)
                   (eq? (car tree) clo)
@@ -177,39 +176,39 @@
                    :body (substitute-local (ref expr 'body) var val)))
             (else expr)))
       
-    ;; ¼°¤ÎÉ½¼¨
-    ;;   ¥°¥í¡¼¥Ğ¥ëÊÑ¿ô - ÊÑ¿ôÌ¾¤ò¥ê¥ó¥¯¤Ë
-    ;;   ¥¯¥í¡¼¥¸¥ã - ¡Ö¦Ë¡×¤ò¥ê¥ó¥¯¤Ë
+    ;; å¼ã®è¡¨ç¤º
+    ;;   ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•° - å¤‰æ•°åã‚’ãƒªãƒ³ã‚¯ã«
+    ;;   ã‚¯ãƒ­ãƒ¼ã‚¸ãƒ£ - ã€ŒÎ»ã€ã‚’ãƒªãƒ³ã‚¯ã«
     (define (render tree)
       (define (render-1 t)
         (cond ((is-a? t <var>)
-               (a/cont: (@@: (cont (action substitute-var tree t)))
+               (a/cont/ (@@/ (cont (action substitute-var tree t)))
                         (x->string (ref t 'var))))
               ((is-a? t <lvar>) (render-lvar t))
               ((is-a? t <closure>)
-               (node-set: "(" (render-clo t #f) ")"))
+               (node-set/ "(" (render-clo t #f) ")"))
               ((list? t)
-               (node-set: "(" (render-list t) ")"))
+               (node-set/ "(" (render-list t) ")"))
               (else (x->string t))))
 
       (define (render-list t)
         (if (and (is-a? (car t) <closure>)
                  (not (null? (cdr t))))
-          (node-set: "(" (render-clo (car t) #t) ") "
+          (node-set/ "(" (render-clo (car t) #t) ") "
                      (render-map (cdr t)))
-          (node-set: (render-map t))))
+          (node-set/ (render-map t))))
         
       (define (render-lvar lvar)
         (if (zero? (ref lvar 'id))
           (x->string (ref lvar 'var))
-          (node-set: (x->string (ref lvar 'var))
-                     (sub: (x->string (ref lvar 'id))))))
+          (node-set/ (x->string (ref lvar 'var))
+                     (sub/ (x->string (ref lvar 'id))))))
 
       (define (render-clo clo applicable?)
-        (node-set: (if applicable?
-                     (a/cont: (@@: (cont (action apply-closure tree clo)))
-                              "¦Ë")
-                     "¦Ë")
+        (node-set/ (if applicable?
+                     (a/cont/ (@@/ (cont (action apply-closure tree clo)))
+                              "Î»")
+                     "Î»")
                    " " (render-lvar (ref clo 'arg)) " "
                    (cond ((list? (ref clo 'body))
                           (render-list (ref clo 'body)))
@@ -221,16 +220,16 @@
       (define (render-map lis)
         (define (rec lis r)
           (if (null? lis)
-            (apply node-set: (reverse! r))
-            (rec (cdr lis) (list* (render-1 (car lis)) " " r))))
+	      (node-set (reverse! r))
+	      (rec (cdr lis) (list* (render-1 (car lis)) " " r))))
         (cond ((null? lis) "")
               ((null? (cdr lis)) (render-1 (car lis)))
               (else (rec (cdr lis) (list (render-1 (car lis)))))))
 
       (page
-       (node-set:
-        (p: (render-1 tree))
-        (p: (a/cont: (@@: (cont start)) "»Ï¤á¤«¤é"))
+       (node-set/
+        (p/ (render-1 tree))
+        (p/ (a/cont/ (@@/ (cont start)) "å§‹ã‚ã‹ã‚‰"))
         (show-defs))))
 
     (define (action proc tree node)
@@ -238,23 +237,23 @@
 
     (define (input mesg text)
       (page
-       (node-set:
-        (p: (or mesg ""))
-        (p: "¼°¤Ş¤¿¤ÏÄêµÁ¤òµ­Æş¤·¤Æ²¼¤µ¤¤¡£")
-        (p: "Îã:")
-        (apply ul:
-               (map (lambda (ex)
-                      (li: (x->string ex)
-                           "  ["
-                           (a/cont: (@@: (cont calcul
-                                               `(expr ,(x->string ex))))
-                                    "¤³¤Î¼°¤òÉ¾²Á")
-                           "]"))
-                    *examples*))
-        (form/cont:
-         (@@: (cont calcul))
-         (textarea: (@: (name "expr") (rows 10) (cols 60)) text)
-         (input: (@: (type "submit") (name "submit") (value "Submit"))))
+       (node-set/
+        (p/ (or mesg ""))
+        (p/ "å¼ã¾ãŸã¯å®šç¾©ã‚’è¨˜å…¥ã—ã¦ä¸‹ã•ã„ã€‚")
+        (p/ "ä¾‹:")
+        (ul/
+	 (map/ (lambda (ex)
+		 (li/ (x->string ex)
+		      "  ["
+		      (a/cont/ (@@/ (cont calcul
+					  `(expr ,(x->string ex))))
+			       "ã“ã®å¼ã‚’è©•ä¾¡")
+		      "]"))
+	       *examples*))
+        (form/cont/
+         (@@/ (cont calcul))
+         (textarea/ (@/ (name "expr") (rows 10) (cols 60)) text)
+         (input/ (@/ (type "submit") (name "submit") (value "Submit"))))
         (show-defs)
         *help*)))
 

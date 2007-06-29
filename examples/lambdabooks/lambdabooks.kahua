@@ -1,11 +1,11 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8; mode: kahua -*-
 ;; sample kahua application using kahua.app.elua.alt
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.kahua,v 1.8 2005/07/03 04:02:55 nobsun Exp $
+;; $Id: lambdabooks.kahua,v 1.8.10.1 2007/06/29 08:03:26 bizenn Exp $
 
 (use srfi-1)
 (use gauche.collection)
@@ -29,46 +29,44 @@
 
 ;; Standard page construction ----------------------------
 (define (imgpath filename)
-  (kahua-static-document-url #`"lambdabooks/images/,filename"))
+  (kahua-static-document-url "lambdabooks" "images" filename))
 
 (define (img-logo)
-  (img: (@: (src (imgpath "lambda-books-logo.png")) (alt "[lambda books]")
+  (img/ (@/ (src (imgpath "lambda-books-logo.png")) (alt "[lambda books]")
 	    (border "0") (width 216) (height 47))))
 
 (define (img-separator)
-  (img: (@: (src (imgpath "separator.jpg")) (alt "[separator]")
+  (img/ (@/ (src (imgpath "separator.jpg")) (alt "[separator]")
 	    (width 480) (height 4))))
 
 ;; standard-frame :: [SXML] -> [SXML]
 (define (standard-frame contents)
-  (list
-   (html:
-     (head: (title: "Lambda books"))
-     (apply body: 
-	    (@: (style "background-color: #ffffff"))
-            (append (standard-header)
-		    contents
-		    (standard-footer))))))
+  (html/
+   (head/ (title/ "Lambda books"))
+   (body/ (@/ (style "background-color: #ffffff; width:490px; margin: .5em auto;"))
+	  (standard-header)
+	  contents
+	  (standard-footer))))
 
 ;; standard-page :: [SXML] -> [SXML]
 (define (standard-page contents)
-  (standard-frame (list
-		   (table: (tr: (apply td: (@: (valign "top")) (standard-menu))
-				(apply td: (@: (valign "top"))
-				           (if (null? contents)
-					       (default-contents)
-					       contents)))))))
+  (standard-frame
+   (table/ (tr/ (td/ (@/ (valign "top"))
+		     (standard-menu))
+		(td/ (@/ (valign "top"))
+		     (if (eq? contents empty)
+			 (default-contents)
+			 contents))))))
 
 (define (standard-header)
-  (list
-   (a/cont: (img-logo))
-   (br:)
-   (img-separator)))
+  (node-set/ (a/cont/ (img-logo))
+	     (br/)
+	     (img-separator)))
 
-(define-entry (books book-key)
-  (if book-key
-    (show-book-detail book-key standard-page)
-    (show-book-list standard-page)))
+(define-entry (books pid)
+  (if pid
+      (show-book-detail (x->integer pid) standard-page)
+      (show-book-list standard-page)))
 
 (define-entry (user-admin-page)
   (user-admin-panel standard-page))
@@ -77,43 +75,42 @@
   (partnership-info standard-page))
 
 (define (standard-menu)
-  (list
-   (table:
-     (tr: (td: (user-box standard-frame standard-page)))
-     (tr: (td: (a/cont: (@@: (cont books)) "Books")))
-     (tr: (td: (a/cont: (@@: (cont partner-page)) "Partnership")))
-     ;; admin role¤Î¥æ¡¼¥¶¡¼¤Ë¤Î¤ß¡¢¥ê¥ó¥¯¤ò¸«¤»¤ë
-     (tr: (@@: (require-role 'admin))
-	  (td: (a/cont: (@@: (cont user-admin-page)) "[¥æ¡¼¥¶´ÉÍı]"))))))
+  (table/
+   (tr/ (td/ (user-box standard-frame standard-page)))
+   (tr/ (td/ (a/cont/ (@@/ (cont books)) "Books")))
+   (tr/ (td/ (a/cont/ (@@/ (cont partner-page)) "Partnership")))
+   ;; admin roleã®ãƒ¦ãƒ¼ã‚¶ãƒ¼ã«ã®ã¿ã€ãƒªãƒ³ã‚¯ã‚’è¦‹ã›ã‚‹
+   (tr/ (@@/ (require-role 'admin))
+	(td/ (a/cont/ (@@/ (cont user-admin-page)) "[ãƒ¦ãƒ¼ã‚¶ç®¡ç†]")))))
 
 (define (standard-footer)
-  (list
+  (node-set/
    (img-separator)
-   (div: (@: (style "text-align: right"))
-         "Powered by " (a: (@: (href "http://www.kahua.org/")) "Kahua"))))
+   (div/ (@/ (style "text-align: right"))
+	 "Powered by "
+	 (a/ (@/ (href "http://www.kahua.org/")) "Kahua"))))
 
 (define (default-contents)
-  (define (new-title key book)
-    (list
-     (tr: (td: (b: (ref book 'title))))
-     (tr: (td: (@: (style "text-align: right"))
-	       (ref book 'authors) "Ãø"))
-     (tr: (td: (@: (style "text-align: right"))
-	       "¥­¥ã¥ó¥Ú¡¼¥ó²Á³Ê¡§" (ref book 'price) "±ß"))
-     (tr: (td: (@: (style "text-align: right"))
-	       (a/cont: (@@: (cont books key)) "¾Ü¤·¤¤¾ğÊó¤ò¸«¤ë...")))))
+  (define (new-title book)
+    (node-set/
+     (tr/ (td/ (b/ (ref book 'title))))
+     (tr/ (td/ (@/ (style "text-align: right"))
+	       (ref book 'authors) "è‘—"))
+     (tr/ (td/ (@/ (style "text-align: right"))
+	       "ã‚­ãƒ£ãƒ³ãƒšãƒ¼ãƒ³ä¾¡æ ¼ï¼š" (ref book 'price) "å††"))
+     (tr/ (td/ (@/ (style "text-align: right"))
+	       (a/cont/ (@@/ (cont books (slot-ref book 'product-id)))
+			"è©³ã—ã„æƒ…å ±ã‚’è¦‹ã‚‹...")))))
 
-  (list
-   (h2: "ºÇ¿·¥Ë¥å¡¼¥¹")
-   (p: "ËÜ¥µ¥¤¥È¤Ï¡¢Kahua¥Õ¥ì¡¼¥à¥ï¡¼¥¯¤Î¥Ç¥â¥µ¥¤¥È¤Ç¤¹¡£")
-   (h2: "¿·´©¾ğÊó")
-   (p: "¥µ¥¤¥È³«Àßµ­Ç°ÆÃÊÌ¥­¥ã¥ó¥Ú¡¼¥ó²Á³Ê¤Ë¤ÆÈÎÇäÃæ!")
-   ;; ¥À¥ß¡¼¥Ç¡¼¥¿¡£ºÇ½é¤Î2ºı¤òÉ½¼¨
-   (let ((book1 (find-kahua-instance <book> "0"))
-	 (book2 (find-kahua-instance <book> "1")))
-     (if (and book1 book2)
-         (apply table:
-		(append-map new-title (list "0" "1") (list book1 book2)))
-	 (p: "(½ñÀÒ¥Ç¡¼¥¿¤¬¤¢¤ê¤Ş¤»¤ó)")))))
+  (node-set/
+   (h2/ "æœ€æ–°ãƒ‹ãƒ¥ãƒ¼ã‚¹")
+   (p/ "æœ¬ã‚µã‚¤ãƒˆã¯ã€Kahuaãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¯ãƒ¼ã‚¯ã®ãƒ‡ãƒ¢ã‚µã‚¤ãƒˆã§ã™ã€‚")
+   (h2/ "æ–°åˆŠæƒ…å ±")
+   (p/ "ã‚µã‚¤ãƒˆé–‹è¨­è¨˜å¿µç‰¹åˆ¥ã‚­ãƒ£ãƒ³ãƒšãƒ¼ãƒ³ä¾¡æ ¼ã«ã¦è²©å£²ä¸­!")
+   ;; ãƒ€ãƒŸãƒ¼ãƒ‡ãƒ¼ã‚¿ã€‚æœ€åˆã®2å†Šã‚’è¡¨ç¤º
+   (let1 dummy-books (filter-map (cut find-kahua-instance <book> 'product-id <>) '(0 1))
+     (if (pair? dummy-books)
+         (table/ (map/ new-title dummy-books))
+	 (p/ "(æ›¸ç±ãƒ‡ãƒ¼ã‚¿ãŒã‚ã‚Šã¾ã›ã‚“)")))))
 
-(initialize-main-proc (cut standard-page '()))
+(initialize-main-proc (cut standard-page empty))

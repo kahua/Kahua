@@ -1,11 +1,11 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; Initializes lambdabooks example database
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdabooks.init,v 1.6.2.1 2007/01/11 09:07:32 bizenn Exp $
+;; $Id: lambdabooks.init,v 1.6.2.2 2007/06/29 08:03:25 bizenn Exp $
 
 (use kahua)
 (use file.util)
@@ -20,107 +20,109 @@
     (let1 dbname (kahua-dbpath (kahua-default-database-name))
       (with-db (db dbname)
         (init-books)
-        (init-users)
-        ))
+        (init-users)))
     0))
 
 (define (init-users)
   (for-each (lambda (entry)
-              (unless (find-kahua-instance <kahua-user> (car entry))
-                (let ((u (kahua-add-user (car entry) (cadr entry))))
-                  (when (and u (equal? (car entry) "admin"))
-                    (slot-set! u 'role-alist '(admin))))))
+	      (let1 uname (car entry)
+		(unless (kahua-find-user uname)
+		  (let1 u (apply kahua-add-user entry)
+		    (when (and u (equal? uname "admin"))
+		      (slot-set! u 'role-alist '(admin)))))))
             '(("admin" "admin")
               ("guest" "guest"))))
 
 (define (init-books)
+  (define make-book
+    (cut make <book>
+	 :product-id <>
+	 :authors    <>
+	 :title      <>
+	 :publisher  <>
+	 :price      <>
+	 :comment    <>))
   (for-each (lambda (entry)
-              (unless (find-kahua-instance <book> (x->string (car entry)))
-                (make <book>
-                  :product-id (list-ref entry 0)
-                  :authors    (list-ref entry 1)
-                  :title      (list-ref entry 2)
-                  :publisher  (list-ref entry 3)
-                  :price      (list-ref entry 4)
-                  :comment    (list-ref entry 5))))
+              (unless (find-kahua-instance <book> 'product-id (car entry))
+		(apply make-book entry)))
             '((0
                "Hans Abelson, Gerald Jay Sussman"
                "Structure and Interpretation of Computer Programs"
                "MIT Press"
                "5,600"
-               "¦Ë¶µ·ĞÅµ¤Î»Ï¤Ë¤·¤Æ½ª¡£ËŞ¤½¦Ë¤ÎÆ»¤òµæ¤á¤ë¼Ô¡¢ËÜ½ñ¤è¤ê³ç¸Ì¤ÎÌ©ÎÓ¤ËÂ­¤òÆ§¤ßÆş¤ì¡¢¤½¤Î±ü¤ËËÜ½ñ¤òºÆ¤Ó¸«½Ğ¤¹¡£ºÆµ¢¤ÎÌÂµÜ¤Ë±÷¤¤¤Æ³ØÅÌ¤Ë¤È¤Ã¤Æ¤ÎËÜ½ñ¤Ï¡¢¥ß¥Î¥¢¤ÎÌÂµÜ¤Ë±÷¤±¤ë¥Æ¥»¥¦¥¹¤Ë¤È¤Ã¤Æ¤Î¥¢¥ê¥¢¥É¥Í¤Î»å¤È¤Ê¤ê¤Ì¡£")
+               "Î»æ•™çµŒå…¸ã®å§‹ã«ã—ã¦çµ‚ã€‚å‡¡ãÎ»ã®é“ã‚’ç©¶ã‚ã‚‹è€…ã€æœ¬æ›¸ã‚ˆã‚Šæ‹¬å¼§ã®å¯†æ—ã«è¶³ã‚’è¸ã¿å…¥ã‚Œã€ãã®å¥¥ã«æœ¬æ›¸ã‚’å†ã³è¦‹å‡ºã™ã€‚å†å¸°ã®è¿·å®®ã«æ–¼ã„ã¦å­¦å¾’ã«ã¨ã£ã¦ã®æœ¬æ›¸ã¯ã€ãƒŸãƒã‚¢ã®è¿·å®®ã«æ–¼ã‘ã‚‹ãƒ†ã‚»ã‚¦ã‚¹ã«ã¨ã£ã¦ã®ã‚¢ãƒªã‚¢ãƒ‰ãƒã®ç³¸ã¨ãªã‚Šã¬ã€‚")
               (1
                "Daniel P Friedman, Mattias Felleisen"
                "The Little Schemer"
                "MIT Press"
                "2,000"
-               "¤é¤ó¤é¤ó³Ú¤·¤¯Scheme¤ò³Ø¤Ü¤¦¡£")
+               "ã‚‰ã‚“ã‚‰ã‚“æ¥½ã—ãSchemeã‚’å­¦ã¼ã†ã€‚")
               (2
                "Daniel P Friedman, Mattias Felleisen"
                "The Seasoned Schemer"
                "MIT Press"
                "2,000"
-               "The Little Schemer¤òÂ´¶È¤·¤¿µ®Êı¤Ë¡£")
+               "The Little Schemerã‚’å’æ¥­ã—ãŸè²´æ–¹ã«ã€‚")
               (3
                "Mattias Felleisen, Robert B. Findler, Matthew Flatt, Shriram Krishnamurthi"
                "How to Design Programs: An Introduction to Programming and Computing"
                "MIT Press"
                "4,200"
-               "¤×¤í¤°¤é¤à¤Ã¤Á¤å¤¦¤â¤ó¤Ï¡¢¤³¤¦¤ä¤Ã¤ÆÁÈ¤à¤â¤ó¤¸¤ã¤¢¡ª ÊÆ¹ñ¤ÎÌ¾Ìç¡¢ÊÆÂç³Ø¤Î¿ÆÊı4¿Í½°¤¬¡¢·×»»µ¡²Ê³Ø¤Î´ğÁÃ¤Î´ğÁÃ¤«¤éÅ°ÄìÅª¤Ëµ®Êı¤òÃÃ¤¨¤ë¡£ÅÁÀâ¤Î48»ş´ÖÂÑµ×¥Ï¥Ã¥¯¤Î²Ì¤Æ¤Ë¸«¤¨¤ÆÍè¤ë¤â¤Î¤Ï²¿¤«¡ª ÂÎ°é²ñ·Ï¥×¥í¥°¥é¥Ş¤Î¥Ğ¥¤¥Ö¥ë¡£")
+               "ã·ã‚ãã‚‰ã‚€ã£ã¡ã‚…ã†ã‚‚ã‚“ã¯ã€ã“ã†ã‚„ã£ã¦çµ„ã‚€ã‚‚ã‚“ã˜ã‚ƒã‚ï¼ ç±³å›½ã®åé–€ã€ç±³å¤§å­¦ã®è¦ªæ–¹4äººè¡†ãŒã€è¨ˆç®—æ©Ÿç§‘å­¦ã®åŸºç¤ã®åŸºç¤ã‹ã‚‰å¾¹åº•çš„ã«è²´æ–¹ã‚’é›ãˆã‚‹ã€‚ä¼èª¬ã®48æ™‚é–“è€ä¹…ãƒãƒƒã‚¯ã®æœã¦ã«è¦‹ãˆã¦æ¥ã‚‹ã‚‚ã®ã¯ä½•ã‹ï¼ ä½“è‚²ä¼šç³»ãƒ—ãƒ­ã‚°ãƒ©ãƒã®ãƒã‚¤ãƒ–ãƒ«ã€‚")
               (4
                "Guy L. Steele (Ed)"
                "Common Lisp: The Language Second Edition"
                "Digital Press"
                "6,800"
-               "¥Ï¥Ã¥¯¤Î´ğËÜ¤ÏÂÎÎÏ¡¢¤½¤ì¤â°®ÎÏ¤È¾åÏÓ¤Î¶ÚÆù¤Ç¤¢¤ë¡£ËÜ½ñ¤ò¼ê¤Ë¼è¤ëÆÉ¼Ô¤Ï¡¢¤½¤Î»ö¼Â¤ò¤¤¤ä¤È¸À¤¦Äø»×¤¤ÃÎ¤ë¤Ç¤¢¤í¤¦¡£ËÜ½ñ¤ò°ìºı¤Å¤ÄÎ¾¼ê¤Ë»ı¤Á¡¢¾åÏÓ¤Î¶ş¿­±¿Æ°¤òÂÕ¤é¤º¤Ë¤¤¤ì¤Ğ¡¢trr¤ÇÅÁÀâ¤Î600ÅÀÂæ¤â¥Ş¡¼¥¯²ÄÇ½¤È¸À¤ï¤ì¤ë¡£¤Ê¤ª¡¢ËÜ½ñ¤òÆÉ¤â¤¦¤È¤·¤Æ¤Ï¤¤¤±¤Ê¤¤¡£¿¿Ãæ¤«¤é³ä¤±¤ë¤³¤È¤¦¤±¤¢¤¤¤Ç¤¢¤ë")
+               "ãƒãƒƒã‚¯ã®åŸºæœ¬ã¯ä½“åŠ›ã€ãã‚Œã‚‚æ¡åŠ›ã¨ä¸Šè…•ã®ç­‹è‚‰ã§ã‚ã‚‹ã€‚æœ¬æ›¸ã‚’æ‰‹ã«å–ã‚‹èª­è€…ã¯ã€ãã®äº‹å®Ÿã‚’ã„ã‚„ã¨è¨€ã†ç¨‹æ€ã„çŸ¥ã‚‹ã§ã‚ã‚ã†ã€‚æœ¬æ›¸ã‚’ä¸€å†Šã¥ã¤ä¸¡æ‰‹ã«æŒã¡ã€ä¸Šè…•ã®å±ˆä¼¸é‹å‹•ã‚’æ€ ã‚‰ãšã«ã„ã‚Œã°ã€trrã§ä¼èª¬ã®600ç‚¹å°ã‚‚ãƒãƒ¼ã‚¯å¯èƒ½ã¨è¨€ã‚ã‚Œã‚‹ã€‚ãªãŠã€æœ¬æ›¸ã‚’èª­ã‚‚ã†ã¨ã—ã¦ã¯ã„ã‘ãªã„ã€‚çœŸä¸­ã‹ã‚‰å‰²ã‘ã‚‹ã“ã¨ã†ã‘ã‚ã„ã§ã‚ã‚‹")
               (5
                "Brian Harvey, Matthew Wright"
                "Simply Scheme - 2nd Edition: Introducing Computer Science"
                "MIT Press"
                "7,800"
-               "¥·¥ó¥×¥ë¥¤¥º¥Ó¥å¡¼¥Æ¥£¥Õ¥ë¡£Æñ¤·¤¤¤³¤È¤Ï¸À¤ï¤Ê¤¤¡£¤¿¤À¤¢¤ë¤¬¤Ş¤Ş¤Ë¡¢¤½¤Î¦Ë¤ò¼õ¤±¼è¤ë¤Î¤À¡£Scheme¤ÎÍ¥¤·¤µ¤Ë¿¨¤ì¤é¤ì¤ëÎÉÉÊ¡£¤½¤ì¤Ë¤·¤Æ¤âSchemer¤Ë¤ÏMatthew¤Ã¤ÆÌ¾Á°¤¬Â¿¤¤¤Ê¡£")
+               "ã‚·ãƒ³ãƒ—ãƒ«ã‚¤ã‚ºãƒ“ãƒ¥ãƒ¼ãƒ†ã‚£ãƒ•ãƒ«ã€‚é›£ã—ã„ã“ã¨ã¯è¨€ã‚ãªã„ã€‚ãŸã ã‚ã‚‹ãŒã¾ã¾ã«ã€ãã®Î»ã‚’å—ã‘å–ã‚‹ã®ã ã€‚Schemeã®å„ªã—ã•ã«è§¦ã‚Œã‚‰ã‚Œã‚‹è‰¯å“ã€‚ãã‚Œã«ã—ã¦ã‚‚Schemerã«ã¯Matthewã£ã¦åå‰ãŒå¤šã„ãªã€‚")
               (6
                "Paul Graham"
                "ANSI Common Lisp"
                "Prentice Hall"
                "5,000"
-               "¥°¥ì¥¢¥à½ÇÉã¤µ¤ó¤¬ANSI Common Lisp¤Î¶ù¤«¤é¶ù¤Ş¤Ç²òÀâ¡£Lisper¤Ï¤³¤Î½ñ¤ò¾ï¤Ë·È¹Ô¤¹¤ë¤ÈÎÉ¤¤¡£CLtL2¤È°ã¤Ã¤Æ¡¢ÆÉ¤ß¹ş¤ó¤Ç¤â¿¿Ãæ¤«¤é³ä¤±¤ë¤³¤È¤¬Ìµ¤¤¡£")
+               "ã‚°ãƒ¬ã‚¢ãƒ å”çˆ¶ã•ã‚“ãŒANSI Common Lispã®éš…ã‹ã‚‰éš…ã¾ã§è§£èª¬ã€‚Lisperã¯ã“ã®æ›¸ã‚’å¸¸ã«æºè¡Œã™ã‚‹ã¨è‰¯ã„ã€‚CLtL2ã¨é•ã£ã¦ã€èª­ã¿è¾¼ã‚“ã§ã‚‚çœŸä¸­ã‹ã‚‰å‰²ã‘ã‚‹ã“ã¨ãŒç„¡ã„ã€‚")
               (7
                "Paul Graham"
                "On Lisp"
                "Prentice Hall"
                "5,000"
-               "¥°¥ì¥¢¥à½ÇÉã¤µ¤ó¤¬Lisp¥¦¥£¥¶¡¼¥É¤Î¥×¥í¥°¥é¥ß¥ó¥°¥Æ¥¯¥Ë¥Ã¥¯¤òÁ´¸ø³«¡£¤­¤ß¤â¤³¤ì¤òÆÉ¤ó¤Ç¡¢¥Ş¥¯¥í¤ò»È¤¤¤³¤Ê¤½¤¦¡ª")
+               "ã‚°ãƒ¬ã‚¢ãƒ å”çˆ¶ã•ã‚“ãŒLispã‚¦ã‚£ã‚¶ãƒ¼ãƒ‰ã®ãƒ—ãƒ­ã‚°ãƒ©ãƒŸãƒ³ã‚°ãƒ†ã‚¯ãƒ‹ãƒƒã‚¯ã‚’å…¨å…¬é–‹ã€‚ãã¿ã‚‚ã“ã‚Œã‚’èª­ã‚“ã§ã€ãƒã‚¯ãƒ­ã‚’ä½¿ã„ã“ãªãã†ï¼")
               (8
                "Peter Norvig"
                "Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp"
                "Morgan Kaufmann"
                "7,800"
-               "¤¤¤Ş¤äLisp¤ò¼Î¤ÆPythonist¤È¤Ê¤Ã¤Æ¤·¤Ş¤Ã¤¿Peter Norvig¤À¤¬¡¢Èà¤¬¤Ş¤ÀLisper¤À¤Ã¤¿º¢¤ËÃø¤·¤¿ËÜ½ñ¤ÏÌ¤¤ÀÌ¾Ãø¤ÈÌ¾¹â¤¤¡£")
+               "ã„ã¾ã‚„Lispã‚’æ¨ã¦Pythonistã¨ãªã£ã¦ã—ã¾ã£ãŸPeter Norvigã ãŒã€å½¼ãŒã¾ã Lisperã ã£ãŸé ƒã«è‘—ã—ãŸæœ¬æ›¸ã¯æœªã åè‘—ã¨åé«˜ã„ã€‚")
               (9
                "Gregor Kiczales, Jim des Rivieres, Daniel G. Bobrow"
                "The Art of the Metaobject Protocol"
                "MIT Press"
                "5,600"
-               "Kiczales¤Ï¥Æ¥¯¥Ë¥·¥ã¥ó¤Ç¤¢¤ë¡£Èà¤¬¤¢¤ë¼ï¤ÎÅ·ºÍ¤Ç¤¢¤ë¤³¤È¤Ï´Ö°ã¤¤¤Ê¤¤¡£¤·¤«¤·¡¢Steele¤Î¤Ò¤é¤á¤­¤¬¶Ã¤¯Äø¥·¥ó¥×¥ë¤Ê¹½Â¤¤Ëµ¢Ãå¤¹¤ë¤Î¤ËÈæ¤·¤Æ¡¢Èà¤ÎÁÏºîÊª¤ÏÂ¿¿ô¤ÎÉôÉÊ¤¬¶Ë¤á¤ÆÀºåÌ¤ËÁÈ¤ß¹ç¤ï¤µ¤ì¤¿¡¢¿¦¿Í·İ¤ò»×¤ï¤»¤ë¡£¤½¤ì¤òÌÜ¤Ë¤¹¤ë¼Ô¤ÏÃ¯¤â¤¬¡¢¤½¤Î¹½Â¤¤ÎÌ¯¤Ë¶Ã¤¯¤â¤Î¤Î¡¢¤Ê¤¼¤½¤ì¤¬Æ°¤¯¤Î¤«¤Ş¤ÇÃÎ¤ë¤â¤Î¤Ï¾¯¤Ê¤¤¡£¼«¤é¤½¤ì¤òÊ¬²ò¤·¡¢ºÆ¤ÓÁÈ¤ßÎ©¤Æ¤¿¼Ô¤Î¤ß¤¬¡¢¿¿¤ÎÍı²ò¤ËÅşÃ£¤¹¤ë¡£")
+               "Kiczalesã¯ãƒ†ã‚¯ãƒ‹ã‚·ãƒ£ãƒ³ã§ã‚ã‚‹ã€‚å½¼ãŒã‚ã‚‹ç¨®ã®å¤©æ‰ã§ã‚ã‚‹ã“ã¨ã¯é–“é•ã„ãªã„ã€‚ã—ã‹ã—ã€Steeleã®ã²ã‚‰ã‚ããŒé©šãç¨‹ã‚·ãƒ³ãƒ—ãƒ«ãªæ§‹é€ ã«å¸°ç€ã™ã‚‹ã®ã«æ¯”ã—ã¦ã€å½¼ã®å‰µä½œç‰©ã¯å¤šæ•°ã®éƒ¨å“ãŒæ¥µã‚ã¦ç²¾ç·»ã«çµ„ã¿åˆã‚ã•ã‚ŒãŸã€è·äººèŠ¸ã‚’æ€ã‚ã›ã‚‹ã€‚ãã‚Œã‚’ç›®ã«ã™ã‚‹è€…ã¯èª°ã‚‚ãŒã€ãã®æ§‹é€ ã®å¦™ã«é©šãã‚‚ã®ã®ã€ãªãœãã‚ŒãŒå‹•ãã®ã‹ã¾ã§çŸ¥ã‚‹ã‚‚ã®ã¯å°‘ãªã„ã€‚è‡ªã‚‰ãã‚Œã‚’åˆ†è§£ã—ã€å†ã³çµ„ã¿ç«‹ã¦ãŸè€…ã®ã¿ãŒã€çœŸã®ç†è§£ã«åˆ°é”ã™ã‚‹ã€‚")
               (10
                "James D Foley, Andries van Dam, Steven K Feiner, John F Hughes"
                "Computer Graphics: Principles and Practice"
                "Addison-Wesley"
                "8,000"
-               "¥³¥ó¥Ô¥å¡¼¥¿¥°¥é¥Õ¥£¥¯¥¹¤ÎÆşÌç¤«¤é±şÍÑ¤Ş¤Ç¤ò¹­¤¯¥«¥Ğ¡¼¤¹¤ë¡¢ÄêÈÖ¤Î³Ø½¬½ñ¡£¶È³¦Æâ¤Ç¤Ï\"Foley van dam\"¤ÇÄÌ¤ë¡£°ìºı¼ê¸µ¤ËÃÖ¤¤¤È¤¤¤ÆÂ»¤Ï¤Ê¤¤¡£")
+               "ã‚³ãƒ³ãƒ”ãƒ¥ãƒ¼ã‚¿ã‚°ãƒ©ãƒ•ã‚£ã‚¯ã‚¹ã®å…¥é–€ã‹ã‚‰å¿œç”¨ã¾ã§ã‚’åºƒãã‚«ãƒãƒ¼ã™ã‚‹ã€å®šç•ªã®å­¦ç¿’æ›¸ã€‚æ¥­ç•Œå†…ã§ã¯\"Foley van dam\"ã§é€šã‚‹ã€‚ä¸€å†Šæ‰‹å…ƒã«ç½®ã„ã¨ã„ã¦æã¯ãªã„ã€‚")
               (11
                "Alan Watt, Mark Watt"
                "Advanced Animation and Rendering Techniques: Theory and Practice"
                "ACM Press"
                "7,000"
-               "Foley van dam¤è¤ê¤â¿Ê¤ó¤À¥Æ¥¯¥Ë¥Ã¥¯¤ò°·¤¦¡£¥«¥Ğ¡¼¤¹¤ë¥È¥Ô¥Ã¥¯¤Ï¹­¤¤¤¬¡¢¼°¤ä¥×¥í¥°¥é¥à¥ê¥¹¥È¤Ë¸í¤ê¤¬Â¿¤¤¤Î¤Ç¡¢¤½¤Î´Ö°ã¤¤¤ò¼«Ê¬¤ÇÃµ¤¹¤³¤È¤¬³Ø½¬¤ÎÁáÆ»¤Ç¤¢¤ë")
+               "Foley van damã‚ˆã‚Šã‚‚é€²ã‚“ã ãƒ†ã‚¯ãƒ‹ãƒƒã‚¯ã‚’æ‰±ã†ã€‚ã‚«ãƒãƒ¼ã™ã‚‹ãƒˆãƒ”ãƒƒã‚¯ã¯åºƒã„ãŒã€å¼ã‚„ãƒ—ãƒ­ã‚°ãƒ©ãƒ ãƒªã‚¹ãƒˆã«èª¤ã‚ŠãŒå¤šã„ã®ã§ã€ãã®é–“é•ã„ã‚’è‡ªåˆ†ã§æ¢ã™ã“ã¨ãŒå­¦ç¿’ã®æ—©é“ã§ã‚ã‚‹")
               (12
                "David S Ebert, F Kenton Musgrave, Darwyn Peachey, Ken Perlin, Steven Worley"
                "Texturing & Modeling: A Procedural Approach"
                "Morgan Kaufmann"
                "8,000"
-               "¤³¤ÎÊ¬Ìî¤ÇÃøÌÀ¤Ê¶ÈÀÓ¤ò»Ä¤·¤Æ¤¤¤ëÃø¼Ô¤é¤Ë¤è¤ë¡¢procedural modeling¤Èprocedural texturing¤Î²òÀâ½ñ¤Î·èÄêÈÇ¡£»°ÈÇ¤ò¿ô¤¨¡¢ºÇ¿·¤Î¥È¥Ô¥Ã¥¯¤â¤Õ¤ó¤À¤ó¤ËÀ¹¤ê¤³¤ó¤Ç¤¤¤ë")
+               "ã“ã®åˆ†é‡ã§è‘—æ˜ãªæ¥­ç¸¾ã‚’æ®‹ã—ã¦ã„ã‚‹è‘—è€…ã‚‰ã«ã‚ˆã‚‹ã€procedural modelingã¨procedural texturingã®è§£èª¬æ›¸ã®æ±ºå®šç‰ˆã€‚ä¸‰ç‰ˆã‚’æ•°ãˆã€æœ€æ–°ã®ãƒˆãƒ”ãƒƒã‚¯ã‚‚ãµã‚“ã ã‚“ã«ç››ã‚Šã“ã‚“ã§ã„ã‚‹")
               ))
   )
 

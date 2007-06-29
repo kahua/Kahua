@@ -1,3 +1,18 @@
+2007-06-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: examples/lambdabooks.init, examples/foldlist/foldlist.kahua,
+	          examples/lambdabooks/book.kahua, examples/lambdabooks/lambdabooks.kahua,
+	          examples/lambdabooks/lister.kahua, examples/lambdabooks/login.kahua,
+	          examples/lambdabooks/partner.kahua, examples/lambdabooks/review.kahua,
+	          examples/lambdabooks/useradmin.kahua,
+	          examples/lambdacalcul/lambdacalcul.kahua,
+	          examples/lazy-nqueen/lazy-nqueen.kahua,
+	          examples/login/login.kahua, examples/nqueen/nqueen.kahua,
+	          examples/wiki-iki/wiki-iki.kahua, test/lambdabooks.scm,
+	          test/wiki-iki.scm
+	  Modernized.  Use index slot, higher-order tag functions, and change
+	  character encoding of sources to UTF-8, and so on.
+
 2007-06-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/persistence/dbi.scm, src/kahua/persistence/efs.scm,

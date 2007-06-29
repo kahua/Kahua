@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test wiki-iki script.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: wiki-iki.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: wiki-iki.scm,v 1.3.10.1 2007/06/29 08:03:33 bizenn Exp $
 
 (use srfi-2)
 (use srfi-11)
@@ -42,7 +42,7 @@
  (test* "run wiki-iki.kahua" #t (worker-running? w))
 
  (test* "top page"
-        '(*TOP* (a (@ (href ?&)) "[編集]")
+        '(*TOP* (a (@ (href ?&)) "[Edit]")
                 (a ?@ "Kahua"))
         (call-worker/gsid->sxml w '() '() '(// (td 1) div a))
         (make-match&pick w))
@@ -61,7 +61,7 @@
           (a (@ (href ?&)) "Welcome to Wiki Iki"))
         (call-worker/gsid->sxml w '()
                                 '(("content" "[[test page]]")
-                                  ("commit" "コミット"))
+                                  ("commit" "commit"))
                                 '(// (td 2) // a))
         (make-match&pick w))
 
@@ -71,7 +71,7 @@
         (make-match&pick w))
 
  (test* "try to access test page"
-        '(*TOP* (a (@ (href ?&)) "test pageを編集する"))
+        '(*TOP* (a (@ (href ?&)) "Edit test page"))
         (call-worker/gsid->sxml w '() '() '(// p a))
         (make-match&pick w))
 

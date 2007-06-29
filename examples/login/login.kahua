@@ -1,11 +1,11 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8 ; mode: kahua -*-
 ;; Common Login Manager
 ;;
-;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua,v 1.4 2005/07/03 04:02:56 nobsun Exp $
+;; $Id: login.kahua,v 1.4.10.1 2007/06/29 08:03:31 bizenn Exp $
 
 ;; This module implements an application server that is used
 ;; to handle web-user login session.  This is an example to
@@ -19,8 +19,8 @@
 
 ;; The application server can put a link to login manager like this:
 ;;
-;;  (a/cont: (@@: (remote-cont 'login 'login)
-;;                (return-cont ,cont))
+;;  (a/cont/ (@@/ (remote-cont 'login 'login)
+;;                (return-cont cont))
 ;;           "Login")
 ;;
 ;; This brings a user to a login screen, and after the authentication,
@@ -33,65 +33,61 @@
 
   (define login-check
     (entry-lambda (:keyword logname pass)
-      (if (kahua-check-user logname pass)
-        (begin
-          (set! (kahua-current-user) logname)
-          (redirect return-cont))
-        (dialog logname pass))))
+      (if (kahua-login logname pass)
+          (redirect return-cont)
+	  (dialog logname pass))))
 
   (define (dialog logname pass)
     (page
-     (node-set:
+     (node-set/
       (if logname
-        (p: "¥æ¡¼¥¶¡¼Ì¾¡¢¤Ş¤¿¤Ï¥Ñ¥¹¥ï¡¼¥É¤¬°ã¤¤¤Ş¤¹")
-        (p: "¥æ¡¼¥¶¡¼ÅĞÏ¿¤¬¤ªºÑ¤ß¤ÎÊı¤Ï¡¢¥æ¡¼¥¶¡¼Ì¾¤È¥Ñ¥¹¥ï¡¼¥É¤òÆşÎÏ¤·¤Æ¡Ö¥í¥°¥¤¥ó¡×¥Ü¥¿¥ó¤ò¥¯¥ê¥Ã¥¯¤·¤Æ²¼¤µ¤¤"))
-      (form/cont:
-       (@@: (cont login-check '(logname) '(pass)))
-       (table:
-        (tr: (th: "¥æ¡¼¥¶¡¼Ì¾")
-             (td: (input: (@: (type "text") (name "logname")
+        (p/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼åã€ã¾ãŸã¯ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ãŒé•ã„ã¾ã™")
+        (p/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼ç™»éŒ²ãŒãŠæ¸ˆã¿ã®æ–¹ã¯ã€ãƒ¦ãƒ¼ã‚¶ãƒ¼åã¨ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ã‚’å…¥åŠ›ã—ã¦ã€Œãƒ­ã‚°ã‚¤ãƒ³ã€ãƒœã‚¿ãƒ³ã‚’ã‚¯ãƒªãƒƒã‚¯ã—ã¦ä¸‹ã•ã„"))
+      (form/cont/
+       (@@/ (cont login-check))
+       (table/
+        (tr/ (th/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼å")
+             (td/ (input/ (@/ (type "text") (name "logname")
                               (value (or logname ""))))))
-        (tr: (th: "¥Ñ¥¹¥ï¡¼¥É")
-             (td: (input: (@: (type "password") (name "pass")
-                              (value (or pass ""))))))
-        (tr: (th:)
-             (td: (input: (@: (type "submit") (name "submit")
-                              (value "¥í¥°¥¤¥ó")))))))
-      (p: "¥æ¡¼¥¶¡¼ÅĞÏ¿¤¬¤ªºÑ¤ß¤Ç¤Ê¤¤Êı¤Ï¡¢"
-          (a/cont: (@@: (cont register `(return-cont ,return-cont)))
-                   "¿·µ¬¥æ¡¼¥¶¡¼ÅĞÏ¿")
-          "¤ÇÅĞÏ¿¤ò¹Ô¤¦¤«¡¢"
-          (a/cont: (@@: (cont (cut redirect return-cont)))
-                   "¥í¥°¥¤¥ó¤»¤º¤Ë¥µ¥¤¥È¤òÍøÍÑ¤¹¤ë")
-          "¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£"
-          "(¥í¥°¥¤¥ó¤·¤Ê¤¤¾ì¹ç¤Ï¡¢°ìÉô¤Îµ¡Ç½¤¬»È¤¨¤Ş¤»¤ó)"))))
+        (tr/ (th/ "ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰")
+             (td/ (input/ (@/ (type "password") (name "pass")))))
+        (tr/ (th/)
+             (td/ (input/ (@/ (type "submit") (name "submit")
+                              (value "ãƒ­ã‚°ã‚¤ãƒ³")))))))
+      (p/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼ç™»éŒ²ãŒãŠæ¸ˆã¿ã§ãªã„æ–¹ã¯ã€"
+          (a/cont/ (@@/ (cont register `(return-cont ,return-cont)))
+                   "æ–°è¦ãƒ¦ãƒ¼ã‚¶ãƒ¼ç™»éŒ²")
+          "ã§ç™»éŒ²ã‚’è¡Œã†ã‹ã€"
+          (a/cont/ (@@/ (cont (cut redirect return-cont)))
+                   "ãƒ­ã‚°ã‚¤ãƒ³ã›ãšã«ã‚µã‚¤ãƒˆã‚’åˆ©ç”¨ã™ã‚‹")
+          "ã“ã¨ãŒã§ãã¾ã™ã€‚"
+          "(ãƒ­ã‚°ã‚¤ãƒ³ã—ãªã„å ´åˆã¯ã€ä¸€éƒ¨ã®æ©Ÿèƒ½ãŒä½¿ãˆã¾ã›ã‚“)"))))
 
   (dialog logname pass))
 
 (define-entry (register :keyword return-cont)
   (define (new-user logname pass)
     (page
-     (node-set:
+     (node-set/
       (if logname
 	  (if pass
-	      (p: "2¤Ä¤Î¥Ñ¥¹¥ï¡¼¥É¤¬°Û¤Ê¤ê¤Ş¤¹¡£Æ±¤¸¥Ñ¥¹¥ï¡¼¥É¤òÆşÎÏ¤·¤Æ²¼¤µ¤¤¡£")
-	      (p: "¤½¤Î¥æ¡¼¥¶¡¼Ì¾¤Ï´û¤ËÅĞÏ¿¤µ¤ì¤Æ¤¤¤Ş¤¹¡£°Û¤Ê¤ë¥æ¡¼¥¶¡¼Ì¾¤òÁª¤ó¤Ç²¼¤µ¤¤¡£"))
-          (p: "¥æ¡¼¥¶¡¼Ì¾¤È¥Ñ¥¹¥ï¡¼¥É¤òÁª¤Ó¡¢ÆşÎÏ¤·¤Æ²¼¤µ¤¤¡£¥Ñ¥¹¥ï¡¼¥É¤Ï³ÎÇ§¤Î¤¿¤á2ÅÙÆşÎÏ¤·¤Æ²¼¤µ¤¤¡£"))
-      (form/cont:
-       (@@: (cont user-registration '(logname) '(pass) '(pass2)))
-        (table:
-         (tr: (th: "¥æ¡¼¥¶¡¼Ì¾")
-	      (td: (input: (@: (type "text") (name "logname")
+	      (p/ "2ã¤ã®ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ãŒç•°ãªã‚Šã¾ã™ã€‚åŒã˜ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ã‚’å…¥åŠ›ã—ã¦ä¸‹ã•ã„ã€‚")
+	      (p/ "ãã®ãƒ¦ãƒ¼ã‚¶ãƒ¼åã¯æ—¢ã«ç™»éŒ²ã•ã‚Œã¦ã„ã¾ã™ã€‚ç•°ãªã‚‹ãƒ¦ãƒ¼ã‚¶ãƒ¼åã‚’é¸ã‚“ã§ä¸‹ã•ã„ã€‚"))
+          (p/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼åã¨ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ã‚’é¸ã³ã€å…¥åŠ›ã—ã¦ä¸‹ã•ã„ã€‚"
+	      "ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ã¯ç¢ºèªã®ãŸã‚2åº¦å…¥åŠ›ã—ã¦ä¸‹ã•ã„ã€‚"))
+      (form/cont/
+       (@@/ (cont user-registration))
+        (table/
+         (tr/ (th/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼å")
+	      (td/ (input/ (@/ (type "text") (name "logname")
 			       (value (or logname ""))))))
-         (tr: (th: "¥Ñ¥¹¥ï¡¼¥É")
-	      (td: (input: (@: (type "password") (name "pass")
-			       (value "")))))
-         (tr: (th: "¥Ñ¥¹¥ï¡¼¥É(³ÎÇ§)")
-	      (td: (input: (@: (type "password") (name "pass2")
-			       (value "")))))
-         (tr: (th:)
-	      (td: (input: (@: (type "submit") (name "submit")
-                           (value "ÅĞÏ¿")))))))
+         (tr/ (th/ "ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰")
+	      (td/ (input/ (@/ (type "password") (name "pass")))))
+         (tr/ (th/ "ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰(ç¢ºèª)")
+	      (td/ (input/ (@/ (type "password") (name "pass2")))))
+         (tr/ (th/)
+	      (td/ (input/ (@/ (type "submit") (name "submit")
+                           (value "ç™»éŒ²")))))))
       )))
 
   (define user-registration
@@ -104,40 +100,37 @@
        (else
         (kahua-add-user logname pass)
         (kahua-db-sync)
-        (set! (kahua-current-user) logname)
+	(kahua-login logname pass)
         (redirect return-cont)))))
 
   (new-user #f #f))
 
 (define-entry (logout :keyword return-cont)
-  (set! (kahua-current-user) #f)
+  (kahua-logout)
   (redirect return-cont))
 
 (define (page nodeset)
-  (node-set:
-   (html: (head: (title: "Kahua example site login")
-                 (link: (@: (rel "stylesheet") (type "text/css")
-			    (href (kahua-static-document-url
-				   "wiki-iki/wiki-iki.css")))))
-          (body:
-           (h1: "Kahua examples: Site login")
-           (hr:)
-           nodeset
-           (hr:)
-           (div: (@: (id "lastchanged"))
-                 "Powered by "
-                 (a: (@: (href "http://www.kahua.org/")) "Kahua"))))))
+  (html/ (head/ (title/ "Kahua example site login")
+		(link/ (@/ (rel "stylesheet") (type "text/css")
+			   (href (kahua-static-document-url
+				  "wiki-iki" "wiki-iki.css")))))
+	 (body/
+	  (h1/ "Kahua examples: Site login")
+	  (hr/)
+	  nodeset
+	  (hr/)
+	  (div/ (@/ (id "lastchanged"))
+		"Powered by " (a/ (@/ (href "http://www.kahua.org/")) "Kahua")))))
 
 (define (redirect return-cont)
   (let ((path (or return-cont "")))
-    (node-set:
-     (html: ;; Needed to make a single SXML node (for now)
-      (extra-header: (@: (name "Status") (value "302 Moved")))
-      (extra-header: (@: (name "Location")
-                         (value (format "~a~a/~a"
-                                        (kahua-server-uri)
-                                        (kahua-bridge-name)
-                                        path))))))))
+    (html/ ;; Needed to make a single SXML node (for now)
+     (extra-header/ (@/ (name "Status") (value "302 Moved")))
+     (extra-header/ (@/ (name "Location")
+			(value (format "~a~a/~a"
+				       (kahua-server-uri)
+				       (kahua-bridge-name)
+				       path)))))))
 
 (initialize-main-proc login)
 
