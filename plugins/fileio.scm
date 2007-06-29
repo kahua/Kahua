@@ -1,9 +1,9 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
 ;;
-;;  Copyright (c) 2005-2006 Tatsuya BIZENN.
+;;  Copyright (c) 2005-2007 Tatsuya BIZENN.
 ;;
 ;; upload and download plugin
-;; $Id: fileio.scm,v 1.4 2006/11/20 04:27:18 bizenn Exp $
+;; $Id: fileio.scm,v 1.5 2007/06/29 09:01:23 bizenn Exp $
 
 (define-plugin "fileio"
   (version "0.7")
