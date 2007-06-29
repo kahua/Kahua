@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test lambdabooks scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: lambdabooks.scm,v 1.4 2007/06/28 14:08:20 bizenn Exp $
+;; $Id: lambdabooks.scm,v 1.5 2007/06/29 02:20:49 bizenn Exp $
 
 (use srfi-2)
 (use srfi-11)
@@ -41,7 +41,7 @@
 
 (define (page-template header footer body)
   `(html (head (title "Lambda books"))
-	 (body (@ (style "background-color: #ffffff"))
+	 (body ?@
 	       ,@header
 	       ,@body
 	       ,@footer)))
