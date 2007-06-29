@@ -1,9 +1,9 @@
 ;; Setup  -*- coding: utf-8 -*-
 ;;
-;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;; Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: Setup.ja,v 1.16.2.6 2007/06/25 04:51:09 bizenn Exp $
+;; $Id: Setup.ja,v 1.16.2.7 2007/06/29 09:00:42 bizenn Exp $
 
 * Kahuaをセットアップする
 
