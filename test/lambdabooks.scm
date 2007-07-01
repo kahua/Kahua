@@ -1,7 +1,7 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test lambdabooks scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: lambdabooks.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: lambdabooks.scm,v 1.3.10.1 2007/06/29 08:03:33 bizenn Exp $
 
 (use srfi-2)
 (use srfi-11)
@@ -31,6 +31,8 @@
 
 (kahua-init *config*)
 
+(debug-print-width #f)
+
 ;;------------------------------------------------------------
 ;; Page pattern
 ;;
@@ -39,7 +41,7 @@
 
 (define (page-template header footer body)
   `(html (head (title "Lambda books"))
-	 (body (@ (style "background-color: #ffffff"))
+	 (body ?@
 	       ,@header
 	       ,@body
 	       ,@footer)))

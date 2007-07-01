@@ -1,11 +1,11 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8; mode: kahua -*-
 ;; Example kahua application (lambdabooks)
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua,v 1.8 2005/07/03 04:02:55 nobsun Exp $
+;; $Id: login.kahua,v 1.8.10.1 2007/06/29 08:03:26 bizenn Exp $
 
 ;; User login management ----------------------------------------
 ;;   Receives two continuation procedure.
@@ -15,66 +15,62 @@
 (define (user-box transient-cont final-cont)
   (define (login-dialog logname pass)
     (transient-cont 
-     (list 
+     (node-set/
       (if logname
-	  (p: "¥æ¡¼¥¶¡¼Ì¾¡¢¤Ş¤¿¤Ï¥Ñ¥¹¥ï¡¼¥É¤¬°ã¤¤¤Ş¤¹")
-	  (p: "¥æ¡¼¥¶¡¼ÅĞÏ¿¤¬¤ªºÑ¤ß¤ÎÊı¤Ï¡¢¥æ¡¼¥¶¡¼Ì¾¤È¥Ñ¥¹¥ï¡¼¥É¤òÆşÎÏ¤·¤Æ¡Ö¥í¥°¥¤¥ó¡×¥Ü¥¿¥ó¤ò¥¯¥ê¥Ã¥¯¤·¤Æ²¼¤µ¤¤"))
-      (form/cont:
-       (@@: (cont login-check '(logname) '(pass)))
-       (table:
-         (tr: (th: "¥æ¡¼¥¶¡¼Ì¾")
-	      (td: (input: (@: (type "text") (name "logname")
+	  (p/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼åã€ã¾ãŸã¯ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ãŒé•ã„ã¾ã™")
+	  (p/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼ç™»éŒ²ãŒãŠæ¸ˆã¿ã®æ–¹ã¯ã€ãƒ¦ãƒ¼ã‚¶ãƒ¼åã¨ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ã‚’å…¥åŠ›ã—ã¦"
+	      "ã€Œãƒ­ã‚°ã‚¤ãƒ³ã€ãƒœã‚¿ãƒ³ã‚’ã‚¯ãƒªãƒƒã‚¯ã—ã¦ä¸‹ã•ã„"))
+      (form/cont/
+       (@@/ (cont login-check))
+       (table/
+         (tr/ (th/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼å")
+	      (td/ (input/ (@/ (type "text") (name "logname")
 			       (value (or logname ""))))))
-         (tr: (th: "¥Ñ¥¹¥ï¡¼¥É")
-	      (td: (input: (@: (type "password") (name "pass")
-			       (value (or pass ""))))))
-         (tr: (th:)
-	      (td: (input: (@: (type "submit") (name "submit")
-			       (value "¥í¥°¥¤¥ó")))))))
-      (p: "¥æ¡¼¥¶¡¼ÅĞÏ¿¤¬¤ªºÑ¤ß¤Ç¤Ê¤¤Êı¤Ï¡¢"
-          (a/cont: (@@: (cont (cut new-user #f #f))) "¿·µ¬¥æ¡¼¥¶¡¼ÅĞÏ¿")
-          "¤ÇÅĞÏ¿¤ò¹Ô¤¦¤«¡¢"
-          (a/cont: (@@: (cont (cut final-cont '())))
-		   "¥í¥°¥¤¥ó¤»¤º¤Ë¥µ¥¤¥È¤òÍøÍÑ¤¹¤ë")
-          "¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£"
-          "(¥í¥°¥¤¥ó¤·¤Ê¤¤¾ì¹ç¤Ï¡¢°ìÉô¤Îµ¡Ç½¤¬»È¤¨¤Ş¤»¤ó)"))
-     ))
+         (tr/ (th/ "ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰")
+	      (td/ (input/ (@/ (type "password") (name "pass")))))
+         (tr/ (th/)
+	      (td/ (input/ (@/ (type "submit") (name "submit")
+			       (value "ãƒ­ã‚°ã‚¤ãƒ³")))))))
+      (p/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼ç™»éŒ²ãŒãŠæ¸ˆã¿ã§ãªã„æ–¹ã¯ã€"
+          (a/cont/ (@@/ (cont (cut new-user #f #f))) "æ–°è¦ãƒ¦ãƒ¼ã‚¶ãƒ¼ç™»éŒ²")
+          "ã§ç™»éŒ²ã‚’è¡Œã†ã‹ã€"
+          (a/cont/ (@@/ (cont (cut final-cont empty)))
+		   "ãƒ­ã‚°ã‚¤ãƒ³ã›ãšã«ã‚µã‚¤ãƒˆã‚’åˆ©ç”¨ã™ã‚‹")
+          "ã“ã¨ãŒã§ãã¾ã™ã€‚"
+          "(ãƒ­ã‚°ã‚¤ãƒ³ã—ãªã„å ´åˆã¯ã€ä¸€éƒ¨ã®æ©Ÿèƒ½ãŒä½¿ãˆã¾ã›ã‚“)"))))
 
   (define login-check
     (entry-lambda (:keyword logname pass)
-      (if (kahua-check-user logname pass)
-        (begin
-          (set! (kahua-current-user) logname)
-          (final-cont '()))
-        (login-dialog logname pass))))
+      (if (kahua-login logname pass)
+          (final-cont empty)
+	  (login-dialog logname pass))))
 
   (define (new-user logname pass)
     (transient-cont
-     (list 
+     (node-set/
       (if logname
-        (if pass
-          (p: "2¤Ä¤Î¥Ñ¥¹¥ï¡¼¥É¤¬°Û¤Ê¤ê¤Ş¤¹¡£Æ±¤¸¥Ñ¥¹¥ï¡¼¥É¤òÆşÎÏ¤·¤Æ²¼¤µ¤¤¡£")
-          (if (#/\w+/ logname)
-            (p: "¤½¤Î¥æ¡¼¥¶¡¼Ì¾¤Ï´û¤ËÅĞÏ¿¤µ¤ì¤Æ¤¤¤Ş¤¹¡£°Û¤Ê¤ë¥æ¡¼¥¶¡¼Ì¾¤òÁª¤ó¤Ç²¼¤µ¤¤¡£")
-            (p: "¥æ¡¼¥¶¡¼Ì¾¤Ï¥¢¥ë¥Õ¥¡¥Ù¥Ã¥È¡¢¿ô»ú¡¢'_'¤ÎÁÈ¹ç¤»¤Ë¤·¤Æ²¼¤µ¤¤¡£")))
-        (p: "¥æ¡¼¥¶¡¼Ì¾¤È¥Ñ¥¹¥ï¡¼¥É¤òÁª¤Ó¡¢ÆşÎÏ¤·¤Æ²¼¤µ¤¤¡£¥Ñ¥¹¥ï¡¼¥É¤Ï³ÎÇ§¤Î¤¿¤á2ÅÙÆşÎÏ¤·¤Æ²¼¤µ¤¤¡£"))
-      (form/cont:
-       (@@: (cont user-registration '(logname) '(pass) '(pass2)))
-        (table:
-         (tr: (th: "¥æ¡¼¥¶¡¼Ì¾")
-	      (td: (input: (@: (type "text") (name "logname")
-			       (value (or logname ""))))))
-         (tr: (th: "¥Ñ¥¹¥ï¡¼¥É")
-	      (td: (input: (@: (type "password") (name "pass")
-			       (value "")))))
-         (tr: (th: "¥Ñ¥¹¥ï¡¼¥É(³ÎÇ§)")
-	      (td: (input: (@: (type "password") (name "pass2")
-			       (value "")))))
-         (tr: (th:)
-	      (td: (input: (@: (type "submit") (name "submit")
-                           (value "ÅĞÏ¿")))))))
-      (p: "¥×¥é¥¤¥Ğ¥·¡¼¥İ¥ê¥·¡¼¡§ËÜ¥µ¥¤¥È¤Ï¥Ç¥âÍÑ¤Î¥µ¥¤¥È¤Ç¤¢¤ê¡¢¤¢¤Ê¤¿¤ÎÆşÎÏ¤·¤¿¥Ç¡¼¥¿¤Ï¥Æ¥¹¥ÈÌÜÅª¤Ë¤Î¤ß»ÈÍÑ¤µ¤ì¡¢¥Æ¥¹¥È½ªÎ»»ş¤ËÇË´ş¤µ¤ì¤Ş¤¹¡£"))
-     ))
+	  (if pass
+	      (p/ "2ã¤ã®ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ãŒç•°ãªã‚Šã¾ã™ã€‚åŒã˜ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ã‚’å…¥åŠ›ã—ã¦ä¸‹ã•ã„ã€‚")
+	      (if (#/\w+/ logname)
+		  (p/ "ãã®ãƒ¦ãƒ¼ã‚¶ãƒ¼åã¯æ—¢ã«ç™»éŒ²ã•ã‚Œã¦ã„ã¾ã™ã€‚ç•°ãªã‚‹ãƒ¦ãƒ¼ã‚¶ãƒ¼åã‚’é¸ã‚“ã§ä¸‹ã•ã„ã€‚")
+		  (p/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼åã¯ã‚¢ãƒ«ãƒ•ã‚¡ãƒ™ãƒƒãƒˆã€æ•°å­—ã€'_'ã®çµ„åˆã›ã«ã—ã¦ä¸‹ã•ã„ã€‚")))
+	  (p/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼åã¨ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ã‚’é¸ã³ã€å…¥åŠ›ã—ã¦ä¸‹ã•ã„ã€‚"
+	      "ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ã¯ç¢ºèªã®ãŸã‚2åº¦å…¥åŠ›ã—ã¦ä¸‹ã•ã„ã€‚"))
+      (form/cont/ (@@/ (cont user-registration))
+		  (table/
+		   (tr/ (th/ "ãƒ¦ãƒ¼ã‚¶ãƒ¼å")
+			(td/ (input/ (@/ (type "text") (name "logname")
+					 (value (or logname ""))))))
+		   (tr/ (th/ "ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰")
+			(td/ (input/ (@/ (type "password") (name "pass")))))
+		   (tr/ (th/ "ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰(ç¢ºèª)")
+			(td/ (input/ (@/ (type "password") (name "pass2")))))
+		   (tr/ (th/)
+			(td/ (input/ (@/ (type "submit") (name "submit")
+					 (value "ç™»éŒ²")))))))
+      (p/ "ãƒ—ãƒ©ã‚¤ãƒã‚·ãƒ¼ãƒãƒªã‚·ãƒ¼ï¼šæœ¬ã‚µã‚¤ãƒˆã¯ãƒ‡ãƒ¢ç”¨ã®ã‚µã‚¤ãƒˆã§ã‚ã‚Šã€"
+	  "ã‚ãªãŸã®å…¥åŠ›ã—ãŸãƒ‡ãƒ¼ã‚¿ã¯ãƒ†ã‚¹ãƒˆç›®çš„ã«ã®ã¿ä½¿ç”¨ã•ã‚Œã€"
+	  "ãƒ†ã‚¹ãƒˆçµ‚äº†æ™‚ã«ç ´æ£„ã•ã‚Œã¾ã™ã€‚"))))
 
   (define user-registration
     (entry-lambda (:keyword logname pass pass2)
@@ -87,19 +83,17 @@
         (new-user logname pass)) ;; passwords don't match
        (else
         (kahua-add-user logname pass)
-        (kahua-db-sync)
-        (set! (kahua-current-user) logname)
-        (final-cont '())))))
+	(kahua-login logname pass)
+        (final-cont empty)))))
 
   (define (logout)
-    (set! (kahua-current-user) #f)
-    (final-cont '()))
+    (kahua-logout)
+    (final-cont empty))
 
-  (let ((user (kahua-current-user)))
+  (let1 user (kahua-current-user)
     (if user
-	(table: (tr: (td: "Welcome, " (ref user 'login-name)))
-		(tr: (td: (@: (style "font-size:small; text-align:right"))
-			  (a/cont: (@@: (cont logout)) "logout"))))
-	(a/cont: (@@: (cont (cut login-dialog #f #f)))
-		 "¥í¥°¥¤¥ó/¿·µ¬ÅĞÏ¿")))
-  )
+	(table/ (tr/ (td/ "Welcome, " (ref user 'login-name)))
+		(tr/ (td/ (@/ (style "font-size:small; text-align:right"))
+			  (a/cont/ (@@/ (cont logout)) "logout"))))
+	(a/cont/ (@@/ (cont (cut login-dialog #f #f)))
+		 "ãƒ­ã‚°ã‚¤ãƒ³/æ–°è¦ç™»éŒ²"))))

@@ -1,50 +1,50 @@
-;; -*- coding: euc-jp -*-
+;; -*- coding: utf-8 -*-
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-admin.ja,v 1.6 2006/09/29 05:25:39 bizenn Exp $
+;; $Id: kahua-admin.ja,v 1.6.2.1 2007/05/31 03:48:10 bizenn Exp $
 
 * kahua-admin [-c conf-file]
 
-ư����Υ����ѥХ���(kahua-spvr)����ӥ���ץ�����(���ץꥱ�������)��
-���󥿥饯�ƥ��֤����椹�뤿��Υե���ȥ���ɥ�����ץȡ�
+動作中のスーパバイザ(kahua-spvr)およびワーカプロセス(アプリケーション)を
+インタラクティブに制御するためのフロントエンドスクリプト。
 
-��ư����ȡ��ޤ�kahua-spvr����³���롣kahua-spvr����³��Ǥ��뤳�Ȥ�
-ɽ������ˡ��ץ���ץȤȤ���
+起動すると、まずkahua-spvrに接続する。kahua-spvrに接続中であることを
+表すために、プロンプトとして
 <<<
  spvr>
 >>>
-��ɽ������롣
+が表示される。
 
-kahua-admin��λ����ˤϡ�EOF(Ctrl-D)�򥿥��פ��롣
+kahua-adminを終了するには、EOF(Ctrl-D)をタイプする。
 
-�ץ���ץȤϡ�������³������˱������Ѳ����롣
+プロンプトは、現在接続中の相手に応じて変化する。
 
-** ��ư���ץ����
+** 起動オプション
 
 <<<
  -c conf-file
-    ���Ȥ�������ե�����̾����ꤹ�롣�ǥե���ȤǤ�
-    $(sysconfdir)/kahua/kahua.conf(Setup�κݤ�configure������ץȤ�
-    �ʤˤ���ꤷ�Ƥ��ʤ���С�/usr/local/etc/kahua/kahua.conf)��õ��
-    �˹Ԥ����ʲ� $(working-directory) �ǻ��Ȥ���Τϡ����Υե������
-    :working-directory �Ȥ��ƻ��ꤵ��Ƥ����ͤ�ؤ���
+    参照する設定ファイル名を指定する。デフォルトでは
+    $(sysconfdir)/kahua/kahua.conf(Setupの際にconfigureスクリプトに
+    なにも指定していなければ、/usr/local/etc/kahua/kahua.conf)を探し
+    に行く。以下 $(working-directory) で参照するのは、このファイルで
+    :working-directory として指定されている値を指す。
 >>>
 
-** kahua-spvr���Ф��륳�ޥ��
+** kahua-spvrに対するコマンド
 
-�ץ���ץ�"spvr>" ���Ф��Ƥϡ��ʲ��Υ��ޥ�ɤ�Ϳ���뤳�Ȥ��Ǥ��롣
+プロンプト"spvr>" に対しては、以下のコマンドを与えることができる。
 
 <<<
  help
-    kahua-spvr �ǻȤ��륳�ޥ�ɤΰ�����ɽ�����롣
+    kahua-spvr で使えるコマンドの一覧を表示する。
 
  ls
-    ���� kahua-spvr ���۲��ǲ�Ư���Ƥ������ץ�����(���ץꥱ�������)
-    �ΰ�����ɽ�����롣
+    その kahua-spvr の配下で稼働しているワーカプロセス(アプリケーション)
+    の一覧を表示する。
       spvr> ls
       wno   pid type         since        wid
         0 21434 lambdabooks  Sep 27 16:19 gje:2ft3z
@@ -52,106 +52,106 @@ kahua-admin��λ����ˤϡ�EOF(Ctrl-D)�򥿥��פ��롣
         2 11683 login        Sep 27 16:19 90j:5hwlk
 
  run <type>
-    <type>�ǻ��ꤵ��륿���פΥ�������Хץ������򿷤���1�ĵ�ư���롣
+    <type>で指定されるタイプのワーカサーバプロセスを新たに1つ起動する。
 
  kill <wno>
  kill <type>
  kill *
-    ���ꤵ�줿����ץ��������ץꥱ������󥵡��Хץ�������λ�����롣
+    指定されたワーカプロセスアプリケーションサーバプロセスを終了させる。
     <wno>
-      ls���ޥ�ɤ�ɽ������ wno ����ֹ�������ǻ��ꤹ�롣
+      lsコマンドが表示する wno 欄の番号を整数で指定する。
     <type>
-      ��������פ���ꤹ�롣�������륿���פΥ���ץ����������ƽ�λ
-      ���롣
+      ワーカタイプを指定する。該当するタイプのワーカプロセスは全て終了
+      する。
     *
-      ���ƤΥ���ץ�������λ�����롣
+      全てのワーカプロセスを終了させる。
 
  restart <wno>
  restart <type>
  restart *
-    ���ꤵ������ץ�������Ƶ�ư���롣�����ΰ�̣�ϥ��ޥ�� kill ��
-    �����Ʊ����
+    指定されるワーカプロセスを再起動する。引数の意味はコマンド kill の
+    それと同じ。
 
  connect <wno>
-    <wno>�ǻ��ꤵ������ץ���������³���롣
-    ����ץ���������³����ȡ��ץ���ץȤ����ID���ѹ�����롣
+    <wno>で指定されるワーカプロセスに接続する。
+    ワーカプロセスに接続すると、プロンプトがワーカIDに変更される。
       spvr> connect 3
       lambdabooks(3v:5u3ni)> 
 
  types
-    kahua-spvr���ΤäƤ���(�Ĥޤ�$(working-directory)/app-servers�ե������
-    ���ܤ���Ƥ���)��������פΰ�����ꥹ�ȷ����ǽ��Ϥ��롣
+    kahua-spvrが知っている(つまり$(working-directory)/app-serversファイルに
+    記載されている)ワーカタイプの一覧をリスト形式で出力する。
       spvr> types
       (lambdabooks wiki-iki login foldlist lambdacalcul nqueen lazy-nqueen)
-    ���ΰ����ˤϡ�����ư���Ƥ��ʤ���������פ�ޤޤ�롣
+    この一覧には、今起動していないワーカタイプも含まれる。
 
  reload
-    $(working-directory)/app-servers�ե������ʤ���С˺��ɤ߹��ߤ��롣
-    ���κݡ�app-servers�ե�������� :run-by-default ��1�ʾ�����ꤵ��Ƥ���
-    ��������פˤĤ��Ƥϡ����ο��ʾ�Υ���ץ���������ư���Ƥ��뤫�ɤ�
-    �����ǧ������ư���Ƥ������ץ������������ʤ����ϡ�­��ʤ�ʬ��
-    �ץ������򿷤��˵�ư���롣app-servers�ե�����ˤĤ��Ƥ�[[kahua-spvr]]
-    �򻲾ȡ�
+    $(working-directory)/app-serversファイルを（あれば）再読み込みする。
+    この際、app-serversファイル内で :run-by-default が1以上に設定されている
+    ワーカタイプについては、その数以上のワーカプロセスが起動しているかどう
+    かを確認し、起動しているワーカプロセス数が少ない場合は、足りない分の
+    プロセスを新たに起動する。app-serversファイルについては[[kahua-spvr]]
+    を参照。
 
  lsuser
-    ��Ͽ���줿��ȯ�ԥ�������Ȥ�ꥹ�ȷ����ǰ���ɽ�����롣
+    登録された開発者アカウントをリスト形式で一覧表示する。
       spvr> lsuser
       ("steel" "sussman" "pochi" "tama")
 
  adduser <name> <password> [<role> ...]
-    ��������ȯ�ԥ�������Ȥ�������롣<name>��3ʸ���ʾ塢<password>��4ʸ��
-    �ʾ�Ǥʤ���Фʤ�ʤ���<role>�����ꤵ�줿���ϡ����������<name>��
-    <role>��°�������֤Ǻ�������롣
+    新しい開発者アカウントを作成する。<name>は3文字以上、<password>は4文字
+    以上でなければならない。<role>が指定された場合は、アカウント<name>は
+    <role>に属した状態で作成される。
 
  deluser <name>
-    ��ȯ�ԥ��������<name>�������롣
+    開発者アカウント<name>を削除する。
 
  moduser password <name> <new-password>
-    ��ȯ��<name>�Υѥ���ɤ�<new-password>���ѹ����롣
+    開発者<name>のパスワードを<new-password>に変更する。
 
  plugin [<wno>]
-    <wno>�ǻ��ꤵ������ץ�����������������ץ饰�����
-    ����ɽ�����롣<wno>���ά�������ϰ��־���������ֹ�
-    �����Ѥ���롣����Ū�����ƤΥ���ץ�������Ʊ���ץ饰����
-    ���������Ƥ���Ϥ������������������� reload plugin ����
-    ��ɤ�Ȥä������Ѥ���ǽ�������롣
+    <wno>で指定されるワーカプロセスが初期化したプラグインを
+    一覧表示する。<wno>を省略した場合は一番小さいワーカ番号
+    が使用される。基本的に全てのワーカプロセスは同じプラグイン
+    を初期化しているはずだが、次に説明する reload plugin コマ
+    ンドを使った場合は変わる可能性がある。
 
  plugin reload <wno>
-    �ץ饰�������ɤ߹��ߤ�����ư���Ƥ��륢�ץꥱ��������
-    �ץ饰�����ѥ⥸�塼����������롣����ˤ�äơ���ư���
-    ���󥹥ȡ��뤵�줿�ץ饰������ɤ߹��ळ�Ȥ��Ǥ��롣
+    プラグインを再読み込みし、起動しているアプリケーションの
+    プラグイン用モジュールを初期化する。これによって、起動後に
+    インストールされたプラグインを読み込むことができる。
 
  shutdown
-    kahua-spvr��λ�����롣kahua-spvr ����ư�������ƤΥ��
-    �ץ����������������Ф⤤�ä���˽�λ���롣
+    kahua-spvrを終了させる。kahua-spvr が起動した全てのワーカ
+    プロセス、キーサーバもいっしょに終了する。
 
  update <wno> [<file> ...]
  update <type> [<file> ...]
-    <wno> �ޤ��� <type> �ǻ��ꤷ������Υ���ȥ�ݥ���ȤȤʤ�
-    ������ץȤ���ɤ߹��ߤ��롣�㤨�С����ꤷ������Υ��������
-    �� lambdabooks �ʤ顢
+    <wno> または <type> で指定したワーカのエントリポイントとなる
+    スクリプトを再読み込みする。例えば、指定したワーカのワーカタイプ
+    が lambdabooks なら、
       $(working-directory)/checkout/lambdabooks/lambdabooks.kahua
-    ����ɤ߹��ߤ��롣
-    <file>����ꤷ�����ˤϡ�
+    を再読み込みする。
+    <file>を指定した場合には、
       $(working-directory)/checkout/<file>
-    �򤽤Υ���� load ���롣<file>��ʣ�����ꤹ�뤳�Ȥ��Ǥ��롣
+    をそのワーカが load する。<file>は複数指定することができる。
 >>>
 
-** ����ץ��������Ф��륳�ޥ��
+** ワーカプロセスに対するコマンド
 
-���Ҥ��� connect ���ޥ�ɤ�Ȥäƥ���ץ���������³����ȡ�
-���Υ���ץ��������̾�� Scheme ����ɾ�������뤳�Ȥ��Ǥ��롣
-�Ĥޤꡢ�ץ���ץȤ��Ф��� Scheme �������Ϥ���ȡ����μ���
-����ץ��������������졢�̾�� repl (read-eval-print-loop)
-Ʊ�ͤ�ɾ�������ͤ�������������֤����ɽ������롣
+前述した connect コマンドを使ってワーカプロセスに接続すると、
+そのワーカプロセスに通常の Scheme 式を評価させることができる。
+つまり、プロンプトに対して Scheme 式を入力すると、その式は
+ワーカプロセスに送信され、通常の repl (read-eval-print-loop)
+同様に評価した値がワーカから送り返されて表示される。
 
-����ɾ�������⥸�塼��ϥ��ץꥱ�������κ��ˤ�äưۤʤ뤬��
-�ǥե���ȤǤ� user �⥸�塼��Ȥʤ롣
+式が評価されるモジュールはアプリケーションの作りによって異なるが、
+デフォルトでは user モジュールとなる。
 
-ͣ����ü쥳�ޥ�ɤ�"disconnect" �ǡ�����򥿥��פ���ȥ��
-�ץ������Ȥ���³�����Ǥ���kahua-spvr�ץ���ץȤ���롣
-(spvr�Υץ���ץȤ���ĽФ�Τϡ�disconnect�θ��newline��
-spvr�ץ���ץȤ���äƤ����ɤޤ�뤿��)��
+唯一の特殊コマンドは"disconnect" で、これをタイプするとワーカ
+プロセスとの接続を切断し、kahua-spvrプロンプトに戻る。
+(spvrのプロンプトが二つ出るのは、disconnectの後のnewlineが
+spvrプロンプトに戻ってから読まれるため)。
 <<<
  lambdabooks(mi0:5xd09)> disconnect
  spvr> spvr> 

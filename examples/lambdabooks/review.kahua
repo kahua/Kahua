@@ -1,15 +1,15 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8 ; mode: kahua -*-
 ;; Example kahua application (lambdabooks)
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: review.kahua,v 1.6 2005/07/03 04:02:55 nobsun Exp $
+;; $Id: review.kahua,v 1.6.10.1 2007/06/29 08:03:26 bizenn Exp $
 
 (define-class <review> (<kahua-persistent-base>)
   ((about     :init-keyword :about  :init-value #f
-              :allocation :persistent) ;; back link to <book>
+              :allocation :persistent :index :any) ;; back link to <book>
    (author    :init-keyword :author :init-value #f
               :allocation :persistent) ;; <user>
    (evaluation :init-keyword :evaluation :init-value 1
@@ -20,99 +20,78 @@
 
 (define-method format-review ((self <review>) cont)
   (define (delete-review)
-    (let* ((rev  (find-kahua-instance <review> (key-of self)))
-           (book (and rev (ref rev 'about))))
-      ;; NB: currently, kahua.persistence can't delete an instance.
-      ;; we just remove invalidate its data and links so that it
-      ;; becomes invisible.
-      (when rev
-        (set! (ref rev 'author) #f)
-        (set! (ref rev 'about) #f))
+    (let1 book (and self (ref self 'about))
       (when book
         (set! (ref book 'reviews)
-              (delete rev (ref book 'reviews))))
-      (kahua-db-sync)
+              (delete self (ref book 'reviews))))
+      (remove-kahua-instance self)
       (if book
-        (show-reviews (key-of book) cont)
-        (cont '()))))
+	  (show-reviews book cont)
+	  (cont '()))))
   
-  (list
-   (tr: (@: (style "border-bottom: 2px solid black"))
-        (td:
-         (apply table:
-          (tr: (th: (@: (style "background-color:#dddddd; width:7em"))
-		    "•Ï•”•Â°º•¢")
-	       (td: ;(@: (style "width:35em"))
-                  (cond ((ref self 'author) => (cut ref <> 'login-name))
-			(else "guest"))))
-          (tr: (th: (@: (style "background-color:#dddddd")) "…æ≤¡(1°¡5)")
-	       (apply td: (make-list (ref self 'evaluation) "°˙")))
-          (tr: (th: (@: (style "background-color:#dddddd")) "•≥•·•Û•»")
-	       (td: (ref self 'comment)))
-          (cond-list
-	   ((and (kahua-current-user)
-		 (equal? (key-of (kahua-current-user))
-			 (key-of (ref self 'author))))
-	    (tr: (th:) (td: (a/cont: (@@: (cont delete-review))
-				     "[•Ï•”•Â°º§Ú∫ÔΩ¸]")))))))))
-  )
+  (tr/ (@/ (style "border-bottom: 2px solid black"))
+       (td/
+	(table/
+	 (tr/ (th/ (@/ (style "background-color:#dddddd; width:7em"))
+		   "„É¨„Éì„É•„Éº„Ç¢")
+	      (td/ ;(@: (style "width:35em"))
+	       (cond ((ref self 'author) => (cut ref <> 'login-name))
+		     (else "guest"))))
+	 (tr/ (th/ (@/ (style "background-color:#dddddd")) "Ë©ï‰æ°(1„Äú5)")
+	      (apply td/ (make-list (ref self 'evaluation) "‚òÖ")))
+	 (tr/ (th/ (@/ (style "background-color:#dddddd")) "„Ç≥„É°„É≥„Éà")
+	      (td/ (ref self 'comment)))
+	 (when/ (and (kahua-authorized?)
+		     (eq? (kahua-current-user) (slot-ref self 'author)))
+	   (tr/ (th/) (td/ (a/cont/ (@@/ (cont delete-review))
+				    "[„É¨„Éì„É•„Éº„ÇíÂâäÈô§]"))))))))
 
-(define (show-reviews key cont)
-  (let ((book (find-kahua-instance <book> key)))
-    (if (not book)
-      (cont (list (p: "(ΩÒ¿“•«°º•ø§¨§¢§Í§ﬁ§ª§Û)")))
-      ((lister (map key-of (ref book 'reviews))
-	       (lambda (key count)
-		 (format-review (find-kahua-instance <review> key)
-				cont))
-	       :table-attrs (@: (style "border-collapse: collapse; width:95%")))
+(define (show-reviews book cont)
+  (if (not book)
+      (cont (p/ "(Êõ∏Á±ç„Éá„Éº„Çø„Åå„ÅÇ„Çä„Åæ„Åõ„Çì)"))
+      ((lister (map values (ref book 'reviews))
+	       (lambda (rev count)
+		 (format-review rev cont))
+	       :table-attrs (@/ (style "border-collapse: collapse; width:95%")))
        (lambda (nodes)
-	 (cont (cons
-		(h2: (ref book 'title) "§À¬–§π§Î∆…º‘•Ï•”•Â°º")
-		(append nodes
-			(list
-			 (a/cont: (@@: (cont books (key-of book)))
-				  "[ΩÒ¿“æ Û§ÀÃ·§Î]")
-			 (book-review-link (key-of book) cont))))))))))
+	 (cont (node-set/
+		(h2/ (ref book 'title) "„Å´ÂØæ„Åô„ÇãË™≠ËÄÖ„É¨„Éì„É•„Éº")
+		(node-set/ nodes
+			   (a/cont/ (@@/ (cont books (slot-ref book 'product-id)))
+				    "[Êõ∏Á±çÊÉÖÂ†±„Å´Êàª„Çã]")
+			   (book-review-link book cont))))))))
 
-(define (write-review key cont)
+(define (write-review book cont)
   (define (commit-review)
-    (let ((book (find-kahua-instance <book> key))
-          (user (kahua-current-user))
+    (let ((user (kahua-current-user))
           (eval (kahua-context-ref "evaluation"))
           (comment (kahua-context-ref "comment")))
       (if book
-        (begin
-          (set! (ref book 'reviews)
-                (cons 
-                 (make <review> :about book :author user
-                       :evaluation (or (string->number eval) 3)
-                       :comment comment)
-                 (ref book 'reviews)))
-          (kahua-db-sync)
-          (show-reviews key cont))
-        (cont (list (p: "(ΩÒ¿“•«°º•ø§¨§¢§Í§ﬁ§ª§Û)"))))))
+	  (begin
+	    (push! (ref book 'reviews)
+		   (make <review> :about book :author user
+			 :evaluation (or (string->number eval) 3)
+			 :comment comment))
+	    (show-reviews book cont))
+	  (cont (p/ "(Êõ∏Á±ç„Éá„Éº„Çø„Åå„ÅÇ„Çä„Åæ„Åõ„Çì)")))))
   
-  (let ((book (find-kahua-instance <book> key))
-        (user (kahua-current-user)))
+  (let1 user (kahua-current-user)
     (if (not book)
-      (cont (list (p: "(ΩÒ¿“•«°º•ø§¨§¢§Í§ﬁ§ª§Û)")))
-      (cont (list
-	     (h2: (ref book 'title) "§À§ƒ§§§∆§Œ•Ï•”•Â°º§ÚΩÒ§Ø")
-	     (form/cont:
-	      (@@: (cont commit-review))
-	      (table:
-	       (tr: (th: "•Ï•”•Â°º•¢")
-                    (td: (if user (ref user 'login-name) "guest")))
-	       (tr: (th: "…æ≤¡")
-                    (td: (apply select: (@: (name "evaluation"))
-                                (map (lambda (s) `(option ,s))
-				     '("1" "2" "3" "4" "5")))))
-	       (tr: (th: "•≥•·•Û•»")
-                    (td: (textarea: (@: (name "comment") (cols 40)))))
-	       (tr: (th:)
-                    (td: (input: (@: (type "submit") (name "submit")
-				     (value "•Ï•”•Â°º§Ú¡˜øÆ"))))))))
-            )))
-  )
+	(cont (p/ "(Êõ∏Á±ç„Éá„Éº„Çø„Åå„ÅÇ„Çä„Åæ„Åõ„Çì)"))
+	(cont (node-set/
+	       (h2/ (ref book 'title) "„Å´„Å§„ÅÑ„Å¶„ÅÆ„É¨„Éì„É•„Éº„ÇíÊõ∏„Åè")
+	       (form/cont/
+		(@@/ (cont commit-review))
+		(table/
+		 (tr/ (th/ "„É¨„Éì„É•„Éº„Ç¢")
+		      (td/ (if user (ref user 'login-name) "guest")))
+		 (tr/ (th/ "Ë©ï‰æ°")
+		      (td/ (select/ (@/ (name "evaluation"))
+				    (map/ option/ '("1" "2" "3" "4" "5")))))
+		 (tr/ (th/ "„Ç≥„É°„É≥„Éà")
+		      (td/ (textarea/ (@/ (name "comment") (cols 40)))))
+		 (tr/ (th/)
+		      (td/ (input/ (@/ (type "submit") (name "submit")
+				       (value "„É¨„Éì„É•„Éº„ÇíÈÄÅ‰ø°"))))))))
+	      ))))
 

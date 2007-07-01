@@ -1,11 +1,11 @@
 ;;; -*- mode: scheme; coding: utf-8 -*-
 ;; Extended File System Database
 ;;
-;;  Copyright (c) 2006 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2006-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2006-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.9 2006/12/02 07:11:32 bizenn Exp $
+;; $Id: efs.scm,v 1.9.2.5 2007/06/25 03:53:29 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -461,7 +461,7 @@
 		 (for-each (lambda (id)
 			     (and-let* ((obj (kahua-instance class (x->integer id) #t)))
 			       (and (equal? key (key-of obj)) (ret obj))))
-			   (directory-list (data-path db (class-name class)) :children #t
+			   (directory-list (data-path db (class-name class)) :children? #t
 					   :filter file-is-regular? :filter-add-path? #t))
 		 #f))
       (let1 path (key-path db (class-name class) key)
@@ -507,8 +507,9 @@
 	  (directory-fold index-path
 			  (lambda (path r)
 			    (or (and-let* ((oid (x->integer (sys-basename (sys-readlink path))))
-					   ((not (read-id-cache db oid)))
-					   (obj (read-from-file path :encoding encoding))
+					   (obj (check-index-cache/cont
+						 db oid class slot-name slot-value
+						 (cut read-from-file path :encoding encoding)))
 					   ((filter-proc obj)))
 				  (cons obj r))
 				r))
@@ -529,7 +530,9 @@
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
-		       (include-removed-object? #f))
+		       (include-removed-object? #f)
+		       (subclasses #f)	; ignore(to avoid WARNING)
+		       )
     (let1 cn (class-name class)
       (cond ((or include-removed-object? (and index (get-optional may-be-sweep? #f)))
 	     (kahua-instances-by-id (data-path db cn) file-is-regular?

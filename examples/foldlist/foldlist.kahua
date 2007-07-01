@@ -1,22 +1,19 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8 ; mode: scheme-*-
 ;; foldlist.kahua
 ;;
-;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id :$
+;; $Id: foldlist.kahua,v 1.5.8.1 2007/06/29 08:03:26 bizenn Exp $
 ;;
 ;; This example shows simple application by kahua.
 ;;
 
 (define (page ttl . elems)
-  (node-set: (html:
-			     ;(extra-header: (@: (name "content-type")
-			      ;  (value "text/html; charset=euc-jp")))
-	      (head: (title: ttl))
-	      (body:
-	       (node-list-to-node-set elems)))))
+  (html/
+   (head/ (title/ ttl))
+   (apply body/ elems)))
 
 (define *tree*
   '(a1 ((c1 d1 d2)) b1))
@@ -37,73 +34,58 @@
 		       tree)))
       (x->string tree)))
 
-(define (foldlist tree default)
+(define (foldlist/ tree default)
   (let ((fl (tree->foldlist tree default)))
-    (define (foldlist-view)
+    (define (foldlist-view/)
       (page "foldlist sample"
-	    (div:
-	     (ul:
-              (open-tree fl))
-	     ; (pre: (format "~A" fl))
-	     (a: (@: (href "./")) "goto start")
-	     )))
+	    (div/ (ul/ (open-tree fl))
+		  (a/ (@/ (href "./")) "goto start"))))
 
-    (define (make/acont tree open?)
-      (a/cont: (@@: (cont 
-		     (lambda ()
-		       (set-car! tree (not open?))
-		       (foldlist-view))))
+    (define (make/acont/ tree open?)
+      (a/cont/ (@@/ (cont (lambda ()
+			    (set-car! tree (not open?))
+			    (foldlist-view/))))
 	       (if open? "[close] " "[open] ")))
       
     (define (open-tree tree)
       (if (pair? tree)
 	  (if (car tree)
 	      ; open tree
-	      (li: (make/acont tree #t) (cadr tree)
-		   (ul: 
-		    (node-list-to-node-set
-		     (map (cut open-tree <>) (cddr tree)))))
+	      (li/ (make/acont/ tree #t) (cadr tree)
+		   (ul/ (map/ (cut open-tree <>) (cddr tree))))
  	      ; close tree
-	      (li: (make/acont tree #f) (cadr tree))
-	      )
-	  (li: tree)
-	  ))
+	      (li/ (make/acont/ tree #f) (cadr tree)))
+	  (li/ tree)))
       
-    (foldlist-view)))
-
-; (use sxml.ssax)
+    (foldlist-view/)))
 
 (define (foldlist-start)
   (define viewer
     (entry-lambda (:keyword content default)
       (let ((default (and (equal? default "true") #t))
-	    ;(sexp (ssax:xml->sxml (open-input-string content) '()))
-	    (sexp (read-from-string content))
-	    )
-	(foldlist sexp default))))
-  (page "foldlist" (div:
-		    (h1: "fold list sample")
-		    (form/cont:
-		     (@@: (cont viewer))
-		     (div:
-		      "表示したい S式"
-		      (div:
-		       (textarea: (@: (name "content")
+	    (sexp (read-from-string content)))
+	(foldlist/ sexp default))))
+  (page "foldlist"
+	(div/
+	 (h1/ "fold list sample")
+	 (form/cont/ (@@/ (cont viewer))
+		     (div/
+		      "S-expression to be displayed"
+		      (div/
+		       (textarea/ (@/ (name "content")
 				      (cols "80")
 				      (rows "20"))
-				      "(a b (c d (e f) g) h)"
-				      )))
-		     (div:
-		      (input: (@: (type "checkbox")
+				  "(a b (c d (e f) g) h)")))
+		     (div/
+		      (input/ (@/ (type "checkbox")
 				  (name "default")
 				  (value "true")))
-		      "すべて開いた状態にする")
-		     (div:
-		      (input: (@: (type "submit") 
+		      "Open all nodes")
+		     (div/
+		      (input/ (@/ (type "submit") 
 				  (name "submit")
-				  (value "決定"))))
-		      ))))
-
+				  (value "Do it"))))
+		     ))))
 
 (initialize-main-proc foldlist-start)
 

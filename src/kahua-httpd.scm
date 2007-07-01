@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.16 2006/12/18 07:18:27 bizenn Exp $
+;; $Id: kahua-httpd.scm,v 1.16.2.3 2007/06/13 03:50:42 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)
@@ -106,8 +106,8 @@
 	 (values (string->symbol method) uri (string->symbol version)))
 	(else (values #f #f #f)))))
 
-(define (parse-header in)
-  (rfc822-header->list in))
+(define http-header-parse rfc822-header->list)
+(define http-header-ref rfc822-header-ref)
 
 (define (parse-uri uri)
   (cond ((string-null? uri) (values #f #f #f #f "/" #f #f))
@@ -287,7 +287,7 @@
 
   (let*-values (((method request-uri version) (values (request-method) (request-uri) (request-version)))
 		((scheme user host port path query frag) (parse-uri request-uri))
-		((http-header) (parse-header in))
+		((http-header) (http-header-parse in))
 		((path-info) (path->path-info path))
 		((abs-path) (path-info->abs-path path-info))
 		((path-translated) (static-document-path-info path-info (kahua-static-document-url))))
@@ -295,6 +295,10 @@
 	(values path-translated #f #f #f)
 	(let* ((local-port (x->string (sockaddr-port (socket-getsockname cs))))
 	       (remote-ipaddr (sockaddr->ipaddr (socket-getpeername cs)))
+	       (client-ipaddr (or (and-let* ((xff (http-header-ref http-header "x-forwarded-for"))
+					     (hops (string-split xff #/\, */)))
+				    (and (pair? hops) (car hops)))
+				  remote-ipaddr))
 	       (http-host (rfc822-header-ref http-header "host"))
 	       (server-uri #`",(or scheme \"http\")://,|http-host|")
 	       (script-name "") ; DUMMY
@@ -322,7 +326,7 @@
 			      (path-info->worker-name path-info) path-info
 			      :server-uri server-uri
 			      :metavariables metavars
-			      :remote-addr remote-ipaddr
+			      :remote-addr client-ipaddr
 			      :bridge script-name
 			      :sgsid state-gsid :cgsid cont-gsid)))
 	  (for-each (lambda (f) (and (file-exists? f) (sys-chmod f #o660))) (cgi-temporary-files))
@@ -351,31 +355,32 @@
 	   (and (with-body?) (cut send-http-body <> encoding w-body)))))
 
 (define (handle-request cs)
-  (call-with-client-socket cs
-    (lambda (in out)
-      (guard (e ((kahua-error? e)
-		 (log-format "Error: ~s" e)
-		 (reply-error e out))
-		(else
-		 (log-format "Unexpected error: ~s" (kahua-error-string e))
-		 (reply-internal-server-error out #f #t)))
-	(log-format "Request start: ~s" cs)
-	(let*-values (((l) (read-line in))
-		      ((m u v) (parse-request-line l)))
-	  (request-line l)
-	  (request-method m)
-	  (request-uri u)
-	  (request-version v)
-	  (cond ((not m) (raise (make-condition <http-bad-request>)))
-		((unsupported-method? m) (raise (make-condition <http-not-implemented>)))
-		(else
-		 (receive (static-path cgsid header params)
-		     (prepare-dispatch-request cs in)
-		   (if static-path
-		       (serve-static-document out static-path)
-		       (serve-via-worker out cgsid header params)))))))
-      (log-format "Request finish: ~s" cs)
-      (flush out)))
+  (guard (e (else (log-format "Request aborted: ~s" cs)))
+    (call-with-client-socket cs
+      (lambda (in out)
+	(guard (e ((kahua-error? e)
+		   (log-format "Error: ~s" e)
+		   (reply-error e out))
+		  (else
+		   (log-format "Unexpected error: ~s" (kahua-error-string e))
+		   (reply-internal-server-error out #f #t)))
+	  (log-format "Request start: ~s" cs)
+	  (let*-values (((l) (read-line in))
+			((m u v) (parse-request-line l)))
+	    (request-line l)
+	    (request-method m)
+	    (request-uri u)
+	    (request-version v)
+	    (cond ((not m) (raise (make-condition <http-bad-request>)))
+		  ((unsupported-method? m) (raise (make-condition <http-not-implemented>)))
+		  (else
+		   (receive (static-path cgsid header params)
+		       (prepare-dispatch-request cs in)
+		     (if static-path
+			 (serve-static-document out static-path)
+			 (serve-via-worker out cgsid header params)))))))
+	(flush out)))
+    (log-format "Request finished: ~s" cs))
   (for-each sys-unlink (cgi-temporary-files)))
 
 (define (run-server tpool socks)
@@ -442,7 +447,7 @@ Options:
        (conf-file "c|conf-file=s")
        (logfile   "l|logfile=s" #t)
        (port      "p|port=i" 80)
-       (thnum     "t:threads=i" 10)
+       (thnum     "t:threads=i" #f)
        (help      "h|help" => usage)
        (else _ (error "Unknown option.  Try --help for the usage."))
        . hosts)
@@ -450,7 +455,7 @@ Options:
     (log-open logfile :prefix log-prefix)
     (log-format "Start with ~d threads" thnum)
     (for-each (pa$ log-format  "listen: ~s") hosts)
-    (let* ((tpool (make-thread-pool thnum))
+    (let* ((tpool (make-thread-pool (or thnum (kahua-httpd-concurrency))))
 	   (hosts (map (cut parse-host-spec <> port) (if (null? hosts) '(#f) hosts)))
 	   (socks (kahua-make-server-sockets hosts)))
       (setuidgid! runas)

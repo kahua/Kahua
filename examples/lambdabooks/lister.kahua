@@ -1,32 +1,32 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8; mode: kahua -*-
 ;; Example kahua application (lambdabooks)
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lister.kahua,v 1.6 2005/07/03 04:02:55 nobsun Exp $
+;; $Id: lister.kahua,v 1.6.10.1 2007/06/29 08:03:26 bizenn Exp $
 
 ;; Lister -------------------------------------------------------
 ;;
 ;;   elts :: [elt]
-;;      É½¼¨¤¹¤Ù¤­¥¢¥¤¥Æ¥à¤Î¥ê¥¹¥È¡£ 
+;;      è¡¨ç¤ºã™ã¹ãã‚¢ã‚¤ãƒ†ãƒ ã®ãƒªã‚¹ãƒˆã€‚ 
 ;;   elt-formatter :: ([elt], Integer) -> [SXML]
-;;      ³Æ¥¢¥¤¥Æ¥à¤¬É½·Á¼°¤ÇÉ½¼¨¤µ¤ì¤ëºİ¤Ë¸Æ¤Ğ¤ì¤ë´Ø¿ô¡£Á´ÂÎ¤¬(table ...)Ãæ¤Ë
-;;      ÁŞÆş¤µ¤ì¤ë¤Î¤Ç¡¢ÄÌ¾ï¤Ï¤¤¤¯¤Ä¤«¤Îtr¥¨¥ì¥á¥ó¥È¤Î¥ê¥¹¥È¤òÊÖ¤¹¡£
-;;      Âè2°ú¿ô¤ÏÉ½Æâ¤Ç¤Î¥¢¥¤¥Æ¥à¤ÎÈÖ¹æ¡£
+;;      å„ã‚¢ã‚¤ãƒ†ãƒ ãŒè¡¨å½¢å¼ã§è¡¨ç¤ºã•ã‚Œã‚‹éš›ã«å‘¼ã°ã‚Œã‚‹é–¢æ•°ã€‚å…¨ä½“ãŒ(table ...)ä¸­ã«
+;;      æŒ¿å…¥ã•ã‚Œã‚‹ã®ã§ã€é€šå¸¸ã¯ã„ãã¤ã‹ã®trã‚¨ãƒ¬ãƒ¡ãƒ³ãƒˆã®ãƒªã‚¹ãƒˆã‚’è¿”ã™ã€‚
+;;      ç¬¬2å¼•æ•°ã¯è¡¨å†…ã§ã®ã‚¢ã‚¤ãƒ†ãƒ ã®ç•ªå·ã€‚
 ;;   cont :: [SXML] -> [SXML]
-;;      ¥ê¥¹¥ÈÆâ¤Ç°ÜÆ°¤·¤¿²èÌÌ¤òÉ½¼¨¤¹¤ëºİ¤Î·ÑÂ³¼êÂ³¤­¡£
+;;      ãƒªã‚¹ãƒˆå†…ã§ç§»å‹•ã—ãŸç”»é¢ã‚’è¡¨ç¤ºã™ã‚‹éš›ã®ç¶™ç¶šæ‰‹ç¶šãã€‚
 ;;
-;;  Â¾¤Ë¡¢¼¡¤Î¥­¡¼¥ï¡¼¥É°ú¿ô¤ò¼è¤ë¡£
+;;  ä»–ã«ã€æ¬¡ã®ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°ã‚’å–ã‚‹ã€‚
 ;;
 ;;   table-attrs :: [SXML-attr]
-;;      °ìÈÖ³°Â¦¤Îtable¤ËÍ¿¤¨¤ëSXMLÂ°À­¥Î¡¼¥É¤ò»ØÄê¡£¥Ç¥Õ¥©¥ë¥È¤ÏÌµ¤·¡£
+;;      ä¸€ç•ªå¤–å´ã®tableã«ä¸ãˆã‚‹SXMLå±æ€§ãƒãƒ¼ãƒ‰ã‚’æŒ‡å®šã€‚ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¯ç„¡ã—ã€‚
 ;;   header-formatter :: () -> [SXML]
-;;      Í¿¤¨¤é¤ì¤ì¤Ğ¡¢¥Æ¡¼¥Ö¥ë¤ÎÀèÆ¬¤Ç¸Æ¤Ğ¤ì¤ë¡£caller¤Ï¥Æ¡¼¥Ö¥ë¤Î¥Ø¥Ã¥À¥¨¥ì¥á¥ó¥È¤ò
-;;      ÄÉ²Ã¤¹¤ë¤³¤È¤¬¤Ç¤­¤ë¡£¥Ç¥Õ¥©¥ë¥È¤ÏÌµ¤·¡£
+;;      ä¸ãˆã‚‰ã‚Œã‚Œã°ã€ãƒ†ãƒ¼ãƒ–ãƒ«ã®å…ˆé ­ã§å‘¼ã°ã‚Œã‚‹ã€‚callerã¯ãƒ†ãƒ¼ãƒ–ãƒ«ã®ãƒ˜ãƒƒãƒ€ã‚¨ãƒ¬ãƒ¡ãƒ³ãƒˆã‚’
+;;      è¿½åŠ ã™ã‚‹ã“ã¨ãŒã§ãã‚‹ã€‚ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¯ç„¡ã—ã€‚
 ;;   items-per-page :: Integer
-;;      ¥Ú¡¼¥¸¤¢¤¿¤ê¤Î¹àÌÜ¿ô¡£¥Ç¥Õ¥©¥ë¥È¤Ï5¡£
+;;      ãƒšãƒ¼ã‚¸ã‚ãŸã‚Šã®é …ç›®æ•°ã€‚ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¯5ã€‚
 
 (define (lister elts elt-formatter . opts)
   (lambda (cont)
@@ -36,27 +36,19 @@
 
       (define (show-list prev-show lis)
 	(receive (cur-items next-items) (split-at* lis items-per-page)
-	  (cont
-	   (list
-	    (apply table:
-		   (append
-		    (cond-list (table-attrs))
-		    (if header-formatter (header-formatter) '())
-		    (append-map elt-formatter cur-items (iota items-per-page))))
-	    (apply p:
-		   (cond-list
-		    (prev-show
-		     (a/cont: (@@: (cont prev-show))
-			      #`"[Á°¤Î,|items-per-page|¹àÌÜ]"))
-		    ((not (null? next-items))
-		     (a/cont: (@@: (cont (lambda ()
-					   (show-list 
-					    (lambda ()
-					      (show-list prev-show lis))
-					    next-items))))
-			      #`"[¼¡¤Î,|items-per-page|¹àÌÜ]")))))
-	   )))
-    
-      (show-list #f elts)))
-  )
+	  (cont (node-set/
+		 (table/ table-attrs
+			 (when/ header-formatter (header-formatter))
+			 (map/ elt-formatter cur-items (iota items-per-page)))
+		 (p/ (when/ prev-show (a/cont/ (@@/ (cont prev-show))
+					      #`"[å‰ã®,|items-per-page|é …ç›®]"))
+		     (when/ (pair? next-items)
+		       (a/cont/ (@@/ (cont (lambda ()
+					     (show-list 
+					      (lambda ()
+						(show-list prev-show lis))
+					      next-items))))
+				#`"[æ¬¡ã®,|items-per-page|é …ç›®]")))))))
+
+      (show-list #f elts))))
 

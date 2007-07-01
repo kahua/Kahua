@@ -1,9 +1,9 @@
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.9 2006/12/22 05:01:26 bizenn Exp $
+;; $Id: user.scm,v 1.9.2.2 2007/06/03 13:48:42 bizenn Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -15,7 +15,7 @@
   (export <kahua-user> kahua-add-user kahua-check-user kahua-find-user
           kahua-user-password-change kahua-user-password-change-force
 	  kahua-user-has-role? kahua-user-add-role! kahua-user-drop-role!
-	  dbpath-of inactive? active? name-of roles-of
+	  dbpath-of inactive? active? name-of roles-of kahua-current-user-class
 	  ))
 (select-module kahua.user)
 

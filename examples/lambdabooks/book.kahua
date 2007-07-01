@@ -1,15 +1,15 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8; mode: kahua -*-
 ;; Example kahua application (lambdabooks)
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: book.kahua,v 1.8 2005/07/03 04:02:55 nobsun Exp $
+;; $Id: book.kahua,v 1.8.10.1 2007/06/29 08:03:26 bizenn Exp $
 
 (define-class <book> (<kahua-persistent-base>)
   ((product-id :init-keyword :product-id :init-value 0
-               :allocation :persistent)
+               :allocation :persistent :index :unique)
    (authors   :init-keyword :authors :init-value ""
               :allocation :persistent)
    (title     :init-keyword :title :init-value ""
@@ -24,59 +24,51 @@
               :allocation :persistent) ;; list of <review>
    ))
 
-(define-method key-of ((self <book>))
-  (x->string (ref self 'product-id)))
-
 (define-method format-for-list ((self <book>) cont)
-  (list
-   (tr: (td: (@: (colspan 2) (style "background-color:#92bae5"))
-	     (a/cont: (@@: (cont books (key-of self))) (ref self 'title))))
-   (tr: (td: (@: (style "background-color:#bed0e2"))
-	     (ref self 'authors))
-        (td: (@: (style "background-color:#bed0e2; text-align:right"))
+  (node-set/
+   (tr/ (td/ (@/ (colspan 2) (style "background-color:#92bae5"))
+	     (a/cont/ (@@/ (cont books (slot-ref self 'product-id))) (ref self 'title))))
+   (tr/ (td/ (@/ (style "background-color:#bed0e2")) (ref self 'authors))
+        (td/ (@/ (style "background-color:#bed0e2; text-align:right"))
 	     (ref self 'price)))))
 
 (define-method format-for-detail ((self <book>) cont)
-  (list
-   (h2: (ref self 'title))
-   (table:
-     (tr: (th: "Ãø¼Ô")  (td: (ref self 'authors)))
-     (tr: (th: "½ĞÈÇ¼Ò") (td: (ref self 'publisher)))
-     (tr: (th: "²Á³Ê")  (td: (ref self 'price))))
-   (hr:)
-   (p: (ref self 'comment))
-   (hr:)
-   (p: (x->string (length (ref self 'reviews))) "·ï¤ÎÆÉ¼Ô¥ì¥Ó¥å¡¼¤¬¤¢¤ê¤Ş¤¹¡£"
-       (if (null? (ref self 'reviews))
-	   ""
-	   (a/cont: (@@: (cont (cute show-reviews (key-of self) cont)))
-		    "[ÆÉ¼Ô¥ì¥Ó¥å¡¼¤òÆÉ¤à]")))
-   (book-review-link (key-of self) cont)
-   (p: (@: (style "text-align:right"))
-       (a/cont: (@@: (cont books)) "[½ñÀÒ°ìÍ÷¤Ø]"))))
+  (node-set/
+   (h2/ (ref self 'title))
+   (table/
+    (tr/ (th/ "è‘—è€…")   (td/ (ref self 'authors)))
+    (tr/ (th/ "å‡ºç‰ˆç¤¾") (td/ (ref self 'publisher)))
+    (tr/ (th/ "ä¾¡æ ¼")   (td/ (ref self 'price))))
+   (hr/)
+   (p/ (ref self 'comment))
+   (hr/)
+   (p/ (x->string (length (ref self 'reviews))) "ä»¶ã®èª­è€…ãƒ¬ãƒ“ãƒ¥ãƒ¼ãŒã‚ã‚Šã¾ã™ã€‚"
+       (when/ (ref self 'reviews)
+	 (a/cont/ (@@/ (cont (cut show-reviews self cont)))
+		  "[èª­è€…ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’èª­ã‚€]")))
+   (book-review-link self cont)
+   (p/ (@/ (style "text-align:right"))
+       (a/cont/ (@@/ (cont books)) "[æ›¸ç±ä¸€è¦§ã¸]"))))
 
-(define (book-review-link key cont)
-  (apply p: (if (kahua-current-user)
-		(list 
-		 (a/cont: (@@: (cont (cute write-review key cont)))
-			  "[¤³¤ÎËÜ¤Ë¤Ä¤¤¤Æ¤Î¥ì¥Ó¥å¡¼¤ò½ñ¤¯]"))
-		(list 
-		 "("
-		 (user-box cont
-			   (lambda (nodes) (show-book-detail key cont)))
-		 "¤¹¤ë¤È¡¢¤³¤ÎËÜ¤Ë¤Ä¤¤¤Æ¤Î¥ì¥Ó¥å¡¼¤ò½ñ¤¯¤³¤È¤¬¤Ç¤­¤Ş¤¹)"))))
+(define (book-review-link book cont)
+  (p/ (if (kahua-current-user)
+	  (a/cont/ (@@/ (cont (cut write-review book cont)))
+		   "[ã“ã®æœ¬ã«ã¤ã„ã¦ã®ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’æ›¸ã]")
+	  (node-set/
+	   "(" (user-box cont
+			 (lambda (nodes) (show-book-detail (slot-ref book 'product-id) cont)))
+	   "ã™ã‚‹ã¨ã€ã“ã®æœ¬ã«ã¤ã„ã¦ã®ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’æ›¸ãã“ã¨ãŒã§ãã¾ã™)"))))
 
 (define (show-book-list cont)
-  ((lister (map key-of (make-kahua-collection <book>))
-	   (lambda (key count)
-	     (format-for-list (find-kahua-instance <book> key) cont)))
+  ((lister (map values (make-kahua-collection <book>))
+	   (lambda (book count)
+	     (format-for-list book cont)))
    (lambda (nodes)
-     (cont (cons (h2: "½ñÀÒ¥ê¥¹¥È") nodes))))
-  )
+     (cont (node-set/ (h2/ "æ›¸ç±ãƒªã‚¹ãƒˆ") nodes)))))
 
-(define (show-book-detail key cont)
-  (let ((book (find-kahua-instance <book> key)))
+(define (show-book-detail pid cont)
+  (let1 book (find-kahua-instance <book> 'product-id pid)
     (if book
-      (cont (format-for-detail book cont))
-      (cont (list (p: "(½ñÀÒ¥Ç¡¼¥¿¤¬¤¢¤ê¤Ş¤»¤ó)"))))))
+	(cont (format-for-detail book cont))
+	(cont (p/ "(æ›¸ç±ãƒ‡ãƒ¼ã‚¿ãŒã‚ã‚Šã¾ã›ã‚“)")))))
 

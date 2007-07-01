@@ -1,35 +1,35 @@
-;; Modules/kahua.util -*- mode: text; coding: euc-jp -*-
+;; Modules/kahua.util -*- mode: text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.util.ja,v 1.2 2006/12/26 12:28:13 bizenn Exp $
+;; $Id: kahua.util.ja,v 1.2.2.1 2007/05/31 03:48:10 bizenn Exp $
 
 
 * [module] kahua.util
 
-����ε�ǽ����°���ʤ�����������ʼ�³����
-�������⥸�塼�롣
+特定の機能群に属さないけれど便利な手続きを
+定義するモジュール。
 
 ** [procedure] kahua-error-string ''error'' [''detail?'']
 
-���顼���֥�������''error''�������ꡢ���顼��å�������ʸ������֤���
-����''detail?''��#t�ʤ顢�����å��ȥ졼�����碌���֤��ޤ���
+エラーオブジェクト''error''を受け取り、エラーメッセージを文字列で返しま
+す。''detail?''が#tなら、スタックトレースも合わせて返します。
 
 ** [condition] <kahua-error>
 
-Kahua���֤����顼����ǥ������δ��쥯�饹�Ǥ������ץꥱ������󤬥��顼
-��raise����ΤǤ���С����Υ��饹�Υ��֥��饹����Ѥ���Ȥ褤�Ǥ��礦��
+Kahuaが返すエラーコンディションの基底クラスです。アプリケーションがエラー
+をraiseするのであれば、このクラスのサブクラスを使用するとよいでしょう。
 
 ** [procedure] kahua-error?
 
-<kahua-error>�Υ��֥��饹���ɤ������֤��Ҹ�Ǥ���
+<kahua-error>のサブクラスかどうかを返す述語です。
 
-** [procedure] time->rfc1123-string��''time''
+** [procedure] time->rfc1123-string　''time''
 
-<time>�Υ��֥�������''time''�������ꡢRFC1123������ʸ������ۤ�����
-���ޤ���
+<time>のオブジェクト''time''を受け取り、RFC1123形式の文字列を構築して返
+します。
 
 ** [procedure] date->rfc1123-string ''date''
 
-<date>�Υ��֥�������''date''�������ꡢRFC1123������ʸ������ۤ�����
-���ޤ���
+<date>のオブジェクト''date''を受け取り、RFC1123形式の文字列を構築して返
+します。

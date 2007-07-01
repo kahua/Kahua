@@ -1,35 +1,36 @@
-;; -*- coding: euc-jp ; mode: scheme-*-
+;; -*- coding: utf-8; mode: kahua -*-
 ;; Example kahua application (lambdabooks)
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: partner.kahua,v 1.6 2005/07/03 04:02:55 nobsun Exp $
+;; $Id: partner.kahua,v 1.6.10.1 2007/06/29 08:03:26 bizenn Exp $
 
 (define (partnership-info cont)
   (cont 
-   (list (h2: "�ѡ��ȥʡ����åץץ������ˤĤ���")
-	 (p: (b: "lambda-books�Υѡ��ȥʡ��ˤʤ�ޤ���"))
-	 (p: "lambda-books�Ǥϡ��ѡ��ȥʡ��ˤʤä�ĺ���륵���ȴ����Ԥ�����"
-             "�罸���Ƥ��ޤ���lambda-books�Υѡ��ȥʡ��ˤʤ뤳�Ȥˤ�ꡢ"
-             "���ʤ��Υ����Ȥ�ˬ��Ԥϡ����ʤ��Υ����Ȥ����ưפ˺���ü��"
-             "����ԥ塼���������󥹡��ץ�����ߥ󥰸���ξ���ؤ�"
-             "�����������뤳�Ȥ��Ǥ���褦�ˤʤ�ޤ���")
-	 (p: "lambda-books�Υѡ��ȥʡ����åץ��� (��) �ˤ�ꡢ"
-             "�����Ȥ�ˬ��Ԥϡ����ʤ��������̤Τ�Ĥ�ξ��Ԥ��פ��Ȥ�"
-             "�Τ뤳�Ȥ��Ǥ��ޤ������å��Ĥ���Τ������ʤ��ʤ��ˤ�"
-             "��Ŭ�Υ����ƥ�Ǥ�")
-	 (p: "lambda-books�Υѡ��ȥʡ��ˤʤ�Τϴ�ñ�����˾夲���ܤΤ����줫��"
-             "������������򤢤ʤ�����ê����Ω�ĤȤ����˾���ޤ���"
-             "�����ơ����ʤ��Υ����ȤΥȥåץڡ����ˡ֦ˡפ�ʸ��������������")
-	 (p: "�ѡ��ȥʡ����å��оݽ���")
-	 (ul: (li: "Abelson & Sussman: Structure and Interpretation of Computer Programs")
-              (li: "Queinnec: Lisp In Small Pieces")
-              (li: "Kiczales, des Rivieres & Bobrow: The Art of the Metaobject Protocol")
-              (li: "Steele (Ed.): Common LISP the Language Second Edition"))
-	 (p: "���ʤ��λ��ä��Ԥ����Ƥ��ޤ���")
-	 (p: (@: (style "text-align:right"))
-             (a/cont: "�ȥåץڡ��������")))
+   (node-set/
+    (h2/ "パートナーシッププログラムについて")
+    (p/ (b/ "lambda-booksのパートナーになりませんか"))
+    (p/ "lambda-booksでは、パートナーになって頂けるサイト管理者の方を"
+	"募集しています。lambda-booksのパートナーになることにより、"
+	"あなたのサイトの訪問者は、あなたのサイトから容易に最先端の"
+	"コンピュータサイエンス、プログラミング言語の情報へと"
+	"アクセスすることができるようになります。")
+    (p/ "lambda-booksのパートナーシップロゴ (λ) により、"
+	"サイトの訪問者は、あなたが「普通のやつらの上を行く」ことを"
+	"知ることができます。カッコつけるのが好きなあなたには"
+	"最適のアイテムです")
+    (p/ "lambda-booksのパートナーになるのは簡単！次に上げる本のいずれかを"
+	"購入し、それをあなたの本棚の目立つところに飾ります。"
+	"そして、あなたのサイトのトップページに「λ」の文字を入れるだけ！")
+    (p/ "パートナーシップ対象書籍")
+    (ul/ (li/ "Abelson & Sussman: Structure and Interpretation of Computer Programs")
+	 (li/ "Queinnec: Lisp In Small Pieces")
+	 (li/ "Kiczales, des Rivieres & Bobrow: The Art of the Metaobject Protocol")
+	 (li/ "Steele (Ed.): Common LISP the Language Second Edition"))
+    (p/ "あなたの参加をお待ちしています。")
+    (p/ (@/ (style "text-align:right"))
+	(a/cont/ "トップページに戻る")))
    ))
 

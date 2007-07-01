@@ -1,101 +1,101 @@
-;; About Kahua  -*- coding: euc-jp -*-
+;; About Kahua  -*- coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: AboutKahua.ja,v 1.2 2006/12/26 11:46:04 bizenn Exp $
+;; $Id: AboutKahua.ja,v 1.2.2.1 2007/05/31 03:47:59 bizenn Exp $
 
 
 ##(toc)
 
-* Kahua�Ȥ�
+* Kahuaとは
 
-Kahua�ϡ�Scheme���������Gauche��Ȥäƽ񤫤줿��''��³�١���''�Υ��ץ�
-��������󥵡���/�ե졼�����Ǥ���Kahua�ץ��������Ȥˤ�äƳ�ȯ����
-��졢
-[http://www.kahua.org/cgi-bin/viewcvs.cgi/kahua/Kahua/COPYING?view=markup ����BSD�饤����]
-�β��ǥ����ץ󥽡������եȥ������Ȥ��Ƹ�������Ƥ��ޤ���
+Kahuaは、Scheme言語処理系Gaucheを使って書かれた、''継続ベース''のアプリ
+ケーションサーバ/フレームワークです。Kahuaプロジェクトによって開発が行
+われ、
+[http://www.kahua.org/cgi-bin/viewcvs.cgi/kahua/Kahua/COPYING?view=markup 修正BSDライセンス]
+の下でオープンソースソフトウェアとして公開されています。
 
-* ��³�١����ä�?
+* 継続ベースって?
 
-���륢�ץꥱ�����������å��򵭽Ҥ����硢Web���ץꥱ�������Ǥϡ���
-�֤򥻥å���󥪥֥������ȤȤ�����������ѿ�������Ū����¸�����ˡ��
-��ή�Ǥ���������ϡ��ܼ�Ū�˥��ơ��ȥ쥹��(���֤�����ʤ�)�ץ��ȥ����
-����HTTP��Ȥ���Ǥ�ñ��Ǹ���Ū�ʼ�ˡ�Ǥ�������Ʊ���˥ץ�����ޤ����
-���֤��ݻ���ռ�����ɬ�פ������ѻ��Ǥ�����
+あるアプリケーションロジックを記述する場合、Webアプリケーションでは、状
+態をセッションオブジェクトという一種の大域変数に明示的に保存する手法が
+主流でした。これは、本質的にステートレスな(状態を持たない)プロトコルで
+あるHTTPを使う上では単純で現実的な手法でしたが、同時にプログラマが常に
+状態の保持を意識する必要があり煩雑でした。
 
-��³�١����γ�ȯ�Ķ��Ǥϡ������å������Ǥ�դξ��ξ��֤�ַ�³�פȤ�
-��������ݲ����Ƥ��ĤǤ�������뤳�Ȥ��Ǥ��ޤ�����ȯ�ԤϾ��֤��ݻ�����
-�����γ��ݤ˵���Ȥ��뤳�Ȥʤ����濴�Ȥʤ�����å��˽��椹�뤳�Ȥ���
-���ޤ���
+継続ベースの開発環境では、ロジックの中の任意の場所の状態を「継続」とい
+う形で抽象化していつでも取得することができます。開発者は状態の保持や整
+合性の確保に気をとられることなく、中心となるロジックに集中することがで
+きます。
 
-��³�١����Υե졼������Kahua�ʳ��ˤ⤫�ʤ�ο����и����Ƥ��ޤ�����
-���������쥳���˷�³����Ū�������ס�̵�¥������ƥ�ȤȤ��ä���ǽ������
-��Scheme�ˤ����Ƥ�������³�١�����ȯ�ο�����ȯ���Ǥ���ΤǤ���
+継続ベースのフレームワークはKahua以外にもかなりの数が出現しています。し
+かし、言語コアに継続や静的スコープ、無限エクステントといった機能を備え
+たSchemeにおいてこそ、継続ベース開発の真価が発揮できるのです。
 
-* Kahua����ħ�äƤ������?
+* Kahuaの特徴ってそれだけ?
 
-Kahua�ˤϡ���³�١����Υ��ץꥱ�������ե졼�����Ǥ���ʳ��ˡ��ʲ�
-�Τ褦����ħ������ޤ���
+Kahuaには、継続ベースのアプリケーションフレームワークである以外に、以下
+のような特徴があります。
 
-** S�������ܥǡ�������
+** S式が基本データ形式
 
-Scheme����ħ��褫�������ܤΥǡ��������Ȥ��Ƥ�������̤�S������Ѥ���
-���ޤ���S���ˤ�äơ��ǡ����ȼ�³���Ȥ򥨥쥬��Ȥ����礹�뤳�Ȥ��Ǥ���
-ưŪ��Web�ڡ�����̿��Ū�ˤǤϤʤ���'''���Ū��'''���Ҥ��뤳�Ȥ��Ǥ��ޤ���
+Schemeの特徴を活かし、基本のデータ形式としてあらゆる場面でS式を採用して
+います。S式によって、データと手続きとをエレガントに統合することができ、
+動的なWebページも命令的にではなく、'''宣言的に'''記述することができます。
 
-** Gache�Υ��֥������ȥ����ƥ��褫�������֥������ȥǡ����١���
+** Gacheのオブジェクトシステムを活かしたオブジェクトデータベース
 
-Kahua�δ��פȤʤäƤ���Gauche�ϡ�CLOS like�����˶��Ϥʥ��֥������ȥ�
-���ƥ�������Ƥ��ޤ�����Kahua�Ϥ����ǡ������ȥ졼���ˤޤǳ�ĥ���ޤ���
-���֥������Ȥϼ�ưŪ�˥ǥ�������Υǡ����١���(�ե����륷���ƥ��¾��
-MySQL��PostgreSQL��Хå�����ɤˤ��뤳�Ȥ�Ǥ��ޤ�)�˼�ưŪ����¸����
-�ޤ����ޤ������饹������ѹ�����ȡ���¸����Ƥ��륪�֥������Ȥϼ�ưŪ
-�ˤ����ѹ����ɿ路�ƹ�������ޤ�����ȯ�Ԥϡ����֥������Ȥ���¸�˿��Ф�
-�Ȥ����Ȥʤ����濴�Ȥʤ�����å��˽��椹�뤳�Ȥ��Ǥ��ޤ���
+Kahuaの基盤となっているGaucheは、CLOS likeな非常に強力なオブジェクトシ
+ステムを備えていますが、Kahuaはそれをデータストレージにまで拡張します。
+オブジェクトは自動的にディスク上のデータベース(ファイルシステムの他、
+MySQLやPostgreSQLをバックエンドにすることもできます)に自動的に保存され
+ます。また、クラス定義を変更すると、保存されているオブジェクトは自動的
+にその変更に追随して更新されます。開発者は、オブジェクトの保存に神経を
+使うことなく、中心となるロジックに集中することができます。
 
-** ưŪ�ǥ��󥯥��󥿥�ʳ�ȯ�Υ��ݡ���
+** 動的でインクリメンタルな開発のサポート
 
-ư����Υ��ץꥱ������󥵡���(����ȸƤӤޤ�)��ľ����³����Ǥ�դ�
-Scheme�����ɤ�ɾ�����뤳�Ȥ��Ǥ��ޤ�������ˤ�ꡢ�����ߤ�뤳�Ȥ�
-����ưŪ���ĥ��󥯥��󥿥�˳�ȯ��ʤ�뤳�Ȥ��Ǥ��ޤ���
+動作中のアプリケーションサーバ(ワーカと呼びます)に直接接続し、任意の
+Schemeコードを評価することができます。これにより、ワーカを止めることな
+く、動的かつインクリメンタルに開発を進めることができます。
 
-** ���ѥ��ץꥱ������󥵡���
+** 汎用アプリケーションサーバ
 
-������Web���ץꥱ������󤬼�����Ӥˤʤ�ޤ�����Kahua�ץ��ȥ���򤷤�
-�٤��å����饤����Ȥ�ȯ���ƥե���ȥ���ɤ˻��Ѥ��뤳�Ȥ�Ǥ��ޤ���
-
-
-* Kahua�ץ��������ȤȤ�
-
-Kahua�ץ��������Ȥ�Kahua���Τ�Τ�Kahua���Ѥ������ץꥱ������󥵡��ӥ���
-��ȯ���Ƥ��륪���ץ󥽡����ץ��������ȤǤ���Kahua�ץ��������ȤˤϤɤʤ�
-�Ǥ⻲�äǤ��ޤ����ޤ���[[Mailing List]]�������ƤߤƤ���������
-�ޤ���Kahua�ץ��������ȤΥ��С���
-[http://www.lingr.com/room/gauche Lingr��Gauche����]
-�Ǥ��Ф��л��̤��Ƥ��ޤ�������Kahua��Gauche��ǻ���ä����ӽФ��ޤ��Τǡ�
-������������ƤߤƤ���������
+時節柄Webアプリケーションが主な用途になりますが、Kahuaプロトコルをしゃ
+べるリッチクライアントを開発してフロントエンドに使用することもできます。
 
 
-* ���Υ����ȤˤĤ���
+* Kahuaプロジェクトとは
 
-����Web�����Ȥϡ�Kahua�Υ��ץꥱ�������Ǥ���'''kahua-web'''�ˤ�ä�
-���ۡ����Ѥ���Ƥ��ޤ���
+KahuaプロジェクトはKahuaそのものやKahuaを用いたアプリケーションサービスを
+開発しているオープンソースプロジェクトです。Kahuaプロジェクトにはどなた
+でも参加できます。まずは[[Mailing List]]を覗いてみてください。
+また、Kahuaプロジェクトのメンバーは
+[http://www.lingr.com/room/gauche LingrのGauche部屋]
+でしばしば雑談しています。時々KahuaやGaucheの濃い話も飛び出しますので、
+こちらも覗いてみてください。
 
-* ���䤤��碌
 
-�ʲ��򤴻��Ȥ���������
+* このサイトについて
+
+このWebサイトは、Kahuaのアプリケーションである'''kahua-web'''によって
+構築、運用されています。
+
+* お問い合わせ
+
+以下をご参照ください。
 
 - [[/info/Contact]]
 
-* �Ѹ����
+* 用語解説
 
-:Kahua(���դ�):�ϥ磻��Ǵ��ס����á����桢����(�����)�������򻺤߽Ф����Ρ�
+:Kahua(かふあ):ハワイ語で基盤、基礎、土台、広場(集会場)、何かを産み出す母体。
 
-:[http://practical-scheme.net/gauche/index-j.html Gauche(��������)]:����ϯ��ˤ�äƳ�ȯ���줿�����ץ󥽡�����Scheme��������ϡ���ݲ�(�ޥ���Х���)�б������¤���Ʊ���饤�֥�ꡢ��ĥ�Х���ǥ��󥰤γ�ȯ�Τ��䤹�����Х�󥹤ΤȤ줿��ǽ����Ĺ�Ȥ��롣Perl��Ruby��Python�ʤɤ�����˻Ȥ������ѥ�����ץȸ���Ǥ⤢�롣
+:[http://practical-scheme.net/gauche/index-j.html Gauche(ごーしゅ)]:川合史朗氏によって開発されたオープンソースのScheme言語処理系。国際化(マルチバイト)対応、充実した同梱ライブラリ、拡張バインディングの開発のしやすさ、バランスのとれた機能を特長とする。Perl、Ruby、Pythonなどの代わりに使える汎用スクリプト言語でもある。
 
-:[http://ja.wikipedia.org/wiki/Scheme Scheme(��������)]:�ץ�����ߥ󥰸��졣���˥���ץ�ʸ�����ͤ���ġ�Lisp����ΰ�
+:[http://ja.wikipedia.org/wiki/Scheme Scheme(すきーむ)]:プログラミング言語。非常にシンプルな言語仕様を持つ。Lisp言語の一種。
 
-:[http://ja.wikipedia.org/wiki/Lisp Lisp(�ꤹ��)]:�ץ�����ߥ󥰸��졣S������ܥǡ��������Ȥ��롣��ɽŪ��Lisp����μ����Common Lisp��Scheme�������Ȥ��Ƥ��륨�ǥ�����Emacs�ˤ�Emacs Lisp���Ȥ߹��ޤ��ʤ�¿���α��Ѽ��Ӥ����롣
+:[http://ja.wikipedia.org/wiki/Lisp Lisp(りすぷ)]:プログラミング言語。S式を基本データ形式とする。代表的なLisp言語の種類はCommon Lisp、Scheme。広く使われているエディターEmacsにもEmacs Lispが組み込まれるなど多数の応用実績がある。
 
-:[http://ja.wikipedia.org/wiki/S�� S��(��������)]:Lisp�δ��ܥǡ�������������������ĥ������������XML��ο�魯�롣
+:[http://ja.wikipedia.org/wiki/S式 S式(えすしき)]:Lispの基本データ形式。汎用性、拡張性、柔軟性でXMLを凌駕する。

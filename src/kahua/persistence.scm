@@ -1,10 +1,10 @@
 ;; Persistent metaclass
 ;;
-;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.72 2006/12/26 09:42:13 bizenn Exp $
+;; $Id: persistence.scm,v 1.72.2.10 2007/06/25 03:53:29 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -52,12 +52,15 @@
 	  kahua-write
 	  kahua-interp-index-translator
 
+	  check-index-cache/cont
+
 	  dump-id-cache
 	  dump-key-cache
 	  dump-index-cache
 
 	  read-id-cache
 	  read-key-cache
+	  read-index-cache
 	  index-value-write
 	  kahua-update-index!
 
@@ -89,6 +92,7 @@
 	  dbutil:check-alive-directory
 
 	  dbutil:with-dummy-reader-ctor
+	  dbutil:class-names
 	  dbutil:persistent-classes-fold
 	  dbutil:check&fix-database
 	  dbutil:kahua-db-fs->efs
@@ -137,7 +141,7 @@
                   :init-keyword :write-syncer)
    (read-syncer   :init-value :auto
                   :init-keyword :read-syncer)
-   (index-cache   :init-form (create-index-cache))
+   (index-cache   :init-value #f)
    ))
 
 (define-method make ((class <kahua-persistent-meta>) . initargs)
@@ -361,29 +365,10 @@
 	(case directive ((:modify :add) (register-index-cache o sn idx nv)))))))
 
 (define (index-value-write value)
-  (cond ((any (pa$ is-a? value) `(,<string> ,<number> ,<symbol> ,<boolean> ,<keyword>))
-	 (write value))
-	((null? value) (write '()))
-	((pair? value)
-	 (write-char #\()(index-value-write (car value))
-	 (for-each (lambda (e)
-		     (write-char #\space)
-		     (index-value-write e)) (cdr value))
-	 (write-char #\)))
-	((vector? value)
-	 (write-char #\#)
-	 (index-value-write (vector->list value)))
-	(else (kahua-persistence-error "Object ~s cannot be used as index value" value))))
+  (serialize-value value))
 
 (define (kahua-indexable-object? obj)
-  (or (any (pa$ is-a? obj) `(,<string> ,<number> ,<symbol> ,<boolean> ,<keyword>))
-      (and (or (list? obj) (vector? obj))
-	   (let/cc ret
-	     (for-each (lambda (obj)
-			 (unless (kahua-indexable-object? obj)
-			   (ret #f)))
-		       obj)
-	     #t))))
+  (kahua-serializable-object? obj))
 
 (define (drop-all-index-values! obj)
   (let1 class (current-class-of obj)
@@ -409,10 +394,38 @@
 ;;   key:   (slot-name . index-value)
 ;;   value: (object ...)
 
+(define-method index-cache-of ((class <kahua-persistent-meta>))
+  (cond ((slot-ref class 'index-cache) => identity)
+	(else
+	 (and-let* ((db (current-db)))
+	   (%index-cache-init class db)))))
+
+(define-method %index-cache-init ((class <kahua-persistent-meta>) db)
+  (define (index-slot-names class)
+    (filter-map (lambda (s)
+		  (and-let* ((si (slot-definition-option s :index #f))
+			     (sn (slot-definition-name s)))
+		    (cons sn si)))
+		(class-slots class)))
+
+  (let ((ht (create-index-cache))
+	(index-slots (index-slot-names class)))
+    (slot-set! class 'index-cache ht)
+    (for-each (lambda (obj)
+		(when (and (not (removed? obj))
+			   (eq? (class-of obj) class))
+		  (for-each (lambda (s)
+			      (let1 sn (car s)
+				(when (slot-bound? obj sn)
+				  (%register-index-cache ht obj sn (cdr s)
+							 (slot-ref obj sn)))))
+			    index-slots)))
+	      (hash-table-values (id-cache-of db)))
+    ht))
+
 (define create-index-cache (cut make-hash-table 'equal?))
 (define (clear-index-cache! class)
-  (let1 cache (slot-ref class 'index-cache)
-    (hash-table-for-each cache (lambda (k _) (hash-table-delete! cache k)))))
+  (slot-set! class 'index-cache #f))
 (define (clear-all-index-cache!)
   (for-each (compose clear-index-cache! cdr) (persistent-class-alist)))
 
@@ -422,31 +435,31 @@
 (define (read-index-cache class slot-name value)
   (and-let* ((slot (class-slot-definition class slot-name))
 	     (index (slot-definition-option slot :index #f)))
-    (hash-table-get (slot-ref class 'index-cache) (index-cache-key slot-name value) #f)))
+    (hash-table-get (index-cache-of class) (index-cache-key slot-name value) #f)))
 
-(define (%register-index-cache class obj slot-name index value)
-  (let* ((idxcache (slot-ref class 'index-cache))
-	 (key (index-cache-key slot-name value)))
+(define (%register-index-cache ht obj slot-name index value)
+  (let1 key (index-cache-key slot-name value)
     (case index
       ((:unique)
-       (or (and-let* ((v (hash-table-get idxcache key #f)))
+       (or (and-let* ((v (hash-table-get ht key #f)))
 	     (if (eq? v obj)
 		 #t			; do nothing
 		 (kahua-persistence-error "~s: index slot ~s conflict with ~s" obj key v)))
-	   (hash-table-put! idxcache key obj)))
+	   (hash-table-put! ht key obj)))
       ((:any)
-       (hash-table-update! idxcache key
+       (hash-table-update! ht key
 			   (lambda (objs)
 			     (if (memq obj objs) objs (cons obj objs)))
 			   '()))
       (else (kahua-persistence-error "Unknown index type: ~s" index)))))
 
 (define (register-index-cache obj slot-name index value)
-  (%register-index-cache (current-class-of obj) obj slot-name index value))
+  (%register-index-cache (index-cache-of (current-class-of obj))
+			 obj slot-name index value))
 
 (define (unregister-index-cache obj slot-name index value)
   (let* ((class (current-class-of obj))
-	 (idxcache (slot-ref class 'index-cache))
+	 (idxcache (index-cache-of class))
 	 (key (index-cache-key slot-name value)))
     (case index
       ((:unique)
@@ -460,7 +473,16 @@
        (kahua-persistence-error "Unknown index type: ~s" index)))))
 
 (define (dump-index-cache class)
-  (hash-table-map (slot-ref class 'index-cache) cons))
+  (hash-table-map (index-cache-of class) cons))
+
+(define (check-index-cache/cont db oid class slot-name slot-value cont)
+  (cond ((read-id-cache db oid) =>
+	 (lambda (obj)
+	   (and (not (eq? obj (read-index-cache class slot-name slot-value)))
+		(ensure-transaction obj)
+		(eq? obj (read-index-cache class slot-name slot-value))
+		obj)))
+	(else (cont))))
 
 ;;=========================================================
 ;; Persistent baseclass
@@ -495,6 +517,13 @@
 
 (define (kahua-persistent-base? obj)
   (is-a? obj <kahua-persistent-base>))
+
+(define-method object-hash ((obj <kahua-persistent-base>))
+  (hash (with-output-to-string (cut serialize-kahua-proxy obj))))
+
+(define-method object-equal? ((obj1 <kahua-persistent-base>)
+			      (obj2 <kahua-persistent-base>))
+  (= (kahua-persistent-id obj1) (kahua-persistent-id obj2)))
 
 ;; You should not override this method.
 (define-method kahua-persistent-id ((obj <kahua-persistent-base>))
@@ -625,14 +654,18 @@
 
 (define-class <kahua-proxy> ()
   ((class :init-keyword :class)
-   (key   :init-keyword :key)
+   (ident   :init-keyword :ident)
    ))
 
 (define (kahua-proxy? obj)
   (is-a? obj <kahua-proxy>))
 
 (define-method realize-kahua-proxy ((proxy <kahua-proxy>))
-  (find-kahua-instance (ref proxy 'class) (ref proxy 'key)))
+  (let ((ident (slot-ref proxy 'ident))
+	(class (slot-ref proxy 'class)))
+    (if (integer? ident)
+	(kahua-instance class ident)
+	(find-kahua-instance class ident))))
 
 ;; The bottom-level writer ----------------------------------------
 ;;   write-kahua-instance calls kahua-write.
@@ -686,40 +719,59 @@
   (kahua-object2-write obj port))
 
 ;; serialization
+(define delimit (cut write-char #\space))
+
+(define (kahua-atom? v)
+  (any (cut is-a? v <>)
+       (list <boolean> <number> <string> <symbol> <keyword>)))
+
 (define (serialize-value v)
   (let1 v (%sanitize-object v)
     (cond
-     ((any (cut is-a? v <>)
-	   (list <boolean> <number> <string> <symbol> <keyword>))
-      (write v) (display " "))
-     ((null? v) (display "()"))
-     ((pair? v)
-      (display "(")
+     ((kahua-atom? v) (write v))
+     ((list? v)                    (serialize-sequence v))
+     ((vector? v) (write-char #\#) (serialize-sequence v))
+     ((pair? v) ; dotted list
+      (write-char #\()
       (let loop ((v v))
-	(cond ((null? v))
-	      ((pair? v) (serialize-value (car v)) (loop (cdr v)))
-	      (else (display " . ") (serialize-value v))))
-      (display ")"))
-     ((vector? v)
-      (display "#(")
-      (for-each serialize-value v)
-      (display ")"))
-     ((kahua-persistent-base? v)
-      (display "#,(kahua-proxy ")
-      (display (class-name (class-of v)))
-      (display " ")
-      (write (key-of v))
-      (display " )"))
-     ((kahua-proxy? v)
-      (display "#,(kahua-proxy ")
-      (display (class-name (ref v 'class)))
-      (display " ")
-      (write (ref v 'key))
-      (display " )"))
-     ((kahua-wrapper? v)
-      (serialize-value (ref v 'value)))
-     (else
-      (error "object not serializable:" v)))))
+	(cond ((pair? v)
+	       (serialize-value (car v))
+	       (delimit)
+	       (loop (cdr v)))
+	      (else (display ". ") (serialize-value v))))
+      (write-char #\)))
+     ((kahua-persistent-base? v) (serialize-kahua-proxy v))
+     ((kahua-proxy? v)           (serialize-kahua-proxy v))
+     ((kahua-wrapper? v) (serialize-value (slot-ref v 'value)))
+     (else (kahua-persistence-error "Object ~s is not serializable:" v)))))
+
+(define (serialize-sequence seq)
+  (write-char #\()
+  (fold (lambda (e thunk)
+	  (thunk)
+	  (serialize-value e)
+	  delimit)
+	values
+	seq)
+  (write-char #\)))
+
+(define-method serialize-kahua-proxy ((obj <kahua-persistent-base>))
+  (display "#,(kahua-proxy ")
+  (display (class-name (class-of obj)))
+  (delimit)
+  (write (kahua-persistent-id obj))
+  (write-char #\)))
+
+(define-method serialize-kahua-proxy ((obj <kahua-proxy>))
+  (let1 ident (slot-ref obj 'ident)
+    (cond ((string? ident)
+	   (serialize-value (realize-kahua-proxy obj)))
+	  (else
+	   (display "#,(kahua-proxy ")
+	   (display (class-name (slot-ref obj 'class)))
+	   (delim)
+	   (write ident)
+	   (write-char #\))))))
 
 (define (kahua-serializable-object? v)
   (or (any (cut is-a? v <>)
@@ -784,8 +836,8 @@
 (define-reader-ctor 'kahua-object2 kahua-object2-read)
 
 ;; kahua-proxy
-(define (kahua-proxy-read cname key)
-  (make <kahua-proxy> :class (find-kahua-class cname) :key key))
+(define (kahua-proxy-read cname ident)
+  (make <kahua-proxy> :class (find-kahua-class cname) :ident ident))
 (define-reader-ctor 'kahua-proxy kahua-proxy-read)
 
 (define (find-instance-generation class class-desc)
@@ -1310,13 +1362,18 @@
 (define-class <kahua-db> ()
   ((path       :init-keyword :path :init-value #f :accessor path-of)
    (active     :init-keyword :active :init-value #f :accessor active?)
-   (instance-by-id  :init-form (create-id-cache))
-   (instance-by-key :init-form (create-key-cache))
+   (id-cache   :init-form (create-id-cache) :accessor id-cache-of)
+   (key-cache  :init-form (create-key-cache) :accessor key-cache-of)
    (modified-instances :init-form '() :accessor modified-instances-of)
    (current-transaction-id :init-value 0)
    (floated-modified-instances :init-value '()) ;; modified, but...
    )
   :metaclass <kahua-db-meta>)
+
+(define-method initialize ((obj <kahua-db>) initargs)
+  (begin0
+    (next-method)
+    (clear-all-index-cache!)))
 
 (define-generic kahua-db-create)
 
@@ -1512,16 +1569,16 @@
 (define create-id-cache (cut make-hash-table 'eqv?))
 
 (define (clear-id-cache! db)
-  (slot-set! db 'instance-by-id (create-id-cache)))
+  (set! (id-cache-of db) (create-id-cache)))
 
 (define-method register-id-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
-  (hash-table-put! (slot-ref db 'instance-by-id) (kahua-persistent-id obj) obj))
+  (hash-table-put! (id-cache-of db) (kahua-persistent-id obj) obj))
 
 (define-method unregister-id-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
-  (hash-table-delete! (slot-ref db 'instance-by-id) (kahua-persistent-id obj)))
+  (hash-table-delete! (id-cache-of db) (kahua-persistent-id obj)))
 
 (define-method read-id-cache ((db <kahua-db>) (id <integer>))
-  (hash-table-get (slot-ref db 'instance-by-id) id #f))
+  (hash-table-get (id-cache-of db) id #f))
 
 (define-method on-id-cache? ((db <kahua-db>) (id <integer>) slot-name slot-value)
   (and-let* ((obj (read-id-cache db id))
@@ -1532,10 +1589,10 @@
 	 obj)))
 
 (define (dump-id-cache db)
-  (hash-table-map (slot-ref db 'instance-by-id) cons))
+  (hash-table-map (id-cache-of db) cons))
 
 (define (all-instances-on-id-cache db)
-  (hash-table-values (slot-ref db 'instance-by-id)))
+  (hash-table-values (id-cache-of db)))
 
 ;;
 ;; On Memory Cache (by Key)
@@ -1544,23 +1601,23 @@
 (define create-key-cache (cut make-hash-table 'equal?))
 
 (define (clear-key-cache! db)
-  (slot-set! db 'instance-by-key (create-key-cache)))
+  (set! (key-cache-of db) (create-key-cache)))
 
 (define make-cache-key cons)
 
 (define-method register-key-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
   (let1 key (key-of obj)
     (slot-set! obj '%persistent-key key)
-    (hash-table-put! (slot-ref db 'instance-by-key)
+    (hash-table-put! (key-cache-of db)
 		     (make-cache-key (class-name (class-of obj)) key)
 		     obj)))
 
 (define-method unregister-key-cache ((db <kahua-db>) (obj <kahua-persistent-base>))
-  (hash-table-delete! (slot-ref db 'instance-by-key)
+  (hash-table-delete! (key-cache-of db)
 		      (make-cache-key (class-name (class-of obj)) (key-of obj))))
 
 (define-method read-key-cache ((db <kahua-db>) (cn <symbol>) key)
-  (hash-table-get (slot-ref db 'instance-by-key)
+  (hash-table-get (key-cache-of db)
 		  (make-cache-key cn key) #f))
 
 (define-method on-key-cache? ((db <kahua-db>) (cn <symbol>) key slot-name slot-value)
@@ -1572,7 +1629,7 @@
 	 obj)))
 
 (define (dump-key-cache db)
-  (hash-table-map (slot-ref db 'instance-by-key) cons))
+  (hash-table-map (key-cache-of db) cons))
 
 ;;
 ;; cache consistency management -----------------------------------
@@ -1698,7 +1755,11 @@
 
   (let1 db (current-db)
     (unless db (error "make-kahua-collection: database not active"))
-    (let-keywords* opts ((subclasses? :subclasses #f))
+    (let-keywords* opts ((subclasses? :subclasses #f)
+			 (keys #f)	                ; pass through(to avoid WARNING)
+			 (index #f)			; pass through(to avoid WARNING)
+			 (predicate #f)			; pass through(to avoid WARNING)
+			 (include-removed-object? #f))	; pass through(to avoid WARNING)
       (if subclasses?
           (append-map (lambda (c)
                         (coerce-to <list> (make-kahua-collection db c opts)))
@@ -1715,7 +1776,9 @@
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
-		       (include-removed-object? #f))
+		       (include-removed-object? #f)
+		       (subclasses #f)			; ignore(to avoid WARNING)
+		       )
     (cond ((or include-removed-object? (and index (get-optional may-be-sweep? #f)))
 	   (let1 filter-proc (make-basic-filter class (make-kahua-collection-filter class opts))
 	     (filter-map filter-proc (all-instances-on-id-cache db))))
@@ -1757,7 +1820,7 @@
 	   (persistent-list (kahua-persistent-instances db class opts persistent-sweep?)))
       (make <kahua-collection>
 	:class class
-	:instances (append! cached-list persistent-list)))))
+	:instances (append cached-list persistent-list)))))
 
 (define (make-index-filter class index-cond)
   (and-let* (((pair? index-cond))
@@ -1775,7 +1838,9 @@
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
-		       (include-removed-object? #f))
+		       (include-removed-object? #f)
+		       (subclasses #f)			; ignore(to avoid WARNING)
+		       )
     (let* ((index-filter (make-index-filter class index))
 	   (keys-filter (make-keys-filter class keys))
 	   (include-removed-filter (and (not include-removed-object?)
@@ -1863,7 +1928,7 @@
    (generation :init-keyword :generation :init-value 0)
    (slot-values :init-keyword :slot-values)))
 (define-class <dbutil:dummy-proxy-class> ()
-  ((key :init-keyword :key)
+  ((ident :init-keyword :ident)
    (class-name :init-keyword :class-name)))
 
 (define (kahua-object-dummy-read class-desc id . vals)
@@ -1876,8 +1941,8 @@
   (let1 obj (apply kahua-object-dummy-read class-desc id vals)
     (slot-set! obj 'removed? removed?)
     obj))
-(define (kahua-proxy-dummy-read cname key)
-  (make <dbutil:dummy-proxy-class> :key key :class-name cname))
+(define (kahua-proxy-dummy-read cname ident)
+  (make <dbutil:dummy-proxy-class> :ident ident :class-name cname))
 
 (define (dbutil:switch-to-dummy-reader-ctor)
   (define-reader-ctor 'kahua-object kahua-object-dummy-read)
@@ -1894,12 +1959,16 @@
       thunk
       dbutil:restore-reader-ctor))
 
+(define-method dbutil:class-names ((db <kahua-db>))
+  (cons '<kahua-persistent-metainfo>
+	(map (cut ref <> 'name) (make-kahua-collection db <kahua-persistent-metainfo>
+						       '(:include-removed-object? #t)))))
+
 (define-method dbutil:persistent-classes-fold ((db <kahua-db>) proc knil)
-  (let1 classes (map (cut ref <> 'name) (make-kahua-collection db <kahua-persistent-metainfo>
-							       '(:include-removed-object? #t)))
+  (let1 cnames (dbutil:class-names db)
     (dbutil:with-dummy-reader-ctor
      (lambda ()
-       (fold proc knil (cons '<kahua-persistent-metainfo> classes))))))
+       (fold proc knil cnames)))))
 
 (define-generic dbutil:kahua-db-fs->efs)
 

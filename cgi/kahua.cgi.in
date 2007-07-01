@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 ;; Communicate to kahua application server
-;; $Id: kahua.cgi.in,v 1.44 2006/11/20 10:51:45 bizenn Exp $
+;; $Id: kahua.cgi.in,v 1.44.2.1 2007/04/23 03:24:02 bizenn Exp $
 
 ;; This cgi script is kicked by httpd and pass through the request
 ;; to one of kahua servers.
@@ -60,9 +60,11 @@
     "HTTP_ACCEPT_CHARSET"
     "HTTP_ACCEPT_ENCODING"
     "HTTP_ACCEPT_LANGUAGE"
+    "HTTP_COOKIE"
     "HTTP_HOST"
     "HTTP_KEEP_ALIVE"
     "HTTP_USER_AGENT"
+    "HTTP_X_FORWARDED_FOR"
     "PATH_INFO"
     "PATH_TRANSLATED"
     "REMOTE_ADDR"
@@ -84,8 +86,8 @@
 
 (define (metavariable-list)
   (filter-map (lambda (meta)
-                (let1 meta-var (cgi-get-metavariable meta)
-                  (and meta-var (list meta meta-var))))
+                (and-let* ((meta-var (cgi-get-metavariable meta)))
+                  (list meta meta-var)))
               *metavariables*))
 
 (define (compose-reply header body)
@@ -139,7 +141,10 @@
   (receive (worker-type cont-gsid path-info)
       (dispatch-destination param)
     (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
-           (remote-addr (cgi-get-metavariable "REMOTE_ADDR"))
+           (remote-addr (or (and-let* ((xff (cgi-get-metavariable "HTTP_X_FORWARDED_FOR"))
+				       (hops (string-split xff #/\, */)))
+			      (and (pair? hops) (car hops)))
+			    (cgi-get-metavariable "REMOTE_ADDR")))
            (header (kahua-worker-header worker-type path-info
 					:server-uri (server-uri)
 					:worker-uri (*worker-uri*)

@@ -1,265 +1,265 @@
-;; Modules/kahua.persistence -*- mode: text; coding: euc-jp -*-
+;; Modules/kahua.persistence -*- mode: text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.persistence.ja,v 1.4 2006/12/26 09:42:13 bizenn Exp $
+;; $Id: kahua.persistence.ja,v 1.4.2.1 2007/05/31 03:48:10 bizenn Exp $
 
 
 * [module] kahua.persistence
 
-���Υ⥸�塼��ϡ���³���֥������Ȥȡ��������¸���륪�֥������ȥǡ���
-�١�����¸����륯�饹���󶡤��ޤ���
+このモジュールは、永続オブジェクトと、それを保存するオブジェクトデータ
+ベースを実現するクラスを提供します。
 
 ** Persistent Object
 
 *** [class] <kahua-persistent-meta>
 
-��³���֥������Ȥ�¸����뤿��Υ᥿���饹�Ǥ���
-���Υ᥿���饹��Ȥäƺ������줿���饹�Υ��󥹥��󥹤���³���֥������Ȥ�
-�ʤ�ޤ����ʤ������˽Ҥ٤�<kahua-persistent-base>��Ѿ������
-��ưŪ�ˤ��Υ��饹�Υ᥿���饹��<kahua-persistent-meta>�ϴޤޤ��Τǡ�
-���Υ᥿���饹������Ū�˻��Ѥ���ɬ�פϤ���ޤ���
+永続オブジェクトを実現するためのメタクラスです。
+このメタクラスを使って作成されたクラスのインスタンスが永続オブジェクトと
+なります。なお、下に述べる<kahua-persistent-base>を継承すれば
+自動的にそのクラスのメタクラスに<kahua-persistent-meta>は含まれるので、
+このメタクラスを明示的に使用する必要はありません。
 
-���Υ᥿���饹��Ȥäƺ������줿���饹�Ǥϡ�:allocation�����åȥ��ץ�����
-'':persistent''�Ȥ����ͤ�Ϳ���뤳�Ȥ������褦�ˤʤ�ޤ���
-'':persistent''��allocation����ĥ����åȤ���³���κݡ���¸���оݤȤʤ�ޤ���
+このメタクラスを使って作成されたクラスでは、:allocationスロットオプションに
+'':persistent''という値を与えることが出来るようになります。
+'':persistent''なallocationを持つスロットが永続化の際、保存の対象となります。
 
-���ΤȤ�������³�������Τϰʲ��Υ��֥������ȤǤ���
-
-- boolean, number, string, symbol, keyword
-- ��³����ǽ���֥������Ȥ����Ǥ˻���list, vector
-- ¾�α�³���֥������Ȥؤλ���
-
-�ޤ������α�³�����åȤˤϡ�:index�����åȥ��ץ�����Ϳ���뤳�Ȥ��Ǥ�
-�ޤ���:index�����åȥ��ץ�����Ϳ���������åȤϡ���Ҥ��䤤��碌��³
-���ǡ����֥������Ȥ����ꤹ�뤿��˻��Ѥ��뤳�Ȥ��Ǥ��ޤ���Ϳ�����륪
-�ץ����ϼ���2����Ǥ���
-
-- :unique - Ʊ�쥯�饹��ˡ�Ʊ�������å��ͤ���ĥ��֥������Ȥ�¸�ߤǤ��ޤ���
-- :any - Ʊ�쥯�饹��ǡ�Ʊ�������å��ͤ���ĥ��֥������Ȥ�¸�ߤǤ��ޤ�
-
-����ǥå����ͤȤ��ƻȤ���Τϡ�
+今のところ、永続化されるのは以下のオブジェクトです。
 
 - boolean, number, string, symbol, keyword
-- ����ǥå�����ǽ���֥������Ȥ����Ǥ˻���list, vector
+- 永続化可能オブジェクトを要素に持つlist, vector
+- 他の永続オブジェクトへの参照
 
-¾�α�³���֥������Ȥؤλ��Ȥ�����ǥå����ͤȤ��ƻ��ѤǤ��ʤ��Τϡ�
-���ߤμ���������¤Ǥ������褳�����¤�ű�Ѥ����ͽ��Ǥ���
+また、この永続スロットには、:indexスロットオプションを与えることができ
+ます。:indexスロットオプションを与えたスロットは、後述の問い合わせ手続
+きで、オブジェクトを特定するために使用することができます。与えられるオ
+プションは次の2種類です。
 
-�ޤ�����³���饹�ˤ� :source-id ������ɤǥ�����ID��Ϳ���뤳�Ȥ�
-�Ǥ��ޤ�������ϱ�³���饹����������˻Ȥ��ޤ���
-�ܤ�����[[../Concepts/PersistenceGeneration]]�򻲾Ȥ��Ʋ�������
+- :unique - 同一クラス内に、同じスロット値を持つオブジェクトは存在できません
+- :any - 同一クラス内で、同じスロット値を持つオブジェクトが存在できます
+
+インデックス値として使えるのは、
+
+- boolean, number, string, symbol, keyword
+- インデックス可能オブジェクトを要素に持つlist, vector
+
+他の永続オブジェクトへの参照がインデックス値として使用できないのは、
+現在の実装上の制限です。将来この制限は撤廃される予定です。
+
+また、永続クラスには :source-id キーワードでソースIDを与えることが
+できます。これは永続クラスの世代管理に使われます。
+詳しくは[[../Concepts/PersistenceGeneration]]を参照して下さい。
 
 *** [class] <kahua-persistent-base>
 
-��³���֥������Ȥ�������륯�饹�Υ١������饹�Ǥ�����³���֥������Ȥ�
-�¸����������饹�Ϥ��Υ��饹��Ѿ�����ɬ�פ�����ޤ������Υ��饹��Ѿ�
-���뤳�Ȥǡ��᥿���饹��<kahua-persistent-meta>���ɲä���ޤ���
+永続オブジェクトを作成するクラスのベースクラスです。永続オブジェクトを
+実現したいクラスはこのクラスを継承する必要があります。このクラスを継承
+することで、メタクラスに<kahua-persistent-meta>が追加されます。
 
 *** [method] key-of (''obj'' <kahua-persistent-base>)
 
-�ǡ����١����Υ����˻Ȥ�ʸ������֤��ޤ����ǥե���ȥ᥽�åɤǤ�id����
-���ޤ������饹�ˤ�äƤϡ����Υ᥽�åɤ��ò����뤳�Ȥǥ����򥫥�����
-�����Ǥ��ޤ���â�����᥽�åɤ��ò����륯�饹�ϥ�������ˡ����ˤʤ뤳��
-���ݾڤ��ʤ���Фʤ�ޤ���
+データベースのキーに使う文字列を返します。デフォルトメソッドではidが使
+われます。クラスによっては、このメソッドを特化することでキーをカスタマ
+イズできます。但し、メソッドを特化するクラスはキーがユニークになること
+を保証しなければなりません。
 
-'''����''': ���Υ᥽�åɤ�'''����Ū��Obsolete�Ǥ�'''�����Ū��ͳ����¸
-³���Ƥ���˲᤮�ޤ��󡣤��Υ᥽�åɤ��ò����ƥ����򥫥����ޥ��������
-�ꡢ����ǥå��������åȤ���Ѥ��뤳�Ȥ�侩���ޤ���key-of������ˤĤ�
-�Ƥϡ�[[../Concepts/PersistenceGeneration]]�򻲾Ȥ��Ʋ�������
+'''注意''': このメソッドは'''基本的にObsoleteです'''。歴史的理由から存
+続しているに過ぎません。このメソッドを特化してキーをカスタマイズするよ
+り、インデックススロットを使用することを推奨します。key-ofの制約につい
+ては、[[../Concepts/PersistenceGeneration]]を参照して下さい。
 
 *** [method] touch-kahua-instance! (''obj'' <kahua-persistent-base>)
 
-�̾��³���֥������Ȥϡ��ץ���������slot-set!���ˤ���ѹ����������
-�˥ޡ������졢�ȥ�󥶥������λ�����ѹ����ǡ����١����˽��ᤵ���
-����
+通常、永続オブジェクトは、プログラム中でslot-set!等により変更を受けた際
+にマークされ、トランザクション終了時に変更がデータベースに書き戻されま
+す。
 
-���μ�³���ϡ���³���֥�������''obj''�����Ƥ��Ѥ����ˤ����ޡ�����������
-���ơ��ѹ����ǡ����١����˽��ᤵ���褦�ˤ��ޤ���
+この手続きは、永続オブジェクト''obj''の内容を変えずにただマークだけを付
+けて、変更がデータベースに書き戻されるようにします。
 
-��³���饹�����夬�夬�ä����ˡ���³���󥹥��󥹤������ޤȤ�ƹ�碌
-�������ʤɤ˻Ȥ��ޤ���
+永続クラスの世代が上がった時に、永続インスタンスの世代もまとめて合わせ
+たい時などに使えます。
 
 *** [method] remove-kahua-instance (''obj'' <kahua-persistent-base>)
 
-��³���֥������Ȥκ���Ѥߥե饰��Ω�Ƥޤ�������ˤ�ꡢ���פˤʤä���
-�֥������Ȥ򵼻�Ū�˺�����뤳�Ȥ��Ǥ��ޤ�������������֥������Ȥ�¾��
-��³���֥������ȤΥ����åȤǻ��Ȥ��Ƥ�����硢�����ˤ��Υ����å��ͤ�
-���褦�Ȥ����#f���֤���ޤ���
+永続オブジェクトの削除済みフラグを立てます。これにより、不要になったオ
+ブジェクトを擬似的に削除することができます。削除したオブジェクトを他の
+永続オブジェクトのスロットで参照していた場合、削除後にそのスロット値を
+得ようとすると#fが返されます。
 
 *** [procedure] kahua-serializable-object? ''obj''
 
-Scheme���֥�������''obj''�����ꥢ�饤����ǽ�������ʤ����³���֥�������
-�Υ����å��ͤȤ��ƥ��ȥ���ǽ���ɤ������֤��Ҹ�Ǥ���
+Schemeオブジェクト''obj''がシリアライズ可能か、すなわち永続オブジェクト
+のスロット値としてストア可能かどうかを返す述語です。
 
-���ꥢ�饤����ǽ�Ǥʤ����֥������Ȥ��³���֥������Ȥ˥��ȥ����褦�Ȥ�
-��ȥ��顼�Ȥʤ�ޤ������Υ��顼��̤���˲��򤹤�Τ˻Ȥ��ޤ���
+シリアライズ可能でないオブジェクトを永続オブジェクトにストアしようとす
+るとエラーとなります。そのエラーを未然に回避するのに使えます。
 
 *** [procedure] kahua-indexable-object? ''obj''
 
-Scheme���֥�������''obj''������ǥå����ͤȤ��ƻ��Ѳ�ǽ���ɤ������֤���
-��Ǥ���
+Schemeオブジェクト''obj''がインデックス値として使用可能かどうかを返す述
+語です。
 
 *** [class] <kahua-persistent-metainfo>
 
-��³���饹���Ĥޤ�<kahua-persistent-meta>�᥿���饹�Υ��󥹥��󥹤˴ؤ�
-������������뤿��Υ��饹�Ǥ������Υ��饹���ȡ�
-<kahua-persistent-base>��Ѿ����Ƥ��ꡢ��³���饹�ˤʤäƤ��ޤ����Ʊ�³
-���饹���Ф���<kahua-persistent-metainfo>�Υ��󥹥��󥹤��������졢����
-�������������֤��Ѵ���§�����ݻ�����ޤ���
+永続クラス、つまり<kahua-persistent-meta>メタクラスのインスタンスに関す
+る情報を管理するためのクラスです。このクラス自身、
+<kahua-persistent-base>を継承しており、永続クラスになっています。各永続
+クラスに対し、<kahua-persistent-metainfo>のインスタンスが作成され、クラ
+スの世代や世代間の変換規則等が保持されます。
 
-��³�ǡ����١����˴ؤ���᥿����򰷤����ץꥱ�������Ǥʤ��¤ꡢ�̾�
-�Ϥ��Υ��饹�˥�����������ɬ�פ�̵���Ǥ��礦��
+永続データベースに関するメタ情報を扱うアプリケーションでない限り、通常
+はこのクラスにアクセスする必要は無いでしょう。
 
 ** Querying Persistent Objects
 
 *** [procedure] find-kahua-class ''name''
 
-����ܥ�''name''��̾���˻��ı�³���饹���֤��ޤ������Τ褦�ʥ��饹��̵
-����Х��顼�Ȥʤ�ޤ���
+シンボル''name''を名前に持つ永続クラスを返します。そのようなクラスが無
+ければエラーとなります。
 
 *** [method] kahua-persistent-id obj
 
-��³���֥������ȤΥ��֥�������ID�������Ȥ��Ƽ������ޤ���
+永続オブジェクトのオブジェクトIDを整数として取得します。
 
 *** [method] removed? obj
 
-��³���֥������Ȥκ���Ѥߥե饰��Ω�Ƥ��Ƥ��뤫�ɤ������֤��Ҹ�Ǥ���
+永続オブジェクトの削除済みフラグが立てられているかどうかを返す述語です。
 
 *** [method] kahua-instance ''class'' id [maybe-include-removed-object?]
 
-���μ�³���ϥǡ����١����������ƥ��֤Ǥ�����ˤ����Ƥ٤ޤ���
+この手続きはデータベースがアクティブである時にしか呼べません。
 
-''class''�Υ��󥹥��󥹤ǥ��֥�������ID��id�Ǥ����³���󥹥��󥹤�õ����
-ɬ�פʤ���β������֤��ޤ����������륤�󥹥��󥹤�¸�ߤ��ʤ����� #f
-���֤��ޤ���maybe-include-removed-object? �Ͼ�ά��ǽ�����ǡ�#t���Ϥ��ȡ�
-remove-kahua-instance�Ǻ�����줿���֥������Ȥ�������뤳�Ȥ��Ǥ��ޤ���
+''class''のインスタンスでオブジェクトIDがidである永続インスタンスを探し、
+必要なら実体化して返します。該当するインスタンスが存在しない場合は #f
+を返します。maybe-include-removed-object? は省略可能引数で、#tを渡すと、
+remove-kahua-instanceで削除されたオブジェクトも取得することができます。
 
 *** [method] find-kahua-instance ''class'' ''key'' [maybe-include-removed-object?]
 *** [method] find-kahua-instance ''class'' ''slot-name'' ''slot-value'' [maybe-include-removed-object?]
 
-���μ�³���ϥǡ����١����������ƥ��֤Ǥ�����ˤ����Ƥ٤ޤ���
+この手続きはデータベースがアクティブである時にしか呼べません。
 
-�ǽ�η����ǸƤӽФ��ȡ�''class''�Υ��󥹥��󥹤ǥ���(ʸ����)�Ȥ�
-��''key''����ı�³���󥹥��󥹤�õ�����֤��ޤ���2���ܤη����ǸƤӽФ�
-�ȡ������å�''slot-name''���ͤ�''slot-value''�Ǥ��륤�󥹥���
-��''class''����õ�����֤��ޤ���������ξ��⡢�������륤�󥹥��󥹤�̵
-������#f���֤��ޤ���maybe-include-removed-object? �Ͼ�ά��ǽ�����ǡ�
-#t���Ϥ���remove-kahua-instance�Ǻ�����줿���֥������Ȥ�������뤳�Ȥ�
-�Ǥ��ޤ���
+最初の形式で呼び出すと、''class''のインスタンスでキー(文字列)とし
+て''key''を持つ永続インスタンスを探して返します。2番目の形式で呼び出す
+と、スロット''slot-name''の値が''slot-value''であるインスタンス
+を''class''から探して返します。いずれの場合も、該当するインスタンスが無
+い場合は#fを返します。maybe-include-removed-object? は省略可能引数で、
+#tを渡すとremove-kahua-instanceで削除されたオブジェクトも取得することが
+できます。
 
 *** [class] <kahua-collection>
 
-��³���֥������Ȥν���򰷤����饹�Ǥ���<collection>��Ѿ����Ƥ���Τǡ�
-gauche.collection��use���Ƥ�����map��fold���Ȥ��ޤ���
+永続オブジェクトの集合を扱うクラスです。<collection>を継承しているので、
+gauche.collectionをuseしておけばmapやfoldが使えます。
 
 *** [method] make-kahua-collection ((''class'' <kahua-persistent-meta>) .opts)
 
-���μ�³���ϥǡ����١����������ƥ��֤Ǥ�����ˤ����Ƥ٤ޤ���
+この手続きはデータベースがアクティブである時にしか呼べません。
 
-��³���饹''class''�����ƤΥ��󥹥��󥹤�<kahua-collection>��������֤��ޤ���
-opts�ϥ�����ɰ����ǡ����󥹥�����Фξ�����ꤹ�뤳�Ȥ��Ǥ��ޤ���
+永続クラス''class''の全てのインスタンスを<kahua-collection>に入れて返します。
+optsはキーワード引数で、インスタンス抽出の条件を指定することができます。
 
-- :index (''slot-name'' . ''slot-value'') - �����å�''slot-name''����''slot-value''�����
-���󥹥��󥹤Τߤ���Ф��롣
-- :keys (''key0'' ...) - �����ͤ� key0 ... �Τ����줫�Ǥ��륤�󥹥��󥹤Τߤ���Ф��롣
-- :predicate pred - (pred obj)�����ͤ��֤����󥹥��󥹤Τߤ���Ф��롣
-- :include-removed-object? #t - ����Ѥߥե饰��Ω�äƤ��륤�󥹥��󥹤�ޤ����Ф��롣
+- :index (''slot-name'' . ''slot-value'') - スロット''slot-name''に値''slot-value''を持つ
+インスタンスのみを抽出する。
+- :keys (''key0'' ...) - キー値が key0 ... のいずれかであるインスタンスのみを抽出する。
+- :predicate pred - (pred obj)が真値を返すインスタンスのみを抽出する。
+- :include-removed-object? #t - 削除済みフラグの立っているインスタンスも含めて抽出する。
 
 ** Object Database
 
 *** [class] <kahua-db>
 
-��³���֥������Ȥ��Ǽ����ǡ����١������饹�ϡ����Υ��饹��Ѿ����ޤ���
+永続オブジェクトを格納するデータベースクラスは、このクラスを継承します。
 
 *** [macro] with-db (''db'' ''path'') ''body'' ...
 
-''path''�ˤ���ǡ����١����򥪡��ץ󤷡��ǡ����١������֥�������
-(<kahua-db>���󥹥���)���ѿ�''db''��«���������֤ǡ�''body'' ... ��ɾ
-�����ޤ���''body''...�����ｪλ����С�''db''�˲ä���줿�Ѳ��򥳥ߥå�
-����''db''�򥯥��������ޤ���''body''�����顼���ꤲ�������Ѳ��򥢥ܡ�
-�Ȥ���''db''�򥯥��������ޤ���
+''path''にあるデータベースをオープンし、データベースオブジェクト
+(<kahua-db>インスタンス)を変数''db''に束縛した状態で、''body'' ... を評
+価します。''body''...が正常終了すれば、''db''に加えられた変化をコミット
+し、''db''をクローズします。''body''がエラーを投げた場合は変化をアボー
+トし、''db''をクローズします。
 
-''body''��¹���Υ����ʥߥå��������ƥ�Ȥ�ؤ��ơ��֥ǡ����١�������
-���ƥ��֤Ǥ���פȸ����ޤ���Kahua���ץꥱ�������ϡ��ǥե���ȥǡ����١�
-���������ƥ��֤ʾ��֤Ǽ¹Ԥ���ޤ������äơ��ۤȤ�ɤξ�硢Kahua���ץ�
-������������'''���Υޥ���������Ū�˸Ƥ�ɬ�פϤ���ޤ���'''��Kahua ��
-�ץꥱ������󤬻��Ѥ���ǥե���ȥǡ����١����ϡ�kahua.conf��
-default-database-name�䡢app-servers��:default-database-name���ץ����
-�ǻ��ꤹ�뤳�Ȥ��Ǥ��ޤ���
+''body''を実行中のダイナミックエクステントを指して、「データベースがア
+クティブである」と言います。Kahuaアプリケーションは、デフォルトデータベー
+スがアクティブな状態で実行されます。従って、ほとんどの場合、Kahuaアプリ
+ケーション内で'''このマクロを明示的に呼ぶ必要はありません'''。Kahua ア
+プリケーションが使用するデフォルトデータベースは、kahua.confの
+default-database-nameや、app-serversの:default-database-nameオプション
+で指定することができます。
 
-�Хå�����ɤΥǡ����١����ϡ�''path''�ι�ʸ�ˤ�����Ǥ��ޤ����ǥե�
-��ȤǤϡ��ե����륷���ƥ��Ȥä��ǡ����١��������ƥब�Ȥ��ޤ���
-kahua.conf ([[kahua.config]]����)�ǻ��ꤵ���database-directory�ʲ�
-��''path''�Ȥ���̾�Υǥ��쥯�ȥ꤬���졢������˱�³�ǡ�������Ǽ����
-�ޤ���
+バックエンドのデータベースは、''path''の構文により指定できます。デフォ
+ルトでは、ファイルシステムを使ったデータベースシステムが使われます。
+kahua.conf ([[kahua.config]]参照)で指定されるdatabase-directory以下
+に''path''という名のディレクトリが作られ、その中に永続データが格納され
+ます。
 
-''path'' �� "mysql:" �ޤ��� "postgresql:" �ǻϤޤäƤ�����ϡ����줾
-��MySQL, PostgreSQL��Хå�����ɤˤ����ǡ����١����Ȥʤ�ޤ�������
-����''path'' �ϰʲ��Τ褦�ʹ�ʸ���������ʤ���Фʤ�ޤ���
+''path'' が "mysql:" または "postgresql:" で始まっている場合は、それぞ
+れMySQL, PostgreSQLをバックエンドにしたデータベースとなります。この
+時、''path'' は以下のような構文を満たさなければなりません。
 
   mysql:''user'':''password'':''options''
   postgresql:''user'':''password'':''options''
 
-''user'' ��DB�Υ桼��̾��''password''�ϥѥ���ɡ�������''options''��
-DB��³����Ϳ���륪�ץ����Ǥ���''password'', ''options'' ��̵����о�
-ά��ǽ�Ǥ���
+''user'' はDBのユーザ名、''password''はパスワード、そして''options''は
+DB接続時に与えるオプションです。''password'', ''options'' は無ければ省
+略可能です。
 
-kahua.persistence�ϡ������ǡ����١�����Ȥ��ݤˤ�dbi�⥸�塼��ȡ�����
-�����ǡ����١�����³�˻��Ѥ���DBD�⥸�塼���ưŪ��load���ޤ���������
-��ˤϤ��餫����ɬ�פ�DBD�⥸�塼�뤬���󥹥ȡ��뤵��Ƥ��ʤ���Фʤ��
-���󡣥ǥե���ȤΥե����륷���ƥ�ǡ����١�����Ȥ����ˤ�DBD�����פ�
-����
+kahua.persistenceは、外部データベースを使う際にはdbiモジュールと、指定
+したデータベース接続に使用するDBDモジュールを自動的にloadします。システ
+ムにはあらかじめ必要なDBDモジュールがインストールされていなければなりま
+せん。デフォルトのファイルシステムデータベースを使う場合にはDBDは不要で
+す。
 
 *** [procedure] kahua-db-sync ''db''
 
-�ǡ����١���''db''�ˤ���ޤǲä���줿�ѹ��򥳥ߥåȤ��ޤ������ߥåȤ�
-������ϡ����θ�ǥ��顼��ȯ�����Ƥ������Хå�����ޤ���db����ά��
-���ȡ����ߥ����ƥ��֤ʥǡ����١������Ȥ��ޤ���
+データベース''db''にこれまで加えられた変更をコミットします。コミットし
+た情報は、この後でエラーが発生してもロールバックされません。dbが省略さ
+れると、現在アクティブなデータベースが使われます。
 
-�̾Kahua���ץꥱ���������Ǥ��μ�³����'''����Ū�˸Ƥ�ɬ�פϤ���ޤ���'''��
+通常、Kahuaアプリケーション内でこの手続きを'''明示的に呼ぶ必要はありません'''。
 
 ** Metainformation
 
-�ɤΤ褦�ʱ�³���饹���ǡ����١����˳�Ǽ����Ƥ��뤫�λ������μ�̵���ˡ�
-�ǡ����١����˳�Ǽ���줿��³���饹�ξ������Ф�API�������Ĥ��󶡤���ޤ���
+どのような永続クラスがデータベースに格納されているかの事前の知識無しに、
+データベースに格納された永続クラスの情報を取り出すAPIがいくつか提供されます。
 
 *** [procedure] kahua-persistent-classes-in-db
 
-���ߤΥǡ����١�����ˤ����³���饹�Υ��饹̾(����ܥ�)�Υꥹ�Ȥ��֤��ޤ���
+現在のデータベース内にある永続クラスのクラス名(シンボル)のリストを返します。
 
 *** [procedure] kahua-persistent-class-generation ''class-name''
 
-���ߤΥǡ����١������顢̾��''class-name''(����ܥ�)�Ǽ������
-��³���饹��õ�������κǿ��������ֹ�(����)���֤��ޤ���
-����Υ��饹��̵������#f���֤�ޤ���
+現在のデータベースから、名前''class-name''(シンボル)で示される
+永続クラスを探し、その最新の世代番号(整数)を返します。
+指定のクラスが無い場合は#fが返ります。
 
 *** [procedure] kahua-persistent-class-definition ''class-name'' [''generation'']
 
-���ߤΥǡ����١������顢̾��''class-name''(����ܥ�)�Ǽ������
-��³���饹���������Ф���define-class�ե��������������֤��ޤ���
-�֤��줿�ե������eval����ȡ��ƤӽФ����ץ�������Ǥ��α�³���饹��
-�Ȥ���褦�ˤʤ�ޤ���
+現在のデータベースから、名前''class-name''(シンボル)で示される
+永続クラスの定義を取り出し、define-classフォームを作成して返します。
+返されたフォームをevalすると、呼び出したプロセス内でその永続クラスが
+使えるようになります。
 
-ʣ�������夬�ǡ����١����˳�Ǽ����Ƥ����硢�ǥե���ȤǤ�
-�ǿ�������������ޤ�����''generation''�����ˤ���������ꤹ�뤳�Ȥ�Ǥ��ޤ���
+複数の世代がデータベースに格納されている場合、デフォルトでは
+最新の定義が得られますが、''generation''引数により世代を指定することもできます。
 
-''class-name''���б������³���饹��̵����硢�ޤ���
-''generation''���б��������夬̵������#f���֤���ޤ���
+''class-name''に対応する永続クラスが無い場合、また、
+''generation''に対応する世代が無い場合は#fが返されます。
 
-�ʤ������δؿ����֤��ե�����ϡ����α�³���饹���ä��ץ������λ���
-���饹����ȴ����˰��פ���櫓�ǤϤʤ����Ȥ����դ��Ʋ�������
-�ǡ����١����ˤϡ����饹���³�����뤿���ɬ�׽�ʬ�ʾ��󤷤�
-��Ǽ����Ƥ��ޤ��󡣤��δؿ����֤����饹����ϡ���������ˤ���٤�
-���Τ褦�ʰ㤤������ޤ���
+なお、この関数が返すフォームは、その永続クラスを作ったプロセスの持つ
+クラス定義と完全に一致するわけではないことに注意して下さい。
+データベースには、クラスを永続化するために必要十分な情報しか
+格納されていません。この関数が返すクラス定義は、元の定義にくらべて
+次のような違いがあります。
 
-- ���饹�ηѾ�����ϼ����ޤ����֤���륯�饹��<kahua-persistent-base>��
-ľ�ܷѾ����ޤ���
-- ���³�����åȤξ���ϴޤޤ�ޤ���
-- ��³�����åȤΥ����åȥ��ץ����� :allocation ���ץ����������
-�����ޤ���
-- :source-id�ʳ��ν�������ץ����ϼ����ޤ���
-- �����åȤν������¸����ޤ���
+- クラスの継承情報は失われます。返されるクラスは<kahua-persistent-base>を
+直接継承します。
+- 非永続スロットの情報は含まれません
+- 永続スロットのスロットオプションは :allocation オプションを除いて
+失われます。
+- :source-id以外の初期化オプションは失われます。
+- スロットの順序は保存されません。
 
-���Τ褦�ʰ㤤�����äƤ⡢�ǡ����١����Υ᥿����򰷤�
-���ץꥱ�������ˤȤäƤϡ����饹��������ͭ�ѤǤ��礦��
+このような違いがあっても、データベースのメタ情報を扱う
+アプリケーションにとっては、クラス定義情報は有用でしょう。

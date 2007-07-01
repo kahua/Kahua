@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: worker.scm,v 1.14 2006/08/31 04:15:16 bizenn Exp $
+;; $Id: worker.scm,v 1.14.2.1 2007/05/25 06:58:38 bizenn Exp $
 
 ;; A convenience module to test worker scripts.
 ;; You can spawn a worker script as a subprocess and communicate with it.
@@ -67,6 +67,7 @@
       (lambda (in out)
         (write header out) (newline out)
         (write body out)   (newline out)
+	(flush out)
         (let* ((header (read in))
                (body   (read in)))
           (proc header body))))))

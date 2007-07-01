@@ -1,11 +1,11 @@
 ;;; -*- mode: scheme; coding: utf-8 -*-
 ;; Persistent on DBI abstract storage
 ;;
-;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.16 2006/12/12 03:39:17 bizenn Exp $
+;; $Id: dbi.scm,v 1.16.2.5 2007/06/25 03:53:29 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)
@@ -114,21 +114,16 @@
 (define-method kahua-db-dbi-build-dsn ((db <kahua-db-dbi>) driver options)
   (format "dbi:~a:~a" driver options))
 
-(define transaction-level (make-parameter 0))
+(define transactional? (make-parameter #t))
 (define-method with-dbi-transaction ((db <kahua-db-dbi>) proc)
-  (define (parameter-inc! param)
-    (param (+ 1 (param))))
-  (define (parameter-dec! param)
-    (param (- (param) 1))
-    (param))
   (define (do-start-transaction conn)
-    (when (= 0 (parameter-inc! transaction-level))
+    (when (transactional?)
       (dbi-do conn "start transaction" '(:pass-through #t))))
   (define (do-commit conn)
-    (when (= 0 (parameter-dec! transaction-level))
+    (when (transactional?)
       (dbi-do conn "commit" '(:pass-through #t))))
   (define (do-rollback conn)
-    (when (= 0 (parameter-dec! transaction-level))
+    (when (transactional?)
       (dbi-do conn "rollback" '(:pass-through #t))))
   (let1 conn (connection-of db)
     (guard (e (else
@@ -136,7 +131,8 @@
 	       (raise e)))
       (do-start-transaction conn)
       (begin0
-	(proc conn)
+	(parameterize ((transactional? #f))
+	  (proc conn))
 	(do-commit conn)))))
 
 (define-method lock-db ((db <kahua-db-dbi>)) #t)
@@ -182,7 +178,7 @@
 (define-method kahua-db-ping ((db <kahua-db-dbi>))
   (safe-execute (cut dbi-do (connection-of db)
 		     "select class_name from kahua_db_classes where class_name is NULL"
-		     '(pass-through #t))))
+		     '(:pass-through #t))))
 
 (define-generic set-default-character-encoding!)
 
@@ -344,7 +340,7 @@
 
 (define-method read-kahua-instance ((db <kahua-db-dbi>)
                                     (class <kahua-persistent-meta>)
-                                    (key <string>) . may-be-include-removed-object?)
+                                    (key <string>) . maybe-include-removed-object?)
   (define (query tab)
     (format "select dataval from ~a where keyval=?" tab))
   (define (query-removed tab)
@@ -355,7 +351,7 @@
 		   (rv  (map (cut dbi-get-value <> 0) r))
 		   ((not (null? rv))))
 	  (read-from-string (car rv)))
-	(and (get-optional may-be-include-removed-object? #f)
+	(and (get-optional maybe-include-removed-object? #f)
 	     (and-let* ((r (dbi-do conn (query-removed tab) '()))
 			(rv (map (cut dbi-get-value <> 0) r))
 			((not (null? rv))))
@@ -366,7 +362,7 @@
 			   rv)
 		 #f))))))
 
-(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class opts . may-be-sweep?)
+(define-method kahua-persistent-instances ((db <kahua-db-dbi>) class opts . maybe-sweep?)
   (define (%select-instances tabname where-clause)
     (format "select id, dataval from ~a ~a" tabname where-clause))
   (define (%make-where-clause index keys)
@@ -388,28 +384,36 @@
 	  (cons (with-output-to-string
 		  (cut index-value-write (cdr index))) keys)
 	  keys)))
-  (define (%find-kahua-instance row filter-proc)
+  (define (%find-kahua-instance row index filter-proc)
     (and-let* ((id (x->integer (dbi-get-value row 0)))
-	       ((not (read-id-cache db id)))
-	       (obj (read-from-string (dbi-get-value row 1))))
+	       (cont (lambda () (read-from-string (dbi-get-value row 1))))
+	       (obj (if index
+			(check-index-cache/cont db id class (car index) (cdr index) cont)
+			(and (not (read-id-cache db id))
+			     (cont)))))
       (filter-proc obj)))
 
   ;; main
   (let-keywords* opts ((index #f)
 		       (keys #f)
 		       (predicate #f)
-		       (include-removed-object? #f))
+		       (include-removed-object? #f)
+		       (subclasses #f)	; ignore(to avoid WARNING)
+		       )
     (or (and-let* ((tab (kahua-class->table-name db class))
 		   (conn (connection-of db)))
 	  (receive (filter-proc res)
-	      (cond ((or include-removed-object? (and index (get-optional may-be-sweep? #f)))
+	      (cond ((or include-removed-object? (and index (get-optional maybe-sweep? #f)))
 		     (values (make-kahua-collection-filter class opts)
 			     (dbi-do conn (%select-instances tab "") '())))
 		    (else
-		     (values (make-kahua-collection-filter class `(:predicate ,predicate))
-			     (apply dbi-do conn (%select-instances tab (%make-where-clause index keys))
+		     (values (make-kahua-collection-filter
+			      class `(:predicate ,predicate
+				      :include-removed-object? ,include-removed-object?))
+			     (apply dbi-do conn (%select-instances
+						 tab (%make-where-clause index keys))
 				    '() (%make-sql-parameters index keys)))))
-	    (filter-map1 (cut %find-kahua-instance <> filter-proc) res)))
+	    (filter-map1 (cut %find-kahua-instance <> index filter-proc) res)))
 	'())))
 
 (define-method write-kahua-instance ((db <kahua-db-dbi>)
@@ -559,7 +563,7 @@
   (let-keywords* args
       ((nullable? #t)
        (default   #f))
-    (let1 conn (connection-of)
+    (let1 conn (connection-of db)
       (dbi-do conn
 	      (with-output-to-string
 		(lambda ()
@@ -579,7 +583,7 @@
 (define-method drop-column-from-table ((db <kahua-db-dbi>)
 				       (table <string>)
 				       (colname <string>))
-  (dbi-do (connection-of db) (format "alter table ~a drop ~a" table colname) '(pass-through #t)))
+  (dbi-do (connection-of db) (format "alter table ~a drop ~a" table colname) '(:pass-through #t)))
 
 (define-method add-index-to-table ((db <kahua-db-dbi>)
 				   (table <string>)
@@ -607,13 +611,15 @@
 			(dbi-do (connection-of db) "select value from kahua_db_classcount" '())))))
 
 (define-method dbutil:fix-kahua-db-classcount ((db <kahua-db-dbi>) n)
-  (dbi-do (connection-of db) "update kahua_db_classcount set value=?" '() n))
+  (dbi-do (connection-of db) "update kahua_db_classcount set value=?" '() n)
+  #t)
 
 (define-method dbutil:create-kahua-db-classcount ((db <kahua-db-dbi>) n)
   (let1 conn (connection-of db)
     (guard (e ((<dbi-exception> e) #t))
       (create-kahua-db-classcount db))
-    (initialize-kahua-db-classcount db n)))
+    (initialize-kahua-db-classcount db n))
+  #t)
 
 (define-method dbutil:check-class-counter ((db <kahua-db-dbi>) do-fix?)
   (define (max-class-id cn r)
@@ -639,12 +645,14 @@
 			(dbi-do (connection-of db) "select value from kahua_db_idcount" '())))))
 
 (define-method dbutil:fix-kahua-db-idcount ((db <kahua-db-dbi>) n)
-  (dbi-do (connection-of db) "update kahua_db_idcount set value = ?" '() n))
+  (dbi-do (connection-of db) "update kahua_db_idcount set value = ?" '() n)
+  #t)
 
 (define-method dbutil:create-kahua-db-idcount ((db <kahua-db-dbi>) n)
   (let1 conn (connection-of db)
     (safe-execute (cut create-kahua-db-idcount db))
-    (initialize-kahua-db-idcount db n)))
+    (initialize-kahua-db-idcount db n)
+    #t))
 
 (define-method dbutil:check-id-counter ((db <kahua-db-dbi>) do-fix?)
   (define (max-id cn r)
@@ -682,7 +690,8 @@
     (dbi-do conn (format "alter table ~a add removed smallint not null default 0" tabname)
 	    '(:pass-through #t))
     (dbi-do conn (format "create index idx_rmd_~a on ~a (removed)" tabname tabname)
-	    '(:pass-through #t)))
+	    '(:pass-through #t))
+    #t)
   (dbutil:persistent-classes-fold db check-removed-flag-column 'OK))
 
 (define-generic dbutil:fix-instance-table-structure)
@@ -713,5 +722,11 @@
 		(writer "\n")))
 	    *proc-table*)
   )
+
+(define-method dbutil:class-names ((db <kahua-db-dbi>))
+  (map (lambda (row)
+	 (string->symbol (dbi-get-value row 0)))
+       (dbi-do (connection-of db)
+	       "select class_name from kahua_db_classes")))
 
 (provide "kahua/persistence/dbi")
