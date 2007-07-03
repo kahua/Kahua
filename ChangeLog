@@ -1,3 +1,9 @@
+2007-07-03  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: configurea.ac, cgi/Makefile.in
+	  Add configure option --with-fastcgi-ext to specify extension of
+	  FastCGI script.  Its default value is fcg yet.
+
 2007-07-01  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 1.0.5 released.
