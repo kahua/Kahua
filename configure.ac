@@ -3,7 +3,7 @@ dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-dnl $Id: configure.ac,v 1.59 2007/06/25 04:22:26 bizenn Exp $
+dnl $Id: configure.ac,v 1.60 2007/07/03 07:12:12 bizenn Exp $
 dnl
 AC_PREREQ(2.59)
 AC_INIT(kahua, 1.1_pre10, info@kahua.org)
@@ -76,13 +76,25 @@ output to.  If disabled (--with-cgilogdir=no or --without-cgilogdir), cgi script
   ])
 AC_SUBST(KAHUA_CGILOGDIR)
 
+FASTCGI_EXT=fcg
+AC_ARG_WITH(fastcgi-ext,
+  AC_HELP_STRING([--with-fastcgi-ext=EXT],
+		 [Specifies the extension of fastcgi script.  It's may be fcg or fcgi usually.  Default: fcg]),
+  [
+    case "$with_fastcgi_ext" in
+      "") ;;
+      *)  FASTCGI_EXT="$with_fastcgi_ext" ;;
+    esac
+  ])
+AC_SUBST(FASTCGI_EXT)
+
 AC_ARG_WITH(fastcgi,
   AC_HELP_STRING([--with-fastcgi=yes|no],
                  [If yes, kahua.cgi will be generated as a fastcgi script. Default: no]),
   [
     case "$with_fastcgi" in
       no) FASTCGI_SCRIPT=          ;;
-      *)  FASTCGI_SCRIPT=kahua.fcg ;;
+      *)  FASTCGI_SCRIPT='kahua.$(FASTCGI_EXT)' ;;
     esac
   ])
 AC_SUBST(FASTCGI_SCRIPT)
