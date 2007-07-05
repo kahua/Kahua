@@ -1,3 +1,9 @@
+2007-07-05  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/server.scm
+	  Now run-eval is invoked with context that has only session-state.
+	  So we can easily simulate login session in kahua-shell.
+
 2007-07-03  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: configurea.ac, cgi/Makefile.in
