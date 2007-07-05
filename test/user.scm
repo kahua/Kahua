@@ -1,5 +1,5 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
-;; $Id: user.scm,v 1.8 2007/06/20 06:12:42 bizenn Exp $
+;; $Id: user.scm,v 1.9 2007/07/05 05:11:40 bizenn Exp $
 
 ;; test kahua.user
 
@@ -96,6 +96,13 @@
        (with-db (db *dbname*)
          (and-let* ((u (kahua-find-user "shiro")))
            (ref u 'login-name))))
+
+(test* "kahua-user?" #t
+       (with-db (db *dbname*)
+	 (every kahua-user?
+		(list (kahua-find-user "shiro")
+		      (kahua-find-user "nobsun")
+		      (kahua-find-user "admin")))))
 
 (test* "kahua-find-user" #f
        (with-db (db *dbname*)
