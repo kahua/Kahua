@@ -1,5 +1,8 @@
 2007-07-05  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: src/kahua/server.scm
+	  Add with-kahua-user/with-kahua-local-user.
+
 	* Change: src/kahua/user.scm, test/user.scm
 	  Add kahua-user? that check obj is a instance (kahua-current-user-class).
 

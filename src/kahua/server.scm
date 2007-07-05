@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.113 2007/07/05 05:32:10 bizenn Exp $
+;; $Id: server.scm,v 1.114 2007/07/05 07:46:20 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -52,6 +52,8 @@
 	  define-session-object
           kahua-current-entry-name
           kahua-current-user
+	  with-kahua-user
+	  with-kahua-local-user
           kahua-current-user-name
 	  kahua-login
 	  kahua-logout
@@ -486,21 +488,42 @@
 		 (acons login-name dbpath login-states))
 		(else login-states)))))
 
+(define kahua-local-current-user (make-parameter #f))
 (define kahua-current-user
   (getter-with-setter
    (lambda ()
-     (and-let* ((u (find-login-state (path-of (current-db))))
-		(user (kahua-find-user (car u))))
-       (cond ((active? user) user)
-	     (else (register-login-state #f (path-of (current-db))) #f))))
+     (cond ((kahua-local-current-user)
+	    => (lambda (u) (and (kahua-user? u) u)))
+	   (else
+	    (and-let* ((u (find-login-state (path-of (current-db))))
+		       (user (kahua-find-user (car u))))
+	      (cond ((active? user) user)
+		    (else (register-login-state #f (path-of (current-db))) #f))))))
    (lambda (user)
      (let1 u (cond ((kahua-user? user) user)
 		   ((string? user) (kahua-find-user user))
 		   (else #f))
-       (if (and u (active? u))
-	   (register-login-state (ref u 'login-name) (dbpath-of u))
-	   (register-login-state #f (path-of (current-db))))))
+       (cond ((kahua-local-current-user)
+	      (kahua-local-current-user (if (kahua-user? u) u #t)))
+	     (else
+	      (if (and u (active? u))
+		  (register-login-state (ref u 'login-name) (dbpath-of u))
+		  (register-login-state #f (path-of (current-db))))))))
    ))
+
+(define (with-kahua-user user proc)
+  (let ((old-user (kahua-current-user))
+	(new-user (cond ((kahua-user? user) user)
+			((string? user) (kahua-find-user user))
+			(else #f))))
+    (dynamic-wind
+	(lambda () (set! (kahua-current-user) new-user))
+	(cut proc new-user)
+	(lambda () (set! (kahua-current-user) old-user)))))
+
+(define (with-kahua-local-user user proc)
+  (parameterize ((kahua-local-current-user #t))
+    (with-kahua-user user proc)))
 
 ;; KAHUA-CURRENT-USER-NAME
 ;; (setter KAHUA-CURRENT-USER-NAME) user
