@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.91.2.4 2007/06/03 13:48:42 bizenn Exp $
+;; $Id: server.scm,v 1.91.2.5 2007/07/05 03:37:38 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -206,7 +206,8 @@
 
     ;; Handles 'eval' protocol
     ;; () -> ([Headers], [Result])
-    (define (run-eval)
+    (define (run-eval state)
+      (parameterize ((kahua-current-context `(("session-state" ,state))))
       (let ((error-output (open-output-string))
             (std-output   (open-output-string)))
         (receive (ok? result)
@@ -221,7 +222,7 @@
 	      (values '(("x-kahua-status" "ERROR"))
 		      (string-append (get-output-string error-output)
 				     (get-output-string std-output)
-				     result))))))
+				       result)))))))
 
     ;; FIXME!!
     (define (make-context state header body)
@@ -257,7 +258,7 @@
                                        (kahua-server-uri)))
                        )
           (if (assoc-ref-car header "x-kahua-eval" #f)
-	      (receive (headers result) (run-eval)
+	      (receive (headers result) (run-eval state)
 		(lambda ()
 		  (reply-cont headers result)))
 	      (receive (stree context)
@@ -461,7 +462,8 @@
 ;;   dynamic extent.
 
 (define (find-login-state dbpath . maybe-include-anon?)
-  (and-let* ((login-states (ref (kahua-context-ref "session-state") 'login-states)))
+  (and-let* ((session-state (kahua-context-ref "session-state"))
+	     (login-states (ref session-state 'login-states)))
     (or (find (lambda (e) (equal? (cdr e) dbpath)) login-states)
 	(and (get-optional maybe-include-anon? #f)
 	     dbpath
