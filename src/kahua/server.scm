@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.110 2007/06/03 13:46:37 bizenn Exp $
+;; $Id: server.scm,v 1.111 2007/07/05 01:20:57 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -464,7 +464,8 @@
 ;;   dynamic extent.
 
 (define (find-login-state dbpath . maybe-include-anon?)
-  (and-let* ((login-states (ref (kahua-context-ref "session-state") 'login-states)))
+  (and-let* ((session-state (kahua-context-ref "session-state"))
+	     (login-states (ref session-state 'login-states)))
     (or (find (lambda (e) (equal? (cdr e) dbpath)) login-states)
 	(and (get-optional maybe-include-anon? #f)
 	     dbpath
