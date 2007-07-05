@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.112 2007/07/05 03:17:56 bizenn Exp $
+;; $Id: server.scm,v 1.113 2007/07/05 05:32:10 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -494,7 +494,7 @@
        (cond ((active? user) user)
 	     (else (register-login-state #f (path-of (current-db))) #f))))
    (lambda (user)
-     (let1 u (cond ((is-a? user <kahua-user>) user)
+     (let1 u (cond ((kahua-user? user) user)
 		   ((string? user) (kahua-find-user user))
 		   (else #f))
        (if (and u (active? u))
