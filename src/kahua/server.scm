@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.111 2007/07/05 01:20:57 bizenn Exp $
+;; $Id: server.scm,v 1.112 2007/07/05 03:17:56 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -209,22 +209,23 @@
 
     ;; Handles 'eval' protocol
     ;; () -> ([Headers], [Result])
-    (define (run-eval)
-      (let ((error-output (open-output-string))
-            (std-output   (open-output-string)))
-        (receive (ok? result)
-            (with-error-to-port error-output
-              (cut with-output-to-port std-output
-                   (cut eval-proc body eval-environment)))
-          (if ok?
-	      (values '(("x-kahua-status" "OK"))
-		      (list* (get-output-string error-output)
-			     (get-output-string std-output)
-			     result))
-	      (values '(("x-kahua-status" "ERROR"))
-		      (string-append (get-output-string error-output)
-				     (get-output-string std-output)
-				     result))))))
+    (define (run-eval state)
+      (parameterize ((kahua-current-context `(("session-state" ,state))))
+	(let ((error-output (open-output-string))
+	      (std-output   (open-output-string)))
+	  (receive (ok? result)
+	      (with-error-to-port error-output
+		(cut with-output-to-port std-output
+		     (cut eval-proc body eval-environment)))
+	    (if ok?
+		(values '(("x-kahua-status" "OK"))
+			(list* (get-output-string error-output)
+			       (get-output-string std-output)
+			       result))
+		(values '(("x-kahua-status" "ERROR"))
+			(string-append (get-output-string error-output)
+				       (get-output-string std-output)
+				       result)))))))
 
     ;; FIXME!!
     (define (make-context state header body)
@@ -260,7 +261,7 @@
                                        (kahua-server-uri)))
                        )
           (if (assoc-ref-car header "x-kahua-eval" #f)
-	      (receive (headers result) (run-eval)
+	      (receive (headers result) (run-eval state)
 		(lambda ()
 		  (reply-cont headers result)))
 	      (receive (stree context)
