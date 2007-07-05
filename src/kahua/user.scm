@@ -3,7 +3,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.9.2.2 2007/06/03 13:48:42 bizenn Exp $
+;; $Id: user.scm,v 1.9.2.3 2007/07/05 05:14:56 bizenn Exp $
 
 (define-module kahua.user
   (use kahua.persistence)
@@ -12,7 +12,7 @@
   (use srfi-13)
   (use srfi-27)
   (use gauche.collection)
-  (export <kahua-user> kahua-add-user kahua-check-user kahua-find-user
+  (export <kahua-user> kahua-user? kahua-add-user kahua-check-user kahua-find-user
           kahua-user-password-change kahua-user-password-change-force
 	  kahua-user-has-role? kahua-user-add-role! kahua-user-drop-role!
 	  dbpath-of inactive? active? name-of roles-of kahua-current-user-class
@@ -47,6 +47,9 @@
 
 (define (kahua-current-user-class)
   (ref <kahua-user> '%user-class))
+
+(define (kahua-user? obj)
+  (eq? (kahua-current-user-class) (class-of obj)))
 
 (define (kahua-find-user login-name)
   (find-kahua-instance (kahua-current-user-class) login-name))
