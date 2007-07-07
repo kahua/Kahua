@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.10 2007/04/30 09:01:46 bizenn Exp $
+;; $Id: util.scm,v 1.11 2007/07/07 22:34:36 bizenn Exp $
 
 ;; This module contains generally useful routines, which don't belong to
 ;; a particular module.
@@ -14,9 +14,11 @@
   (use srfi-1)
   (use srfi-19)
   (use util.list)
+  (use file.util)
   (use gauche.collection)
   (use gauche.sequence)
   (use gauche.parseopt)
+  (use gauche.charconv)
   (use kahua.config)
   (export kahua-error-string
 	  <kahua-error>
@@ -34,6 +36,7 @@
 	  read-pid-file
 	  check-pid
 	  make-filter-pipeline
+	  kahua:call-with-output-file
 	  ))
 (select-module kahua.util)
 
@@ -174,5 +177,29 @@
 		    (break #f)))
 	      obj
 	      filtered-filters)))))
+
+(define (kahua:call-with-output-file outfile proc . kargs)
+  (let-keywords kargs ((backup-file #f)
+		       (tmpbase     #f)
+		       (perm        #f)
+		       (encoding (gauche-character-encoding))
+		       . kargs)
+    (let1 outdir (sys-dirname outfile)
+      (make-directory* outdir)
+      (receive (out tmpfile)
+	  (sys-mkstemp (build-path outdir (or tmpbase "kahua-tmp-")))
+	(let1 out (wrap-with-output-conversion out encoding)
+	  (when (and backup-file (file-is-regular? outfile))
+	    (sys-link outfile backup-file))
+	  (guard (e (else
+		     (sys-unlink tmpfile)
+		     (unless (port-closed? out)
+		       (close-output-port out))
+		     (raise e)))
+	    (proc out outfile)
+	    (close-output-port out)
+	    (when perm
+	      (sys-chmod tmpfile perm))
+	    (sys-rename tmpfile outfile)))))))
 
 (provide "kahua/util")

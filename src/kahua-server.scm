@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-server.scm,v 1.28 2007/06/18 05:50:19 bizenn Exp $
+;; $Id: kahua-server.scm,v 1.29 2007/07/07 22:34:36 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.
@@ -242,22 +242,11 @@
 (define (kahua-write-static-file path nodes context . rargs)
   (when (string-scan path "../")
     (error "can't use 'up' component in kahua-write-static-file" path))
-  (let* ((write-path (kahua-static-document-path path))
-	 (write-dir (sys-dirname write-path)))
-    (make-directory* write-dir)
-    (receive (out fname) (sys-mkstemp (build-path write-dir "kahua-static-"))
-      (let* ((out (wrap-with-output-conversion
-		   out (get-keyword :encoding rargs (gauche-character-encoding))))
-	     (ex (guard (e (else (sys-remove fname) e))
-		   (with-output-to-port out
-		     (lambda ()
-		       (display (kahua-render nodes context))
-		       (flush)))
-		   (sys-chmod fname #o644)
-		   (sys-rename fname write-path)
-		   #f)))
-	(close-output-port out)
-	(when ex (raise ex))))))
+  (apply kahua:call-with-output-file
+	 (kahua-static-document-path path)
+	 (lambda (out _)
+	   (with-output-to-port out (cut display (kahua-render nodes context))))
+	 :tmpbase "kahua-static-" :perm #o644 rargs))
 
 ;; Main -----------------------------------------------------
 

@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.14 2007/06/21 07:00:56 bizenn Exp $
+;; $Id: efs.scm,v 1.15 2007/07/07 22:34:36 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)
@@ -93,20 +93,6 @@
   (let1 reader (get-keyword :reader opts read)
     (apply call-with-input-file path reader opts)))
 
-(define (safe-update-file path tmpbase writer . maybe-encoding)
-  (receive (out tmp) (sys-mkstemp tmpbase)
-    (guard (e (else
-	       (close-output-port out)
-	       (sys-unlink tmp)
-	       (raise e)))
-      (let1 out (or (and-let* ((ce (get-optional maybe-encoding #f)))
-		      (wrap-with-output-conversion out ce))
-		    out)
-	(begin0
-	  (writer out)
-	  (close-output-port out)
-	  (sys-rename tmp path))))))
-
 (define (with-locking-output-file file proc . opts)
   (apply call-with-output-file file
 	 (lambda (out)
@@ -132,7 +118,7 @@
     (lambda ()
       (let* ((path (id-counter-path-of db))
 	     (next-id (read-from-file path)))
-	(safe-update-file path (tmp-path-of db) (pa$ write (+ next-id 1)) #f)
+	(kahua:call-with-output-file path (lambda (out _) (write (+ next-id 1) out)))
 	next-id))))
 
 (define-method lock-db ((db <kahua-db-efs>)) #t)   ; DUMMY
@@ -472,7 +458,7 @@
                                      (obj <kahua-persistent-base>))
   (let* ((class (class-of obj))
 	 (file-path (data-path db obj))
-	 (writer (lambda (out)
+	 (writer (lambda (out _)
 		   (with-port-locking out (cut kahua-write obj out)))))
     (create-class-directory* db class)
     (with-locking-output-file (class-lock-path db (class-name class))
@@ -481,10 +467,10 @@
 	(if (floating-instance? obj)
 	    (guard (e (else (kahua-db-efs-error "Object ID ~s conflicts" (kahua-persistent-id obj))))
 	      (call-with-output-file file-path
-		writer
+		(cut writer <> #f)
 		:if-exists :error
 		:encoding (character-encoding-of db)))
-	    (safe-update-file file-path (tmp-path-of db) writer (character-encoding-of db)))
+	    (kahua:call-with-output-file file-path writer :encoding (character-encoding-of db)))
 	(maintain-alive-link db obj)
 	(maintain-key-link db obj))
       :if-exists :append)
@@ -574,8 +560,10 @@
     (cond ((> (or (with-input-from-file (id-counter-path-of db)
 		    read :if-does-not-exist #f) 0)
 	      max-id)                                     'OK)
-	  (do-fix? (safe-update-file (id-counter-path-of db) (tmp-path-of db)
-				(pa$ write (+ max-id 1))) 'FIXED)
+	  (do-fix?
+	   (kahua:call-with-output-file
+	    (id-counter-path-of db) (lambda (out _) (write (+ max-id 1) out)))
+	   'FIXED)
 	  (else                                           'NG))))
 
 ;; Sweep all instances data as raw string, and check each data character
@@ -589,9 +577,8 @@
 	(string=? s1 s2))))
   (define (convert p bs from to)
     (cond (do-fix?
-	   (safe-update-file p (tmp-path-of db)
-			(pa$ display (ces-convert bs from))
-			to)
+	   (kahua:call-with-output-file
+	    p (lambda (out _) (display (ces-convert bs from) out)) :encoding to)
 	   'FIXED)
 	  (else 'NG)))
   (let1 ce (character-encoding-of db)
