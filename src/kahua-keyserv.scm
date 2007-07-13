@@ -1,10 +1,10 @@
 ;; session-key server.
 ;;
-;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-keyserv.scm,v 1.16 2007/06/13 03:49:07 bizenn Exp $
+;; $Id: kahua-keyserv.scm,v 1.17 2007/07/13 21:42:00 bizenn Exp $
 
 ;; This will eventually becomes generic object broker.  
 ;; For now, this only handles state session object.
@@ -72,22 +72,17 @@
            (sockaddr (worker-id->sockaddr wid (kahua-sockbase)))
 	   (tpool (make-thread-pool (or thnum (kahua-keyserv-concurrency)))))
       (unwind-protect
-       (call/cc
-	(lambda (bye)
-	  (set-signal-handler! *TERMINATION-SIGNALS* (lambda _ (bye 0)))
-	  (set-signal-handler! SIGPIPE #f)
-	  (set! *default-sigmask* (sys-sigmask 0 #f))
-	  (guard (e (else
-		     (log-format "~a" (kahua-error-string e #t))
-		     (log-format "Exitting by error")
-		     (bye 70)))
-	    (run-server wid sockaddr tpool)
-	    (bye 0))))
+       (begin
+	 (set-signal-handler! SIGPIPE #f)
+	 (sys-sigmask SIG_BLOCK *TERMINATION-SIGNALS*)
+	 (set! *default-sigmask* (sys-sigmask 0 #f))
+	 (run-server wid sockaddr tpool)
+	 (sys-sigwait *TERMINATION-SIGNALS*)
+	 0)
        (begin
 	 (when (is-a? sockaddr <sockaddr-un>)
 	   (sys-unlink (sockaddr-name sockaddr)))
 	 (thread-pool-wait-all tpool)
-	 (thread-pool-finish-all tpool)
 	 (sys-unlink (kahua-keyserv-pidpath)))))))
 
 (define (usage)
@@ -107,15 +102,12 @@
     (format #t "~a\n" worker-id) ;; tell spvr about myself
     (selector-add! selector (socket-fd sock) accept-handler '(r))
 
-    ;; The signal mask of "root" thread is changed unexpectedly on Mac OS X 10.4.5,
-    ;; maybe something wrong,  but I don't know what is wrong.
-    ;; So, I restore the signal mask of "root" thread periodically.
-    ;; FIXME!!
-    (do () (#f)
-      (sys-sigmask SIG_SETMASK *default-sigmask*)
-      (when (zero? (selector-select selector 60.0e6))
-        (sweep-objects *default-timeout*)))
-    ))
+    (let1 t (make-thread (lambda ()
+			   (do () (#f)
+			     (when (zero? (selector-select selector 60.0e6))
+			       (sweep-objects *default-timeout*))))
+			 "dispatcher")
+      (thread-start! t))))
 
 (define (handle-request client)
   (call-with-client-socket client

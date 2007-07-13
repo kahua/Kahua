@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.19 2007/07/13 08:37:05 bizenn Exp $
+;; $Id: session.scm,v 1.20 2007/07/13 21:42:01 bizenn Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -39,6 +39,7 @@
   (use util.list)
   (use srfi-1)
   (use srfi-2)
+  (use srfi-11)
   (use srfi-27)
   (export session-manager-init
           session-cont-register
@@ -57,17 +58,31 @@
   )
 (select-module kahua.session)
 
-;;; initialization --------------------------------------------
-;;
-;; application server must tell this module its worker Id.
-
 (define worker-id (make-parameter #f))
 
 (define session-server-id (make-parameter #f))
 
+(define-class <kahua-session-server> ()
+  ((wid :init-keyword :wid)
+   (sockaddr)
+   (socket :init-value #f)
+   (in     :init-value #f)
+   (out    :init-value #f)))
+
+(define-method initialize ((self <kahua-session-server>) initargs)
+  (next-method)
+  (and-let* ((wid (slot-ref self 'wid)))
+    (slot-set! self 'sockaddr (worker-id->sockaddr wid (kahua-sockbase))))
+  self)
+
+;;; initialization --------------------------------------------
+;;
+;; application server must tell this module its worker Id.
+
 (define (session-manager-init wid ssid)
   (worker-id wid)
-  (when (string? ssid) (session-server-id ssid))
+  (when (string? ssid)
+    (session-server-id (make <kahua-session-server> :wid ssid)))
   #t)
 
 (define (check-initialized)
@@ -268,19 +283,27 @@
         id)))
 
 ;; Communicate to keyserver
+;; NB: This work properly on single thread program only.
 (define (keyserver request)
-  (let1 client (make-client-socket
-		(worker-id->sockaddr (session-server-id) (kahua-sockbase)))
-    (call-with-client-socket client
-      (lambda (in out)
-	(unwind-protect
-	 (begin
-	   (write request out) (flush out)
-	   (let1 result (read in)
-	     (unless (pair? result)
-	       (error "keyserver failure: check log file"))
-	     result))
-	 (socket-shutdown client 1))))))
+  (let*-values (((keyserv) (session-server-id))
+		((client in out)
+		 (cond ((slot-ref keyserv 'socket)
+			(lambda (s) (and s (eq? 'connected (socket-status s))))
+			=> (lambda (s)
+			     (values s (slot-ref keyserv 'in) (slot-ref keyserv 'out))))
+		       (else
+			(let* ((s (make-client-socket (slot-ref keyserv 'sockaddr)))
+			       (in (socket-input-port s))
+			       (out (socket-output-port s)))
+			  (slot-set! keyserv 'socket s)
+			  (slot-set! keyserv 'in in)
+			  (slot-set! keyserv 'out out)
+			  (values s in out))))))
+    (write request out) (flush out)
+    (let1 result (read in)
+      (unless (pair? result)
+	(error "keyserver failure: check log file"))
+      result)))
 
 ;; SESSION-STATE-REGISTER [id]
 ;;   Register a new session state.  Returns a state session ID.
