@@ -5,7 +5,7 @@
 ;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: thread-pool.scm,v 1.4 2007/04/30 09:36:47 bizenn Exp $
+;; $Id: thread-pool.scm,v 1.5 2007/07/13 06:54:51 bizenn Exp $
 
 (define-module kahua.thread-pool
   (use srfi-1)
@@ -93,7 +93,7 @@
 		   (if (or (<= num 0) (null? pool))
 		       pool
 		       (begin
-			 (thread-specific-set! (car pool) #f)
+			 (thread-specific-set! (car pool) #t)
 			 (loop (- num 1) (cdr pool)))))))))
 
 (define (thread-pool-wait-all tp . maybe-interval)
