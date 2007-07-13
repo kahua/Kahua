@@ -2,10 +2,10 @@
 ;;
 ;; kahua.thread-pool - Thread Pooling Facility
 ;;
-;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2006-2007 Kahua Project, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: thread-pool.scm,v 1.5 2007/07/13 06:54:51 bizenn Exp $
+;; $Id: thread-pool.scm,v 1.6 2007/07/13 08:37:05 bizenn Exp $
 
 (define-module kahua.thread-pool
   (use srfi-1)

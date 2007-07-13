@@ -1,6 +1,6 @@
 ;; -*- coding: euc-jp ; mode: scheme -*-
 ;; test kahua.session
-;; $Id: session.scm,v 1.3 2005/07/04 05:09:21 nobsun Exp $
+;; $Id: session.scm,v 1.4 2007/07/13 08:37:13 bizenn Exp $
 
 ;; NB: first we test state session without session key server (local mode),
 ;; then start up the server process and test the shared key mode.
@@ -27,7 +27,7 @@
        (session-cont-register values))
 
 (test* "initialization" #t
-       (begin (session-manager-init "worker") #t))
+       (begin (session-manager-init "worker" #f) #t))
 
 (kahua-init "./test.conf")
 

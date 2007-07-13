@@ -1,10 +1,10 @@
 ;; Session manager
 ;;
-;;  Copyright (c) 2003-2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: session.scm,v 1.18 2007/04/28 08:17:18 bizenn Exp $
+;; $Id: session.scm,v 1.19 2007/07/13 08:37:05 bizenn Exp $
 
 ;; This module manages two session-related structure.
 ;;
@@ -65,11 +65,10 @@
 
 (define session-server-id (make-parameter #f))
 
-(define (session-manager-init wid . maybe-ssid)
-  (let-optionals* maybe-ssid ((ssid #f))
-    (worker-id wid)
-    (when (string? ssid) (session-server-id ssid))
-    #t))
+(define (session-manager-init wid ssid)
+  (worker-id wid)
+  (when (string? ssid) (session-server-id ssid))
+  #t)
 
 (define (check-initialized)
   (unless (worker-id) (error "session manager is not initialized")))

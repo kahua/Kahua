@@ -1,10 +1,10 @@
 ;; Common server operations
 ;;
-;;  Copyright (c) 2003-2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.114 2007/07/05 07:46:20 bizenn Exp $
+;; $Id: server.scm,v 1.115 2007/07/13 08:37:05 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -113,10 +113,10 @@
 ;; KAHUA-INIT-SERVER worker-type [session-server-id]
 ;;   Application server should use it within init-server procedure.
 ;;   Returns worker id.
-(define (kahua-init-server wtype . maybe-ssid)
+(define (kahua-init-server wtype ssid)
   (random-source-randomize! default-random-source)
   (let ((wid (make-worker-id wtype)))
-    (apply session-manager-init wid maybe-ssid)
+    (session-manager-init wid ssid)
     (worker-type wtype)
     (worker-id wid)
     wid))
