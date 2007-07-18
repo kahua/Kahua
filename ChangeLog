@@ -1,3 +1,9 @@
+2007-07-18  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: configure.ac, src/Makefile.in
+	  Fix the problem that BSD make couldn't substitute version string
+	  properly.
+
 2007-07-14  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua-keyserv.scm, src/kahua/session.scm
