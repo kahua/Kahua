@@ -1,4 +1,5 @@
-package	          = kahua
+package	          = @PACKAGE_NAME@
+package_version   = @PACKAGE_VERSION@
 SHELL             = @SHELL@
 prefix            = @prefix@
 exec_prefix       = @exec_prefix@
@@ -34,7 +35,6 @@ SCRIPT_INSTALL_DIR     = $(bindir)
 KAHUA_STATICDIR        = @KAHUA_STATICDIR@
 SOCKET_BASE_DIR        = $(prefix)/tmp/$(package)
 TMP_BASE_DIR           = $(localstatedir)/tmp
-KAHUA_VERSION          = $(shell cat $(top_srcdir)/VERSION)
 
 MAKE_SH_SCRIPT   = $(GOSH) $(top_srcdir)/src/make-script.scm "$(GOSH)" "$(libdir)"
 
@@ -132,7 +132,7 @@ kahua/config.scm: kahua/config.scm.in
 	    -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" \
 	    -e "s@##KAHUA_STATICDIR##@$(KAHUA_STATICDIR)@" \
 	    -e "s@##package##@$(package)@" \
-	    -e "s@##KAHUA_VERSION##@$(KAHUA_VERSION)@" \
+	    -e "s@##KAHUA_VERSION##@$(package_version)@" \
             $@.in > $@
 	chmod -w $@
 
