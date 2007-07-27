@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.72.2.10 2007/06/25 03:53:29 bizenn Exp $
+;; $Id: persistence.scm,v 1.72.2.11 2007/07/27 05:13:11 bizenn Exp $
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -769,7 +769,7 @@
 	  (else
 	   (display "#,(kahua-proxy ")
 	   (display (class-name (slot-ref obj 'class)))
-	   (delim)
+	   (delimit)
 	   (write ident)
 	   (write-char #\))))))
 
