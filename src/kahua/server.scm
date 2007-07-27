@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2004 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: server.scm,v 1.91.2.7 2007/07/05 07:48:00 bizenn Exp $
+;; $Id: server.scm,v 1.91.2.8 2007/07/27 22:18:56 bizenn Exp $
 
 ;; This module integrates various kahua.* components, and provides
 ;; application servers a common utility to communicate kahua-server
@@ -141,7 +141,7 @@
          paths))
 
 (define (kahua-self-uri-full . paths)
-  (build-path (kahua-server-uri) (string-drop (apply kahua-self-uri paths) 1)))
+  (string-append (kahua-server-uri) (apply kahua-self-uri paths)))
 
 ;; KAHUA-DEFAULT-HANDLER header body reply-cont default-proc
 ;;                       &keyword stale-proc error-proc eval-proc
