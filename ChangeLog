@@ -1,3 +1,11 @@
+2007-07-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/server.scm
+	  Now kahua-self-uri and kahua-self-uri-full always return a URI(path)
+	  string which ends by #\/ if they have no arguments, and they
+	  always return a URI(path) which doesn't end by #\/ if they have
+	  one or more arguments.
+
 2007-07-18  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: configure.ac, src/Makefile.in
