@@ -1,45 +1,45 @@
-;; Setup  -*- coding: euc-jp -*-
+;; Setup  -*- coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: Setup.ja,v 1.19 2007/06/29 09:01:23 bizenn Exp $
+;; $Id$
 
-* Kahua�򥻥åȥ��åפ���
+* Kahuaをセットアップする
 
 
 ##(toc)
 
-** ����
+** 準備
 
-*** Gauche �Υ��󥹥ȡ���
+*** Gauche のインストール
 
-Kahua��ư��������ˤϡ�0.8.8 �ʹߤ�pthread�򥵥ݡ��Ȥ���
+Kahuaを動かすためには、0.8.8 以降のpthreadをサポートした
 [http://practical-scheme.net/gauche/index-j.html Gauche]
-�����󥹥ȡ���ѤߤǤ���ɬ�פ�����ޤ���
+がインストール済みである必要があります。
 
-��������0.8.8�ˤ��礭�ʥХ��������Ĥ�����Τǡ�0.8.9�ʹߤ�
-���Ѥ�侩���ޤ�����ʬ�Υ����ƥ�ˤɤ�ʥС�������Gauche
-�����󥹥ȡ��뤵��Ƥ��뤫�ϰʲ��Υ��ޥ�ɤ�¹Ԥ���Ф狼��
-�ޤ���
+ただし、0.8.8には大きなバグがいくつかあるので、0.8.9以降の
+使用を推奨します。自分のシステムにどんなバージョンのGauche
+がインストールされているかは以下のコマンドを実行すればわかり
+ます。
 {{{
 $ gosh -V
 Gauche scheme interpreter, version 0.8.9 [utf-8,pthreads]
 }}}
-Ŭ�ڤʥС������� Gauche �����󥹥ȡ��뤵��Ƥ��ʤ���С�
-���󥹥ȡ��뤷�Ƥ���������
+適切なバージョンの Gauche がインストールされていなければ、
+インストールしてください。
 
-����: [[GaucheForKahua//Kahua�Τ����Gauche���󥹥ȡ�������]]
+参考: [[GaucheForKahua//KahuaのためのGaucheインストール入門]]
 
 ----
 
-** �Ȥꤢ�����
+** とりあえず試す
 
-*** ��ʬ��HOME�β��˥��󥹥ȡ���
+*** 自分のHOMEの下にインストール
 
-�Ȥꤢ����Kahua���θ����Ƥߤ����Τʤ顢��ʬ��HOME�β��˥��󥹥ȡ��뤷��
-���ޤ����Ȥ����ᤷ�ޤ�����ҤΤ褦�ʥѡ��ߥå�����桼��/���롼�פ�
-���꤬���פˤʤ�ޤ���
+とりあえずKahuaを体験してみたいのなら、自分のHOMEの下にインストールして
+しまうことをお薦めします。後述のようなパーミッションやユーザ/グループの
+設定が不要になります。
 {{{
 % tar xvzf Kahua-1.1.tgz
 % cd Kahua-1.1
@@ -50,105 +50,105 @@ Gauche scheme interpreter, version 0.8.9 [utf-8,pthreads]
 % make install-examples
 }}}
 
-�����Kahua��ư�����Τ�ɬ�פʤ�����Ƥȥ���ץ륢�ץꥱ�������Ȥ���
-${HOME}/kahua �β��˥��󥹥ȡ��뤵��ޤ���${HOME}/kahua/bin ��PATH����
-���Ƥ����������Ǥ��礦���ޤ���Kahua��¢��HTTPd��Ȥ��С�Apache�ʤɤ�
-Web�����Ф������Ѱդ���ɬ�פϤ���ޤ���
+これでKahuaを動かすのに必要なもの全てとサンプルアプリケーションとが、
+${HOME}/kahua の下にインストールされます。${HOME}/kahua/bin にPATHを通
+しておくと便利でしょう。また、Kahua内蔵のHTTPdを使えば、Apacheなどの
+Webサーバを別途用意する必要はありません。
 
-*** Kahua��ư����
+*** Kahuaを起動する
 
-Kahua��ư����ˤϡ��ʲ��Υ��ޥ�ɤ�¹Ԥ��ޤ���
+Kahuaを起動するには、以下のコマンドを実行します。
 {{{
 % ($HOME/kahua/bin/kahua-spvr --httpd localhost:8888 >>/tmp/kahua-error.log &)
 }}}
-�ݡ����ֹ�����ø��ݡ��Ȥ���Ŭ���˷��Ʋ�������--httpd(�⤷����-H) ��
-�����Ȥ��ƥݡ����ֹ��������ꤷ�����ϡ�0.0.0.0(����Ӳ�ǽ�ʤ�[::])��
-�����Х����åȤ�bind����ޤ���Ŭ�ڤ˥ե��륿��󥰤򤷤Ƥ��ʤ����ϳ�
-�����鼫ͳ�˥��������Ǥ��Ƥ��ޤ��ΤǤ����դ���������
+ポート番号は非特権ポートから適当に決めて下さい。--httpd(もしくは-H) の
+引数としてポート番号だけを指定した場合は、0.0.0.0(および可能なら[::])に
+サーバソケットがbindされます。適切にフィルタリングをしていない場合は外
+部から自由にアクセスできてしまうのでご注意ください。
 
-�֥饦���� http://localhost:8888/ �˥����������Ƥߤޤ��礦������ץ륢
-�ץꥱ��������lambdabooks��ɽ�����줿�������Ǥ�����������ͷ��ǤߤƤ�
-������������ץ륢�ץꥱ�������Υ����������ɤ�
-$HOME/kahua/var/kahua/checkout�β��˥��ץꥱ�������̾��Ʊ��̾���Υǥ�
-�쥯�ȥꤴ�Ȥ��֤���Ƥ��ޤ����ʤ���kahua-shell ��Ȥäƥ���ץ�����
-����³�������Ȥ��ϡ���ҤΡֳ�ȯ��������Ȥ��������פ򻲾Ȥ��Ƥ�����
-����
+ブラウザで http://localhost:8888/ にアクセスしてみましょう。サンプルア
+プリケーションのlambdabooksが表示されたら成功です。いろいろ遊んでみてく
+ださい。サンプルアプリケーションのソースコードは
+$HOME/kahua/var/kahua/checkoutの下にアプリケーション名と同じ名前のディ
+レクトリごとに置かれています。なお、kahua-shell を使ってワーカプロセス
+に接続したいときは、後述の「開発アカウントを作成する」を参照してくださ
+い。
 
 ----
 
-** ������ȥ��󥹥ȡ��뤹��
+** きちんとインストールする
 
-�����ƥ�θ����ξ���root���¤�Kahua�򥤥󥹥ȡ��뤹��ݤˤϡ�
-¿���μ��ȡ�Kahua�λ��Ȥߤ򾯤������Ƥߤ�ɬ�פ�����ޤ���
+システムの公共の場所にroot権限でKahuaをインストールする際には、
+多少の手順と、Kahuaの仕組みを少し覗いてみる必要があります。
 
-*** Kahua�����ʬô�����򤹤�
+*** Kahuaの役割分担を理解する
 
-Kahua�ϡ��礭��3�Ĥ�ʬ�व���ץ��������������줾��θ���
-(UNIX�桼��)�ǡ���ߤ��̿����ʤ���ư��ޤ���
+Kahuaは、大きく3つに分類されるプロセス群が、それぞれの権限
+(UNIXユーザ)で、相互に通信しながら動作します。
 
-# Kahua�����з�(kahua-spvr��kahua-server��kahua-keyserv)
-# Kahua�֥�å�(kahua.cgi, kahua.fcg, kahua-httpd)
-# Kahua������(kahua-admin)����ӳ�ȯ��(kahua-shell)
+# Kahuaサーバ群(kahua-spvr、kahua-server、kahua-keyserv)
+# Kahuaブリッジ(kahua.cgi, kahua.fcg, kahua-httpd)
+# Kahua管理者(kahua-admin)および開発者(kahua-shell)
 
-����3�Ԥϡ�Ʊ��UNIX�ɥᥤ�󥽥��åȤ��ɤ߽񤭤Ǥ���ɬ�פ�����ޤ���
-�ޤ���Kahua�����з���Kahua�֥�å��Ȥϡ�Ʊ�����ǥƥ�ݥ��ե�����
-���ɤ߽񤭤��Ǥ���ɬ�פ�����ޤ���
+この3者は、同じUNIXドメインソケットを読み書きできる必要があります。
+また、Kahuaサーバ群とKahuaブリッジとは、同じ場所でテンポラリファイル
+の読み書きができる必要があります。
 
-*** ���롼�� kahua ���������
+*** グループ kahua を作成する
 
-3�Ĥ����Υץ�����Ʊ�Τ�UNIX�ɥᥤ�󥽥��åȤ��̤��Ƥ����򤹤�
-����ˤϡ����줾��Υץ������μ¹ԥ桼����Ʊ��Υ��롼�פ�°���Ƥ���
-ɬ�פ�����ޤ������Τ���Υ��롼�� ''kahua'' �򿷵�����Ͽ���ޤ��礦��
-root���¤�ɬ�פǤ���
+3つの役割のプロセス同士がUNIXドメインソケットを通じてやり取りをする
+ためには、それぞれのプロセスの実行ユーザが同一のグループに属している
+必要があります。そのためのグループ ''kahua'' を新規に登録しましょう。
+root権限が必要です。
 {{{
 # groupadd kahua
 }}}
 
-OS�ˤ�äƤϰ㤦���ޥ�ɤ�Ȥ�ɬ�פ����뤫���Τ�ޤ���
-OS�Υޥ˥奢��򻲾Ȥ��Ƥ���������
+OSによっては違うコマンドを使う必要があるかも知れません。
+OSのマニュアルを参照してください。
 
-*** �桼�� kahua ���������
+*** ユーザ kahua を作成する
 
-�嵭��3����Υץ������Τ�����Kahua�����з��ϰ��ΤȤʤä�ư���ޤ���
-�������ƥ��塢Kahua�����з����ȼ��Υ桼�����¤β���ư�������Ȥ�
-˾�ޤ����Ǥ��礦�������Ǥϡ����Υ桼���� ''kahua'' �Ȥ��ƿ����˺������ޤ���
-�ץ饤�ޥꥰ�롼�פϾ嵭�Ǻ����������롼�� kahua �Ǥ����Ǥ��礦��
+上記の3種類のプロセスのうち、Kahuaサーバ群は一体となって動きます。
+セキュリティ上、Kahuaサーバ群は独自のユーザ権限の下で動かすことが
+望ましいでしょう。ここでは、そのユーザを ''kahua'' として新規に作成します。
+プライマリグループは上記で作成したグループ kahua でいいでしょう。
 {{{
 # useradd -g kahua kahua
 }}}
 
-*** ���롼�� kahua ��¾�Υ桼������Ͽ����
+*** グループ kahua に他のユーザを登録する
 
-���ˡ�Kahua�֥�å��μ¹ԥ桼����Kahua������/��ȯ�ԤǤ���桼����kahua
-���롼�פ���Ͽ���ޤ��礦��
+次に、Kahuaブリッジの実行ユーザとKahua管理者/開発者であるユーザをkahua
+グループに登録しましょう。
 
-Kahua�֥�å��Τ�����kahua.cgi��kahua.fcg�ϡ��̾�CGI������ץȤ�¹Ԥ���
-Web�����Ф�Ʊ�����¤�ư��ޤ�(�����Ǥ�suEXEC�ϻȤäƤ��ʤ���ΤȤ��ޤ�)��
-Web�����Фμ¹ԥ桼���� www ���Ȥ���ȡ�
+Kahuaブリッジのうち、kahua.cgiやkahua.fcgは、通常CGIスクリプトを実行する
+Webサーバと同じ権限で動作します(ここではsuEXECは使っていないものとします)。
+Webサーバの実行ユーザが www だとすると、
 {{{
 # usermod -G kahua www
 }}}
-��¹Ԥ��ޤ��������ѹ���Web�����Ф�ư���ȿ�Ǥ�����ˤϡ����ä���Web�����Ф�
-�Ƶ�ư����ɬ�פ�����ޤ����ʤ���Kahua��¢��HTTPd����Ѥ���������Web�����Ф�
-���Ѥ��ʤ����Ϥ�����������פǤ���
+を実行します。この変更をWebサーバの動作に反映させるには、いったんWebサーバを
+再起動する必要があります。なお、Kahua内蔵のHTTPdを使用し、外部のWebサーバを
+使用しない場合はこの設定は不要です。
 
-���ˡ�Kahua������/��ȯ�ԤˤĤ��ƹͤ��ޤ�������Ϥ����餯�����ʤ�����
-(+¾��ï��)�Υ�������桼���Ǥ��礦���㤨�Ф��ʤ��� taro ���Ȥ���ȡ�
+次に、Kahua管理者/開発者について考えます。これはおそらく、あなた自身
+(+他の誰か)のログインユーザでしょう。例えばあなたが taro だとすると、
 {{{
 # usermod -G kahua taro
 }}}
-�� kahua ���롼�פ� taro ���ɲä��뤳�Ȥ��Ǥ��ޤ���
+で kahua グループに taro を追加することができます。
 
-'''����:''' usermod���ޥ�ɤε�ư�ϡ�OS���Ȥ���̯�˰�äƤ��ޤ���NetBSD�Ǥ�
-��������ꥰ�롼�פ��ɲä�������Ǥ�����Ubuntu Linux �� Fedora Core�ʤɤǤ�
-��������ꥰ�롼�פ��񤭤��Ƥ��ޤ��ޤ���ɬ�����Ȥ���usermod���ޥ�ɤε�ư
-���ǧ���Ƥ���¹Ԥ��Ƥ���������
+'''注意:''' usermodコマンドの挙動は、OSごとに微妙に違っています。NetBSDでは
+セカンダリグループを追加するだけですが、Ubuntu Linux や Fedora Coreなどでは
+セカンダリグループを上書きしてしまいます。必ずお使いのusermodコマンドの挙動
+を確認してから実行してください。
 
-*** �ӥ�ɤ���
+*** ビルドする
 
-�ӥ�ɤȤ��äƤ⡢Kahua�ϤۤȤ�ɤ�Gauche������ץȤǤ���(����sh������ץ�)��
-./configure �Υ��ץ����˵���Ĥ�����������ä�����Ϥ���ޤ��󡣰ʲ���
-ɮ�Ԥ����륵���Ȥ�Kahua�򥤥󥹥ȡ��뤹�뤿��˥ӥ�ɤ�Ԥ��ͻҤǤ���
+ビルドといっても、KahuaはほとんどがGaucheスクリプトであり(一部shスクリプト)、
+./configure のオプションに気をつけさえすれば特に問題はありません。以下は
+筆者があるサイトにKahuaをインストールするためにビルドを行う様子です。
 {{{
 % tar xzvf Kahua-1.1.tgz
 % cd Kahua-1.1
@@ -163,142 +163,142 @@ Web�����Фμ¹ԥ桼���� www ���Ȥ���ȡ�
     --with-fastcgi=yes
 % make
 }}}
-make��GNU make�Ǥ�BSD make�Ǥ�����פʤϤ��Ǥ����⤷��BSD make�Ǥ��ޤ�
-�Ԥ��ʤ����� GNU make ���ƤߤƤ��������������ơ�BSD make�Ǥɤ�
-���ޤ������ʤ��ä��Τ��򤷤餻�Ƥ���������
+makeはGNU makeでもBSD makeでも大丈夫なはずです。もし、BSD makeでうまく
+行かない場合は GNU make を試してみてください。そして、BSD makeでどう
+うまくいかなかったのかをしらせてください。
 
-**** configure�Υ��ץ����
+**** configureのオプション
 
-configure�Υ��ץ����ξܺ٤ˤĤ��Ƥϡ�
+configureのオプションの詳細については、
 {{{
 % ./configure --help
 }}}
-�Ǹ��뤳�Ȥ��Ǥ��ޤ����������Ǥ��ä����ꤹ�뤳�Ȥ�¿���Ǥ��������ץ����
-�ˤĤ��Ʋ��⤷�ޤ���
+で見ることができますが、ここでは特に設定することが多いであろうオプション
+について解説します。
 
 {{{
  --with-kahua-user
 
-     Kahua�����з���ư��������Υ桼��̾���ǥե���Ȥϻ���ʤ���
+     Kahuaサーバ群を動かすためのユーザ名。デフォルトは指定なし。
 
  --with-kahua-group
 
-     Kahua�����з���ư�����桼����Kahua������/��ȯ�ԡ�Kahua�֥�å���
-     �¹ԥ桼������°���ʤ���Фʤ�ʤ����롼��̾���ǥե���Ȥϻ���ʤ���
+     Kahuaサーバ群を動かすユーザ、Kahua管理者/開発者、Kahuaブリッジの
+     実行ユーザが所属しなければならないグループ名。デフォルトは指定なし。
 
  --with-cgi-user
 
-     Kahua�֥�å�(kahua.cgi/kahua.fcg)�μ¹ԥ桼��̾���̾��CGI��ư
-     ����Web�����Фμ¹ԥ桼���ˤʤ롣�ǥե���Ȥϻ���ʤ���
+     Kahuaブリッジ(kahua.cgi/kahua.fcg)の実行ユーザ名。通常はCGIを起動
+     するWebサーバの実行ユーザになる。デフォルトは指定なし。
 
  --with-cgidir
 
-     Kahua�֥�å��Ǥ���CGI������ץȤΥ��󥹥ȡ�����Ȥʤ�ǥ��쥯�ȥꡣ
-     Web�����Ф�����ˤ�롣�ǥե���ȤǤ� ${libexecdir}/kahua �Ȥʤ롣
+     KahuaブリッジであるCGIスクリプトのインストール先となるディレクトリ。
+     Webサーバの設定による。デフォルトでは ${libexecdir}/kahua となる。
 
  --with-cgilogdir
 
-     Kahua�֥�å��Ǥ���CGI������ץȤ���������Ϥ���ǥ��쥯�ȥꡣ
-     ���ꤷ���ǥ��쥯�ȥ��CGI������ץȤμ¹Ը��¤ǽ񤭹��ߤ��Ǥ���
-     ����Фʤ�ʤ����ǥե���Ȥ� ${localstatedir}/kahua/cgilog��
+     KahuaブリッジであるCGIスクリプトがログを出力するディレクトリ。
+     指定したディレクトリはCGIスクリプトの実行権限で書き込みができな
+     ければならない。デフォルトは ${localstatedir}/kahua/cgilog。
 
  --prefix, --exec-prefix, ...
 
-     configure��ɸ�४�ץ�������ꤹ�뤳�Ȥ�¿���Τ�--prefix��¾��
-     --localstatedir��--sysconfdir�����ꡣ${localstatedir}/kahua ��
-     Kahua���ץꥱ��������ǡ����١����������ǥ��쥯�ȥ�ʤɤ�����
-     ���졢ɸ�������ե����뤬${sysconfdir}/etc/kahua.conf ���֤���롣
+     configureの標準オプション。設定することが多いのは--prefixの他、
+     --localstatedir、--sysconfdirあたり。${localstatedir}/kahua に
+     Kahuaアプリケーションやデータベース、ログディレクトリなどが配置
+     され、標準の設定ファイルが${sysconfdir}/etc/kahua.conf に置かれる。
 
  --with-staticdir
 
-     Kahua�����з�����Ū����ƥ�Ĥ�õ���ǥ��쥯�ȥꡣ�ǥե���Ȥ�
-     /var/www/kahua�������ͤϥ��󥹥ȡ��������ե�������ѹ��Ǥ��롣
+     Kahuaサーバ群が静的コンテンツを探すディレクトリ。デフォルトは
+     /var/www/kahua。この値はインストール後設定ファイルで変更できる。
 
  --with-fastcgi
 
-     FastCGI�б���Kahua�֥�å�(kahua.fcg)�򥤥󥹥ȡ��뤹�롣����
-     ���ץ�����Ȥ�����ˤϡ����餫���� Gauche-fastcgi �򥤥󥹥�
-     ���뤷�Ƥ���ɬ�פ����롣
+     FastCGI対応のKahuaブリッジ(kahua.fcg)をインストールする。この
+     オプションを使うためには、あらかじめ Gauche-fastcgi をインスト
+     ールしておく必要がある。
 }}}
 
-*** ����եƥ���
+*** セルフテスト
 
-�ʲ��Υ��ޥ�ɤǥƥ��Ȥ�¹Ԥ��ޤ���
+以下のコマンドでテストを実行します。
 {{{
 % make check
 }}}
 
-*** ���󥹥ȡ���
+*** インストール
 
-�ʲ��Υ��ޥ�ɤ�Kahua�����ƥ�Ȥ���ɬ�פʥե����뷲�򥤥󥹥ȡ��뤷�ޤ���
+以下のコマンドでKahuaシステムとして必要なファイル群をインストールします。
 {{{
 % su
 # make install
 }}}
 
-����ץ륢�ץꥱ�������򥤥󥹥ȡ��뤹��ݤ� root �ǤϤʤ���Kahua
-������/��ȯ�Ԥθ��¤ǹԤ��ޤ���
+サンプルアプリケーションをインストールする際は root ではなく、Kahua
+管理者/開発者の権限で行います。
 {{{
 % make install-examples
 }}}
-���θ塢����ץ�Ȥ��ƥ��󥹥ȡ��뤵�줿�ǡ����١����ǥ��쥯�ȥ��
-�����ʡ�/���롼��/�ѡ��ߥå�����ʲ��Τ褦���ѹ����ޤ����嵭��
-configure���ץ����ǥӥ�ɤ򤷤��ΤǤ���С��ǡ����١����ǥ��쥯�ȥ�
-�� /usr/local/kahua/var/kahua/db �ˤʤ�ޤ���
+この後、サンプルとしてインストールされたデータベースディレクトリの
+オーナー/グループ/パーミッションを以下のように変更します。上記の
+configureオプションでビルドをしたのであれば、データベースディレクトリ
+は /usr/local/kahua/var/kahua/db になります。
 {{{
 % su
 # chown -R kahua:kahua /usr/local/kahua/var/kahua/db*
 }}}
-�Ǹ��*(�������ꥹ��)��˺��ʤ���
+最後の*(アスタリスク)をお忘れなく。
 
-*** Kahua�����з��ε�ư
+*** Kahuaサーバ群の起動
 
-����줵�ޤǤ������褦�䤯Kahua��ư��������������ޤ�����
-Kahua�����з���kahua�桼�����¤ǵ�ư���ޤ��礦��
+お疲れさまでした。ようやくKahuaを起動する準備が整いました。
+Kahuaサーバ群をkahuaユーザ権限で起動しましょう。
 {{{
 # su kahua -c ${prefix}/bin/kahua-spvr
 }}}
-���Υ��ޥ�ɤ�Kahua�����ѥХ���(kahua-spvr)����ư���������ѥХ�����
-ɬ�פ˱����ƥ��(kahua-server)�䥭��������(kahua-keyserv)��ư
-���ޤ�����¢HTTPd�Ĥ��ǵ�ư����ʤ顢
+このコマンドでKahuaスーパバイザ(kahua-spvr)が起動し、スーパバイザが
+必要に応じてワーカ(kahua-server)やキーサーバ(kahua-keyserv)を起動
+します。内蔵HTTPdつきで起動するなら、
 {{{
 # su kahua -c ${prefix}/bin/kahua-spvr --httpd localhost:8888
 }}}
-�Τ褦�ˤ��ޤ����Хå����饦��ɤ�ư������������
+のようにします。バックグラウンドで動かしたい場合は
 {{{
 # su kahua -c "(${prefix}/bin/kahua-spvr >>${localstatedir}/kahua/logs/kahua-error.log 2>&1 &)"
 }}}
-�Τ褦�ˤ���Ф����Ǥ��礦��
+のようにすればいいでしょう。
 
-���ߤ�Kahua�ˤϡ��Ƽ�OS��rc������ץ�(init.d������ץ�)�ˤ��Τ褦��
-��ư���ޥ�ɤ���Ͽ������Ȥߤ�(�ޤ�)����ޤ��󡣾嵭�Υ��ޥ�ɥ饤���
-���ͤ˺������뤫��daemontools ��Ȥ��Ȥ褤�Ǥ��礦��
+現在のKahuaには、各種OSのrcスクリプト(init.dスクリプト)にこのような
+起動コマンドを登録する仕組みは(まだ)ありません。上記のコマンドラインを
+参考に作成するか、daemontools を使うとよいでしょう。
 
 ----
 
-** ��ȯ�桼���κ���
+** 開発ユーザの作成
 
-Kahua�Ǥϡ�kahua-shell�Ȥ������ޥ�ɤ�Ȥ���ư����Υ���ץ���������³����
-����ɾ�������ꡢ�����ξ��֤��ѹ������ꤹ�뤳�Ȥ��Ǥ��ޤ���kahua-shell��
-�������³����ݡ��ֳ�ȯ�桼���פ�ǧ�ڤ�Ԥ��ޤ��Τǡ��ޤ��Ϥ��Τ����
-��ȯ�桼�����������ɬ�פ�����ޤ���Kahua�γ�ȯ�桼���ϡ�������/��ȯ�Ԥ�
-UNIX�������󥢥�����ȤȤ���Ω�ˡ�Kahua�����ƥ�������˺������뤳�Ȥ�
-���դ��Ƥ���������
+Kahuaでは、kahua-shellというコマンドを使い、動作中のワーカプロセスに接続して
+式を評価したり、内部の状態を変更したりすることができます。kahua-shellは
+ワーカに接続する際、「開発ユーザ」の認証を行いますので、まずはそのための
+開発ユーザを作成する必要があります。Kahuaの開発ユーザは、管理者/開発者の
+UNIXログインアカウントとは独立に、Kahuaシステムの内部に作成することに
+注意してください。
 
-�ޤ���Kahua�����з���������뤿��Υ��ޥ�ɤǤ���kahua-admin��ư���ޤ���
-�ʹߡ�kahua-admin���ޥ�ɤ����󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ�˥ѥ����̤ä�
-�����ΤȤ��ޤ���
+まず、Kahuaサーバ群を管理するためのコマンドであるkahua-adminを起動します。
+以降、kahua-adminコマンドがインストールされているディレクトリにパスが通って
+いるものとします。
 {{{
 % kahua-admin
 spvr>
 }}}
-���Υץ���ץȤ˰ʲ��Υ��ޥ�ɤ����Ϥ��ޤ���
+このプロンプトに以下のコマンドを入力します。
 {{{
-spvr> adduser �桼��̾ �ѥ����
+spvr> adduser ユーザ名 パスワード
 done
 spvr>
 }}}
-�㤨�С��ɲä������桼��̾�� taro���ѥ���ɤ� secret �ξ��ϡ�
+例えば、追加したいユーザ名が taro、パスワードが secret の場合は、
 {{{
 spvr> adduser taro secret
 done
@@ -306,8 +306,8 @@ spvr> lsuser
 ("steel" "sussman" "taro")
 spvr>
 }}}
-�Ȥʤ�Ǥ��礦��steel��sussman�Ȥ����Τϥ���ץ�Ȥ�����Ͽ����Ƥ���桼��
-�ʤΤǡ�������Ƥ��ޤäƤ��ޤ��ޤ���
+となるでしょう。steel、sussmanというのはサンプルとして登録されているユーザ
+なので、削除してしまってかまいません。
 {{{
 spvr> deluser steel
 done
@@ -315,9 +315,9 @@ spvr> deluser sussman
 done
 spvr>
 }}}
-EOF(Ctrl-D)�����Ϥ���� kahua-admin ��ȴ�����ޤ���
+EOF(Ctrl-D)を入力すれば kahua-admin を抜けられます。
 
-����������� kahua-shell ��Ȥ���褦�ˤʤ�ޤ�������Ƥߤޤ��礦��
+さぁ、これで kahua-shell を使えるようになりました。試してみましょう。
 {{{
 % kahua-shell
 Welcome to Kahua.
@@ -333,27 +333,27 @@ lambdabooks(gje:2ft3z)> (map (cut ref <> 'login-name) (make-kahua-collection <ka
 ("admin" "guest")
 lambdabooks(gje:2ft3z)>
 }}}
-����ץ륢�ץꥱ��������lambabooks����³��������ɾ�������Ȥ����Ǥ���
+サンプルアプリケーションのlambabooksに接続し、式を評価したところです。
 
 ----
 
-** �����ȥХ�ɥ����Ѥ���
+** サイトバンドルを使用する
 
-Kahua 0.8���顢�����ȥХ�ɥ�Ȥ����������Ȥ߹��ޤ�ޤ�����Kahua�����з���
-ư������󥰥ǥ��쥯�ȥ����ݲ�������Τǡ�ñ���Kahua���󥹥ȡ���
-�١����β��ǡ�ʣ����Kahua�����з�(kahua-spvr�Ȥ����۲��Υ����з�)���ñ��
-ư�������Ȥ��Ǥ���褦�ˤʤ�ޤ���
+Kahua 0.8から、サイトバンドルという機構が組み込まれました。Kahuaサーバ群が
+動作するワーキングディレクトリを抽象化したもので、単一のKahuaインストール
+ベースの下で、複数のKahuaサーバ群(kahua-spvrとその配下のサーバ群)を簡単に
+動かすことができるようになります。
 
-����: [[Concepts/Site Bundle//�����ȥХ�ɥ�]]
+参考: [[Concepts/Site Bundle//サイトバンドル]]
 
-*** �����ȥХ�ɥ����
+*** サイトバンドルを作る
 
-�������륵���Ȥ��б�����kahua-spvr�μ¹Ը��¤ǰʲ��Υ��ޥ�ɤ�¹Ԥ��ޤ���
+作成するサイトに対応したkahua-spvrの実行権限で以下のコマンドを実行します。
 {{{
 % kahua-package create /var/tmp/kahua
 }}}
-����ǥ����ȤΥ�����ȥ󤬺�������ޤ����ǥ��쥯�ȥ깽���ϰʲ��Τ褦��
-�ʤ�ޤ���
+これでサイトのスケルトンが作成されます。ディレクトリ構成は以下のように
+なります。
 {{{
 % find /var/tmp/kahua
 /var/tmp/kahua
@@ -370,62 +370,71 @@ Kahua 0.8���顢�����ȥХ�ɥ�Ȥ����������Ȥ߹��ޤ�ޤ�����Kahua�����з���
 /var/tmp/kahua/static
 /var/tmp/kahua/tmp
 }}}
-ɸ��Υ���󥰥ǥ��쥯�ȥ�ι����˻��Ƥ��ޤ����������Ĥ��ѹ���ä���
-���ޤ���
+標準のワーキングディレクトリの構成に似ていますが、いくつか変更を加えて
+います。
 
-# app: ɸ��Υ���󥰥ǥ��쥯�ȥ�Ǥ����Ū�аޤ����checkout�ס�
-���ץꥱ������󤴤Ȥˤ��β��˥��֥ǥ��쥯�ȥ�򷡤ꡢ���ץꥱ�������
-�Υ������ե���������֤��롣
-# database: ɸ��Υ���󥰥ǥ��쥯�ȥ�Ǥϥ���󥰥ǥ��쥯�ȥ�ľ����
-�֤���Ƥ����ե����륷���ƥ�ϥǡ����١����Υǥ��쥯�ȥ꤬�֤���롣
-# etc: �����ȥХ�ɥ��ǵ�ư����kahua-*������ץȷ������Ȥ�������ե�����
-�䳫ȯ�桼���ǡ����١��������֤���롣�����ȥХ�ɥ���ѻ���kahua-*
-������ץȤ�ɸ�������ե�����򻲾Ȥ��ʤ���
-# logs: �����ե�����ν����衣
-# plugins: �ץ饰����ե���������֤��롣�����Ǥϡ�Kahua�ȤȤ��
-���󥹥ȡ��뤵���ɸ��ץ饰����򥵥��ȥХ�ɥ���ǻ��Ѥ��������ϡ�
-�����˥��ԡ�����ɬ�פ����롣
-# run: PID�ե�����ν����衣
-# socket: Kahua�����з����̿��˻��Ѥ���UNIX�ɥᥤ�󥽥��åȤ����־�ꡣ
-# static: ��Ū����ƥ�Ĥ������衣
-# tmp: �ƥ�ݥ��ǥ��쥯�ȥꡣ
+# app: 標準のワーキングディレクトリでは歴史的経緯から「checkout」。
+アプリケーションごとにこの下にサブディレクトリを掘り、アプリケーション
+のソースファイルを配置する。
+# database: 標準のワーキングディレクトリではワーキングディレクトリ直下に
+置かれていたファイルシステム系データベースのディレクトリが置かれる。
+# etc: サイトバンドル上で起動するkahua-*スクリプト群が参照する設定ファイル
+や開発ユーザデータベースが配置される。サイトバンドル使用時、kahua-*
+スクリプトは標準の設定ファイルを参照しない。
+# logs: ログファイルの出力先。
+# plugins: プラグインファイルを配置する。現状では、Kahuaとともに
+インストールされる標準プラグインをサイトバンドル内で使用したい時は、
+ここにコピーする必要がある。
+# run: PIDファイルの出力先。
+# socket: Kahuaサーバ群が通信に使用するUNIXドメインソケットの配置場所。
+# static: 静的コンテンツの配置先。
+# tmp: テンポラリディレクトリ。
 
-*** �����ȥХ�ɥ���kahua-spvr��ư����
+*** サイトバンドル上でkahua-spvrを動かす
 
-�����ȥХ�ɥ������������¤ǰʲ��Τ褦�˵�ư���ޤ���
+サイトバンドルを作成した権限で以下のように起動します。
 {{{
 % kahua-spvr -S /var/tmp/kahua --httpd 8889
 }}}
--S�θ������륵���ȥХ�ɥ�ؤΥѥ��ϥե�ѥ��ǻ��ꤷ�Ƥ���������
-����kahua-spvr��kahua-admin����³�������Ȥ��ϡ�
+-Sの後ろに来るサイトバンドルへのパスはフルパスで指定してください。
+このkahua-spvrにkahua-adminを接続したいときは、
 {{{
 % kahua-admin -S /var/tmp/kahua
 }}}
-�ȵ�ư���ޤ���
+と起動します。
 
-�ʤ�����󥳥ޥ�ɥ饤�󥪥ץ�������ꤹ��Τ����ݤǤ���С�
-�Ķ��ѿ�kAHUA_DEFAULT_SITE�˥ǥե���Ȥǻ��Ѥ��륵���ȥХ�ɥ��
-���ꤹ�뤳�Ȥ��Ǥ��ޤ���
+なお、毎回コマンドラインオプションを指定するのが面倒であれば、
+環境変数kAHUA_DEFAULT_SITEにデフォルトで使用するサイトバンドルを
+指定することができます。
 {{{
 % export KAHUA_DEFAULT_SITE=/var/tmp/kahua
 % kahua-spvr --httpd 8889
 }}}
 
-���ε�����Ƴ���ˤȤ�ʤ����桼�����ѥ⡼�ɤ��ѻߤ��ޤ�����
+この機構の導入にともない、ユーザ専用モードは廃止しました。
 
 ----
 
-** CVS����Υӥ��
+** Subversionによるソースコードの取得とビルド
 
-CVS��ݥ��ȥ꤫�������������������ӥ��/���󥹥ȡ����Ԥ��ˤϡ�
-autoconf 2.54�ʹߤ�ɬ�פˤʤ�ޤ����ޤ���CVS HEAD���Τʤ顢
-Gauche��CVS HEAD�Τ�Τ���Ѥ��������褤�Ǥ��礦��
+2007年7月29日から、KahuaのソースコードはSubversionリポジトリで管理
+~されています。リポジトリはAnonymous SVNで公開されていますので、
+~以下のようにしてソースコードをチェックアウトすることができます。
+{{{
+### trunk(CVSで言うHEAD)を取得する
+% svn co http://svn.kahua.org/Kahua/trunk Kahua
+### stable1_0ブランチの先端を取得する
+% svn co http://svn.kahua.org/Kahua/branches/stable1_0 Kahua_STABLE
+}}}
+リポジトリから取得したソースからビルド/インストールを行うには、
+~autoconf 2.59以降が必要になります。また、trunkを試すのなら、
+~GaucheもCVS HEADのものを使用した方がよいでしょう。
 
-CVS��������å������Ȥ�������������ӥ�ɤ���ˤϡ��ʲ��Υ��ޥ�ɤ�
-configure������ץȤ���������ɬ�פ�����ޤ���
+CVSからチェックアウトしたソースからビルドするには、以下のコマンドで
+~configureスクリプトを生成する必要があります。
 
 {{{
 % ./DIST gen
 }}}
 
-���Ȥϥ�꡼���ǤΥӥ��/���󥹥ȡ����Ʊ�ͤμ��Ǥ���
+あとはリリース版のビルド/インストールと同様の手順です。
