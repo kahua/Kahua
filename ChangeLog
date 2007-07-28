@@ -1,3 +1,9 @@
+2007-07-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: DIST
+	  Add .svn directory to be excluded when ./DIST tgz, because
+	  source repository moved from CVS to Subversion.
+
 2007-07-28  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/server.scm

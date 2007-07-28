@@ -29,7 +29,7 @@ if [ "$tgz" = "yes" ]; then
 
   rm -f DIST_EXCLUDE_X
   cat DIST_EXCLUDE > DIST_EXCLUDE_X
-  find . -name CVS -print -prune >> DIST_EXCLUDE_X
+  find . -name CVS -o -name .svn -print -prune >> DIST_EXCLUDE_X
 
   rm -rf ../$MODULE-$VERSION
 
