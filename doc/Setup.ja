@@ -3,7 +3,7 @@
 ;; Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: Setup.ja,v 1.16.2.7 2007/06/29 09:00:42 bizenn Exp $
+;; $Id$
 
 * Kahuaをセットアップする
 
@@ -435,14 +435,23 @@ Kahuaサーバ群をkahuaユーザ権限で起動しましょう。
 
 ----
 
-** CVSからのビルド
+** Subversionによるソースコードの取得とビルド
 
-CVSリポジトリから取得したソースからビルド/インストールを行うには、
-autoconf 2.54以降が必要になります。また、CVS HEADを試すのなら、
-GaucheもCVS HEADのものを使用した方がよいでしょう。
+2007年7月29日から、KahuaのソースコードはSubversionリポジトリで管理
+~されています。リポジトリはAnonymous SVNで公開されていますので、
+~以下のようにしてソースコードをチェックアウトすることができます。
+{{{
+### trunk(CVSで言うHEAD)を取得する
+% svn co http://svn.kahua.org/Kahua/trunk Kahua
+### stable1_0ブランチの先端を取得する
+% svn co http://svn.kahua.org/Kahua/branches/stable1_0 Kahua_STABLE
+}}}
+リポジトリから取得したソースからビルド/インストールを行うには、
+~autoconf 2.59以降が必要になります。また、trunkを試すのなら、
+~GaucheもCVS HEADのものを使用した方がよいでしょう。
 
 CVSからチェックアウトしたソースからビルドするには、以下のコマンドで
-configureスクリプトを生成する必要があります。
+~configureスクリプトを生成する必要があります。
 
 {{{
 % ./DIST gen
