@@ -1,7 +1,7 @@
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
-;; $Id: INSTALL,v 1.16 2007/02/15 02:54:19 bizenn Exp $
+;; $Id$
 
 * Setup Kahua
 
@@ -9,12 +9,11 @@
 
 *** Installing Gauche
 
-To use Kahua, you need Gauche 0.8.8 or later that supports pthread.
-But Gauche 0.8.8 has several serious bugs, so we strongly recommend
-to use Gauche 0.8.9 or later.
+To use Kahua, you need Gauche 0.8.10 or later that supports pthread.
+We strongly recommend to use the latest release of Gauche.
 {{{
 $ gosh -V
-Gauche scheme interpreter, version 0.8.9 [utf-8,pthreads]
+Gauche scheme interpreter, version 0.8.10 [utf-8,pthreads]
 }}}
 
 If you have not installed proper version of Gauche, please install new
