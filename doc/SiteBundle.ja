@@ -1,83 +1,83 @@
-;; Site Bundle  -*- coding: euc-jp -*-
+;; Site Bundle  -*- coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: SiteBundle.ja,v 1.2 2006/12/25 10:13:30 bizenn Exp $
+;; $Id$
 
-* �����ȥХ�ɥ�Ȥ�
+* サイトバンドルとは
 
-[[Servers//Kahua�����з�]]�������ˤ����̤ꡢKahua�ϡ��ҤȤĤ�
-kahua-spvr(�����ѥХ���)�β���kahua-keyserv��1�ץ�������1�İʾ�Υ��ץ�
-���������ư��ޤ������ץꥱ��������1�İʾ�Υ���ץ������ǹ���
-���졢kahua-spvr�ϡ�Kahua���饤����Ȥ���Υꥯ�����Ȥ򡢥��ץꥱ������
-����Υ���ץ������˳�����Ƥƽ��������뤳�Ȥˤʤ�ޤ������Ρ�1�Ĥ�
-kahua-spvr�β��ˤ֤餵���륵���з���ޤȤ�ơ֥����ȡפȸƤ�Ǥ��ޤ���
-���礦��Zope�Υ��󥹥��󥹤ߤ����ʴ����Ǥ��礦����
+[[Servers//Kahuaサーバ群]]の説明にある通り、Kahuaは、ひとつの
+kahua-spvr(スーパバイザ)の下、kahua-keyservが1プロセスと1つ以上のアプリ
+ケーションが動作します。アプリケーションは1つ以上のワーカプロセスで構成
+され、kahua-spvrは、Kahuaクライアントからのリクエストを、アプリケーショ
+ン内のワーカプロセスに割り当てて処理させることになります。この、1つの
+kahua-spvrの下にぶらさがるサーバ群をまとめて「サイト」と呼んでいます。
+ちょうどZopeのインスタンスみたいな感じでしょうか。
 
-���Υ����Ȥ���Ǥϡ����ץꥱ�������֤ǥǡ����١����䥻�å�����ͭ
-���뤳�Ȥ��Ǥ��ޤ�(�Ȥ�����ꡢ�ǥե���ȤǶ�ͭ���Ƥ���)��ʣ���Υ��ץ�
-��������󤬴�ñ��Ϣ�ȤǤ���櫓�Ǥ���
+このサイトの中では、アプリケーション間でデータベースやセッションを共有
+することができます(というより、デフォルトで共有している)。複数のアプリ
+ケーションが簡単に連携できるわけです。
 
-���Υ����Ȥ��Ȥ��ǡ����١����䥢�ץꥱ������󥳡��ɡ��ƥ�ץ졼�Ȥ���
-��ե����롢��ȯ�桼����������Ȥʤɡ����ƤΤ�Τ�1�ĤΥǥ��쥯�ȥ곬��
-�ˤޤȤ᤿��Τ�'''�����ȥХ�ɥ�'''�Ǥ���Mac�桼���ʤ顢���ץꥱ������
-��򤢤��ˡ��§�ä��ǥ��쥯�ȥ깽¤��ɽ������֥��ץꥱ�������Х��
-��פ�¸�ΤǤ��礦�������ȥХ�ɥ�ϡ����ιͤ�����Kahua�Υ����Ȥ�Ŭ��
-������ΤʤΤǤ���
+このサイトが使うデータベースやアプリケーションコード、テンプレートや設
+定ファイル、開発ユーザアカウントなど、全てのものを1つのディレクトリ階層
+にまとめたものが'''サイトバンドル'''です。Macユーザなら、アプリケーショ
+ンをある作法に則ったディレクトリ構造で表現する「アプリケーションバンド
+ル」をご存知でしょう。サイトバンドルは、あの考え方をKahuaのサイトに適用
+したものなのです。
 
-* �����ȥХ�ɥ����
+* サイトバンドルを作る
 
-�ޤ��������ȥХ�ɥ���äƤߤޤ��礦���ʹߤǾҲ𤹤���Ǥϡ�Kahua��
-���ޥ�ɤ��֤���Ƥ���ǥ��쥯�ȥ�˥ѥ����̤äƤ����ΤȤ��ޤ���
+まず、サイトバンドルを作ってみましょう。以降で紹介する例では、Kahuaの
+コマンドが置かれているディレクトリにパスが通っているものとします。
 {{{
 % kahua-package create ~/work/kahua
 }}}
-����Ƕ��Υ����ȥХ�ɥ뤬��������ޤ������Υ����ȥХ�ɥ���Ф���
-kahua-spvr��ư����ˤϼ��Τ褦�ˤ��ޤ���
+これで空のサイトバンドルが作成されます。このサイトバンドルに対して
+kahua-spvrを起動するには次のようにします。
 {{{
 % kahua-spvr -S ~/work/kahua --httpd 8080
 }}}
 
 
-* �ǥ��쥯�ȥ깽¤
+* ディレクトリ構造
 
-�����ȥХ�ɥ�Ϥ����ˡ��§�ä��ǥ��쥯�ȥ깽¤�Ǥ����ƥǥ��쥯�ȥ��
-�ե���������ϰʲ��Τ褦�ˤʤ�ޤ���
+サイトバンドルはある作法に則ったディレクトリ構造です。各ディレクトリや
+ファイルの役割は以下のようになります。
 
 {{{
-${path_to_site}/                  : �����ȥХ�ɥ�Υ롼��(�嵭����Ǥ�~/work/kahua)
-${path_to_site}/app-servers       : �������ե�����
-${path_to_site}/app/              : ���ץꥱ������󥽡����ǥ��쥯�ȥ�
-${path_to_site}/database/         : fsdb���֤���
-${path_to_site}/database/db       : �ǥե���ȥǡ����١���
-${path_to_site}/etc/              : ����ե������֤���ǥ��쥯�ȥ�
-${path_to_site}/etc/kahua.conf    : ����ե�����
-${path_to_site}/logs/             : �����ǥ��쥯�ȥ�
-${path_to_site}/run/              : PID�ǥ��쥯�ȥ�
+${path_to_site}/                  : サイトバンドルのルート(上記の例では~/work/kahua)
+${path_to_site}/app-servers       : ワーカ設定ファイル
+${path_to_site}/app/              : アプリケーションソースディレクトリ
+${path_to_site}/database/         : fsdbの置き場
+${path_to_site}/database/db       : デフォルトデータベース
+${path_to_site}/etc/              : 設定ファイル置き場ディレクトリ
+${path_to_site}/etc/kahua.conf    : 設定ファイル
+${path_to_site}/logs/             : ログディレクトリ
+${path_to_site}/run/              : PIDディレクトリ
 ${path_to_site}/run/kahua-spvr.pid
 ${path_to_site}/run/kahua-keyserv.pid
 ${path_to_site}/run/kahua-httpd.pid
-${path_to_site}/tmp/              : �ƥ�ݥ��ǥ��쥯�ȥ�
-${path_to_site}/sock/             : �����åȥǥ��쥯�ȥ�
-${path_to_site}/sock/kahua        : Kahua�����å�
-${path_to_site}/static/           : ��Ū����ƥ�ĥǥ��쥯�ȥ�
-${path_to_site}/user.conf         : ��ȯ�ԥ�������ȥǡ����١���
+${path_to_site}/tmp/              : テンポラリディレクトリ
+${path_to_site}/sock/             : ソケットディレクトリ
+${path_to_site}/sock/kahua        : Kahuaソケット
+${path_to_site}/static/           : 静的コンテンツディレクトリ
+${path_to_site}/user.conf         : 開発者アカウントデータベース
 }}}
 
 
-* �����ȥХ�ɥ��Ȥ�
+* サイトバンドルを使う
 
-��Ǥ����äȿ��줿�褦�ˡ�Kahua�γƥ��ޥ�ɤ�-S path-to-site���Ϥ��ȡ�
-���ꤵ�줿�����ȥХ�ɥ��Ȥäƥ��ޥ�ɤ�ư���뤳�Ȥˤʤ�ޤ����ʤ���
-�����ȥХ�ɥ����Ѥ����硢�ǥե���Ȥ�����ե�����(kahua.conf)����
-�����Ȥ���ʤ����Ȥˤ����դ���������
+上でもちょっと触れたように、Kahuaの各コマンドに-S path-to-siteを渡すと、
+指定されたサイトバンドルを使ってコマンドを起動することになります。なお、
+サイトバンドルを使用する場合、デフォルトの設定ファイル(kahua.conf)は全
+く参照されないことにご注意ください。
 
-- kahua-spvr��HTTPd�Ĥ��ǵ�ư����
+- kahua-spvrをHTTPdつきで起動する
 {{{
 % kahua-spvr -S ~/work/kahua --httpd 8080
 }}}
 
-- ����kahua-spvr��kahua-admin����³���Ƴ�ȯ�桼�����ɲä���
+- そのkahua-spvrにkahua-adminを接続して開発ユーザを追加する
 {{{
 % kahua-admin -S ~/work/kahua
 spvr> lsuser
@@ -88,21 +88,21 @@ spvr> lsuser
 ("bizenn")
 spvr> 
 }}}
-����ľ�塢���줿�����ȥХ�ɥ��ʸ���̤���äݤǤ���
-���äơ���ȯ�桼�����ɲä��Ƥ����ʤ��ȡ�kahua-shell���Ȥ��ޤ���
+作成直後、作られたサイトバンドルは文字通り空っぽです。
+従って、開発ユーザを追加しておかないと、kahua-shellが使えません。
 
-- ���ץꥱ���������ɲä��Ƥߤ�
+- アプリケーションを追加してみる
 {{{
 (define (main)
   (html/ (head/ (title/ "Hello Kahua!!"))
   (body/ (h1/ "Hello Kahua!!"))))
 (initialize-main-proc main)
 }}}
-�������ȤΥե������
+こんな中身のファイルを
 {{{
 ~/work/kahua/app/hello/hello.kahua
 }}}
-�Ȥ��ƺ������롣����~/work/kahua/app-servers�ե������ʲ��Τ褦���Խ����ޤ���
+として作成する。次に~/work/kahua/app-serversファイルを以下のように編集します。
 {{{
 ;; -*-scheme-*-
 ;; Application Service Configuration alist.
@@ -114,8 +114,8 @@ spvr>
  (hello :arguments () :run-by-default 2)
  ) 
 }}}
-���ä���kahua-admin�����reload����ȡ�hello���ץꥱ�������Υ����
-����������ư���ޤ���
+さっきのkahua-adminの中でreloadすると、helloアプリケーションのワーカプ
+ロセスが起動します。
 {{{
 spvr> ls
 wno   pid type         since        wid
@@ -127,13 +127,13 @@ wno   pid type         since        wid
   1  5639 hello        Dec 25 18:29 4cn:56aqu
 spvr> 
 }}}
-�����
+これで
 {{{
 http://localhost:8080/hello
 }}}
-�˥��������Ǥ���褦�ˤʤ�ޤ�����
+にアクセスできるようになりました。
 
-- kahua-shell��hello���ץꥱ�������ˤĤʤ��Ǥߤ�
+- kahua-shellでhelloアプリケーションにつないでみる
 {{{
 % kahua-shell -S ~/work/kahua
 Welcome to Kahua.
@@ -147,10 +147,10 @@ select wno> 0
 hello(4cm:2rejo)> 
 }}}
 
-�ʤ������Ĥ�Ʊ�������ȥХ�ɥ����Ѥ���ΤǤ���С��ʲ��Τ褦�˴Ķ���
-���ǥǥե���Ȥǻ��Ѥ��륵���ȥХ�ɥ����ꤹ�뤳�Ȥ��Ǥ��ޤ���
+なお、いつも同じサイトバンドルを使用するのであれば、以下のように環境変
+数でデフォルトで使用するサイトバンドルを指定することができます。
 {{{
 % KAHUA_DEFAULT_SITE=$HOME/work/kahua; export KAHUA_DEFAULT_SITE
 }}}
-����ǡ�-S����ꤷ�ʤ��Ƥ⡢�����ȥХ�ɥ�Ȥ���~/work/kahua���Ȥ���
-����.profile�ʤɤ�����Ƥ����������Ǥ��礦��
+これで、-Sを指定しなくても、サイトバンドルとして~/work/kahuaが使われま
+す。.profileなどに入れておけば便利でしょう。

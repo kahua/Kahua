@@ -1,93 +1,93 @@
-;; Modules/kahua.user -*- mode: text; coding: euc-jp -*-
+;; Modules/kahua.user -*- mode: text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.user.ja,v 1.3 2006/12/26 11:21:21 bizenn Exp $
+;; $Id$
 
 
 * [module] kahua.user
 
-Kahua���ץꥱ�������Υ������󥻥å����ˤ����ơ�ǧ�ڤ˻��Ѥ���桼��
-����򰷤�����Υ⥸�塼��Ǥ���
+Kahuaアプリケーションのログインセッションにおいて、認証に使用するユーザ
+情報を扱うためのモジュールです。
 
 ** [class] <kahua-user>
 
-��ͤΥ桼���ξ�����ݻ����륯�饹�Ǥ���<kahua-persistent-base>��Ѿ���
-�Ƥ��ޤ� ([[kahua.persistence]]����)��
+一人のユーザの情報を保持するクラスです。<kahua-persistent-base>を継承し
+ています ([[kahua.persistence]]参照)。
 
 *** [slot] login-name
 
-�桼���Υ�������̾�����줬<kahua-user>��³���饹�Υ����Ȥ��ƻ��Ѥ���ޤ���
+ユーザのログイン名。これが<kahua-user>永続クラスのキーとして使用されます。
 
 *** [slot] password-hash
 
-�ѥ���ɤΥϥå�����(salt�ޤ�)���ϥå���ˤϺ��ΤȤ���md5��ȤäƤ��ޤ���
+パスワードのハッシュ値(salt含む)。ハッシュには今のところmd5を使っています。
 
 *** [slot] role-alist
 
-���Υ桼����role��ɽ������ꥹ�ȡ����ΤȤ�����role-alist��ñ�ʤ�
-����ܥ�Υꥹ�ȤǤ���
-role������ϥ��ץꥱ������󥵡��Фˤ�äƹԤ��ޤ���
+このユーザのroleを表現するリスト。今のところ、role-alistは単なる
+シンボルのリストです。
+roleの定義はアプリケーションサーバによって行われます。
 
 ** [procedure] kahua-add-user ''login-name'' ''password''
 
-���Υ᥽�åɤϥǡ����١����������ƥ��֤ʻ��˸ƤФ�ʤ���Фʤ�ޤ���
+このメソッドはデータベースがアクティブな時に呼ばれなければなりません。
 
-�����ʥ桼������Ͽ���ޤ���password�ˤ����Υѥ���ɥƥ����Ȥ��Ϥ��ޤ���
-����������ǥϥå��夵�졢�ºݤ˥桼�����֥������Ȥ���¸�����Τ�
-�ϥå����ͤΤߤǤ���
+新たなユーザを登録します。passwordには生のパスワードテキストを渡します。
+それは内部でハッシュされ、実際にユーザオブジェクトに保存されるのは
+ハッシュ値のみです。
 
-����Ʊ��''login-name''����ĥ桼�������ʤ����ϡ���Ͽ����������
-�����˺��줿<kahua-user>���֥������Ȥ��֤���ޤ���
-Ʊ��''login-name''����ĥ桼�����������ϡ������ʥ桼������Ͽ���줺��
-#f���֤�ޤ���
+既に同じ''login-name''を持つユーザがいない場合は、登録は成功し、
+新たに作られた<kahua-user>オブジェクトが返されます。
+同じ''login-name''を持つユーザがいた場合は、新たなユーザは登録されず、
+#fが返ります。
 
 ** [procedure] kahua-check-user ''login-name'' ''password''
 
-���Υ᥽�åɤϥǡ����١����������ƥ��֤ʻ��˸ƤФ�ʤ���Фʤ�ޤ���
+このメソッドはデータベースがアクティブな時に呼ばれなければなりません。
 
-Ϳ����줿login-name��password����ĥ桼�������Ĥ���Ф���<kahua-user>
-���֥������Ȥ򡢸��Ĥ���ʤ����#f���֤��ޤ���
+与えられたlogin-nameとpasswordを持つユーザが見つかればその<kahua-user>
+オブジェクトを、見つからなければ#fを返します。
 
 ** [procedure] kahua-find-user ''login-name''
 
-���Υ᥽�åɤϥǡ����١����������ƥ��֤ʻ��˸ƤФ�ʤ���Фʤ�ޤ���
+このメソッドはデータベースがアクティブな時に呼ばれなければなりません。
 
-Ϳ����줿login-name����ĥ桼�������Ĥ���Ф���<kahua-user>���֥�����
-�Ȥ򡢸��Ĥ���ʤ����#f���֤��ޤ���
+与えられたlogin-nameを持つユーザが見つかればその<kahua-user>オブジェク
+トを、見つからなければ#fを返します。
 
 ** [procedure] kahua-user-password-change ''user'' ''old-password'' ''new-password''
 
-�桼��''user''�Υѥ���ɤ�''new-password''���ѹ����ޤ����桼���θ���
-�Υѥ���ɤ�''old-password''�˥ޥå����ʤ��Ȥ����ѹ�����ޤ���
+ユーザ''user''のパスワードを''new-password''に変更します。ユーザの現在
+のパスワードが''old-password''にマッチしないときは変更されません。
 
-�ѹ������������Ȥ���#t�������Ԥ����Ȥ���#f���֤���ޤ���
+変更が成功したときは#tが、失敗したときは#fが返されます。
 
 ** [procedure] kahua-user-password-change-force ''user'' ''new-password''
 
-�桼��''user''�Υѥ���ɤ���Ū��''new-password''���ѹ����ޤ���
+ユーザ''user''のパスワードを強制的に''new-password''に変更します。
 
-�ѹ������������Ȥ���#t�������Ԥ����Ȥ���#f���֤���ޤ���
+変更が成功したときは#tが、失敗したときは#fが返されます。
 
 ** [procedure] kahua-user-has-role? ''user'' ''roles''
 
-���Υ᥽�åɤϥǡ����١����������ƥ��֤ʻ��˸ƤФ�ʤ���Фʤ�ޤ���
+このメソッドはデータベースがアクティブな時に呼ばれなければなりません。
 
-�桼��''user''����''roles''�˵󤲤��Ƥ���role�Τ����줫����äƤ����
-��#t�򡢤����Ǥʤ����#f���֤��ޤ���
+ユーザ''user''が、''roles''に挙げられているroleのいずれかを持っている時
+に#tを、そうでなければ#fを返します。
 
-''user''�ˤϡ�<kahua-user>�Υ��󥹥��󥹤���#f���Ϥ��ޤ���#f���Ϥ�����
-��Ͼ��#f���֤�ޤ�������ϡ�kahua-current-user ([[kahua.server]] ��
-��) ������ͤ򤽤Τޤ��Ϥ��Τ������Ǥ���
+''user''には、<kahua-user>のインスタンスか、#fを渡します。#fを渡した場
+合は常に#fが返ります。これは、kahua-current-user ([[kahua.server]] 参
+照) の戻り値をそのまま渡すのに便利です。
 
-''roles''��role��ɽ��'''����ܥ�Υꥹ��'''�Ǥ�������ϡ����ʣ���ʾ��
-�����Ǥ���褦�˳�ĥ����뤫�⤷��ޤ���
+''roles''はroleを表す'''シンボルのリスト'''です。将来は、より複雑な条件
+を指定できるように拡張されるかもしれません。
 
 ** [procedure] kahua-user-add-role! ''user'' ''role''
 
-�桼��''user''�˥���ܥ�''role''��ɽ������������ɲä��ޤ���
+ユーザ''user''にシンボル''role''で表されるロールを追加します。
 
 ** [procedure] kahua-user-drop-role! ''user'' ''role''
 
-�桼��''user''���饷��ܥ�''role''��ɽ����������������ޤ���
+ユーザ''user''からシンボル''role''で表されるロールを削除します。
 

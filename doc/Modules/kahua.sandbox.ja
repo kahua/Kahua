@@ -1,25 +1,25 @@
-;; Modules/kahua.sandbox -*- mode: text; coding: euc-jp -*-
+;; Modules/kahua.sandbox -*- mode: text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.sandbox.ja,v 1.2 2006/12/26 12:58:17 bizenn Exp $
+;; $Id$
 
 
 * [module] kahua.sandbox
 
-���Υ⥸�塼��ϡ���������ե����륷���ƥ��ץ������ʤɤγ����Ķ��إ�
-���������뤳�ȡ�load �� use ���뤳�Ȥ�ػߤ��륵��ɥܥå����⥸�塼��
-���󶡤��ޤ���
+このモジュールは、ローカルファイルシステムやプロセスなどの外部環境へア
+クセスすること、load や use することを禁止するサンドボックスモジュール
+を提供します。
 
-�����Υ⥸�塼��λ��ͤϡ������礭���ѹ�������ǽ��������ޤ���
+※このモジュールの仕様は、今後大きく変更される可能性があります。
 
-���Υ⥸�塼�뤬 Kahua ���ץꥱ�������μ¹ԴĶ��ˤʤ�ޤ���
+このモジュールが Kahua アプリケーションの実行環境になります。
 
 ** [procedure] make-sandbox-module
 
-�����ʼ�³����ػߤ���̵̾�⥸�塼����֤��ޤ���
+危険な手続きを禁止した無名モジュールを返します。
 
-�ʲ��μ�³�����ػߤ���Ƥ��ޤ���
+以下の手続きが禁止されています。
 
 {{{
  open-input-file open-output-file
@@ -35,19 +35,19 @@
  define-in-module find-module
 }}}
 
-use �� kahua.plugin ���󶡤��� use-plugin �ޥ������ִ����졢
-[[/doc/Modules/kahua.plugin]] �ǵ��Ĥ��줿�⥸�塼��򥵥�ɥܥå�����
-���塼���«�����뤳�Ȥ��Ǥ��ޤ���
+use は kahua.plugin の提供する use-plugin マクロで置換され、
+[[/doc/Modules/kahua.plugin]] で許可されたモジュールをサンドボックスモ
+ジュールに束縛することができます。
 
 ** [macro] export-module ''module'' ''name'' ...
 
-''module'' �ˤ��� ''name'' ��«������ export ���ޤ���
+''module'' にある ''name'' を束縛して export します。
 
 ** [macro] enable-module-except ''module'' ''names'' ...
 
-''names'' �ʳ��� ''module'' ���󶡤����³����«�����ޤ���
+''names'' 以外の ''module'' の提供する手続きを束縛します。
 
 ** [macro] disable-bindings ''name'' ...
 
-''name'' �ˤ���«���򥨥顼�򵯤����ޥ����Ǿ�񤭤���̵���ˤ��ޤ���
+''name'' にある束縛をエラーを起こすマクロで上書きし、無効にします。
 

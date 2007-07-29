@@ -1,25 +1,25 @@
-;; Modules/kahua.plugin -*- mode: text; coding: euc-jp -*-
+;; Modules/kahua.plugin -*- mode: text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.plugin.ja,v 1.2 2006/12/26 11:46:05 bizenn Exp $
+;; $Id$
 
 
 * [module] kahua.plugin
 
-���Υ⥸�塼��ϥ���ɥܥå����⥸�塼��� Kahua ��ȯ�Ԥ����Ĥ���������
-��³�����󶡤��뤿��ε�ǽ���󶡤��ޤ���
+このモジュールはサンドボックスモジュールに Kahua 開発者が許可した安全な
+手続きを提供するための機能を提供します。
 
-** �ץ饰����κ�����ˡ
+** プラグインの作成方法
 
-Kahua �Υ��ץꥱ�������򵭽Ҥ��� *.kahua �Ȱ㤤���ץ饰��������¤Τ�
-�� Gauche ��Ȥ����Ȥ��Ǥ��ޤ������ץꥱ�������˴����ʼ�³����Ȥä�
-��ǽ(�㤨�С��᡼�������Τ���� sendmail �� run-process ����)��ɬ�פʤ�
-���ϡ���³�����åԥ󥰤��ƥץ饰����ˤ���Ȥ����Ǥ��礦��
+Kahua のアプリケーションを記述する *.kahua と違い、プラグインは制限のな
+い Gauche を使うことができます。アプリケーションに危険な手続きを使った
+機能(例えば、メール送信のために sendmail を run-process する)が必要なと
+きは、手続きをラッピングしてプラグインにするといいでしょう。
 
-����������³����ץ饰�������Ͽ���뤿��� define-plugin ��Ȥ��ޤ���
-define-plugin �ϥե��������Ƭ�ǻȤ���select-module �������Ȥ˸ƤӽФ�
-��뤳�Ȥ��ʤ��褦�ˤ��Ƥ���������
+作成した手続きをプラグインに登録するために define-plugin を使います。
+define-plugin はファイルの先頭で使い、select-module したあとに呼び出さ
+れることがないようにしてください。
 
 {{{
 ;; sendmail plugin.
@@ -47,25 +47,25 @@ define-plugin �ϥե��������Ƭ�ǻȤ���select-module �������Ȥ˸ƤӽФ�
 }}}
 
 
-allow-module �ޥ�����Ȥäƴ�¸�Υ⥸�塼��򤽤Τޤޥץ饰���󲽤��뤳
-�Ȥ��Ǥ��ޤ���
+allow-module マクロを使って既存のモジュールをそのままプラグイン化するこ
+とができます。
 
 {{{
 (allow-module srfi-1)
 }}}
 
-** �ץ饰����Υ��󥹥ȡ�����ˡ
+** プラグインのインストール方法
 
-kahua.config ��kahua-plugin-directory��������ǥ��쥯�ȥ�ˡ�
-define-plugin ��񤤤�scm �ե�������֤��Ƥ���������
+kahua.config のkahua-plugin-directoryで得られるディレクトリに、
+define-plugin を書いたscm ファイルを置いてください。
 
-���θ�� kahua-spvr ��ư����С����ƤΥ��ץꥱ�������ǥץ饰�����
-���Ѥ��뤳�Ȥ��Ǥ��ޤ���
+その後で kahua-spvr を起動すれば、全てのアプリケーションでプラグインを
+利用することができます。
 
-��ư��Υ��ץꥱ�������˥ץ饰������ɲä��������� kahua-admin ��
-ư���� plugin reload ���ޥ�ɤ򥢥ץꥱ�������Υ�����ֹ��դ��Ǽ¹�
-���Ƥ���������kahua-admin �� plugin ���ޥ�ɤ�¹Ԥ���ȥץ饰����ΰ�
-����ɽ���Ǥ��ޤ���
+起動中のアプリケーションにプラグインを追加したい場合は kahua-admin を起
+動して plugin reload コマンドをアプリケーションのワーカー番号付きで実行
+してください。kahua-admin で plugin コマンドを実行するとプラグインの一
+覧を表示できます。
 
 {{{
 $ kahua-admin
@@ -109,64 +109,64 @@ spvr>
 
 
 
-*.scm �˥ץ饰���󲽤�������³�����������Kahua �Υ���󥰥ǥ��쥯��
-�겼�ˤ��� plugins�ǥ��쥯�ȥ�˥��ԡ�����Х��󥹥ȡ��봰λ�Ǥ���
+*.scm にプラグイン化したい手続きを定義し、Kahua のワーキングディレクト
+リ下にある pluginsディレクトリにコピーすればインストール完了です。
 
 
 ** [macro] define-export ''def'' ''body''
 
-����Ū�˥ץ饰����Ȥ����󶡤��뤳�Ȥ�������뤿��Υޥ����Ǥ���
+明示的にプラグインとして提供することを宣言するためのマクロです。
 
 ** [procedure] lookup-exports ''name''
 
-�ץ饰����ե�����ϥץ饰�����ɤ߹����Ѥ�̵̾�⥸�塼��ǥ����ɤ����
-������ɬ�����Υ⥸�塼���«�������Ȥϸ¤�ޤ���
+プラグインファイルはプラグイン読み込み用の無名モジュールでロードされま
+すが、必ずそのモジュールで束縛されるとは限りません。
 
-''name'' �Υץ饰����� export �ꥹ�Ȥˤ���̾����õ��������ݥ�ȥ⥸�塼
-��� alist ���֤��ޤ���
+''name'' のプラグインで export リストにある名前を探し、シンポルとモジュー
+ルの alist を返します。
 
 ** [macro] expand-define ''name'' ''module''
 
-''name'' �μ�³���� ''module'' ��«�����ޤ���
+''name'' の手続きを ''module'' に束縛します。
 
 
 ** [macro] %load-plugin ''file''
 
-''file'' �Ȥ���̾���Υץ饰������󶡤����³���򥵥�ɥܥå�����«��
-���ޤ���''file'' ��ʸ����Ǥʤ���Фʤ�ޤ���
+''file'' という名前のプラグインの提供する手続きをサンドボックスに束縛
+します。''file'' は文字列でなければなりません。
 
 ** [macro] use-plugin ''name''
 
-load-plugin �Υ��󥿥å������奬���Ǥ�������ɥܥå����Ϥ��μ�³����
-use �Ȥ���̾����«������Gauche �� use ��Ʊ����ʸ�ǥץ饰�����Ȥ�����
-���Ǥ��ޤ���
+load-plugin のシンタックスシュガーです。サンドボックスはこの手続きを
+use という名前で束縛し、Gauche の use と同じ構文でプラグインを使うこと
+ができます。
 
 ** [macro] define-plugin ''name'' (''version'') (''export'' ...) (''depend'' ...)
 
-�ץ饰�������Ͽ���뤿��˻Ȥ��ޤ���export �˥ץ饰�����󶡤����³��
-��̾����񤭤ޤ���
+プラグインを登録するために使います。export にプラグインが提供する手続き
+の名前を書きます。
 
-''version'' �� ''depend'' �ϥץ饰�������ɽ���ѤΥ᥿����Ǥ���
+''version'' と ''depend'' はプラグイン一覧表示用のメタ情報です。
 
 ** [macro] allow-module ''module''
 
-''module'' �򤽤Τޤޥץ饰���󲽤��ޤ�����¸�⥸�塼���ץ饰���󲽤�
-����� define-plugin ������˻Ȥ��ޤ���
+''module'' をそのままプラグイン化します。既存モジュールをプラグイン化す
+る場合は define-plugin の代わりに使います。
 
 ** [procedure] register-plugin ''name'' ''version'' ''export'' ''depend''
 
-define-plugin �� allow-module �ǥ�åԥ󥰤���Ƥ���ץ饰������Ͽ��³
-���Ǥ���
+define-plugin と allow-module でラッピングされているプラグイン登録手続
+きです。
 
 ** [procedure] initialize-plugins
 
-�ץ饰����������³���Ǥ����¹Ԥ���ȥץ饰����ǥ��쥯�ȥ�ˤ���
-*.scm �ե������ץ饰����Ķ��˥����ɤ��ޤ���
+プラグイン初期化手続きです。実行するとプラグインディレクトリにある
+*.scm ファイルをプラグイン環境にロードします。
 
 ** [procedure] refresh-plugin ''filename''
 
-�ץ饰������ɤ߹����³���Ǥ���
+プラグインを読み込む手続きです。
 
 ** [procedure] all-plugins
 
-��Ͽ����Ƥ���ץ饰�����̾���ȥС�������ֹ�� alist ���֤��ޤ���
+登録されているプラグインの名前とバージョン番号の alist を返します。

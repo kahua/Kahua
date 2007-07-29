@@ -1,77 +1,77 @@
-;; -*- coding: euc-jp -*-
+;; -*- coding: utf-8 -*-
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-spvr.ja,v 1.4 2006/09/29 05:46:53 bizenn Exp $
+;; $Id$
 
 * kahua-spvr [-c conf-file] [-i] [-l logfile] [-H [host:]port]
 
-Kahua �����ѥХ����ץ������򥹥����Ȥ��롣�����ѥХ����ץ������ϡ�
-ɬ�פ˱����ƥ��������Хץ�����(kahua-keyserv)��HTTPd�ץ�����(kahua-httpd)��
-�����app-servers�ե�����(���)�ε��Ҥ˽��äƥ���ץ�������ư���롣
-�����ơ����饤����Ȥ���Υꥯ�����Ȥ����˥ǥ����ѥå������۲���
-�ץ������λ������ʤɤ�Ԥ���
+Kahua スーパバイザプロセスをスタートする。スーパバイザプロセスは、
+必要に応じてキーサーバプロセス(kahua-keyserv)、HTTPdプロセス(kahua-httpd)、
+さらにapp-serversファイル(後述)の記述に従ってワーカプロセスを起動する。
+そして、クライアントからのリクエストをワーカにディスパッチし、配下の
+プロセスの死活管理などを行う。
 
-** ��ư���ץ����
+** 起動オプション
 
 <<<
  -c conf-file
-    ���Ȥ�������ե�����̾����ꤹ�롣�ǥե���ȤǤ�
-    $(sysconfdir)/kahua/kahua.conf(Setup�κݤ�configure������ץȤ�
-    �ʤˤ���ꤷ�Ƥ��ʤ���С�/usr/local/etc/kahua/kahua.conf)��õ��
-    �˹Ԥ���������Ϳ��������ե�����̾�ϡ�kahua-spvr ����ư����
-    kahua-keyserv�����ץ�����(kahua-server)��ư����ݤˤ�
-    �����Ѥ���롣����ե�����ν񼰤�������ܤˤĤ��Ƥ�
-    [[../Modules/kahua.config]]�򻲾ȡ�
+    参照する設定ファイル名を指定する。デフォルトでは
+    $(sysconfdir)/kahua/kahua.conf(Setupの際にconfigureスクリプトに
+    なにも指定していなければ、/usr/local/etc/kahua/kahua.conf)を探し
+    に行く。ここで与えた設定ファイル名は、kahua-spvr が起動する
+    kahua-keyservやワーカプロセス(kahua-server)を起動する際にも
+    引き継がれる。設定ファイルの書式や設定項目については
+    [[../Modules/kahua.config]]を参照。
 
  -i 
-    ���� interactive ���ץ����Ϳ������ȡ�ɸ�������Ϥ��Ф���
-    repl (read-eval-print-loop)��ư���롣�ǥХå��ѡ�
+    この interactive オプションが与えられると、標準入出力に対して
+    repl (read-eval-print-loop)を起動する。デバッグ用。
 
  -l log-file
-    �����ե�������ꡣ -l - �Ȥ����stdout�˥�������Ϥ��롣
-    �ǥե���ȤǤϡ�    $(working-directory)/logs/kahua-spvr.log ��
-    ��������Ϥ��롣
+    ログファイル指定。 -l - とするとstdoutにログを出力する。
+    デフォルトでは、    $(working-directory)/logs/kahua-spvr.log に
+    ログを出力する。
 
  -H, --httpd [host:]port
-    ���Υ��ץ�����Ϳ����줿 kahua-spvr �ϡ����ץ������ͤ������
-    kahua-httpd��ư���롣
+    このオプションを与えられた kahua-spvr は、オプションの値を引数に
+    kahua-httpdを起動する。
       -H 8080
       -H localhost:8080
-    �Τ褦�˻��ꤹ�롣�ܺ٤�[[kahua-httpd]]�򻲾ȡ�
+    のように指定する。詳細は[[kahua-httpd]]を参照。
 >>>
 
-ư����� kahua-spvr �ϡ�[[kahua-admin]]���ޥ�ɤˤ�äƥ��󥿥饯�ƥ��֤�
-���椹�뤳�Ȥ��Ǥ��롣���� kahua-spvr �ϼ���� daemonize �����ꡢ�����
-�桼�����¤��ѹ�����ư��뵡ǽ����äƤ��ʤ����Хå����饦��ɤ�ư�����
-�ˤϡ��㤨�м��Τ褦�˵�ư���롣
+動作中の kahua-spvr は、[[kahua-admin]]コマンドによってインタラクティブに
+制御することができる。現状 kahua-spvr は自らを daemonize したり、特定の
+ユーザ権限に変更して動作する機能を持っていない。バックグラウンドで動作させる
+には、例えば次のように起動する。
 
 <<<
  % (kahua-spvr >> /logpath 2>&1 &)
 >>>
 
-�ޤ���root���¤��顢����Υ桼�����¤���Ȥ��Ƶ�ư���뤿��ˤϼ��Τ褦��
-���롣
+また、root権限から、特定のユーザ権限に落として起動するためには次のように
+する。
 
 <<<
  # su kahua -c "(kahua-spvr >> /logpath 2>&1 &)"
 >>>
 
-�Х��ʤɤαƶ���kahua-spvr���۾ｪλ����ݡ�ɸ�२�顼���Ϥ˥��顼��å�������
-���Ϥ��뤳�Ȥ����뤿�ᡢkahua-spvr��ɸ����Ϥ�ɸ�२�顼���Ϥϡ�/dev/null ��
-������쥯�Ȥ��٤��ǤϤʤ���
+バグなどの影響でkahua-spvrが異常終了する際、標準エラー出力にエラーメッセージを
+出力することがあるため、kahua-spvrの標準出力と標準エラー出力は、/dev/null に
+リダイレクトすべきではない。
 
-** app-servers�ե�����
+** app-serversファイル
 
-kahua-spvr�ϡ���ʬ���������٤�����˴ؤ�������
-$(working-directory)/app-servers�Ȥ����ե����뤫���ɤ߹��ࡣ
-���Υե������ kahua-spvr ��ư�����ɤ߹��ޤ��¾��
-[[kahua-admin]]��reload���ޥ�ɤˤ�äƺ��ɤ߹��ߤ����뤳�Ȥ��Ǥ��롣
+kahua-spvrは、自分が管理すべきワーカに関する情報を、
+$(working-directory)/app-serversというファイルから読み込む。
+このファイルは kahua-spvr 起動時に読み込まれる他、
+[[kahua-admin]]のreloadコマンドによって再読み込みさせることができる。
 
-app-servers�ν񼰤ϼ����̤ꡣ
+app-serversの書式は次の通り。
 
 <<<
  ((<server-type> :arguments <args> :run-by-default <count>
@@ -79,32 +79,32 @@ app-servers�ν񼰤ϼ����̤ꡣ
   ...)
 
  <server-type>
-    ����ܥ�ǡ�����Υ�����(���ץꥱ��������̾��)��񤯡�
+    シンボルで、ワーカのタイプ(アプリケーションの名前)を書く。
 
  <args>
-    ���Υ���ץ�������ư����Ϳ����������Υꥹ�ȡ�������ꤷ�ʤ�
-    ���� () ��񤯡�
+    そのワーカプロセス起動時に与えられる引数のリスト。何も指定しない
+    場合は () を書く。
 
  :run-by-default <count>
-    kahua-spvr��ư�����Υ�������פȤ��Ƶ�ư����ץ������ο�����ꤹ�롣
-    kahua-spvr�ϡ����饤����Ȥ��������ä��ꥯ�����Ȥ򡢤��Υץ�������
-    ���Ф��ƽ��֤˥ǥ����ѥå����Ƥ�����
+    kahua-spvr起動時このワーカタイプとして起動するプロセスの数を指定する。
+    kahua-spvrは、クライアントから受け取ったリクエストを、このプロセス群
+    に対して順番にディスパッチしていく。
 
  :profiler <base-path>
-    Gauche�Υץ��ե����鵡ǽ����Ѥ���ݡ�������Ȥʤ�ե�����Υ١���̾
-    ����ꤹ�롣�㤨�� /usr/local/kahua/logs/profile �Ȼ��ꤷ����硢
-    �ºݤΥե�����̾�� /usr/local/kahua/logs/profile.<worker-id> �Ȥʤꡢ
-    ������ҤȤĤ�����100�ꥯ�����Ȥ�������뤴�Ȥ˥ץ��ե������̤�
-    ���Ϥ��롣��ά�������ϥץ��ե�����󥰤ϹԤ��ʤ���
+    Gaucheのプロファイラ機能を使用する際、出力先となるファイルのベース名
+    を指定する。例えば /usr/local/kahua/logs/profile と指定した場合、
+    実際のファイル名は /usr/local/kahua/logs/profile.<worker-id> となり、
+    ワーカーひとつあたり100リクエストを処理するごとにプロファイル結果を
+    出力する。省略した場合はプロファイリングは行われない。
 
  :default-database-name <dbname>
-    ���ץꥱ������󤬥ǥե���Ȥǻ��Ѥ���ǡ����١���̾����ꤹ�롣
-    ��ά�������� ${working-directory}/db �˥ե����륷���ƥ�ǡ����١���
-    �����졢���줬���Ѥ���롣
+    アプリケーションがデフォルトで使用するデータベース名を指定する。
+    省略した場合は ${working-directory}/db にファイルシステムデータベース
+    が作られ、それが使用される。
 >>>
 
-app-servers���ɤ߹��߻��˥��顼�����ä����ϡ�ñ��app-servers�����Ƥ�
-̵�뤵��롣kahua-spvr�Υ����򸫤� app-servers ���ɤ߹��߻��˥��顼��
-�����Ƥ����顢app-servers�ե���������� [[kahua-admin]] ����reload
-���ޥ�ɤ�¹Ԥ���Ф褤��
+app-serversの読み込み時にエラーがあった場合は、単にapp-serversの内容は
+無視される。kahua-spvrのログを見て app-servers の読み込み時にエラーが
+起きていたら、app-serversファイルを修正後 [[kahua-admin]] からreload
+コマンドを実行すればよい。
 

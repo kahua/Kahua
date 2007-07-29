@@ -1,45 +1,45 @@
-;; Modules/kahua.xml-template -*- mode: text; coding: euc-jp -*-
+;; Modules/kahua.xml-template -*- mode: text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.xml-template.ja,v 1.1 2006/12/27 05:16:02 bizenn Exp $
+;; $Id$
 
 
 * [module] kahua.xml-template
 
-���˥���ץ�ʥڡ����ƥ�ץ졼�ȵ�ǽ���󶡤���⥸�塼��Ǥ���
+非常にシンプルなページテンプレート機能を提供するモジュールです。
 
 ** [procedure] kahua:make-xml-template ''path'' [''ns-alist'']
 
-''path''��Ϳ����줿XML�ե����뤫��ƥ�ץ졼�ȥ��֥������Ȥ��������ޤ���
-''path''�ϥե�ѥ���Ϳ����Τ������Ǥ���kahua.config��template-directory
-���֤���Ƥ���XML�ե��������ꤷ�������
+''path''で与えられたXMLファイルからテンプレートオブジェクトを生成します。
+''path''はフルパスで与えるのが安全です。kahua.configのtemplate-directory
+に置かれているXMLファイルを指定したければ
 {{{
 (kahua:make-xml-template (kahua-template-path "foo.xml"))
 }}}
-�Ȥ���Ф褤�Ǥ��礦��
+とすればよいでしょう。
 
-���Ѥ���XML�ϡ�ʸ�����󥳡��ǥ��󥰤�UTF-8�Ǥʤ���Фʤ�ޤ���(����ϸ�
-�ߤμ���������¤Ǥ�)��
+使用するXMLは、文字エンコーディングがUTF-8でなければなりません(これは現
+在の実装上の制限です)。
 
-''ns-alist''�Ͼ�ά��ǽ�ʰ����ǡ�#f ����̾�����֤�ɽ���ץ�ե��å�����
-URI��alist����ꤷ�ޤ�����ά����
+''ns-alist''は省略可能な引数で、#f か、名前空間を表すプレフィックスと
+URIのalistを指定します。省略時は
 {{{
 ((#f . "http://www.w3.org/1999/xhtml"))
 }}}
 
-���Ϥ����Τ�Ʊ���Ǥ���#f���Ϥ��ȡ�����ʬ�ƥ�ץ졼�ȡפ�������ޤ�����
-�λ���''path''�ǻ��ꤹ��XML�ե�����ˤ�'''XML�����ޤ�ƤϤ����ޤ���'''
-(����⸽�ߤμ����������Ǥ�)��
+を渡したのと同じです。#fを渡すと、「部分テンプレート」を作成します。こ
+の時、''path''で指定するXMLファイルには'''XML宣言を含めてはいけません'''
+(これも現在の実装上の制約です)。
 
 ** [procedure] kahua:xml-template->sxml ''template'' . ''kargs''
 
-�ƥ�ץ졼��''template''��''kargs''��Ŭ�Ѥ��ơ�SXML�Ρ��ɤ��ۤ���
-����''kargs''�ϥ�����ɰ����ǡ����Τ褦�ʽ񼰤ˤʤ�ޤ���
+テンプレート''template''に''kargs''を適用して、SXMLノードを構築しま
+す。''kargs''はキーワード引数で、次のような書式になります。
 {{{
 :id1 node1 :id2 node2 ...
 }}}
-:id�ϡ��ƥ�ץ졼���������˻��ꤷ��XML�ե�����Ρ����Ǥ�Ϳ����줿ID°����
-��Ʊ��̾���Υ�����ɤǤ���node�ˤϡ��ⳬ�����ؿ��Ǻ����ؿ��Ρ��ɡ�ñ
-�㥿���ؿ��Ǻ����SXML�Ρ��ɡ�SXML��ƥ��Τ�������Ϥ����Ȥ��Ǥ��ޤ�����
-���ߤ����뤳�Ȥ�Ǥ��ޤ���
+:idは、テンプレート生成時に指定したXMLファイルの、要素に与えられたID属性値
+と同じ名前のキーワードです。nodeには、高階タグ関数で作られる関数ノード、単
+純タグ関数で作られるSXMLノード、SXMLリテラルのいずれも渡すことができますし、
+混在させることもできます。

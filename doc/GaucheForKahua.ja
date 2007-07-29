@@ -1,59 +1,59 @@
-;; Gauche for Kahua -*- coding: euc-jp -*-
+;; Gauche for Kahua -*- coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2007 Kahua Project.
 ;;
-;; $Id: GaucheForKahua.ja,v 1.2 2007/02/15 02:18:00 bizenn Exp $
+;; $Id$
 
-* Kahua�Τ����Gauche���󥹥ȡ�������
+* KahuaのためのGaucheインストール入門
 
-�����Ǥϡ�Kahua�򵤻����褯�Ȥ�����ˤϤɤΤ褦��Gauche�򥤥󥹥ȡ��뤹
-�٤������������ޤ�������ʸ��ϸ��ߤΰ����ǤǤ���Kahua 1.0�����1.0.x��
-�оݤˤ��Ƥ��ꡢ����˿������ǤǤϤޤ������Ѥ�뤳�Ȥ����뤫�⤷���
-����
+ここでは、Kahuaを気持ちよく使うためにはどのようにGaucheをインストールす
+べきかを説明します。この文書は現在の安定版であるKahua 1.0および1.0.xを
+対象にしており、さらに新しい版ではまた事情が変わることがあるかもしれま
+せん。
 
-����: http://practical-scheme.net/gauche/download-j.html
+参考: http://practical-scheme.net/gauche/download-j.html
 
-** ���󥹥ȡ���γ���
+** インストールの概要
 
-Kahua����Ѥ����Ǥ������Gauche�Υ��󥹥ȡ�����֤ϡ�
+Kahuaを使用する上でお薦めのGaucheのインストール形態は、
 
-# ������������(tarball�⤷����CVS��ݥ��ȥ�)���饤�󥹥ȡ��뤹�롣
-# ����ʸ�����󥳡��ǥ��󥰤�UTF-8��Ȥ���
-# �ޥ������åɥ��ݡ��Ȥ�ͭ���ˤ��롣
+# ソースコード(tarballもしくはCVSリポジトリ)からインストールする。
+# 内部文字エンコーディングはUTF-8を使う。
+# マルチスレッドサポートを有効にする。
 
-���ɤ�1�Ϥʤ��󤸤�ʤ�?���Ȼפ��뤫�⤷��ޤ��󡣤�������Gauche����
-��Ū�㤤���եȥ������Ǥ��ꡢ�ѥå����������ƥ�ǤΥ��ݡ��Ⱦ�����OS����
-�ˤ��ʤ�Ф�Ĥ�������ޤ���Kahua���ǿ���Gauche���ɿ魯����ǳ�ȯ�����
-���뤳�Ȥ⤢�äơ������ƥ����������ɤ���ӥ�ɤ��٤����Ȼפ��ޤ���
-Gauche�Υӥ�ɼ��ϡ�UNIX�ϥ����ץ󥽡������եȥ������Ȥ��ƤϤ���ɸ��
-Ū�ʤ�ΤǤ��ꡢ�ϥޤ�ɤ����Ϥ���ۤɤʤ��Ȼפ��ޤ���
+今どき1はないんじゃない?、と思われるかもしれません。しかし、Gaucheは比
+較的若いソフトウェアであり、パッケージシステムでのサポート状況がOSごと
+にかなりばらつきがあります。Kahuaが最新のGaucheに追随する形で開発されて
+いることもあって、あえてソースコードからビルドすべきだと思います。
+Gaucheのビルド手順は、UNIX系オープンソースソフトウェアとしてはごく標準
+的なものであり、ハマりどころはそれほどないと思います。
 
 
-** Gauche 0.8.9�Υ��󥹥ȡ���
+** Gauche 0.8.9のインストール
 
-2007ǯ1��18�����ߡ�Gauche�κǿ���꡼����0.8.9�Ǥ���Kahua-1.0�ϡ�
-Gauche 0.8.8�ʹߤ�ư��ޤ�����0.8.8�ˤϽ���ʥХ�������Τǡ�0.8.9��
-���󥹥ȡ��뤷�ޤ��礦��
+2007年1月18日現在、Gaucheの最新リリースは0.8.9です。Kahua-1.0は、
+Gauche 0.8.8以降で動作しますが、0.8.8には重大なバグがあるので、0.8.9を
+インストールしましょう。
 
-*** �ӥ�ɤȥ��󥹥ȡ����ɬ�פʥ��եȥ�����
+*** ビルドとインストールに必要なソフトウェア
 
-# C����ѥ���
-# ��ȯ�ѥ饤�֥��+�إå��ե�����
+# Cコンパイラ
+# 開発用ライブラリ+ヘッダファイル
 # make
 # patch
 
-�Ƕ��Linux�ǥ����ȥ�ӥ塼�������ȡ�ɸ�।�󥹥ȡ���ǤϤ����Υ���
-�ȥ����������äƤ��ʤ����Ȥ�����ޤ�(�ä�2)�����äƤ��ʤ��褦�ʤ��ɲå�
-�󥹥ȡ��뤷�ʤ���Фʤ�ޤ��󡣤ޤ��������ͥ��饤�֥�꤬�ͥ��ƥ���
-POSIX����åɤ򥵥ݡ��Ȥ��Ƥ��ʤ���Фʤ�ޤ��󡣳�ǧ�λ����ˤĤ��Ƥϸ��
-���ޤ���
+最近のLinuxディストリビューションだと、標準インストールではこれらのソフ
+トウェアが入っていないことがあります(特に2)。入っていないようなら追加イ
+ンストールしなければなりません。また、カーネルやライブラリがネイティブ
+POSIXスレッドをサポートしていなければなりません。確認の仕方については後述
+します。
 
-*** Gauche�Υ����������ɤ����ꤹ��
+*** Gaucheのソースコードを入手する
 
 [http://prdownloads.sourceforge.net/gauche/Gauche-0.8.9.tgz Gauche-0.8.9.tgz]
-�����������ɤ��ޤ���
+をダウンロードします。
 
-*** �ӥ�ɤ��ƥ��Ȥ���
+*** ビルドしテストする
 
 {{{
 % tar xzf Gauche-0.8.9.tgz
@@ -61,119 +61,119 @@ POSIX����åɤ򥵥ݡ��Ȥ��Ƥ��ʤ���Фʤ�ޤ��󡣳�ǧ�λ����ˤĤ��Ƥϸ��
 % ./configure --enable-threads=pthreads --enable-multibyte=utf-8 \
   && make && make -s check
 configure: WARNING: you should use --build, --host, --target
- [��ά]
+ [中略]
 Testing digest framework ...                                     passed.
 Testing vport ...                                                passed.
 %
 }}}
 
-configure�Υ��ץ����ˤϡ�����¡�--enable-threads=pthreads�פ���ꤷ
-�ơ��ޥ������åɤ򥵥ݡ��Ȥ���ɬ�פ�����ޤ����ޤ���
---enable-multibyte=utf-8 �Ȥ��ơ�����ʸ�����󥳡��ǥ��󥰤�UTF-8��
-����Ū�����ꤷ�Ƥ��ޤ���OS��ͭ�Υ��ץ����䡢���ꤹ��ȴ򤷤����⤷���
-�����ץ����ˤĤ��Ƥϸ�Ҥ��ޤ���make -s check�η�̤��ɤ����ơ�fail
-���Ƥ��ʤ����Ȥ��ǧ����Τ⤪˺��ʤ���
+configureのオプションには、最低限「--enable-threads=pthreads」を指定し
+て、マルチスレッドをサポートする必要があります。また、
+--enable-multibyte=utf-8 として、内部文字エンコーディングをUTF-8に
+明示的に設定しています。OS固有のオプションや、指定すると嬉しいかもしれな
+いオプションについては後述します。make -s checkの結果を良く見て、fail
+していないことを確認するのもお忘れなく。
 
-*** ���󥹥ȡ��뤹��
+*** インストールする
 
 {{{
 % su
 Password:
 # make install
- [��ά]
+ [中略]
 # exit
 % make install-check
 Testing installed Gauche
 Testing primitive syntax ...                                     passed.
- [��ά]
+ [中略]
 Testing digest framework ...                                     passed.
 Testing vport ...                                                passed.
 }}}
 
-����ǡ�����Ū�ˤ�/usr/local�β���Gauche�����󥹥ȡ��뤵�졢���󥹥ȡ�
-�뤵�줿Gauche�Υƥ��Ȥ�Ԥ��ޤ������餫����PATH��/usr/local/bin����
-�ޤ�Ƥ��뤳�Ȥ��ǧ���Ƥ����ޤ��礦��
+これで、基本的には/usr/localの下にGaucheがインストールされ、インストー
+ルされたGaucheのテストも行われます。あらかじめPATHに/usr/local/binが含
+まれていることを確認しておきましょう。
 
 {{{
 % gosh -V
 Gauche scheme interpreter, version 0.8.9 [utf-8,pthreads]
 }}}
 
-����ǡ�Kahua��Ȥ������Gauche�ν����������ޤ�����
+これで、Kahuaを使うためのGaucheの準備が整いました。
 
-** OS���Ȥθ��̻���
+** OSごとの個別事情
 
-�ǽ���ǤäƤ����ޤ������ܹƤ����Ԥ��µ��ǳ�ǧ���Ƥ���Τϡ���Mac OS X
-10.4.8(intel)�ס�NetBSD 3.1_STABLE�פ����Ǥ���¾�����ơ�Mac OS X���ư
-��� Parallels Desktop ��VM��ǳ�ǧ���Ƥ��ޤ���
+最初に断っておきますが、本稿の著者が実機で確認しているのは、「Mac OS X
+10.4.8(intel)」「NetBSD 3.1_STABLE」だけです。他は全て、Mac OS X上で動
+作する Parallels Desktop のVM上で確認しています。
 
-*** Linux����
+*** Linux共通
 
-Kahua��[[/info/Release Note//��꡼���Ρ���]]�ˤ�񤤤Ƥ��ޤ����������ͥ�
-2.4�����Ȥ���硢NPTL(Native Posix Thread Library)���Ȥ߹��ޤ�Ƥ���
-ɬ�פ�����ޤ���NPTL���Ȥ��뤫�ɤ������ǧ����ˤϡ�getconf���ޥ�ɤ��
-���ޤ���
+Kahuaの[[/info/Release Note//リリースノート]]にも書いていますが、カーネル
+2.4系列を使う場合、NPTL(Native Posix Thread Library)が組み込まれている
+必要があります。NPTLが使えるかどうかを確認するには、getconfコマンドを使
+います。
 {{{
 % getconf GNU_LIBPTHREAD_VERSION
 NPTL 0.60
 }}}
-������󡢥����ͥ�2.6����˾夲�Ƥ��ޤäƤ�OK�Ǥ���
+もちろん、カーネル2.6系列に上げてしまってもOKです。
 
-*** [http://www.ubuntulinux.jp/ Ubuntu Linux 6.10(i386)���ܸ�������饤����]
+*** [http://www.ubuntulinux.jp/ Ubuntu Linux 6.10(i386)日本語ローカライズ版]
 
-�����ͥ��2.6����Ǥ���make��patch���ޥ�ɤ�ɸ��ǥ��󥹥ȡ��뤵����
-���Ǥ�����libc6-dev�ѥå������ϥ��󥹥ȡ��뤵��ޤ���libc6-dev���ɲ�
-�ǥ��󥹥ȡ��뤹��ɬ�פ�����ޤ���GUI��Ȥ��ʤ�Synaptic�ѥå������ޥ͡�
-�����libc6-dev�ѥå�����������å����ơ�Ŭ�ѡץܥ���򲡤��Ф褤�Ǥ���
-�������ޥ�ɥ饤��Ǥ��ʤ顢
+カーネルは2.6系列です。makeやpatchコマンドは標準でインストールされるよ
+うですが、libc6-devパッケージはインストールされません。libc6-devを追加
+でインストールする必要があります。GUIを使うならSynapticパッケージマネー
+ジャでlibc6-devパッケージをチェックして「適用」ボタンを押せばよいでしょ
+う。コマンドラインでやるなら、
 {{{
 % sudo apt-get install libc6-dev
 }}}
-�ǥ��󥹥ȡ���Ǥ��ޤ���
+でインストールできます。
 
-�ޤ���iconv��ɸ��Ǵޤޤ�Ƥ��뤿�ᡢconfigure���ץ����
-��--with-iconv=/usr ����ꤹ��С�iconv���ݡ��Ȥ��ɲä��뤳�Ȥ��Ǥ��ޤ���
-����������ܸ�(��ASCIIʸ��)���ϰϤǤ���Kahua��Gauche��Ȥ��Τʤ顢����
-��ɬ�ܤǤϤ���ޤ���
+また、iconvが標準で含まれているため、configureオプション
+に--with-iconv=/usr を指定すれば、iconvサポートを追加することができます。
+もちろん日本語(とASCII文字)の範囲でだけKahuaやGaucheを使うのなら、これ
+は必須ではありません。
 
 *** [http://fedora.redhat.com/ Fedora Core 6(i386)]
 
-���󥹥ȡ��뤹��ݡ��ѥå��������åȤ����ֺݡ��֥��եȥ�������ȯ�פ�
-�����å�������ޤ��礦(�ǥե���ȤǤϥ����å�����Ƥ��ޤ���)��
+インストールする際、パッケージセットを選ぶ際、「ソフトウェア開発」に
+チェックを入れましょう(デフォルトではチェックされていません)。
 
-���󥹥ȡ����ˤ����Υѥå����������ɲä���ˤϡ��ѥå������ޥ͡�����
-�Υ֥饦�����֤κ��ڥ���ǡֳ�ȯ�פ����򤷡����ڥ���ǡֳ�ȯ�ġ���פ�
-�ֳ�ȯ�饤�֥��פ˥����å�������ơ���Ŭ�ѡץܥ���򲡤��Х��󥹥ȡ�
-�뤵���Ϥ��Ǥ���
+インストール後にこれらのパッケージ群を追加するには、パッケージマネージャ
+のブラウズタブの左ペインで「開発」を選択し、右ペインで「開発ツール」と
+「開発ライブラリ」にチェックを入れて、「適用」ボタンを押せばインストー
+ルされるはずです。
 
 *** [http://www.freebsd.org/ FreeBSD 6.2 RELEASE(i386)]
 
-ports���饽�եȥ��������ɲä���ɬ�פϤ���ޤ���
+portsからソフトウェアを追加する必要はありません。
 
 *** [http://www.netbsd.org/ NetBSD 3.1_STABLE/4.0_BETA2(i386)]
 
-pkgsrc���饽�եȥ��������ɲä���ɬ�פϤ���ޤ��󡣤ޤ���iconv��OS��ɸ��
-�Ǵޤޤ�Ƥ��ޤ��Τǡ�configure���ץ�����--with-iconv=/usr����ꤹ��
-�С�iconv���ݡ��Ȥ��ɲä��뤳�Ȥ��Ǥ��ޤ���
+pkgsrcからソフトウェアを追加する必要はありません。また、iconvがOSに標準
+で含まれていますので、configureオプションに--with-iconv=/usrを指定すれ
+ば、iconvサポートを追加することができます。
 
 *** [http://www.apple.com/ Mac OS X 10.4.8(intel)]
 
-���餫����BSD�ѥå������ȳ�ȯ�Ķ���BSD SDK�Ĥ��ǥ��󥹥ȡ��뤷�Ƥ���ɬ
-�פ�����ޤ����ޤ���iconv��OS��ɸ��Ǵޤޤ�Ƥ��ޤ��Τǡ�configure����
-������--with-iconv=/usr����ꤹ��С�iconv���ݡ��Ȥ��ɲä��뤳�Ȥ���
-���ޤ���
+あらかじめBSDパッケージと開発環境をBSD SDKつきでインストールしておく必
+要があります。また、iconvがOSに標準で含まれていますので、configureオプ
+ションに--with-iconv=/usrを指定すれば、iconvサポートを追加することがで
+きます。
 
-*** ����¾��OS�ˤĤ���
+*** その他のOSについて
 
-��Ƥ��ʤ��ΤǤ褯�狼��ޤ��󤬡����̤�UNIX��OS�Ǥ���Ф����ϥޤ��
-�����Ϥʤ��Ȼפ��ޤ����⤷�ϥޤ�Ȥ���������褦�ʤ顢���Υ����Ȥǲ���
-��𤵤�Ƥ��뤫�⤷��ޤ���
+試していないのでよくわかりませんが、普通のUNIX系OSであればそうハマると
+ころはないと思います。もしハマるところがあるようなら、次のサイトで何か
+報告されているかもしれません。
 
 http://practical-scheme.net/wiliki/wiliki.cgi?Gauche%3aPlatform
 
-�Ť������ĤäƤ����ꤹ��Τǡ����դʤɤ��ǧ���ޤ��礦��
+古い情報も残っていたりするので、日付なども確認しましょう。
 
-����Ǥ⤦�ޤ������ʤ���С�
-[http://practical-scheme.net/wiliki/wiliki.cgi WiLiKi]�˽񤭹�����ꡢ
-[http://www.lingr.com/room/gauche Lingr��Gauche����]��ʹ���Ƥߤ�ȡ�
-ï���������Ƥ���뤫�⤷��ޤ���(�������Ƥ���ʤ����⤷��ޤ���)��
+それでもうまくいかなければ、
+[http://practical-scheme.net/wiliki/wiliki.cgi WiLiKi]に書き込んだり、
+[http://www.lingr.com/room/gauche LingrのGauche部屋]で聞いてみると、
+誰かが教えてくれるかもしれません(し教えてくれないかもしれません)。

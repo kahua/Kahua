@@ -1,27 +1,27 @@
-;; Modules/kahua.text.xml -*- mode: text; coding: euc-jp -*-
+;; Modules/kahua.text.xml -*- mode: text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.test.xml.ja,v 1.3 2006/12/27 07:03:32 bizenn Exp $
+;; $Id$
 
 
 * [module] kahua.test.xml
 
-���Υ⥸�塼��� HTML ���������륳���ɡ����Ȥ��С�CGI�ץ������η�̤�
-�ƥ��Ȥ�����ʤ��󶡤����ΤǤ����������������ɤν��Ϥϡ��ƥ��Ȥ��
-���Ȥ��ˤϡ�ʬ��ʤ����󤬴ޤޤ�뤳�Ȥ�����ޤ������Τ褦�ʾ�������
-���Ƥϡ������ॹ����פ䥻�å����ID������ޤ���
+このモジュールは HTML を生成するコード、たとえば、CGIプログラムの結果を
+テストする手段を提供するものです。こうしたコードの出力は、テストを書い
+たときには、分らない情報が含まれることがあります。このような情報の例と
+しては、タイムスタンプやセッションIDがあります。
 
-test-xml-match? ��³���ϥƥ��Ȥ���륳���ɤν��Ϥ˥ޥå�����ѥ������
-�Ȥ��ޤ������Υѥ�����ˤϡ���don't care�����ޤ�뤳�Ȥ��Ǥ��ޤ�����
-���������Ĥ������������å�����Τ˻Ȥ���ѥ������ѿ���ޤ���ޤ���
+test-xml-match? 手続きはテストされるコードの出力にマッチするパターンを
+使います。このパターンには、「don't care」節を含めることができます。ま
+た、いくつかの制約をチェックするのに使えるパターン変数も含められます。
 
 ** [procedure] test-sxml-match? ''pattern'' ''input'' [''extra-check'']
 
-''input''��SXML��''pattern''�ϡ��ȹ礹�٤��ѥ������ɽ������S����
+''input''はSXML。''pattern''は、照合すべきパターンを表現するS式。
 
-�ѥ������SXML���������S���Ǥ������ѥ������ѿ���ޤ�뤳�Ȥ�����ޤ���
-����Ū���ͤϰʲ��Τ褦�ˤʤäƤ��ޤ���
+パターンはSXMLに類似したS式ですが、パターン変数を含めることが出来ます。
+形式的仕様は以下のようになっています。
 
 {{{
     <pattern> : <node>
@@ -39,100 +39,100 @@ test-xml-match? ��³���ϥƥ��Ȥ���륳���ɤν��Ϥ˥ޥå�����ѥ������
               | (!repeat  <pattern> ...)
               | (!contain <pattern> ...)
 
-    <literal-symbol> : ��Ƭ��'?'���뤤��'!'�ǤϤʤ����٤ƤΥ���ܥ�
+    <literal-symbol> : 先頭が'?'あるいは'!'ではないすべてのシンボル
 
-    <pattern-variable> : ��Ƭ��'?'�Ǥ��륷��ܥ�
+    <pattern-variable> : 先頭が'?'であるシンボル
 }}}
 
-<string> �� <literal-symbol> �Ϥ��Τޤ����ϤȾȹ礵��ޤ���
+<string> と <literal-symbol> はそのまま入力と照合されます。
 
-<pattern-variable> ��������Τ��٤ƤΥ��֥������Ȥȥޥå����ޤ����ȹ��
-�ϥѥ������ѿ��ȥޥå��������֥������ȤȤ�Ͽ���ޤ��������ϡ���Ҥ�
-�ɲå����å���³���ˤ���ɲå����å��ǻȤ��ޤ���
+<pattern-variable> は入力中のすべてのオブジェクトとマッチします。照合器
+はパターン変数とマッチしたオブジェクトとを記録します。これらは、後述の
+追加チェック手続きによる追加チェックで使われます。
 
-(���С������Ǥϡ��ѥ������ѿ�̾�ˤĤ��Ƥϡ�����ȤäƤ⤫�ޤ��ޤ���
-���������衢Ʊ���ѿ�̾�ʤ�Ʊ���ι�¤�򻲾Ȥ���Ȥ��������ä����ǽ��
-������ޤ�����don't care����ʬ��ɽ������Τˡ��ѥ������ѿ� ?_ ��Ȥ���
-��������ϡ��������ӤΤ����ͽ�󤷤ޤ���)
+(現バージョンでは、パターン変数名については、何を使ってもかまいませんし
+かし、将来、同じ変数名なら同型の構造を参照するという制約を加える可能性
+があります。「don't care」部分を表現するのに、パターン変数 ?_ を使いま
+す。これは、その用途のために予約します。)
 
-�ѥ������ѿ�?@�ϡ�attr-node���⤷����Ф���˥ޥå����ޤ������ȥ�ӥ塼
-�Ȥ�̵�뤷�������������Ǥ���
+パターン変数?@は、attr-nodeがもしあればそれにマッチします。アトリビュー
+トを無視したい場合に便利です。
 
-<attr-node>���<content>���б��������ϤΥ��ȥ�ӥ塼�ȥΡ��ɤ����Ƥˡ�
-����ư�ǥޥå����ޤ���
+<attr-node>内の<content>は対応する入力のアトリビュートノードの内容に、
+順不動でマッチします。
 
-�ѥ������ѿ�?*�ϡ�(!repeat ?_)��Ʊ���Ǥ���
+パターン変数?*は、(!repeat ?_)と同じです。
 
 :(!seq <pattern> ...):
-<pattern> ... ���¤Ӥ˥ޥå����ޤ���<content> �γ��ѤǤ����
-<pattern> ... �ϷҤ����蘆��� <content> ���¤ӤȤʤ�ޤ���
-���ʤ�����ʲ��Υѥ�����
+<pattern> ... の並びにマッチします。<content> の外観であれば
+<pattern> ... は繋ぎあわされて <content> の並びとなります。
+すなわち、以下のパターン
 {{{
 (ul (li "foo") (!seq (li "bar") (li "baz")) (li "oof"))
 }}}
-�ϡ��ʲ������Ϥȥޥå����ޤ���
+は、以下の入力とマッチします。
 {{{
 (ul (li "foo") (li "bar") (li "baz") (li "oof"))
 }}}
 :(!permute <pattern> ...):
-<pattern> ... �Τ��٤Ƥν���Τɤ줫���¤Ӥ˥ޥå����ޤ���
-�¤Ӥϡ��Ҥ����蘆�� <content> ���¤Ӥ�ޤ��Τˤʤ�ޤ���
-���ʤ�����ʲ��Υѥ�����
+<pattern> ... のすべての順列のどれかの並びにマッチします。
+並びは、繋ぎあわされ <content> の並びを含むものになります。
+すなわち、以下のパターン
 {{{
 (ul (li "foo") (!permute (li "bar") (li "baz")) (li "oof"))
 }}}
-�ϰʲ������Ϥ˥ޥå����ޤ���
+は以下の入力にマッチします。
 {{{
 (ul (li "foo") (li "baz") (li "bar") (li "oof"))
 }}}
 :(!or <pattern> ...):
-<pattern> ... �Τ����줫�˥ޥå����ޤ����Ҥ����碌�Υ롼���
-�Ƶ�Ū��Ŭ�Ѥ���ޤ����ʲ��Υѥ�����
+<pattern> ... のいずれかにマッチします。繋ぎあわせのルールは
+再帰的に適用されます。以下のパターン
 {{{
 (ul (li "foo") (!or (!seq (li "bar") (li "baz")) (li "ZZ")))
 }}}
-�ϡ��ʲ������Ϥ�ξ���˥ޥå����ޤ���
+は、以下の入力の両方にマッチします。
 {{{
 (ul (li "foo") (li "bar") (li "baz"))
 (ul (li "foo") (li "ZZ"))
 }}}
 :(!repeat <pattern> ...):
-���ϤΤʤ��� <pattern> ... �˥ޥå������ΤΥ����İʾ�νи���
-�ޥå����ޤ�����ȿ����ǡ��ޥå������ѥ������ѿ��ϺǸ��Τ���
-��¸����ޤ��󡣥ѥ�����
+入力のなかの <pattern> ... にマッチするもののゼロ個以上の出現に
+マッチします。各反復中で、マッチしたパターン変数は最後をのぞき
+保存されません。パターン
 {{{
 (dl (!repeat (dt ?_) (dd ?_)))
 }}}
-�ϰʲ������Ϥ˥ޥå����ޤ���
+は以下の入力にマッチします。
 {{{
 (dl (dt "foo") (dd "bar") (dt "foo2") (dd "bar2"))
 }}}
 :(!contain <pattern> ...):
-<pattern> ...��ޤ��Τ˥ޥå����ޤ���<pattern> ... �νи�������䤤�ޤ��󤬡�
-���٤Ƥ�<pattern> ...���ޤޤ�Ƥ�����Τߥޥå����������ޤ����ѥ�����
+<pattern> ...を含むものにマッチします。<pattern> ... の出現順序は問いませんが、
+すべての<pattern> ...が含まれている場合のみマッチに成功します。パターン
 {{{
 (ul (!contain (li "foo") (li "bar")))
 }}}
-�ϰʲ������ϤΤ�����ˤ�ޥå����ޤ���
+は以下の入力のいずれにもマッチします。
 {{{
 (ul (li "foo") (li "bar"))
 (ul (li "bar") (li "foo"))
 (ul (li "baz") (li "bar") (li "foo"))
 }}}
 
-���ץ������� extra-check ��Ϳ����ȡ�����ϡ��ѥ������ѿ��ȥޥå�����
-�ͤȤ�Ϣ�ۥꥹ�Ȥ�����Ȥ��ƸƤӽФ���ޤ���extra-check���ɲäΥ����å�
-��Ԥ������Ԥ����� #f �����������鿿���ͤ��֤��ͤФʤ�ޤ���
+オプション引数 extra-check を与えると、これは、パターン変数とマッチした
+値との連想リストを引数として呼び出されます。extra-checkは追加のチェック
+を行い、失敗したら #f を、成功したら真の値を返さねばなりません。
 
-test-sxml-match? �Ͼȹ礬�����������ˤ�#f�򡢾ȹ礬������������
-extra-check��Ϳ�����Ƥ��ʤ�����#t�򡢾ȹ礬��������extra-check��Ϳ
-�����Ƥ������extra-check���֤��ͤ��֤��ޤ���
+test-sxml-match? は照合が成功した場合には#fを、照合が成功し、かつ
+extra-checkが与えられていない場合は#tを、照合が成功し、extra-checkが与
+えられている場合はextra-checkの返り値を返します。
 
-�ѥ�����ΥХå��ȥ�å��ˤ�ꡢextra-check��ñ��Υƥ��Ȥ�ʣ����ƤФ�
-���뤳�Ȥ����դ��Ʋ�������
+パターンのバックトラックにより、extra-checkは単一のテストで複数回呼ばれ
+得ることに注意して下さい。
 
-extra-check���ʤ���硢test-sxml-match? �� gauche.test �⥸�塼���
-test��³����test*�ޥ����ˡ���Ӽ�³���Ȥ���ľ���Ϥ����Ȥ��Ǥ��ޤ���
+extra-checkがない場合、test-sxml-match? は gauche.test モジュールの
+test手続きやtest*マクロに、比較手続きとして直接渡すことができます。
 
 {{{
 (test* "test sxml output" '(ul (!repeat (li ?_)))
@@ -140,33 +140,33 @@ test��³����test*�ޥ����ˡ���Ӽ�³���Ȥ���ľ���Ϥ����Ȥ��Ǥ��ޤ���
        test-sxml-match?)
 }}}
 
-���Τ褦�ʻ���ˡ�����ꤷ�Ƥ��뤿�ᡢ''input'' ��*test-error*���Ϥ��줿
-��� (sxml-generating-procedure �¹���˥��顼��ȯ������ȡ�test*������
-����­���� *test-error* ���֥������Ȥؤȥ�åפ��ޤ�)��
-test-sxml-match? �ϥޥå�����ڹԤ鷺��ľ����#f���֤��ޤ���
+このような使用法を想定しているため、''input'' に*test-error*が渡された
+場合 (sxml-generating-procedure 実行中にエラーが発生すると、test*がそれ
+を補足して *test-error* オブジェクトへとラップします)、
+test-sxml-match? はマッチを一切行わず、直ちに#fを返します。
 
 ** [procedure] test-xml-match? ''pattern'' ''input'' [''extra-check'']
 
-''input''��ʸ����⤷���ϥꥹ�ȤǤ����ꥹ�Ȥξ�硢����Ϥޤ�text.tree
-�⥸�塼���tree->string��³�����Ϥ���ơ�ʸ������������ޤ���
+''input''は文字列もしくはリストです。リストの場合、それはまずtext.tree
+モジュールのtree->string手続きに渡されて、文字列を生成します。
 
-���ˤ���ʸ����ssax:xml->sxml���Ϥ��졢XML�Ȥ��ƥѡ�������ޤ���
+次にその文字列がssax:xml->sxmlに渡され、XMLとしてパーズされます。
 
-��̤�SXML����test-sxml-match? ���Ϥ���ޤ���
+結果のSXMLが、test-sxml-match? に渡されます。
 
-test-sxml-match? ��Ʊ�͡�''input''��*test-error*���Ϥ��줿����
-�ޥå�����ڹԤ鷺��ľ����#f���֤��ޤ���
+test-sxml-match? と同様、''input''に*test-error*が渡された場合は
+マッチを一切行わず、直ちに#fを返します。
 
 ** [procedure] test-sxml-select-matcher ''sxpath-expr'' [''extra-check'']
 ** [procedure] test-xml-select-matcher ''sxpath-expr'' [''extra-check'']
 
-�����μ�³���ϡ�Ϳ����줿SXPath����롼������Ϥ˺ǽ��Ŭ�Ѥ��Ƥ���
-���줾��test-sxml-match?, test-xml-match? ��Ŭ�Ѥ���褦�ʼ�³�����֤�
-�ޤ����礭��XML���ϤΤ�������ΥΡ��ɤΤߤ�ƥ��Ȥ������褦�ʾ�������
-�Ǥ���
+これらの手続きは、与えられたSXPath選択ルールを入力に最初に適用してから
+それぞれtest-sxml-match?, test-xml-match? を適用するような手続きを返し
+ます。大きなXML出力のうち特定のノードのみをテストしたいような場合に便利
+です。
 
-�㤨�С�������ϡ��ƥ��ȷ�̤�����ͤ�SXML�����顢body�������p�������
-���򤷤���Τ��Ф��ơ�Ϳ����줿�ѥ�����Ȥξȹ��Ԥ��ޤ���
+例えば、次の例は、テスト結果の戻り値のSXML式から、body要素内のp要素列を
+選択したものに対して、与えられたパターンとの照合を行います。
 {{{
 (test* "test sxml output" '(!seq (p ?_) (p ?_))
        '(html (head (title "TEST"))
@@ -174,5 +174,5 @@ test-sxml-match? ��Ʊ�͡�''input''��*test-error*���Ϥ��줿����
        (test-sxml-select-matcher '(html body p)))
 }}}
 
-�֤��줿��³���ϡ��������������*test-error*���Ϥ��줿���ϥޥå����
-�鷺����������#f���֤��ޤ���
+返された手続きは、その第二引数に*test-error*が渡された場合はマッチを行
+わず、ただちに#fを返します。

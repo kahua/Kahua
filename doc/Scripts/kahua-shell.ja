@@ -1,23 +1,23 @@
-;; -*- coding: euc-jp -*-
+;; -*- coding: utf-8 -*-
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-shell.ja,v 1.2 2006/09/29 06:41:53 bizenn Exp $
+;; $Id$
 
 * kahua-shell [-c conffile]
 
-ư����Υ���ץ�����([[kahua-server]])����³�������ץꥱ������󤬲�Ư����
-����ɥܥå����Ķ����Ф��ƥ��󥿥饯�ƥ��֤� Scheme ����ȯ�Ԥ��뤿���
-�ե���ȥ���ɥ�����ץȡ�Kahua���ץꥱ�������ȯ�Ԥ����ޥ�ɥ饤�󤫤�
-��ư���뤫���⤷����Emacs�⤫�鵯ư���롣
+動作中のワーカプロセス([[kahua-server]])に接続し、アプリケーションが稼働する
+サンドボックス環境に対してインタラクティブに Scheme 式を発行するための
+フロントエンドスクリプト。Kahuaアプリケーション開発者がコマンドラインから
+起動するか、もしくはEmacs内から起動する。
 
-kahua-shell��ư����ȡ��ǽ��ǧ�ڥץ���ץȤ��Ф롣[[kahua-admin]] ��
-��������Ͽ������ȯ�ԥ�������ȤΥ桼��̾�ȥѥ���ɤ����Ϥ��롣���ˡ�
-��³�������ץ�������ɽ������Ƥ�������������ֹ�(wno)�����򤹤롣
-���򤹤�ȥץ���ץȤ��Ф롣
+kahua-shellを起動すると、最初に認証プロンプトが出る。[[kahua-admin]] で
+作成、登録した開発者アカウントのユーザ名とパスワードを入力する。次に、
+接続するワーカプロセスを、表示されている一覧からワーカ番号(wno)で選択する。
+選択するとプロンプトが出る。
 
 <<<
  % /usr/local/kahua/bin/kahua-shell
@@ -34,9 +34,9 @@ kahua-shell��ư����ȡ��ǽ��ǧ�ڥץ���ץȤ��Ф롣[[kahua-admin]] ��
  kahua-web(h52:5jxo6)> 
 >>>
 
-���Υץ���ץȤ��Ф��� Scheme �������Ϥ���ȡ���³��Υ���ץ�����
-([[kahua-server]]) �Υ���ɥܥå����Ķ�(*.kahua���¹Ԥ����Ķ�)���
-ɾ������롣
+このプロンプトに対して Scheme 式を入力すると、接続中のワーカプロセス
+([[kahua-server]]) のサンドボックス環境(*.kahuaが実行される環境)内で
+評価される。
 
 <<<
  kahua-web(h52:5jxo6)> (map (cut ref <> 'login-name) (make-kahua-collection <kahua-user>))
@@ -44,29 +44,29 @@ kahua-shell��ư����ȡ��ǽ��ǧ�ڥץ���ץȤ��Ф롣[[kahua-admin]] ��
  kahua-web(h52:5jxo6)> 
 >>>
 
-��λ����ˤ�EOF(Ctrl-D)�򥿥��פ��롣
+終了するにはEOF(Ctrl-D)をタイプする。
 
-** ��ư���ץ����
+** 起動オプション
 
 <<<
  -c conf-file
-    ����ե�����Υѥ�����ꤹ�롣
+    設定ファイルのパスを指定する。
 >>>
 
-** Emacs����kahua-shell��Ȥ���
+** Emacsからkahua-shellを使う。
 
-# Kahua�������ĥ꡼�� emacs �ǥ��쥯�ȥ�ˤ��� kahua.el �� kahua-shell.el �� Emacs ��
-load-path ���̤ä��ǥ��쥯�ȥ���֤���
-# Emacs ��ư���˥����ɤ������ʤ� .emacs �� ''(require 'kahua)'' �򵭽Ҥ��롣
-Emacs ����ư�������Ȥ˥����ɤ���ʤ� *scratch* �Хåե��� ''(require 'kahua)''
-��¹Ԥ��롣
-# ���餫���� [[kahua-admin]] �� kahua-shell ���֤��줿�ǥ��쥯�ȥ��
-PATH���ɲä��Ƥ�������exec-path ���ɲä��Ƥ�����
-# kahua.el ������ɤ���� 2�ĤΥ��ޥ�ɤ��Ȥ���褦�ˤʤ롣
-- M-x run-kahua : [[kahua-admin]] ��ư���롣
-- M-x run-kahua-shell : ��⡼�ȥۥ��Ȥ� ssh ����³��
-kahua-shell��ư���롣hostname��ʹ���Ƥ����Ȥ�����ñ��Enter�����򲡤��С�
-���������kahua-shell����Ѥ��롣
+# Kahuaソースツリーの emacs ディレクトリにある kahua.el と kahua-shell.el を Emacs の
+load-path が通ったディレクトリに置く。
+# Emacs 起動時にロードしたいなら .emacs に ''(require 'kahua)'' を記述する。
+Emacs が起動したあとにロードするなら *scratch* バッファで ''(require 'kahua)''
+を実行する。
+# あらかじめ [[kahua-admin]] や kahua-shell が置かれたディレクトリを
+PATHに追加しておくか、exec-path に追加しておく。
+# kahua.el をロードすると 2つのコマンドが使えるようになる。
+- M-x run-kahua : [[kahua-admin]] を起動する。
+- M-x run-kahua-shell : リモートホストに ssh で接続し
+kahua-shellを起動する。hostnameを聞いてきたところで単にEnterキーを押せば、
+ローカルのkahua-shellを使用する。
 
-�ʤ���run-kahua-shell�ε�ư���ѹ����뤿��Υ������ޥ������ѿ����Ѱդ���Ƥ��ꡢ
-M-x customize-group kahua �ǥǥե���Ȥ���³�ۥ���̾��桼��̾��������Ǥ��롣
+なお、run-kahua-shellの挙動を変更するためのカスタマイズ用変数が用意されており、
+M-x customize-group kahua でデフォルトの接続ホスト名やユーザ名等を設定できる。

@@ -1,32 +1,32 @@
-;; -*- coding: euc-jp -*-
+;; -*- coding: utf-8 -*-
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
 ;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: kahua-dbutil.ja,v 1.3 2006/09/29 06:43:41 bizenn Exp $
+;; $Id$
 
 * kahua-dbutil {check|fix} database-path
 
-����Ū�ˤ�Kahua���֥������ȥǡ����١����������������å��Ƚ�����
-�ǡ�����������̤�Ԥ��桼�ƥ���ƥ��Ȥʤ�ͽ������������Ǥ�
-�ǡ����١��������������󥿤��������γ�ǧ�Ƚ�����Ԥ���
+将来的にはKahuaオブジェクトデータベースの整合性チェックと修復、
+データの操作全般を行うユーティリティとなる予定だが、現状では
+データベースの内部カウンタの整合性の確認と修復を行う。
 
-Kahua���֥������ȥǡ����١�����RDBMS�ؤγ�Ǽ��ˡ�ϡ�0.5��0.7��
-�ѹ����줿���ᡢ��������ΥС�������Kahua�ǻ��Ѥ��Ƥ����ǡ���
-�١�������Ѥ����硢�ޤ��Ϥ��Υ桼�ƥ���ƥ�������ץȤ�Ȥä�
-�ǡ����١�������(�Ѵ�)����ɬ�פ����롣
+KahuaオブジェクトデータベースのRDBMSへの格納方法は、0.5と0.7で
+変更されたため、それ以前のバージョンのKahuaで使用していたデータ
+ベースを使用する場合、まずはこのユーティリティスクリプトを使って
+データベースを修復(変換)する必要がある。
 
 <<<
  check
-    ����������kahua_db_idcount��kahua_db_classcount�������������
-    ����ե饰������̵ͭ��Ĵ�٤�ɸ����Ϥ���𤹤롣����(�Ѵ�)��
-    �Ԥ�ʤ���
+    内部カウンタkahua_db_idcountとkahua_db_classcountの整合性および
+    削除フラグカラムの有無を調べて標準出力に報告する。修復(変換)は
+    行わない。
 
  fix
-    ����������kahua_db_idcount��kahua_db_classcount����������
-    ��ǧ���������������Ƥ��ʤ����ϴ�¸�Υǡ���(���󥹥���)
-    ��������������褦�˽�����Ԥ����ޤ�������ե饰����ब
-    ¸�ߤ��ʤ����ˤϥ������ɲäȥ���ǥå����κ�����Ԥ���
+    内部カウンタkahua_db_idcountとkahua_db_classcountの整合性を
+    確認し、整合性が取れていない場合は既存のデータ(インスタンス)
+    と整合性が取れるように修復を行う。また、削除フラグカラムが
+    存在しない場合にはカラムの追加とインデックスの作成を行う。
 >>>

@@ -1,20 +1,20 @@
-;; Modules/kahua.gsid -*- mode: text; coding: euc-jp -*-
+;; Modules/kahua.gsid -*- mode: text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.gsid.ja,v 1.2 2006/12/26 12:53:02 bizenn Exp $
+;; $Id$
 
 
 * [module] kahua.gsid
 
-�������Х륻�å����ID (gsid) �򰷤�����μ�³�������󶡤��ޤ���
+グローバルセッションID (gsid) を扱うための手続き群を提供します。
 
-���ץꥱ������󥳡��ɤˤ����Ƥϡ��̾��[[kahua.session]]�⥸�塼�뤬��
-ưŪ�˥��å����ID���������Τǡ����Υ⥸�塼���API��ľ�ܻȤ�ɬ�פϤ�
-�ޤ�ʤ��Ǥ��礦��
+アプリケーションコードにおいては、通常は[[kahua.session]]モジュールが自
+動的にセッションIDを作成するので、このモジュールのAPIを直接使う必要はあ
+まりないでしょう。
 
-���ץꥱ������󥵡��С��ʳ���Kahua�桼�ƥ���ƥ��ϡ�GSID����ɤ���Τ�
-���Υ⥸�塼�뤬ɬ�פǤ���
+アプリケーションサーバー以外のKahuaユーティリティは、GSIDを解読するのに
+このモジュールが必要です。
 
 ** Global session ID (GSID)
 
@@ -24,28 +24,28 @@
 ;; session as far as it hasn't explicitly invalidated.  In other word,
 ;; a continuation ID has an unlimited extent by default.
 
-���å����ID��2�Ĥ�ʸ���󤫤鹽������ޤ����ҤȤĤϷ�³ID�ǡ����Υ��å���
-�����η�³�ΤҤȤĤ��б����ޤ������η�³�ϥꥹ�����Ȳ�ǽ�Ǥ��ꡢƱ��
-��³ID��Ȥ����Ȥǡ�����Ū��̵���������ޤǤδ֤Ǥ���Х��å�����Х�
-���ȥ�å����뤿��˺����Ѥ��뤳�Ȥ��Ǥ��ޤ������դ򴹤���С���³ID��
-�ǥե���Ȥ�̵�¥������ƥ�Ȥ�����ޤ���
+セッションIDは2つの文字列から構成されます。ひとつは継続IDで、そのセッショ
+ンの中の継続のひとつに対応します。この継続はリスタート可能であり、同じ
+継続IDを使うことで、明示的に無効化されるまでの間であればセッションをバッ
+クトラックするために再利用することができます。言葉を換えれば、継続IDは
+デフォルトで無限エクステントを持ちます。
 
 ;; The other is a state ID, which stands for a monadic state of
 ;; the session.  It carries a stateful information---therefore can't 
 ;; be backtracked.
 
-�⤦�����Ͼ���ID�ǡ����å����ˤ������ʥǥ��å��ʾ��֤�ɽ�����Ƥ���
-��������Ͼ��֤˴ؤ�������ޤߤޤ�--�Ĥޤꡢ�Хå��ȥ�å��Ǥ��ޤ���
+もう一方は状態IDで、セッションにおけるモナディックな状態を表現していま
+す。これは状態に関する情報を含みます--つまり、バックトラックできません。
 
 ;; In a typical web session, the continuation ID is kept in parameters
 ;; in POST request or in URL, whereas the state ID is kept in cookies.
 
-ŵ��Ū��Web���å����ˤ����Ƥϡ���³ID��POST�ꥯ�����ȤΥѥ�᡼����
-URL���ݻ����졢����ID��Cookie���ݻ�����ޤ���
+典型的なWebセッションにおいては、継続IDはPOSTリクエストのパラメータか
+URLに保持され、状態IDはCookieに保持されます。
 
 ;; Both ID consists of the following format:
 
-����2�Ĥ�ID�ϼ��Τ褦�ʽ񼰤ǹ�������ޤ���
+この2つのIDは次のような書式で構成されます。
 {{{
    1-HHHHH-BBBBBBB
 }}}
@@ -54,56 +54,56 @@ URL���ݻ����졢����ID��Cookie���ݻ�����ޤ���
 ;; in the later versions.  For version 1, the header just includes worker ID.
 ;; The body is up to the worker.  Hs and Bs shouldn't include a minus sign.
 
-�ǽ��'1'��GSID�ΥС�������ɽ���ޤ���H��B�ϥإå��ȥܥǥ����̣���ޤ���
-�С�������ֹ�θ���ν񼰤ϡ�����ΥС������ˤ����Ƥ��ѹ�����뤫��
-����ޤ��󡣥С������1�ˤ����Ƥϡ��إå��ϥ��ID�Τߤ�ޤߤޤ����ܥǥ�
-�Ϥ��Υ���˰�¸���ޤ���H��B�ˤ�'-'(�ϥ��ե�)��ޤ�ǤϤ����ޤ���
+最初の'1'はGSIDのバージョンを表します。HとBはヘッダとボディを意味します。
+バージョン番号の後ろの書式は、今後のバージョンにおいては変更されるかも
+しれません。バージョン1においては、ヘッダはワーカIDのみを含みます。ボディ
+はそのワーカに依存します。HやBには'-'(ハイフン)を含んではいけません。
 
 ** [procedure] make-gsid ''worker-id'' ''body''
 
-GSID������ʸ�����''worker-id''��''body''������������֤��ޤ���
+GSID形式の文字列を''worker-id''と''body''から作成して返します。
 
-���μ�³����ñ��ʸ����������������ǡ����줬��ˡ����Ǥ��뤳�Ȥ�
-�ݾڤ��ޤ���[[kahua.session]]�⥸�塼�뤬��ˡ�����ID�κ�����
-�ݾڤ��ޤ���
+この手続きは単に文字列を作成するだけで、それがユニークであることは
+保証しません。[[kahua.session]]モジュールがユニークなIDの作成を
+保証します。
 
 ** [procedure] decompose-gsid ''gsid''
 
-GSIDʸ���󤫤�إå���ʬ�ȥܥǥ���ʬ����Ф���
-2�Ĥ��ͤȤ����֤��ޤ���
+GSID文字列からヘッダ部分とボディ部分を取り出し、
+2つの値として返します。
 
 ** [procedure] gsid->worker-id ''gsid''
 
-GSIDʸ���󤫤�worker id����Ф����֤��ޤ���''gsid''��#f�ξ��ˤ�
-#f���֤��ޤ���
+GSID文字列からworker idを取り出して返します。''gsid''が#fの場合には
+#fを返します。
 
 ** [procedure] get-gsid-from-header ''header''
 
-��å�����([[�ץ��ȥ���]]����)�Υإå����顢2�Ĥ�gsid
-(state gsid��continuation gsid)����Ф���2�Ĥ��ͤȤ����֤��ޤ���
-��������gsid���إå���Ϳ�����Ƥ��ʤ����Ϥ����ͤȤ���#f���֤�ޤ���
+メッセージ([[プロトコル]]参照)のヘッダから、2つのgsid
+(state gsidとcontinuation gsid)を取り出し、2つの値として返します。
+該当するgsidがヘッダに与えられていない場合はその値として#fが返ります。
 
 ** [procedure] add-gsid-to-header ''header'' ''state-gsid'' ''cont-gsid''
 
-�إå�''header'' (�ꥹ�ȤΥꥹ��) �ˡ�''state-gsid''�ǻ��ꤵ���
-state gsid�ȡ�''cont-gsid''�ǻ��ꤵ���continuation gsid�����ꤷ��
-�إå����֤��ޤ���''header''�˴��ˤ�����gsid���ޤޤ�����
-��������Τ��֤��������ޤ���
+ヘッダ''header'' (リストのリスト) に、''state-gsid''で指定される
+state gsidと、''cont-gsid''で指定されるcontinuation gsidを設定した
+ヘッダを返します。''header''に既にこれらのgsidが含まれる場合は
+新しいものに置き換えられます。
 
 ** [procedure] worker-id->sockaddr ''worker-id'' [''sockbase'']
 
-worker-id���顢����worker (���ץꥱ������󥵡��С�) ����³���뤿���
-<sockaddr>���֥������Ȥ���������֤��ޤ���''worker-id''��#f��Ϳ����ȡ�
-�����ѥХ��������С�����³���뤿���<sockaddr>���֤��ޤ���
+worker-idから、そのworker (アプリケーションサーバー) に接続するための
+<sockaddr>オブジェクトを作成して返します。''worker-id''に#fを与えると、
+スーパバイザサーバーに接続するための<sockaddr>を返します。
 
-�֤ä�<sockaddr>��make-client-socket��Ϳ���뤳�Ȥǡ����饤����ȥ����åȤ�
-�������ƥ����С�����³���뤳�Ȥ��Ǥ��ޤ���
+返った<sockaddr>をmake-client-socketに与えることで、クライアントソケットを
+作成してサーバーに接続することができます。
 
 ** [procedure] make-worker-id ''worker-type''
 
-worker�����פ���worker id��������ޤ���
+workerタイプからworker idを作成します。
 
 ** [procedure] supervisor-sockaddr [''sockbase'']
 
-(worker-id->sockaddr #f) ��Ʊ���ǡ������ѥХ��������С�����³���뤿���
-<sockaddr>����������֤��ޤ���
+(worker-id->sockaddr #f) と同じで、スーパバイザサーバーに接続するための
+<sockaddr>を作成して返します。

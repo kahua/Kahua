@@ -1,26 +1,26 @@
-;; Modules/kahua.config -*- mode: text; coding: euc-jp -*-
+;; Modules/kahua.config -*- mode: text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.config.ja,v 1.2 2006/12/26 02:54:59 bizenn Exp $
+;; $Id$
 
 
 * [module] kahua.config
 
-Kahua�����С��ġ��뷲�Ƕ��̤��ƻȤ�������ѥ�᡼����
-����Ū�˰�������Υ⥸�塼��Ǥ���
+Kahuaサーバ、ツール群で共通して使われる設定パラメータを
+統一的に扱うためのモジュールです。
 
-Kahua�����С��ġ��뷲([[../Scripts]]����)�ϡ���ư���˥���ե����졼����
-��ե�������ɤ߹��ߤޤ����ǥե���Ȥ�${prefix}/etc/kahua.conf�Ǥ�����
-¿���Υġ����-c���ץ������ؤ��Υե��������ꤹ�뤳�Ȥ�Ǥ��ޤ���
+Kahuaサーバ、ツール群([[../Scripts]]参照)は、起動時にコンフィグレーショ
+ンファイルを読み込みます。デフォルトは${prefix}/etc/kahua.confですが、
+多くのツールは-cオプションで替わりのファイルを指定することもできます。
 
-�ޤ���[[../Concepts/Site Bundle//�����ȥХ�ɥ�]]����Ѥ��Ƥ�����ϡ�
-${path_to_site}/etc/kahua.conf ���Ȥ�졢�����ƥ������ե������̵�뤵
-��ޤ���
+また、[[../Concepts/Site Bundle//サイトバンドル]]を使用している場合は、
+${path_to_site}/etc/kahua.conf が使われ、システムの設定ファイルは無視さ
+れます。
 
-����ե����졼�����ե������Scheme������ץ��Ҥǡ�ñ��load��������
-�Ǥ�������ϡ�<kahua-config>���饹�Υ��󥰥�ȥ󥤥󥹥��󥹤���������
-����ޤ�Ǥ��ʤ���Фʤ�ޤ���
+コンフィグレーションファイルはSchemeスクリプト片で、単にloadされるだけ
+です。それは、<kahua-config>クラスのシングルトンインスタンスを生成する
+式を含んでいなければなりません。
 
 {{{
 (make <kahua-config>
@@ -28,205 +28,205 @@ ${path_to_site}/etc/kahua.conf ���Ȥ�졢�����ƥ������ե������̵�뤵
   :working-directory ...)
 }}}
 
-����������������(tarball)�����src/kahua.conf.sample �˥���ץ������ե�
-���뤬����ޤ���
+ソースアーカイブ(tarball)の中のsrc/kahua.conf.sample にサンプルの設定ファ
+イルがあります。
 
 ** [class] <kahua-config>
 
-gauche.mop.singleton��<singleton-mixin>��Ѿ����Ƥ��ꡢmake�����ñ���
-���󥹥��󥹤���������ޤ������Υ��饹�ˤϡ��������ǽ�ʰʲ��Υ����å�
-���������Ƥ��ޤ���kahua.conf��Ǥ����Υ����åȤ˽���ͤ�Ϳ���뤳��
-�ǡ�Kahua�������Ԥ��櫓�Ǥ���
+gauche.mop.singletonの<singleton-mixin>を継承しており、makeすると単一の
+インスタンスが作成されます。このクラスには、初期化可能な以下のスロット
+が定義されています。kahua.conf中でこれらのスロットに初期値を与えること
+で、Kahuaの設定を行うわけです。
 
-�����Υ����åȤϡ��ץ�������ư������ͤ��ѹ����뤳�Ȥ����ꤷ�Ƥ���
-���󡣥ץ��������Ǥϡ���ҤΥ������å���桼�ƥ���ƥ���³�����ǻ���
-��������ˤȤɤ�Ƥ����٤��Ǥ���
+これらのスロットは、プログラムの動作中に値を変更することを想定していま
+せん。プログラム中では、後述のアクセッサやユーティリティ手続き等で参照
+するだけにとどめておくべきです。
 
 *** [slot] site-root
 
-�����ȥХ�ɥ����Ѥ����硢���Υ����ȥХ�ɥ��root�ˤ�����ǥ��쥯
-�ȥ�Υե�ѥ�̾�����ꤵ��ޤ��������ͤΤߤϡ�����ե������������Ū��
-���ꤹ�٤��ǤϤ���ޤ��󡣥����ȥХ�ɥ���ѻ��˼�ưŪ�����ꤵ��ޤ���
-�����ȥХ�ɥ����Ѥ��ʤ����(�Ĥޤꡢ�����ƥ������ե��������Ѥ���
-���)�ϡ����Υ����åȤ� #f �ǽ��������ޤ���
+サイトバンドルを使用する場合、そのサイトバンドルのrootにあたるディレク
+トリのフルパス名が設定されます。この値のみは、設定ファイル内で明示的に
+設定すべきではありません。サイトバンドル使用時に自動的に設定されます。
+サイトバンドルを使用しない場合(つまり、システムの設定ファイルを使用する
+場合)は、このスロットは #f で初期化されます。
 
 *** [slot] sockbase
 
-�����������ɤ� :sockbase �ǡ�Kahua�����з��������Х����åȤ������
-��ǥ��쥯�ȥ�Υѥ���ʲ��ν񼰤����ꤷ�ޤ���
+初期化キーワードは :sockbase で、Kahuaサーバ群がサーバソケットを作成す
+るディレクトリのパスを以下の書式で設定します。
 {{{
 :sockbase unix:''dir''
 }}}
-dir�����Хѥ��Ǥ����硢
-# �����ȥХ�ɥ���ѻ��ϡ������å�site-root���ͤ�������Хѥ��Ȥ��ư����ޤ���
-# �����ȥХ�ɥ����Ѥ��Ƥ��ʤ����ϡ������ȥǥ��쥯�ȥ꤫������Хѥ��Ȥ��ư����ޤ���
-unix:�Ȥ����ץ�ե��å�����Ĥ���ΤϾ���TCP�����åȤʤɤ�Ȥ���褦��
-���뤿��Ǥ��������ߤ�UNIX�ɥᥤ�󥽥��åȤΤߤ����ݡ��Ȥ���Ƥ���
-����''dir''��ľ���˥����åȥե����뤬��������ޤ���''dir''��Kahua���ޥ�
-�ɼ¹Ի��ˤ��餫����¸�ߤ��Ƥ��ʤ���Фʤ餺��Kahua�����Фμ¹Ը��¤ǽ�
-�����߲�ǽ�Ǥʤ���Фʤ�ޤ���
+dirが相対パスである場合、
+# サイトバンドル使用時は、スロットsite-rootの値からの相対パスとして扱われます。
+# サイトバンドルを使用していない場合は、カレントディレクトリからの相対パスとして扱われます。
+unix:というプレフィックスをつけるのは将来TCPソケットなどを使えるように
+するためですが、現在はUNIXドメインソケットのみがサポートされていま
+す。''dir''の直下にソケットファイルが作成されます。''dir''はKahuaコマン
+ド実行時にあらかじめ存在していなければならず、Kahuaサーバの実行権限で書
+き込み可能でなければなりません。
 
-�����ȥХ�ɥ���ѻ��Υǥե���Ȥ� unix:socket�������ȥХ�ɥ��Ի��ѻ�
-�Υǥե���Ȥ� unix:${prefix}/tmp/kahua �Ǥ���
+サイトバンドル使用時のデフォルトは unix:socket、サイトバンドル不使用時
+のデフォルトは unix:${prefix}/tmp/kahua です。
 
 *** [slot] working-directory
 
-�����������ɤ� :working-directory �ǡ�Kahua�����з������Ѥ�����
-�󥰥ǥ��쥯�ȥ�Υѥ�����ꤷ�ޤ������Υǥ��쥯�ȥ��Kahua�����з���ư
-���ˤϤ��餫����¸�ߤ��ơ�Kahua�����Фμ¹Ը��¤ǽ񤭹��߲�ǽ�Ǥʤ����
-�ʤ�ޤ���
+初期化キーワードは :working-directory で、Kahuaサーバ群が使用するワーキ
+ングディレクトリのパスを指定します。このディレクトリはKahuaサーバ群起動
+時にはあらかじめ存在して、Kahuaサーバの実行権限で書き込み可能でなければ
+なりません。
 
-Kahua�����з��ϡ����β��˥��ץꥱ������󥳡��ɤ䡢�ե����륷���ƥ�ǡ�
-���١�������¸���ޤ���
+Kahuaサーバ群は、この下にアプリケーションコードや、ファイルシステムデー
+タベースを保存します。
 
-�����ȥХ�ɥ���ѻ��Υǥե�����ͤ� . �ǡ�����ϥ����ȥХ�ɥ�Υȥå�
-�ǥ��쥯�ȥ���̣���ޤ��������ȥХ�ɥ��Ի��ѻ��Υǥե�����ͤ�
-${localstatedir}/kahua�Ǥ���
+サイトバンドル使用時のデフォルト値は . で、これはサイトバンドルのトップ
+ディレクトリを意味します。サイトバンドル不使用時のデフォルト値は
+${localstatedir}/kahuaです。
 
 *** [slot] app-servers
 
-�����������ɤ� :app-servers �ǡ�kahua-spvr�����Ѥ���app-servers�ե�
-����Υѥ�����ꤷ�ޤ���
+初期化キーワードは :app-servers で、kahua-spvrが使用するapp-serversファ
+イルのパスを指定します。
 
-�����ȥХ�ɥ���ѻ��Υǥե�����ͤ� app-servers �ǡ������ȥХ�ɥ��Ի�
-�ѻ��Υǥե�����ͤ� ${localstatedir}/kahua/app-servers �Ǥ���
+サイトバンドル使用時のデフォルト値は app-servers で、サイトバンドル不使
+用時のデフォルト値は ${localstatedir}/kahua/app-servers です。
 
 *** [slot] application-directory
 
-�����������ɤ� :application-directory �ǡ����ץꥱ������󥳡��ɤ�
-�֤����١����ǥ��쥯�ȥ�Υѥ�����ꤷ�ޤ���
+初期化キーワードは :application-directory で、アプリケーションコードが
+置かれるベースディレクトリのパスを指定します。
 
-�����ȥХ�ɥ���ѻ��Υǥե�����ͤ� app �ǡ������ȥХ�ɥ��Ի��ѻ��Υ�
-�ե�����ͤ� ${localstatedir}/kahua/checkout �Ǥ���
+サイトバンドル使用時のデフォルト値は app で、サイトバンドル不使用時のデ
+フォルト値は ${localstatedir}/kahua/checkout です。
 
 *** [slot] plugin-directory
 
-�����������ɤ� :plugin-directory �ǡ��ץ饰���󥳡��ɤ��֤����ǥ�
-�쥯�ȥ�Υѥ�����ꤷ�ޤ���
+初期化キーワードは :plugin-directory で、プラグインコードが置かれるディ
+レクトリのパスを指定します。
 
-�����ȥХ�ɥ���ѻ��Υǥե�����ͤ� plugins �ǡ������ȥХ�ɥ��Ի��ѻ�
-�Υǥե�����ͤ� ${localstatedir}/kahua/plugins �Ǥ���
+サイトバンドル使用時のデフォルト値は plugins で、サイトバンドル不使用時
+のデフォルト値は ${localstatedir}/kahua/plugins です。
 
 *** [slot] template-directory
 
-�����������ɤ� :template-directory �ǡ�XML�ƥ�ץ졼�ȥե��������
-���ǥ��쥯�ȥ�Υѥ�����ꤷ�ޤ���
+初期化キーワードは :template-directory で、XMLテンプレートファイルを置
+くディレクトリのパスを指定します。
 
-�����ȥХ�ɥ���ѻ��Υǥե�����ͤ� templates �ǡ������ȥХ�ɥ��Ի���
-���Υǥե�����ͤ� ${localstatedir}/kahua/templates �Ǥ���
+サイトバンドル使用時のデフォルト値は templates で、サイトバンドル不使用
+時のデフォルト値は ${localstatedir}/kahua/templates です。
 
 *** [slot] static-document-path
 
-�����������ɤ� :static-document-path �ǡ���Ū�ʥ���ƥ�Ĥ��ݻ�����
-�ǥ��쥯�ȥ����ꤷ�ޤ������Υǥ��쥯�ȥ�β����֤��줿�ե�����ϡ���
-�˽Ҥ٤� static-document-url �����Ȥ���URL�ǡ�ľ��HTTPd��ͳ���ɤ߼��
-��뤳�Ȥ�տޤ��Ƥ��ޤ���
+初期化キーワードは :static-document-path で、静的なコンテンツを保持する
+ディレクトリを指定します。このディレクトリの下に置かれたファイルは、次
+に述べる static-document-url を起点とするURLで、直接HTTPd経由で読み取ら
+れることを意図しています。
 
-���Υǥ��쥯�ȥ�Ϥ��餫����¸�ߤ��ơ�(Kahua�����з��ǤϤʤ�)HTTPd����
-�߼���ǽ�Ǥʤ���Фʤ�ޤ��󡣤ޤ���Kahua���ץꥱ������󤬤��Υǥ���
-���ȥ�˽񤭹��ߤ�Ԥ����(�㤨��Kahua ���ץꥱ�������Ǥ��Υǥ��쥯��
-��˥ե�����򥢥åץ����ɤ���ʤ�)��Kahua�����з��μ¹Ը��¤ǽ񤭹���
-��ǽ�Ǥʤ���Фʤ�ޤ���
+このディレクトリはあらかじめ存在して、(Kahuaサーバ群ではなく)HTTPdが読
+み取り可能でなければなりません。また、Kahuaアプリケーションがこのディレ
+クトリに書き込みを行う場合(例えばKahua アプリケーションでこのディレクト
+リにファイルをアップロードするなど)、Kahuaサーバ群の実行権限で書き込み
+可能でなければなりません。
 
-�����ȥХ�ɥ���ѻ��Υǥե�����ͤ� static �Ǥ��������ȥХ�ɥ��Ի���
-���Υǥե�����ͤ� ${localstatedir}/kahua/static �Ǥ���
+サイトバンドル使用時のデフォルト値は static です。サイトバンドル不使用
+時のデフォルト値は ${localstatedir}/kahua/static です。
 
 *** [slot] static-document-url
 
-�����������ɤ� :static-document-url �ǡ���Ū�ʥ���ƥ�Ĥ˥�������
-���뤿���URL�Υ١����ѥ�����ꤷ�ޤ��������ͤϡ�Kahua���ץꥱ�������
-�����Ū����ƥ�Ĥ�URL(�Υѥ���ʬ)����������ݤ˻��Ѥ��ޤ���
+初期化キーワードは :static-document-url で、静的なコンテンツにアクセス
+するためのURLのベースパスを指定します。この値は、Kahuaアプリケーション
+内で静的コンテンツのURL(のパス部分)を生成する際に使用します。
 
-�ǥե���Ȥ�/kahua�Ǥ���
+デフォルトは/kahuaです。
 
-��kahua-httpd�ˤ����ƤϤ���URL������Ū����ƥ�ĥե�����Υѥ��ؤΥޥ�
-�ԥ󥰤ϼ�ưŪ�˹Ԥ��ޤ�����Apache�ʤɤ�HTTPd�Ǥϡ������Τ褦�������
-HTTPd������˲ä���ɬ�פ�����ޤ���
+※kahua-httpdにおいてはこのURLから静的コンテンツファイルのパスへのマッ
+ピングは自動的に行われますが、ApacheなどのHTTPdでは、下記のような設定を
+HTTPdの設定に加える必要があります。
 {{{
 Alias /kahua/ "/usr/local/kahua/var/kahua/static/"
 }}}
 
 *** [slot] database-directory
 
-�����������ɤ� :database-directory �ǡ��ե����륷���ƥ�ǡ����١���
-���֤����ǥ��쥯�ȥ�Υѥ������ꤵ��ޤ���
+初期化キーワードは :database-directory で、ファイルシステムデータベース
+が置かれるディレクトリのパスが指定されます。
 
-�����ȥХ�ɥ���ѻ��Υǥե�����ͤ� database �ǡ������ȥХ�ɥ��Ի���
-���Υǥե�����ͤ� ${localstatedir}/kahua ���Ĥޤ�working-directory��Ʊ
-���ͤǤ���
+サイトバンドル使用時のデフォルト値は database で、サイトバンドル不使用
+時のデフォルト値は ${localstatedir}/kahua 、つまりworking-directoryと同
+じ値です。
 
 *** [slot] default-database-name
 
-�����������ɤ� :default-database-name �ǡ��ǥե���Ȥǻ��Ѥ���ǡ�
-���١�����̾������ꤷ�ޤ����ǥե�����ͤ� "db" �ǡ�database-directory
-��������Хѥ��Ȥ��ư����ޤ������Хѥ�����ꤷ���ꡢRDBMS����Ѥ��뤿
-���DSN����ꤹ�뤳�Ȥ�Ǥ��ޤ���
+初期化キーワードは :default-database-name で、デフォルトで使用するデー
+タベースの名前を指定します。デフォルト値は "db" で、database-directory
+からの相対パスとして扱われます。絶対パスを指定したり、RDBMSを使用するた
+めのDSNを指定することもできます。
 
 *** [slot] temporary-directory
 
-�����������ɤ� :temporary-directory �ǡ�����ե������񤭹���ǥ�
-�쥯�ȥ�Υѥ������ꤵ��ޤ���
+初期化キーワードは :temporary-directory で、一時ファイルを書き込むディ
+レクトリのパスが指定されます。
 
-�����ȥХ�ɥ���ѻ��Υǥե�����ͤ� "tmp" �ǡ������ȥХ�ɥ��Ի��ѻ���
-�ǥե�����ͤ� ${localstatedir}/kahua/tmp �Ǥ���
+サイトバンドル使用時のデフォルト値は "tmp" で、サイトバンドル不使用時の
+デフォルト値は ${localstatedir}/kahua/tmp です。
 
 *** [slot] log-directory
 
-�����������ɤ� :log-directory �ǡ�Kahua�����з���������񤭽Ф��ǥ�
-�쥯�ȥ�Υѥ�����ꤷ�ޤ���
+初期化キーワードは :log-directory で、Kahuaサーバ群がログを書き出すディ
+レクトリのパスを指定します。
 
-�ǥե�����ͤ� logs �ǡ������ȥХ�ɥ���ѻ��� site-root ���ͤ��������
-�ѥ��������ȥХ�ɥ��Ի��ѻ��� working-directory ��������Хѥ��Ȥ��ư�
-���ޤ������Хѥ������Ǥ��ޤ���
+デフォルト値は logs で、サイトバンドル使用時は site-root の値からの相対
+パス、サイトバンドル不使用時は working-directory からの相対パスとして扱
+われます。絶対パスも指定できます。
 
 *** [slot] run-directory
 
-�����������ɤ� :run-directory �ǡ�Kahua�����з���PID�ե�������
-�Ф��ǥ��쥯�ȥ�Υѥ�����ꤷ�ޤ���
+初期化キーワードは :run-directory で、Kahuaサーバ群がPIDファイルを書き
+出すディレクトリのパスを指定します。
 
-�ǥե�����ͤϥ����ȥХ�ɥ���ѻ��� run �� site-root ���ͤ�������Х�
-���Ȥ��ư���졢�����ȥХ�ɥ��Ի��ѻ��� . �� working-directory ���ͤ�
-������Хѥ��Ȥ��ư����ޤ������Хѥ������Ǥ��ޤ���
+デフォルト値はサイトバンドル使用時は run で site-root の値からの相対パ
+スとして扱われ、サイトバンドル不使用時は . で working-directory の値か
+らの相対パスとして扱われます。絶対パスも指定できます。
 
 *** [slot] secure-sandbox
 
-�⥸�塼����ɤ߹��ߤ�Ȥ����³�������¤Τ��뤵��ɥܥå���������ͭ��
-�ˤ��뤫�ɤ�����#t��#f�ǻ��ꤷ�ޤ����ǥե�����ͤ�#t�Ǥ���
+モジュールの読み込みや使える手続きに制限のあるさんどボックス機構を有効
+にするかどうかを#tか#fで指定します。デフォルト値は#tです。
 
 *** [slot] userconf-file
 
-��ȯ�桼���Υǡ����١����ե�����Υѥ�����ꤷ�ޤ���
+開発ユーザのデータベースファイルのパスを指定します。
 
-�����ȥХ�ɥ���ѻ��Υǥե�����ͤ� #`",(ref (kahua-config) 'etc-directory)/user.conf"��
-�����ȥХ�ɥ��Ի��ѻ��Υǥե�����ͤ� ${localstatedir}/kahua/user.conf�Ǥ���
+サイトバンドル使用時のデフォルト値は #`",(ref (kahua-config) 'etc-directory)/user.conf"、
+サイトバンドル不使用時のデフォルト値は ${localstatedir}/kahua/user.confです。
 
 *** [slot] spvr-concurrency
 
-kahua-spvr�����Ѥ��륹��åɥס�����礭��(��ư���륹��åɤο�)�����
-���ޤ����ǥե�����ͤ�10�Ǥ���
+kahua-spvrが使用するスレッドプールの大きさ(起動するスレッドの数)を指定
+します。デフォルト値は10です。
 
 *** [slot] timeout-mins
 
-���å�������¸���֤�ʬ�ǻ��ꤷ�ޤ����ǥե���Ȥ�60ʬ�Ǥ���
+セッションの生存時間を分で指定します。デフォルトは60分です。
 
 *** [slot] ping-timeout-sec
 
-�ѻߤ���ޤ����������ߴ����Τ�������˻ĤäƤ��ޤ���
+廃止されました。後方互換性のためだけに残っています。
 
 *** [slot] ping-interval-sec
 
-�ѻߤ���ޤ����������ߴ����Τ�������˻ĤäƤ��ޤ���
+廃止されました。後方互換性のためだけに残っています。
 
 *** [slot] auto-restart
 
-�տޤ����˽�λ���� worker �ץ�������ưŪ�˺Ƶ�ư������ˤ� #t ����
-�ꤷ�ޤ����ǥե���ȤǤ� #f �ˤʤäƤ��ޤ���
+意図せずに終了した worker プロセスを自動的に再起動する場合には #t を設
+定します。デフォルトでは #f になっています。
 
-** ����������³��
+** アクセス手続き
 
-�ƥ����åȤ�ľ�ܻ��ꤻ���˺Ѥ�褦�ˡ��ʲ��Υ���������³������������
-���ޤ���������⡢�����ʤ��ǸƤӽФ��ȡ��б����륹���åȤ��ͤ�������
-����
+各スロットを直接指定せずに済むように、以下のアクセス手続きが定義されて
+います。いずれも、引数なしで呼び出すと、対応するスロットの値が得られま
+す。
 {{{
  kahua-site-root
  kahua-sockbase
@@ -243,81 +243,81 @@ kahua-spvr�����Ѥ��륹��åɥס�����礭��(��ư���륹��åɤο�)�����
  kahua-default-database-name
 }}}
 
-** �桼�ƥ���ƥ���³��
+** ユーティリティ手続き
 
-Kahua���ץꥱ��������񤯺ݡ�ñ��kahua-config�Υ����å��ͤ�����ΤǤ�
-�ʤ��������ͤ򸵤˥ѥ����Ȥ�Ω�Ƥ뤳�Ȥ��褯����ޤ����������ä��ѥ���
-�Ȥ�Ω�Ƥ�Ԥ�����Υ桼�ƥ���ƥ���³�����󶡤���Ƥ��ޤ���
+Kahuaアプリケーションを書く際、単にkahua-configのスロット値を得るのでは
+なく、その値を元にパスを組み立てることがよくあります。そういったパスの
+組み立てを行うためのユーティリティ手続きが提供されています。
 
 *** [procedure] kahua-sockbase-abs-path sockbase
 
-�ץ�ե��å����ΤĤ������Хѥ�(ex. unix:socket)��ץ�ե��å����Ĥ��Υ�
-��ѥ���Ÿ�����ޤ������ߤμ����Ǥϡ�unix:�ʳ��Υץ�ե��å������Ĥ���ʸ
-����sockbase�Ȥ����Ϥ��줿�Ȥ��ϡ�sockbase���Ȥ��֤��ޤ����ޤ����ץ�
-�ե��å����Τʤ��ѥ���sockbase�Ȥ����Ϥ����ȡ�unix:���ץ�ե��å�����
-�����ղä���ޤ���
+プレフィックスのついた相対パス(ex. unix:socket)をプレフィックスつきのフ
+ルパスに展開します。現在の実装では、unix:以外のプレフィックスがついた文
+字列がsockbaseとして渡されたときは、sockbase自身を返します。また、プレ
+フィックスのないパスがsockbaseとして渡されると、unix:がプレフィックスと
+して付加されます。
 
 *** [procedure] kahua-tmpbase
 
-sys-mkstemp���Ϥ�����Υƥ�ץ졼�Ȥ�ե�ѥ����������ޤ���
+sys-mkstempに渡すためのテンプレートをフルパスで生成します。
 
 *** [procedure] kahua-dbpath dbpath
 
-�ץ�ե��å����ΤĤ������Хѥ���dbpath�Ȥ����Ϥ��ȡ�
-(kahua-database-directory) ���֤��ͤ�������Хѥ��ȸ��ʤ��ơ��ץ�ե���
-�����Ĥ������Хѥ���Ÿ�����ޤ����ѥ�Ÿ�����Ԥ���ץ�ե��å����ϡ���
-���Ǥ�efs:��fs:�ΤߤǤ���
+プレフィックスのついた相対パスをdbpathとして渡すと、
+(kahua-database-directory) が返す値からの相対パスと見なして、プレフィッ
+クスつきの絶対パスに展開します。パス展開が行われるプレフィックスは、現
+状ではefs:とfs:のみです。
 
-�ץ�ե��å������Ĥ��Ƥ��ʤ��ѥ����Ϥ����ȡ�Ʊ�ͤ����Хѥ���Ÿ������
-�ץ�ե��å���efs:���ղä��ޤ���efs:��fs:�ǤϤʤ��ץ�ե��å�����
-dbpath�˴ޤޤ�Ƥ����硢dbpath���ͤ򤽤Τޤ��֤��ޤ���
+プレフィックスがついていないパスが渡されると、同様に絶対パスに展開し、
+プレフィックスefs:を付加します。efs:やfs:ではないプレフィックスが
+dbpathに含まれている場合、dbpathの値をそのまま返します。
 
 *** [procedure] kahua-logpath filename
 
-filename��(kahua-log-directory)���ͤ������ǥ��쥯�ȥ꤫������Хѥ��ȸ�
-�ʤ������Хѥ���Ÿ�����ޤ���
+filenameを(kahua-log-directory)の値が示すディレクトリからの相対パスと見
+なして絶対パスに展開します。
 
 *** [procedure] kahua-spvr-pidpath
 *** [procedure] kahua-keyserv-pidpath
 *** [procedure] kahua-httpd-pidpath
 
-���줾�졢kahua-spvr��kahua-keyserv��kahua-httpd��PID��ޤ�ե��������
-�Хѥ����֤��ޤ���
+それぞれ、kahua-spvr、kahua-keyserv、kahua-httpdのPIDを含むファイルの絶
+対パスを返します。
 
 *** [procedure] kahua-static-document-path . path-components
 
-������0�İʾ�Υѥ����ǡ������å� static-document-path �θ���˥ѥ�����
-���ղä���������Хѥ����ۤ��ޤ����ʲ���Ʊ����̣�Ǥ����������ϹԤ��ޤ���
+引数は0個以上のパス要素。スロット static-document-path の後ろにパス要素
+を付加する形で絶対パスを構築します。以下と同じ意味です。正規化は行われません。
 {{{
 (apply build-path (ref (kahua-config) 'static-document-path) path-components)
 }}}
 
 *** [procedure] kahua-static-document-url . path-components
 
-������0�İʾ�Υѥ����Ǥǡ�URI���󥳡��ɺѤߤǤʤ���Фʤ�ޤ��󡣰ʲ�
-��Ʊ����̣�ǡ�URL�����Хѥ���ʬ���ۤ��ޤ����������ϹԤ��ޤ���
+引数は0個以上のパス要素で、URIエンコード済みでなければなりません。以下
+と同じ意味で、URLの絶対パス部分を構築します。正規化は行われません。
 {{{
 (apply build-path (ref (kahua-config) 'static-document-url) path-components)
 }}}
 
 
-** ����¾�μ�³��
+** その他の手続き
 
 *** [procedure] kahua-common-init ''site-path'' ''conf-file''
 
-Kahua�γƥץ������ϤϺǽ�ˤ��μ�³����ƤӤ����ƽ������Ԥ��ޤ�����
-�ץꥱ������󥳡��ɤ���Ǥ��μ�³����Ƥ�ɬ�פ��̾濫��ޤ���
+Kahuaの各プログラムはは最初にこの手続きを呼びだして初期化を行います。ア
+プリケーションコードの中でこの手続きを呼ぶ必要は通常ありません。
 
-����ե����졼����󥯥饹<kahua-config>�Υ��󥰥�ȥ󥤥󥹥��󥹤��
-�������ޤ���''site-path''�����ͤǤ���Ф����ͤ򥵥��ȥХ�ɥ�Υѥ��Ȥ�
-�ƻ��Ѥ��ƽ�������ޤ���''site-path''�����ͤλ���''conf-file''�����ͤ�
-����Ф����ͤ�Kahua����ե�����Υѥ��ȸ��ʤ���load����
-����''conf-file''�����ͤʤ顢�ǥե���Ȥ�Kahua����ե�����
-(/etc/kahua.conf) ��load���ߡ����줬���Ĥ���ʤ���зٹ��Ф���Ŭ��
-�ʽ���ͤ����ꤷ�ޤ���
+コンフィグレーションクラス<kahua-config>のシングルトンインスタンスを初
+期化します。''site-path''が真値であればその値をサイトバンドルのパスとし
+て使用して初期化します。''site-path''が偽値の時は''conf-file''が真値で
+あればその値をKahua設定ファイルのパスと見なしてloadしま
+す。''conf-file''が偽値なら、デフォルトのKahua設定ファイル
+(/etc/kahua.conf) のloadを試み、それが見つからなければ警告を出して適当
+な初期値を設定します。
 
 *** [procedure] kahua-config
 
-<kahua-config>�Υ��󥰥�ȥ󥤥󥹥��󥹤��֤��ޤ����̾���󥰥�ȥ�
-���󥹥��󥹤Υ����åȤ�ľ��slot-ref�ǥ������������ꡢ�嵭�Υ�������
-��³����桼�ƥ���ƥ���³����Ȥ����Ȥ��侩����ޤ���
+<kahua-config>のシングルトンインスタンスを返します。通常、シングルトン
+インスタンスのスロットに直接slot-refでアクセスするより、上記のアクセス
+手続きやユーティリティ手続きを使うことが推奨されます。
