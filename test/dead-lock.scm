@@ -1,6 +1,6 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test supervisor's dead-lock
-;; $Id: dead-lock.scm,v 1.2 2006/02/21 14:24:33 nobsun Exp $
+;; $Id$
 
 (use srfi-1)
 (use gauche.test)

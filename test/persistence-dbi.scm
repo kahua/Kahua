@@ -1,8 +1,8 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test kahua.persistence with dbi
-;; DBI¥Ğ¥Ã¥¯¥¨¥ó¥É¤òÍÑ¤¤¤¿kahua.persistence¥â¥¸¥å¡¼¥ë¤Î¥Æ¥¹¥È
+;; DBIãƒãƒƒã‚¯ã‚¨ãƒ³ãƒ‰ã‚’ç”¨ã„ãŸkahua.persistenceãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ãƒ†ã‚¹ãƒˆ
 
-;; $Id: persistence-dbi.scm,v 1.5 2006/10/24 06:14:53 bizenn Exp $
+;; $Id$
 
 ;; Clear the data remaining from the other test
 (define (cleanup-db dbtype user pass options)

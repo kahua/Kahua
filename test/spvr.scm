@@ -1,7 +1,7 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test supervisor scripts.
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: spvr.scm,v 1.5 2006/02/21 14:24:33 nobsun Exp $
+;; $Id$
 
 (use gauche.test)
 (use gauche.process)

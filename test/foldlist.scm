@@ -1,6 +1,6 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test of foldlist.scm
-;; $Id: foldlist.scm,v 1.2 2005/07/04 05:09:21 nobsun Exp $
+;; $Id$
 
 (use srfi-2)
 (use srfi-11)

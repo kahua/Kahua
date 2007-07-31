@@ -1,9 +1,9 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test admin scripts.
 ;; this test isn't for modules, but for actual scripts.
-;; kahua-admin ¥Æ¥¹¥È
+;; kahua-admin ãƒ†ã‚¹ãƒˆ
 
-;; $Id: admin.scm,v 1.6 2006/11/28 06:22:49 bizenn Exp $
+;; $Id$
 
 (use gauche.test)
 (use gauche.process)
@@ -46,10 +46,10 @@
 (define *admin*  #f)
 
 ;;---------------------------------------------------------------
-;; ¥Æ¥¹¥È¤ËÉ¬Í×¤Ê2¤Ä¤Î¥¹¥¯¥ê¥×¥È¤òµ¯Æ°¤¹¤ë¡£
+;; ãƒ†ã‚¹ãƒˆã«å¿…è¦ãª2ã¤ã®ã‚¹ã‚¯ãƒªãƒ—ãƒˆã‚’èµ·å‹•ã™ã‚‹ã€‚
 (test-section "run scripts")
 
-;; kahua-spvr ¤òµ¯Æ°¤¹¤ë¡£
+;; kahua-spvr ã‚’èµ·å‹•ã™ã‚‹ã€‚
 (test* "start spvr" #t
        (let ((p (run-process "../src/kahua-spvr" "--test"
 			     "-c" *config*)))
@@ -58,7 +58,7 @@
 	      (or (eq? (file-type "_tmp/kahua") 'socket)
                   (eq? (file-type "_tmp/kahua") 'fifo)))))
 
-;; kahua-admin ¤òµ¯Æ°¤¹¤ë¡£
+;; kahua-admin ã‚’èµ·å‹•ã™ã‚‹ã€‚
 (test* "start admin" 'spvr>
        (let ((p (run-process "../src/kahua-admin" "--test"
 			     "-c" *config* 
@@ -70,7 +70,7 @@
 	   (read in))))
 
 ;;---------------------------------------------------------------
-;; ¥Æ¥¹¥ÈÍÑ¤Î¥æ¡¼¥Æ¥£¥ê¥Æ¥£¤òÄêµÁ¤¹¤ë¡£
+;; ãƒ†ã‚¹ãƒˆç”¨ã®ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ã‚’å®šç¾©ã™ã‚‹ã€‚
 (test-section "define utilities")
 
 (define (admin-out)
@@ -114,66 +114,66 @@
 
 
 ;;------------------------------------------------------------
-;; kahua-admin ¤ÎÆ°ºî¤ò³ÎÇ§¤¹¤ë¡£
+;; kahua-admin ã®å‹•ä½œã‚’ç¢ºèªã™ã‚‹ã€‚
 (test-section "spvr command test")
 
-;; ls ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¡£
-;; hello ¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤¬°ìÍ÷¤Ë¤¢¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; ls ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã€‚
+;; hello ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãŒä¸€è¦§ã«ã‚ã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: ls" #f
        (not (#/wno\s+pid\s+type\s+since\s+wid.+hello/
 	     (send&recv-str 'ls))))
 
-;; help ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¡£
-;; ¥³¥Ş¥ó¥É¤Î¥ê¥¹¥È¤¬É½¼¨¤µ¤ì¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; help ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã€‚
+;; ã‚³ãƒãƒ³ãƒ‰ã®ãƒªã‚¹ãƒˆãŒè¡¨ç¤ºã•ã‚Œã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: help" #t
        (let1 ans (send&recv 'help)
 	     (and (list? ans)
 		  (< 0 (length ans)))))
 
-;; type ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¡£
-;; hello greeting lister ¤Î3¤Ä¤Î¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤¬É½¼¨¤µ¤ì¤ë
-;; ¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; type ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã€‚
+;; hello greeting lister ã®3ã¤ã®ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãŒè¡¨ç¤ºã•ã‚Œã‚‹
+;; ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: types" '(hello greeting lister)
        (send&recv 'types))
 
-;; run ¥³¥Ş¥ó¥É¤Î¥Æ¥¹¥È¡£1²óÌÜ¡£
-;; greeting ¤¬µ¯Æ°¤¹¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; run ã‚³ãƒãƒ³ãƒ‰ã®ãƒ†ã‚¹ãƒˆã€‚1å›ç›®ã€‚
+;; greeting ãŒèµ·å‹•ã™ã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: run greeting" #f
        (let1 ans (send&recv-str '(run greeting))
 	     (not (#/greeting/ ans))))
 
-;; run ¥³¥Ş¥ó¥É¤Î¥Æ¥¹¥È¡£2²óÌÜ¡£
-;; lister ¤¬µ¯Æ°¤¹¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; run ã‚³ãƒãƒ³ãƒ‰ã®ãƒ†ã‚¹ãƒˆã€‚2å›ç›®ã€‚
+;; lister ãŒèµ·å‹•ã™ã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: run lister" #f
        (let1 ans (send&recv-str '(run lister))
 	     (not (#/lister/ ans))))
 
-;; kill ¥³¥Ş¥ó¥É¤Î¥Æ¥¹¥È¡£
-;; greeting ¤ò½ªÎ»¤Ç¤­¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; kill ã‚³ãƒãƒ³ãƒ‰ã®ãƒ†ã‚¹ãƒˆã€‚
+;; greeting ã‚’çµ‚äº†ã§ãã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: kill 1(greeting)" #f
        (let1 ans (send&recv-str '(kill 1))
 	     (#/greeting/ ans)))
 
-;; reload ¥³¥Ş¥ó¥É¤Î¥Æ¥¹¥È¡£
-;; app-server ¤ËÅĞÏ¿¤µ¤ì¤Æ¤¤¤ë3¤Ä¤Î¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤¬
-;; É½¼¨¤µ¤ì¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; reload ã‚³ãƒãƒ³ãƒ‰ã®ãƒ†ã‚¹ãƒˆã€‚
+;; app-server ã«ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹3ã¤ã®ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãŒ
+;; è¡¨ç¤ºã•ã‚Œã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: reload" '(hello greeting lister)
        (send&recv 'reload))
 
-;; update ¥³¥Ş¥ó¥É¤Î¥Æ¥¹¥È
-;; hello ¤ò¹¹¿·¤Ç¤­¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; update ã‚³ãƒãƒ³ãƒ‰ã®ãƒ†ã‚¹ãƒˆ
+;; hello ã‚’æ›´æ–°ã§ãã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: update" 'update:
        (send&recv '(update hello)))
 
 ;;------------------------------------------------------------
-;; kahua-server ¤ËÀÜÂ³¤¹¤ë connect ¥³¥Ş¥ó¥É¤ò¥Æ¥¹¥È¤¹¤ë¡£
+;; kahua-server ã«æ¥ç¶šã™ã‚‹ connect ã‚³ãƒãƒ³ãƒ‰ã‚’ãƒ†ã‚¹ãƒˆã™ã‚‹ã€‚
 (test-section "server connect test")
 
-;; ¥ï¡¼¥«¡¼ÈÖ¹æ 0 hello ¤ËÀÜÂ³¤Ç¤­¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; ãƒ¯ãƒ¼ã‚«ãƒ¼ç•ªå· 0 hello ã«æ¥ç¶šã§ãã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: connect 0(hello)" #t
        (not (not (#/hello/ (send&recv-str '(connect 0))))))
 
-;; ÀÜÂ³Àè¤¬ hello ¤Ç¤¢¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; æ¥ç¶šå…ˆãŒ hello ã§ã‚ã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: connect: (kahua-worker-type)" "hello"
        (begin
 	 (write '(kahua-worker-type) (admin-out))
@@ -181,7 +181,7 @@
 	 (flush (admin-out))
 	 (read (admin-in))))
 
-;; hello ¤«¤éÀÚÃÇ¤Ç¤­¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; hello ã‹ã‚‰åˆ‡æ–­ã§ãã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: connect: disconnect" #f
        (begin
 	 (write 'disconnect (admin-out))
@@ -194,38 +194,38 @@
 (newline (admin-out))
 
 ;;------------------------------------------------------------
-;; ³«È¯¼Ô¥¢¥«¥¦¥ó¥È¤ò¥Æ¥¹¥È¤¹¤ë¡£
+;; é–‹ç™ºè€…ã‚¢ã‚«ã‚¦ãƒ³ãƒˆã‚’ãƒ†ã‚¹ãƒˆã™ã‚‹ã€‚
 (test-section "developer account test")
 
-;; lsuser ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¤·¡¢¥æ¡¼¥¶ gandalf °ì¿Í¤¬°ìÍ÷¤Ë¤¤¤ë¤³¤È¤ò
-;; ³ÎÇ§¤¹¤ë¡£
+;; lsuser ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã—ã€ãƒ¦ãƒ¼ã‚¶ gandalf ä¸€äººãŒä¸€è¦§ã«ã„ã‚‹ã“ã¨ã‚’
+;; ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: lsuser" '("gandalf")
        (send&recv '(lsuser)))
 
-;; adduser ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¤·¡¢¥æ¡¼¥¶ bilbo ¤òÅĞÏ¿¤Ç¤­¤ë¤³¤È¤ò
-;; ³ÎÇ§¤¹¤ë¡£
+;; adduser ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã—ã€ãƒ¦ãƒ¼ã‚¶ bilbo ã‚’ç™»éŒ²ã§ãã‚‹ã“ã¨ã‚’
+;; ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: adduser" 'done
        (send&recv '(adduser bilbo baggins)))
 
-;; lsuser ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¤·¡¢¥æ¡¼¥¶ gandalf ¤È bilbo ¤¬°ìÍ÷¤Ë¤¤¤ë¤³¤È¤ò
-;; ³ÎÇ§¤¹¤ë¡£
+;; lsuser ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã—ã€ãƒ¦ãƒ¼ã‚¶ gandalf ã¨ bilbo ãŒä¸€è¦§ã«ã„ã‚‹ã“ã¨ã‚’
+;; ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: lsuser" '("gandalf" "bilbo")
        (send&recv '(lsuser)))
 
-;; deluser ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¤·¡¢¥æ¡¼¥¶ gandalf ¤òºï½ü¤Ç¤­¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; deluser ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã—ã€ãƒ¦ãƒ¼ã‚¶ gandalf ã‚’å‰Šé™¤ã§ãã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: deluser" 'done
        (send&recv '(deluser gandalf)))
 
-;; lsuser ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¤·¡¢¥æ¡¼¥¶ bilbo °ì¿Í¤¬°ìÍ÷¤Ë¤¤¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; lsuser ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã—ã€ãƒ¦ãƒ¼ã‚¶ bilbo ä¸€äººãŒä¸€è¦§ã«ã„ã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "admin: lsuser" '("bilbo")
        (send&recv '(lsuser)))
 
 
 ;;------------------------------------------------------------
-;; ¥Æ¥¹¥È½ªÎ»½èÍı
+;; ãƒ†ã‚¹ãƒˆçµ‚äº†å‡¦ç†
 (test-section "finalize")
 
-;; shutdown ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¤·¡¢kahua-spvr ¤¬½ªÎ»¤Ç¤­¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; shutdown ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã—ã€kahua-spvr ãŒçµ‚äº†ã§ãã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "shutdown spvr" '()
        (begin
 	 (send&recv 'shutdown)
@@ -236,7 +236,7 @@
 			(exit '())))
 		    #f))))
 
-;; kahua-admin ¤¬½ªÎ»¤¹¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; kahua-admin ãŒçµ‚äº†ã™ã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "shutdown admin" #t
        (begin
 	 (process-send-signal *admin* SIGTERM)

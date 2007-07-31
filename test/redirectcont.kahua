@@ -1,4 +1,4 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: kahua -*-
 
 (define-entry (redirectcont/start :keyword arg)
   (redirect/cont (cont next `(arg ,arg))))

@@ -1,7 +1,7 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test lambdabooks scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: lambdabooks.scm,v 1.5 2007/06/29 02:20:49 bizenn Exp $
+;; $Id$
 
 (use srfi-2)
 (use srfi-11)
@@ -81,7 +81,7 @@
 			      (values off off off)))))
 	   `((td (@ (valign "top"))
 		 (table 
-		  (tr (td (a ,link-1 "¥í¥°¥¤¥ó/¿·µ¬ÅĞÏ¿")))
+		  (tr (td (a ,link-1 "ãƒ­ã‚°ã‚¤ãƒ³/æ–°è¦ç™»éŒ²")))
 		  (tr (td (a ,link-2 "Books")))
 		  (tr (td (a ,link-3 "Partnership"))))))))
 	((eq? role 'admin) 
@@ -103,7 +103,7 @@
 			       (tr (td ?@ (a ,link-1 "logout"))))))
 		  (tr (td (a ,link-2 "Books")))
 		  (tr (td (a ,link-3 "Partnership")))
-		  (tr (td (a ,link-4 "[¥æ¡¼¥¶´ÉÍı¡×"))))))))
+		  (tr (td (a ,link-4 "[ãƒ¦ãƒ¼ã‚¶ç®¡ç†ã€"))))))))
 	(else
 	 (let-values (((link-1 link-2 link-3)
 			(cond ((eq? navi 'logout)
@@ -131,26 +131,26 @@
 		      (else
 		       (values href-off href-off)))))
     `((td (@ (valign "top"))
-	  (h2 "ºÇ¿·¥Ë¥å¡¼¥¹")
-	  (p "ËÜ¥µ¥¤¥È¤Ï¡¢Kahua¥Õ¥ì¡¼¥à¥ï¡¼¥¯¤Î¥Ç¥â¥µ¥¤¥È¤Ç¤¹¡£")
-	  (h2 "¿·´©¾ğÊó")
-	  (p "¥µ¥¤¥È³«Àßµ­Ç°ÆÃÊÌ¥­¥ã¥ó¥Ú¡¼¥ó²Á³Ê¤Ë¤ÆÈÎÇäÃæ!")
+	  (h2 "æœ€æ–°ãƒ‹ãƒ¥ãƒ¼ã‚¹")
+	  (p "æœ¬ã‚µã‚¤ãƒˆã¯ã€Kahuaãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¯ãƒ¼ã‚¯ã®ãƒ‡ãƒ¢ã‚µã‚¤ãƒˆã§ã™ã€‚")
+	  (h2 "æ–°åˆŠæƒ…å ±")
+	  (p "ã‚µã‚¤ãƒˆé–‹è¨­è¨˜å¿µç‰¹åˆ¥ã‚­ãƒ£ãƒ³ãƒšãƒ¼ãƒ³ä¾¡æ ¼ã«ã¦è²©å£²ä¸­!")
 	  (table 
 	   (tr (td (b "Structure and Interpretation of Computer Programs")))
 	   (tr (td (@ (style "text-align: right"))
-		  "Hans Abelson, Gerald Jay SussmanÃø"))
+		  "Hans Abelson, Gerald Jay Sussmanè‘—"))
 	   (tr (td (@ (style "text-align: right"))
-		   "¥­¥ã¥ó¥Ú¡¼¥ó²Á³Ê¡§5,600±ß"))
+		   "ã‚­ãƒ£ãƒ³ãƒšãƒ¼ãƒ³ä¾¡æ ¼ï¼š5,600å††"))
 	   (tr (td (@ (style "text-align: right"))
 		   (a ,link-1
-		      "¾Ü¤·¤¤¾ğÊó¤ò¸«¤ë...")))
+		      "è©³ã—ã„æƒ…å ±ã‚’è¦‹ã‚‹...")))
 	   (tr (td (b "The Little Schemer")))
 	   (tr (td (@ (style "text-align: right"))
-		   "Daniel P Friedman, Mattias FelleisenÃø"))
+		   "Daniel P Friedman, Mattias Felleisenè‘—"))
 	   (tr (td (@ (style "text-align: right"))
-		   "¥­¥ã¥ó¥Ú¡¼¥ó²Á³Ê¡§2,000±ß"))
+		   "ã‚­ãƒ£ãƒ³ãƒšãƒ¼ãƒ³ä¾¡æ ¼ï¼š2,000å††"))
 	   (tr (td (@ (style "text-align: right"))
-		   (a ,link-2 "¾Ü¤·¤¤¾ğÊó¤ò¸«¤ë..."))))))))
+		   (a ,link-2 "è©³ã—ã„æƒ…å ±ã‚’è¦‹ã‚‹..."))))))))
   
 (define (book-list-page-contents-pattern page-num book-select)
   (define on href-on)
@@ -172,7 +172,7 @@
 			     (else
 			      (values off off off off off off)))))
            `((td (@ (valign "top"))
-		 (h2 "½ñÀÒ¥ê¥¹¥È")
+		 (h2 "æ›¸ç±ãƒªã‚¹ãƒˆ")
 		 (table 
 		  (tr (td ?@ (a ,bk1 ?*)))
 		  (tr (td ?@ ?*) (td ?@ ?*))
@@ -184,7 +184,7 @@
 		  (tr (td ?@ ?*) (td ?@ ?*))
 		  (tr (td ?@ (a ,bk5 ?*)))
 		  (tr (td ?@ ?*) (td ?@ ?*)))
-		 (p (a ,next "[¼¡¤Î5¹àÌÜ]"))))))
+		 (p (a ,next "[æ¬¡ã®5é …ç›®]"))))))
 	((= page-num 2)
 	 (let-values (((bk1 bk2 bk3 bk4 bk5 prev next)
 		       (cond ((eq? book-select 1) 
@@ -204,7 +204,7 @@
 			     (else
 			      (values off off off off off off off)))))
            `((td (@ (valign "top"))
-		 (h2 "½ñÀÒ¥ê¥¹¥È")
+		 (h2 "æ›¸ç±ãƒªã‚¹ãƒˆ")
 		 (table 
 		  (tr (td ?@ (a ,bk1 ?*)))
 		  (tr (td ?@ ?*) (td ?@ ?*))
@@ -216,7 +216,7 @@
 		  (tr (td ?@ ?*) (td ?@ ?*))
 		  (tr (td ?@ (a ,bk5 ?*)))
 		  (tr (td ?@ ?*) (td ?@ ?*)))
-		 (p (a ,prev "[Á°¤Î5¹àÌÜ]") (a ,next "[¼¡¤Î5¹àÌÜ]"))))))
+		 (p (a ,prev "[å‰ã®5é …ç›®]") (a ,next "[æ¬¡ã®5é …ç›®]"))))))
 	((= page-num 3)
 	 (let-values (((bk1 bk2 bk3 prev)
 		       (cond ((eq? book-select 1) 
@@ -230,7 +230,7 @@
 			     (else
 			      (values off off off off)))))
            `((td (@ (valign "top"))
-		 (h2 "½ñÀÒ¥ê¥¹¥È")
+		 (h2 "æ›¸ç±ãƒªã‚¹ãƒˆ")
 		 (table 
 		  (tr (td ?@ (a ,bk1 ?*)))
 		  (tr (td ?@ ?*) (td ?@ ?*))
@@ -238,65 +238,65 @@
 		  (tr (td ?@ ?*) (td ?@ ?*))
 		  (tr (td ?@ (a ,bk3 ?*)))
 		  (tr (td ?@ ?*) (td ?@ ?*)))
-		 (p (a ,prev "[Á°¤Î5¹àÌÜ]"))))))))
+		 (p (a ,prev "[å‰ã®5é …ç›®]"))))))))
 
 (define (book-page-contents-pattern user link)
   (cond ((eq? user 'anonymous)
 	 (let-values (((read-review write-review books-list)
 		       (cond ((eq? link 'read) 
 			      (values 
-			       `(p ?* (a ,href-on "[ÆÉ¼Ô¥ì¥Ó¥å¡¼¤òÆÉ¤à]"))
-			       `(p "(" (a ,href-off "¥í¥°¥¤¥ó/¿·µ¬ÅĞÏ¿")
-				   "¤¹¤ë¤È¡¢¤³¤ÎËÜ¤Ë¤Ä¤¤¤Æ¤Î¥ì¥Ó¥å¡¼¤ò½ñ¤¯¤³¤È¤¬¤Ç¤­¤Ş¤¹)")
+			       `(p ?* (a ,href-on "[èª­è€…ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’èª­ã‚€]"))
+			       `(p "(" (a ,href-off "ãƒ­ã‚°ã‚¤ãƒ³/æ–°è¦ç™»éŒ²")
+				   "ã™ã‚‹ã¨ã€ã“ã®æœ¬ã«ã¤ã„ã¦ã®ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’æ›¸ãã“ã¨ãŒã§ãã¾ã™)")
 			       href-off))
 			     ((eq? link 'write) 
 			      (values 
 			       `(p ?*)
-			       `(p "(" (a ,href-on "¥í¥°¥¤¥ó/¿·µ¬ÅĞÏ¿")
-				   "¤¹¤ë¤È¡¢¤³¤ÎËÜ¤Ë¤Ä¤¤¤Æ¤Î¥ì¥Ó¥å¡¼¤ò½ñ¤¯¤³¤È¤¬¤Ç¤­¤Ş¤¹)")
+			       `(p "(" (a ,href-on "ãƒ­ã‚°ã‚¤ãƒ³/æ–°è¦ç™»éŒ²")
+				   "ã™ã‚‹ã¨ã€ã“ã®æœ¬ã«ã¤ã„ã¦ã®ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’æ›¸ãã“ã¨ãŒã§ãã¾ã™)")
 			       href-off))
 			     ((eq? link 'list) 
 			      (values `(p ?*) `(p ?*) href-on))
 			     (else (values `(p ?*) `(p ?*) href-off)))))
 	   `((td (@ (valign "top"))
 		 (h2 ?*)
-		 (table (tr (th "Ãø¼Ô") (td ?*))
-			(tr (th "½ĞÈÇ¼Ò") (td ?*))
-			(tr (th "²Á³Ê") (td ?*)))
+		 (table (tr (th "è‘—è€…") (td ?*))
+			(tr (th "å‡ºç‰ˆç¤¾") (td ?*))
+			(tr (th "ä¾¡æ ¼") (td ?*)))
 		 (hr)
 		 (p ?*)
 		 (hr)
 		 ,read-review
 		 ,write-review
-		 (p ?@ (a ,books-list "[½ñÀÒ°ìÍ÷¤Ø]"))))))
+		 (p ?@ (a ,books-list "[æ›¸ç±ä¸€è¦§ã¸]"))))))
 	(else
 	 (let-values (((read-review write-review books-list)
 		       (cond ((eq? link 'read) 
 			      (values 
-			       `(p ?* (a ,href-on "[ÆÉ¼Ô¥ì¥Ó¥å¡¼¤òÆÉ¤à]"))
-			       `(p "(" (a ,href-off "¥í¥°¥¤¥ó/¿·µ¬ÅĞÏ¿")
-				   "¤¹¤ë¤È¡¢¤³¤ÎËÜ¤Ë¤Ä¤¤¤Æ¤Î¥ì¥Ó¥å¡¼¤ò½ñ¤¯¤³¤È¤¬¤Ç¤­¤Ş¤¹)")
+			       `(p ?* (a ,href-on "[èª­è€…ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’èª­ã‚€]"))
+			       `(p "(" (a ,href-off "ãƒ­ã‚°ã‚¤ãƒ³/æ–°è¦ç™»éŒ²")
+				   "ã™ã‚‹ã¨ã€ã“ã®æœ¬ã«ã¤ã„ã¦ã®ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’æ›¸ãã“ã¨ãŒã§ãã¾ã™)")
 			       href-off))
 			     ((eq? link 'write) 
 			      (values 
 			       `(p ?*)
 			       `(p (a ,href-on 
-				      "[¤³¤ÎËÜ¤Ë¤Ä¤¤¤Æ¤Î¥ì¥Ó¥å¡¼¤ò½ñ¤¯]"))
+				      "[ã“ã®æœ¬ã«ã¤ã„ã¦ã®ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’æ›¸ã]"))
 			       href-off))
 			     ((eq? link 'list) 
 			      (values `(p ?*) `(p ?*) href-on))
 			     (else (values `(p ?*) `(p ?*) href-off)))))
 	   `((td (@ (valign "top"))
 		 (h2 ?*)
-		 (table (tr (th "Ãø¼Ô") (td ?*))
-			(tr (th "½ĞÈÇ¼Ò") (td ?*))
-			(tr (th "²Á³Ê") (td ?*)))
+		 (table (tr (th "è‘—è€…") (td ?*))
+			(tr (th "å‡ºç‰ˆç¤¾") (td ?*))
+			(tr (th "ä¾¡æ ¼") (td ?*)))
 		 (hr)
 		 (p ?*)
 		 (hr)
 		 ,read-review
 		 ,write-review
-		 (p ?@ (a ,books-list "[½ñÀÒ°ìÍ÷¤Ø]"))))))))
+		 (p ?@ (a ,books-list "[æ›¸ç±ä¸€è¦§ã¸]"))))))))
 
 (define (login-page-contents-pattern flg)
   (let-values (((login register to-top)
@@ -313,17 +313,17 @@
 
     `((p ?*)
       (form ,login
-	    (table (tr (th "¥æ¡¼¥¶¡¼Ì¾")
+	    (table (tr (th "ãƒ¦ãƒ¼ã‚¶ãƒ¼å")
 		       (td (input ?@)))
-		   (tr (th "¥Ñ¥¹¥ï¡¼¥É")
+		   (tr (th "ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰")
 		       (td (input ?@)))
 		   (tr (th)
 		       (td (input ?@)))))
-      (p "¥æ¡¼¥¶¡¼ÅĞÏ¿¤¬¤ªºÑ¤ß¤Ç¤Ê¤¤Êı¤Ï¡¢"
-	 (a ,register "¿·µ¬¥æ¡¼¥¶¡¼ÅĞÏ¿")
-	 "¤ÇÅĞÏ¿¤ò¹Ô¤¦¤«¡¢"
-	 (a ,to-top "¥í¥°¥¤¥ó¤»¤º¤Ë¥µ¥¤¥È¤òÍøÍÑ¤¹¤ë")
-	 "¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£(¥í¥°¥¤¥ó¤·¤Ê¤¤¾ì¹ç¤Ï¡¢°ìÉô¤Îµ¡Ç½¤¬»È¤¨¤Ş¤»¤ó)"))))
+      (p "ãƒ¦ãƒ¼ã‚¶ãƒ¼ç™»éŒ²ãŒãŠæ¸ˆã¿ã§ãªã„æ–¹ã¯ã€"
+	 (a ,register "æ–°è¦ãƒ¦ãƒ¼ã‚¶ãƒ¼ç™»éŒ²")
+	 "ã§ç™»éŒ²ã‚’è¡Œã†ã‹ã€"
+	 (a ,to-top "ãƒ­ã‚°ã‚¤ãƒ³ã›ãšã«ã‚µã‚¤ãƒˆã‚’åˆ©ç”¨ã™ã‚‹")
+	 "ã“ã¨ãŒã§ãã¾ã™ã€‚(ãƒ­ã‚°ã‚¤ãƒ³ã—ãªã„å ´åˆã¯ã€ä¸€éƒ¨ã®æ©Ÿèƒ½ãŒä½¿ãˆã¾ã›ã‚“)"))))
 
 ;;------------------------------------------------------------
 ;; Run lambdabooks

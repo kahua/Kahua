@@ -1,5 +1,5 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
-;; $Id: user.scm,v 1.9 2007/07/05 05:11:40 bizenn Exp $
+;; -*- coding: utf-8 ; mode: scheme -*-
+;; $Id$
 
 ;; test kahua.user
 

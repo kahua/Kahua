@@ -1,7 +1,7 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test wiki-iki script.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: wiki-iki.scm,v 1.4 2007/06/26 05:42:06 bizenn Exp $
+;; $Id$
 
 (use srfi-2)
 (use srfi-11)
@@ -84,7 +84,7 @@
         '(*TOP* (p "OK\n"))
         (call-worker/gsid->sxml w '()
                                 '(("content" "OK")
-                                  ("commit" "¥³¥ß¥Ã¥È"))
+                                  ("commit" "ã‚³ãƒŸãƒƒãƒˆ"))
                                 '(// (td 1) // p))
         (make-match&pick w))
  )

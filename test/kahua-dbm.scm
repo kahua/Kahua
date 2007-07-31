@@ -1,6 +1,6 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test kahua.dbm module
-;; $Id: kahua-dbm.scm,v 1.3 2006/11/19 22:04:17 bizenn Exp $
+;; $Id$
 
 (use gauche.test)
 (use srfi-1)

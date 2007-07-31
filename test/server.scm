@@ -1,6 +1,6 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; Test kahua.server module
-;; $Id: server.scm,v 1.17 2007/07/13 08:37:13 bizenn Exp $
+;; $Id$
 
 ;; The kahua.server in the "real situation" would be tested by
 ;; worker and spvr tests.  This module tests the surface API.

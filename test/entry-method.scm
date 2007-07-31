@@ -1,7 +1,7 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: entry-method.scm,v 1.9 2006/12/16 16:01:55 shibata Exp $
+;; $Id$
 
 (use srfi-2)
 (use gauche.test)

@@ -1,7 +1,7 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: redirectcont.scm,v 1.2 2006/08/31 04:15:16 bizenn Exp $
+;; $Id$
 
 (use srfi-2)
 (use gauche.test)

@@ -1,4 +1,4 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: kahua -*-
 
 (use srfi-1)
 (use util.list)

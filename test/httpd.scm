@@ -1,7 +1,7 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test supervisor scripts in http mode.
 ;; this test isn't for modules, but for actual scripts.
-;; $Id: httpd.scm,v 1.3 2006/08/17 07:27:56 bizenn Exp $
+;; $Id$
 
 (use gauche.test)
 (use gauche.process)

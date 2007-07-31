@@ -1,7 +1,7 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: rollback.scm,v 1.2 2005/12/24 10:17:14 shibata Exp $
+;; $Id$
 
 (use srfi-2)
 (use gauche.test)

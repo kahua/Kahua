@@ -1,3 +1,5 @@
+;; -*- mode: scheme; coding: utf-8 -*-
+
 (use gauche.test)
 
 (test-start "kahua.css")

@@ -1,8 +1,8 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test kahua.config
-;; Kahua.config ¥â¥¸¥å¡¼¥ë¤Î¥Æ¥¹¥È
+;; Kahua.config ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ãƒ†ã‚¹ãƒˆ
 
-;; $Id: config.scm,v 1.3 2006/10/08 01:36:20 bizenn Exp $
+;; $Id$
 
 (use gauche.test)
 
@@ -10,15 +10,15 @@
 (sys-mkdir "_work" #o755)
 
 ;;---------------------------------------------------------------
-;; ¥Æ¥¹¥È³«»Ï
+;; ãƒ†ã‚¹ãƒˆé–‹å§‹
 (test-start "kahua.config")
 (use kahua.config)
 
 (define *config* #f)
 
-;; ¥í¡¼¥É¥Æ¥¹¥È
-;; kahua.config ¤¬¥í¡¼¥É¤Ç¤­¡¢¤Ş¤¿¤½¤Î¥¤¥ó¥¿¡¼¥Õ¥§¥¤¥¹¤Ëóòó÷¤¬
-;; ¤Ê¤¤¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; ãƒ­ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆ
+;; kahua.config ãŒãƒ­ãƒ¼ãƒ‰ã§ãã€ã¾ãŸãã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ã‚¤ã‚¹ã«é½Ÿé½¬ãŒ
+;; ãªã„ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test-module 'kahua.config)
 
 (test-section "Old Fashion Configuration")

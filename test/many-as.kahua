@@ -1,4 +1,4 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: kahua -*-
 
 (define-entry (many-as)
   (node-set:

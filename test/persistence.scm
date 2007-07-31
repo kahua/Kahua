@@ -1,8 +1,8 @@
-;; -*- coding: euc-jp; mode: scheme -*-
+;; -*- coding: utf-8; mode: scheme -*-
 ;; test kahua.persistence
-;; Kahua.persistence�⥸�塼��Υƥ���
+;; Kahua.persistenceモジュールのテスト
 
-;; $Id: persistence.scm,v 1.21 2007/06/15 01:26:08 bizenn Exp $
+;; $Id$
 
 (use gauche.test)
 (use gauche.collection)
@@ -25,18 +25,18 @@
        (kahua-db-purge-objs)
        . body))))
 
-;; �����ɥƥ���:
-;;   kahua.persistentce�������ɤǤ����ޤ����Υ��󥿥ե�������
-;;   �������ʤ����Ȥ��ǧ���롣
+;; ロードテスト:
+;;   kahua.persistentceがロードでき、またそのインタフェースに
+;;   齟齬がないことを確認する。
 (use kahua.persistence)
 (test-module 'kahua.persistence)
 
 ;;----------------------------------------------------------
-;; ����Ū�ʥƥ���
+;; 基本的なテスト
 (test-section "database basics")
 
-;;  ¸�ߤ��ʤ��ǡ����١���̾��Ϳ���ƥǡ����١����򥪡��ץ󤷡�
-;;  �ǡ����١�������������������뤳�Ȥ��ǧ���롣
+;;  存在しないデータベース名を与えてデータベースをオープンし、
+;;  データベースが正しく作成されることを確認する。
 (test* "creating database" '(#t #t #t #t)
        (with-db (db *dbname*)
          (cons (is-a? db <kahua-db>)
@@ -68,19 +68,19 @@
 		     (and (pair? p) (= (x->integer (car p)) 1))))))
 	       )))
 
-;;  �ǡ����١�����with-db��ưŪ�����������ͭ���Ǥ��ꡢ
-;;  ���γ���̵���ˤʤ뤳�Ȥ��ǧ���롣
+;;  データベースがwith-dbの動的スコープ中で有効であり、
+;;  その外で無効になることを確認する。
 (test* "database activeness" '(#t #f)
        (receive (db active?)
            (with-db (db *dbname*) (values db (ref db 'active)))
          (list active? (ref db 'active))))
 
 ;;----------------------------------------------------------
-;; ���󥹥��󥹺����ƥ���
+;; インスタンス作成テスト
 (test-section "instances")
 
-;;  ��������³���饹������������줬��³�᥿���饹<kahua-persistent-meta>��
-;;  ��Ͽ����Ƥ��뤳�Ȥ��ǧ���롣
+;;  新しい永続クラスを定義し、それが永続メタクラス<kahua-persistent-meta>に
+;;  登録されていることを確認する。
 (define-class <kahua-test> (<kahua-persistent-base>)
   ((quick :allocation :persistent :init-keyword :quick :init-value 'i)
    (quack :init-keyword :quack :init-value 'a)
@@ -97,19 +97,19 @@
        (list (is-a? <kahua-test> <kahua-persistent-meta>)
              (find-kahua-class '<kahua-test>)))
 
-;;  ��³���󥹥��󥹤�������������åȤ����������Ƥ��뤳�ȳ�ǧ���롣
+;;  永続インスタンスを作成し、スロットが初期化されていること確認する。
 (test* "creation (1)" '(1 ii aa "oo")
        (with-clean-db (db *dbname*)
          (list-slots (make <kahua-test> :quick 'ii :quack 'aa :quock "oo"))))
 
-;;  �Ƥӥȥ�󥶥������򳫻Ϥ�����������������³���֥������Ȥ�������
-;;  ���Ȥ��ǧ���롣
+;;  再びトランザクションを開始し、先程作成した永続オブジェクトが得られる
+;;  ことを確認する。
 (test* "read (1)" '(1 ii a "oo")
        (with-clean-db (db *dbname*)
          (list-slots (get-test-obj 1))))
 
-;;  �ҤȤĤΥȥ�󥶥������Ǥ��ѹ��������Υȥ�󥶥������ˤ��ݻ������
-;;  ���뤳�Ȥ��ǧ���롣
+;;  ひとつのトランザクションでの変更が、次のトランザクションにも保持されて
+;;  いることを確認する。
 (test* "modify (1)" '(1 "II" a "oo")
        (begin
          (with-clean-db (db *dbname*)
@@ -118,9 +118,9 @@
            (list-slots (get-test-obj 1))))
        )
 
-;;  �⤦��Ĥα�³���󥹥��󥹤���������ѹ�����ǽ�Ǥ��뤳�Ȥ��ǧ���롣
-;;  �ޤ��������ѹ�����������������³���󥹥��󥹤ˤϱƶ����ʤ����Ȥ�
-;;  ��ǧ���롣
+;;  もう一つの永続インスタンスを作成し、変更が可能であることを確認する。
+;;  また、その変更が先程作成した永続インスタンスには影響しないことを
+;;  確認する。
 (test* "creation (2)" '(2 hh bb "pp")
        (with-clean-db (db *dbname*)
          (list-slots (make <kahua-test> :quick 'hh :quack 'bb :quock "pp"))))
@@ -138,15 +138,15 @@
        (with-clean-db (db *dbname*)
          (list-slots (get-test-obj 1))))
 
-;;  ��³���饹�������ֹ椬���������������Ƥ��뤳�ȡ����ʤ��
-;;  in-memory�����in-db�����0�Ǥ��뤳�Ȥ��ǧ���롣
+;;  永続クラスの世代番号が正しく初期化されていること、すなわち
+;;  in-memory世代もin-db世代も0であることを確認する。
 (test* "generation" '(0 0)
        (with-clean-db (db *dbname*)
          (list (ref <kahua-test> 'generation)
                (ref <kahua-test> 'persistent-generation))))
 
-;; �����С��饤�ɤ�ػߤ��������åȤ򥪡��С��饤�ɤ��륯�饹��������Ƥߤ롣
-;; ���顼�ˤʤ�Ϥ���
+;; オーバーライドを禁止したスロットをオーバーライドするクラスを定義してみる。
+;; エラーになるはず。
 (test* "Final slot overriding: %kahua-persistent-base::id"
        *test-error*
        (eval '(define-class <kahua-violation-id> (<kahua-persistent-base>)
@@ -160,12 +160,12 @@
 	     (current-module)))
 
 ;;----------------------------------------------------------
-;; �ȥ�󥶥������˴ؤ���ƥ���
+;; トランザクションに関するテスト
 (test-section "transaction")
 
-;;   ��³���󥹥����ѹ���˥ȥ�󥶥�������error�����Ǥ���
-;;   �Ƥӥȥ�󥶥������򳫻Ϥ��ơ���³���󥹥��󥹤��ѹ������
-;;   ���ʤ����Ȥ��ǧ���롣
+;;   永続インスタンス変更後にトランザクションをerrorで中断し、
+;;   再びトランザクションを開始して、永続インスタンスが変更されて
+;;   いないことを確認する。
 (test* "abort transaciton" '(2 "hh" a "PP")
        (with-error-handler
            (lambda (e)
@@ -176,10 +176,10 @@
              (set! (ref (get-test-obj 2) 'quick) 'whoops)
              (error "abort!")))))
 
-;;   ��³���󥹥����ѹ���˰������commit���Ƥ���ޤ����󥹥��󥹤�
-;;   �ѹ������ȥ�󥶥�������error�����Ǥ��롣
-;;   �Ƥӥȥ�󥶥������򳫻Ϥ��ơ���³���󥹥��󥹤����commit�ޤǤ�
-;;   �ѹ������������ʹߤ��ѹ��ϼ����Ƥ��ʤ����Ȥ��ǧ���롣
+;;   永続インスタンス変更後に一度中間commitしてからまたインスタンスを
+;;   変更し、トランザクションをerrorで中断する。
+;;   再びトランザクションを開始して、永続インスタンスが中間commitまでの
+;;   変更を受け、それ以降の変更は受けていないことを確認する。
 (test* "commit & abort" '(2 whoops a "PP")
        (with-error-handler
            (lambda (e)
@@ -193,44 +193,44 @@
              (error "abort!")))))
 
 ;;----------------------------------------------------------
-;; ��³���֥������ȴ֤λ��Ȥ˴ؤ���ƥ���
+;; 永続オブジェクト間の参照に関するテスト
 (test-section "references")
 
-;;   ��³���֥������Ȥؤλ��Ȥ��̤α�³���֥������ȤΥ����åȤ˥��åȤ���
-;;   ���ߥåȤǤ��뤳�Ȥ��ǧ���롣
+;;   永続オブジェクトへの参照を別の永続オブジェクトのスロットにセットし、
+;;   コミットできることを確認する。
 (test* "reference write" #t
        (with-clean-db (db *dbname*)
          (set! (ref (get-test-obj 1) 'quick) (get-test-obj 2))
          (is-a? (ref (get-test-obj 1) 'quick) <kahua-test>)))
 
-;;   �ƤӤ�Ȥα�³���֥������Ȥ��ɤ߽Ф���������α�³���֥������Ȥ�
-;;   �������ɤޤ�Ƥ��뤳�Ȥ��ǧ���롣
+;;   再びもとの永続オブジェクトを読み出し、参照先の永続オブジェクトも
+;;   正しく読まれていることを確認する。
 (test* "reference read" '(2 whoops a "PP")
        (with-clean-db (db *dbname*)
          (list-slots (ref (get-test-obj 1) 'quick))))
 
-;;   �դ��Ĥα�³���֥������Ȥ���ߤ˻��Ȥ�������¤������������줬
-;;   ���ߥåȤǤ��뤳�Ȥ��ǧ���롣
+;;   ふたつの永続オブジェクトが相互に参照しあう構造を作成し、それが
+;;   コミットできることを確認する。
 (test* "circular reference write" '(#t #t)
        (with-clean-db (db *dbname*)
          (set! (ref (get-test-obj 2) 'quick) (get-test-obj 1))
          (list (eq? (get-test-obj 1) (ref (get-test-obj 2) 'quick))
                (eq? (get-test-obj 2) (ref (get-test-obj 1) 'quick)))))
 
-;;   ���������۴Ļ��ȹ�¤��Ƥ��ɤ߽Ф�����¤���������Ƹ�����Ƥ���
-;;   ���Ȥ��ǧ���롣
+;;   作成した循環参照構造を再び読み出し、構造が正しく再現されている
+;;   ことを確認する。
 (test* "circular reference read" '(#t #t)
        (with-clean-db (db *dbname*)
          (list (eq? (get-test-obj 1) (ref (get-test-obj 2) 'quick))
                (eq? (get-test-obj 2) (ref (get-test-obj 1) 'quick)))))
 
 ;;----------------------------------------------------------
-;; ���饹�����
+;; クラス再定義
 (test-section "class redefinition")
 
 ;(with-clean-db (db *dbname*) (kahua-db-purge-objs))
 
-;; ��³���饹���������롣�����åȤ��ѹ����ϰʲ����̤ꡣ
+;; 永続クラスを再定義する。スロットの変更点は以下の通り。
 
 ;; Slot changes:
 ;;  quick - no change (persistent)
@@ -247,11 +247,11 @@
    )
   :source-id "Rev 2")
 
-;;   ���֥������ȥޥ͡�����ˡ���������줿���饹����Ͽ����Ƥ��뤳�Ȥ��ǧ��
+;;   オブジェクトマネージャに、再定義されたクラスが登録されていることを確認。
 (test* "redefining class" <kahua-test>
        (find-kahua-class '<kahua-test>))
 
-;;   ���󥹥��󥹤����������饹���б����ƥ��åץǡ��Ȥ���뤳�Ȥ��ǧ���롣
+;;   インスタンスが新しいクラスに対応してアップデートされることを確認する。
 (test* "updating instance for new class" #t
        (with-db (db *dbname*)
          (eq? (ref (get-test-obj 1) 'quick)
@@ -264,8 +264,8 @@
                (equal? (list-slots (ref (get-test-obj 2) 'quock))
                        (list-slots (get-test-obj 1))))))
 
-;;   ���åץǡ��Ȥ������󥹥��󥹤��Ф����ѹ����ǡ����١�����ȿ�Ǥ���뤳�Ȥ�
-;;   ��ǧ���롣
+;;   アップデートしたインスタンスに対する変更がデータベースに反映されることを
+;;   確認する。
 (test* "redefining class (write)" '("M" "M" "M")
        (with-clean-db (db *dbname*)
          (set! (ref (get-test-obj 1) 'muick) '("M" "M" "M"))
@@ -275,19 +275,19 @@
        (with-clean-db (db *dbname*)
          (ref (get-test-obj 1) 'muick)))
 
-;;   �����������³���饹�������ֹ椬���󥯥���Ȥ���Ƥ��뤳�Ȥ��ǧ���롣
+;;   再定義した永続クラスの世代番号がインクリメントされていることを確認する。
 (test* "generation" '(1 1)
        (with-clean-db (db *dbname*)
          (list (ref <kahua-test> 'generation)
                (ref <kahua-test> 'persistent-generation))))
 
 ;;----------------------------------------------------------
-;; ���֥��饹�Υƥ���
+;; サブクラスのテスト
 (test-section "subclassing")
 
 ;(with-clean-db (db *dbname*) (kahua-db-purge-objs))
 
-;;   ��³���饹<kahua-test>��Ѿ��������֥��饹��������롣
+;;   永続クラス<kahua-test>を継承したサブクラスを作成する。
 (define-class <kahua-test-sub> (<kahua-test>)
   ((woo :allocation :persistent :init-keyword :woo :init-value "W")
    (boo :allocation :persistent :init-keyword :boo :init-value "B")
@@ -301,8 +301,8 @@
 (define-method key-of ((obj <kahua-test-sub>))
   (string-append (ref obj 'woo) (ref obj 'boo)))
 
-;;   ���֥��饹�α�³���󥹥��󥹤��������������졢�Ѿ����줿�����åȡ�
-;;   �ɲä��줿�����åȡ����˥ǡ�������³������뤳�Ȥ��ǧ���롣
+;;   サブクラスの永続インスタンスが正しく作成され、継承されたスロット、
+;;   追加されたスロット、共にデータが永続化されることを確認する。
 (test* "write" '(4 "quick" "quack" "woo" "boo" "quock")
        (with-clean-db (db *dbname*)
          (list-slots
@@ -322,8 +322,8 @@
        (with-clean-db (db *dbname*)
          (list-slots (find-kahua-instance <kahua-test-sub> "wooobooo"))))
 
-;;   �ƥ��饹�α�³���󥹥��󥹤ؤλ��Ȥ�ޤ๽¤���������
-;;   ���줬�ǡ����١�����ȿ�Ǥ���뤳�Ȥ��ǧ���롣
+;;   親クラスの永続インスタンスへの参照を含む構造を作成し、
+;;   それがデータベースに反映されることを確認する。
 (test* "reference to parent (write)" #t
        (with-clean-db (db *dbname*)
          (let1 obj (find-kahua-instance <kahua-test-sub> "wooboo")
@@ -335,19 +335,19 @@
          (let1 obj (find-kahua-instance <kahua-test-sub> "wooboo")
            (eq? (ref obj 'quick) (get-test-obj 1)))))
 
-;;   ���λҥ��饹�������ֹ椬���������Ƥ��뤳�Ȥ��ǧ���롣
+;;   この子クラスの世代番号が初期化されていることを確認する。
 (test* "generation" '(0 0)
        (with-clean-db (db *dbname*)
          (list (ref <kahua-test-sub> 'generation)
                (ref <kahua-test-sub> 'persistent-generation))))
 
 ;;----------------------------------------------------------
-;; ��³���֥������ȥ��쥯�����<kahua-collection>�˴ؤ���ƥ���
+;; 永続オブジェクトコレクション<kahua-collection>に関するテスト
 (test-section "collection")
 
-;;  <kahua-test>��³���饹�������<kahua-test-sub>��³���饹����
-;;  ���Υ��饹�α�³���󥹥��󥹤Υ��쥯����󤬺����Ǥ��뤳�Ȥ�
-;;  ��ǧ���롣
+;;  <kahua-test>永続クラス、および<kahua-test-sub>永続クラスから
+;;  そのクラスの永続インスタンスのコレクションが作成できることを
+;;  確認する。
 (test* "kahua-test" '(1 2)
        (sort (with-clean-db (db *dbname*)
                (map kahua-persistent-id
@@ -371,8 +371,8 @@
 		    (make-kahua-collection <kahua-test-sub> :keys '("wooboo" "wooobooo"))))))
 
 ;; This tests key-cache table initialization protocol
-;; ��³���쥯�����κ������ˡ�in-memory�ǡ����١����Υ���ǥå����ϥå��夬
-;; ���������åȥ��åפ���뤳�Ȥ��ǧ���롣
+;; 永続コレクションの作成時に、in-memoryデータベースのインデックスハッシュが
+;; 正しくセットアップされることを確認する。
 (test* "kahua-test-sub" '((<kahua-test-sub> . "wooboo")
                           (<kahua-test-sub> . "wooobooo"))
        (with-clean-db (db *dbname*)
@@ -380,9 +380,9 @@
          (sort (hash-table-keys (with-module kahua.persistence (key-cache-of db)))
 	       (lambda (a b) (string<? (cdr a) (cdr b))))))
 
-;; <kahua-test>�ȡ�����subclass�Ǥ���<kahua-test-sub>ξ�ԤȤ��
-;; ��³���󥹥��󥹤Υ��쥯������<kahua-test>���Ф���
-;; make-kahua-collection���Ѥ��ƺ����Ǥ��뤳�Ȥ��ǧ���롥
+;; <kahua-test>と，そのsubclassである<kahua-test-sub>両者ともの
+;; 永続インスタンスのコレクションを，<kahua-test>に対する
+;; make-kahua-collectionを用いて作成できることを確認する．
 (test* "kahua-test-subclasses"
        '((1 . <kahua-test>) (2 . <kahua-test>) (4 . <kahua-test-sub>) (5 . <kahua-test-sub>))
        (sort (with-clean-db (db *dbname*)
@@ -403,14 +403,14 @@
           (size-of (make-kahua-collection <hogehoge>))))
 
 ;;----------------------------------------------------------
-;; �᥿��������˴ؤ���ƥ��ȡ���³���饹���ѹ��򥪥֥������ȥޥ͡�����
-;; ��ǧ�����������ֹ��ưŪ����Ϳ���ƴ������Ƥ��뤳�Ȥ��ǧ���롣
+;; メタ情報履歴に関するテスト：永続クラスの変更をオブジェクトマネージャ
+;; が認識し、世代番号を自動的に付与して管理していることを確認する。
 (test-section "metainfo history")
 
 ;; Tests source-id change
-;;   �����å�������Ѥ�����source-id�������Ѥ�����³���饹����������
-;;   ��³���饹�������ֹ椬�Ѳ����ʤ����ȡ��ѹ�����source-id���������ֹ�ؤ�
-;;   �ޥåԥ󥰤����������ꤵ��Ƥ��뤳�Ȥ��ǧ���롣
+;;   スロット定義を変えずにsource-idだけを変えた永続クラスを再定義し、
+;;   永続クラスの世代番号が変化しないこと、変更したsource-idから世代番号への
+;;   マッピングが正しく設定されていることを確認する。
 (define-class <kahua-test-sub> (<kahua-test>)
   ((woo :allocation :persistent :init-keyword :woo :init-value "W")
    (boo :allocation :persistent :init-keyword :boo :init-value "B")
@@ -430,9 +430,9 @@
                                  'source-id-map)
                             "Rev 4")))))
 
-;;   ����ˡ�Source-id���ᤷ����³���饹������������³�����åȰʳ���
-;;   ����ѹ��Ǥϱ�³���饹�������ֹ椬�Ѳ����ʤ����ȡ������Source-id����
-;;   �����ֹ�ؤΥޥåԥ󥰤��������ʤ����Ȥ��ǧ���롣
+;;   さらに、Source-idを戻した永続クラスを再定義し、永続スロット以外の
+;;   定義変更では永続クラスの世代番号が変化しないこと、およびSource-idから
+;;   世代番号へのマッピングに齟齬がないことを確認する。
 (define <kahua-test-sub-save> <kahua-test-sub>)
 
 (define-class <kahua-test-sub> (<kahua-test>)
@@ -454,9 +454,9 @@
                                  'source-id-map)
                             "Rev 3")))))
 
-;;   Source-id���ݤä��ޤޱ�³���饹�Υ����å�������ѹ�������³���饹��
-;;   �����ֹ椬�ѹ�����뤳�ȡ����������source-id����������ֹ�ؤΥޥåפ�
-;;   ʣ����������ꤵ��뤳�Ȥ��ǧ���롣
+;;   Source-idを保ったまま永続クラスのスロット定義を変更し、永続クラスの
+;;   世代番号が変更されること、および当該source-idからの世代番号へのマップが
+;;   複数世代に設定されることを確認する。
 (define-class <kahua-test-sub> (<kahua-test>)
   ((woo :allocation :persistent :init-keyword :woo :init-value "W")
    (boo :allocation :persistent :init-keyword :boo :init-value "B")
@@ -475,9 +475,9 @@
                                'source-id-map)
                           "Rev 3"))))
 
-;;   �嵭��������ݤä��ޤޱ�³���饹��source-id���ѹ�����source-id����
-;;   �����ֹ�ؤ�many-to-many�Υޥåԥ󥰤���������������Ƥ��뤳�Ȥ�
-;;   ��ǧ���롣
+;;   上記の定義を保ったまま永続クラスのsource-idを変更し、source-idから
+;;   世代番号へのmany-to-manyのマッピングが正しく管理されていることを
+;;   確認する。
 (define-class <kahua-test-sub> (<kahua-test>)
   ((woo :allocation :persistent :init-keyword :woo :init-value "W")
    (boo :allocation :persistent :init-keyword :boo :init-value "B")
@@ -495,9 +495,9 @@
                                'source-id-map)
                           "Rev 4"))))
 
-;;   �Ƥα�³���饹���������뤳�Ȥˤ�ä�<kahua-test-sub>�μ�ư�������
-;;   �ȥꥬ���������ѹ����ǡ����١����Υ᥿��������ˤ�ȿ�Ǥ���뤳�Ȥ�
-;;   ��ǧ���롣
+;;   親の永続クラスを再定義することによって<kahua-test-sub>の自動再定義を
+;;   トリガし、その変更がデータベースのメタ情報履歴にも反映されることを
+;;   確認する。
 ;;   slot change: drop muick.
 (define-class <kahua-test> (<kahua-persistent-base>)
   ((quick :allocation :persistent :init-keyword :quick :init-value 'i)
@@ -513,8 +513,8 @@
                                'source-id-map)
                           "Rev 4"))))
 
-;;   ���Υƥ��ȤΤ���ˡ��⤦�������ѹ����Ƥ�����
-;;   (�ƥ��饹�Ǻ�����줿�����å�muick��ҥ��饹������)
+;;   次のテストのために、もう一世代変更しておく。
+;;   (親クラスで削除されたスロットmuickを子クラスで復活)
 (define-class <kahua-test-sub> (<kahua-test>)
   ((woo   :allocation :persistent :init-keyword :woo :init-value "W")
    (boo :allocation :persistent :init-keyword :boo :init-value "B")
@@ -532,15 +532,15 @@
                           "Rev 5"))))
 
 ;;----------------------------------------------------------
-;; ���󥹥��󥹤�����֤��ѹ��˴ؤ���ƥ��ȡ��ۤʤ�����α�³���饹��
-;; �������줿���󥹥��󥹤˥�����������ݤˡ�����֤μ�ư�Ѵ����Ԥ���
-;; ���Ȥ��ǧ���ʲ��Υ����ȤǤϡ�<kahua-test-sub>[n]������n��
-;; <kahua-test-sub>���饹�Ǥ��뤳�Ȥ�ɽ�����롣
+;; インスタンスの世代間の変更に関するテスト：異なる世代の永続クラスで
+;; 作成されたインスタンスにアクセスする際に、世代間の自動変換が行われる
+;; ことを確認。以下のコメントでは、<kahua-test-sub>[n]で世代nの
+;; <kahua-test-sub>クラスであることを表記する。
 (test-section "instance translation")
 
-;; �ƥ��ȳ������ˡ����ߤα�³���ȥ졼�������Ƥ��ǧ���Ƥ�����
-;; ��³���饹<kahua-test-sub>�������ϰʲ����̤�Ǥ��롣
-;; (����[4]�ϰʲ��Υƥ��������������)
+;; テスト開始前に、現在の永続ストレージの内容を確認しておく。
+;; 永続クラス<kahua-test-sub>の変遷は以下の通りである。
+;; (世代[4]は以下のテスト中に定義される)
 ;;
 ;; generation   [0]        [1]         [2]         [3]         [4]
 ;; ----------------------------------------------------------------
@@ -556,10 +556,10 @@
 ;;             "Rev 4"     "Rev 4"
 ;; -------------------------------------------------------
 ;;
-;; ���ߤα�³���饹������
+;; 現在の永続クラスの世代
 ;;   in-memory class:  <kahua-test-sub>[3]
 ;;   in-db     class:  <kahua-test-sub>[3]
-;; ���ߤα�³���󥹥��󥹤�in-db������
+;; 現在の永続インスタンスのin-dbの世代
 ;;   "wooboo"    [0]
 ;;   "woobooo"   [0]
 ;;   "1B"        [0]
@@ -568,8 +568,8 @@
 ;;   "4B"        [1]
 ;;   "5B"        [3]
 
-;;   �ޤ���<kahua-test-sub>[0]�Ǻ������줿��³���󥹥��󥹤��ɤ߽Ф���
-;;   ���줬<kahua-test-sub>[3]�ι����˥��åץǡ��Ȥ���Ƥ��뤳�Ȥ��ǧ���롣
+;;   まず、<kahua-test-sub>[0]で作成された永続インスタンスを読み出し、
+;;   それが<kahua-test-sub>[3]の構成にアップデートされていることを確認する。
 (test* "translation [0]->[3]"
        '(:slots 
          ((quick . q1) (muick . m1) (woo . "1") (boo . "B") (bee . beebee))
@@ -584,9 +584,9 @@
                  :hidden (ref obj '%hidden-slot-values)
                  :instance-generation (ref obj '%persistent-generation)))))
 
-;;   ��ö <kahua-test-sub> �����������[2]���ᤷ�����󥹥���"1B"��
-;;   ��������������[3]�Ǻ�����줿�����å�quock���ͤ����褷�Ƥ��뤳�Ȥ�
-;;   ��ǧ���롣
+;;   一旦 <kahua-test-sub> の定義を世代[2]に戻し、インスタンス"1B"に
+;;   アクセス。世代[3]で削除されたスロットquockの値が復活していることを
+;;   確認する。
 
 (define-class <kahua-test-sub> (<kahua-test>)
   ((woo   :allocation :persistent :init-keyword :woo :init-value "W")
@@ -615,8 +615,8 @@
                  :hidden (ref obj '%hidden-slot-values)
                  :instance-generation (ref obj '%persistent-generation)))))
 
-;;   ����[1]�Υ��󥹥���"3B"�ˤ⥢�������������줬����[2]�˥��åץǡ���
-;;   ����뤳�Ȥ��ǧ���롣
+;;   世代[1]のインスタンス"3B"にもアクセスし、それが世代[2]にアップデート
+;;   されることを確認する。
 
 (test* "translation [1]->[2]"
        '(:class-generations
@@ -634,11 +634,11 @@
                              '(quick woo boo quock bar))
                  :instance-generation (ref obj '%persistent-generation)))))
 
-;;   �Ƥ�<kahua-test-sub>�����������[3]���ᤷ�����󥹥���"1B", "3B"��
-;;   ���줾�쥢���������롣"1B"������[2]���ᤷ���ݤ˾ä��������å�(bee)��
-;;   �ڤӡ�"3B"������[2]�˰ܹԤ����ݤ˾ä��������å� (muick) �����褷�Ƥ���
-;;   ���Ȥ��ǧ���롣�ޤ����Ʊ�³���󥹥��󥹤�����ϺǤ�ʤ������Τޤ�
-;;   (���ʤ����"1B"�Ǥ�[3], "3B"�Ǥ�[2])�Ǥ��뤳�Ȥ��ǧ���롣
+;;   再び<kahua-test-sub>の定義を世代[3]に戻し、インスタンス"1B", "3B"に
+;;   それぞれアクセスする。"1B"を世代[2]に戻した際に消えたスロット(bee)、
+;;   及び、"3B"を世代[2]に移行した際に消えたスロット (muick) が復活している
+;;   ことを確認する。また、各永続インスタンスの世代は最も進んだ世代のまま
+;;   (すなわち、"1B"では[3], "3B"では[2])であることを確認する。
 
 (define-class <kahua-test-sub> (<kahua-test>)
   ((woo   :allocation :persistent :init-keyword :woo :init-value "W")
@@ -669,7 +669,7 @@
                  :instance-generation (map (cut ref <> '%persistent-generation)
                                            objs)))))
 
-;; �����ʳ��Ǥγƥ��󥹥��󥹤�in-db������ϼ��Τ褦�ˤʤäƤ��롣
+;; この段階での各インスタンスのin-dbの世代は次のようになっている。
 ;;   "wooboo"    [0]
 ;;   "wooobooo"  [0]
 ;;   "1B"        [3]
@@ -678,9 +678,9 @@
 ;;   "4B"        [1]
 ;;   "5B"        [3]
 
-;;   ���٤�<kahua-test-sub>�����������[0]�ޤ��᤹������[0]�����[3]��
-;;   ��³���󥹥���ʣ�����ɤ߽Ф������Ƥ�in-memory�Ǥ�����[0]��
-;;   ���󥹥��󥹤ˤʤäƤ��뤳�Ȥ��ǧ���롣
+;;   今度は<kahua-test-sub>の定義を世代[0]まで戻す。世代[0]および[3]の
+;;   永続インスタンス複数を読み出し、全てがin-memoryでは世代[0]の
+;;   インスタンスになっていることを確認する。
 
 (define-class <kahua-test> (<kahua-persistent-base>)
   ((quick :allocation :persistent :init-keyword :quick :init-value 'i)
@@ -741,11 +741,11 @@
                                            objs)))))
 
 
-;;   �����ǡ�<kahua-test-sub>���������롣���٤�<kahua-test>��
-;;   �Ѿ����ʤ����������������[4]�Ȥʤ뤳�Ȥ��ǧ���롣�ޤ���
-;;   ������α�³���󥹥��󥹤��ɤ߹��ߡ�����餬�����������
-;;   ���åץǡ��Ȥ���Ƥ��뤳�ȡ�����֤�translation�Ǿä��������å�
-;;   ���ͤ������Ƥ��ʤ����ȡ����ǧ���롣
+;;   次いで、<kahua-test-sub>を再定義する。今度は<kahua-test>を
+;;   継承しない。この定義が世代[4]となることを確認する。また、
+;;   各世代の永続インスタンスを読み込み、それらが新しい世代に
+;;   アップデートされていること、世代間のtranslationで消えたスロット
+;;   の値が失われていないこと、を確認する。
 
 (define-class <kahua-test-sub> (<kahua-persistent-base>)
   ((woo :allocation :persistent :init-keyword :woo :init-value "W")
@@ -812,9 +812,9 @@
                  :instance-generation (map (cut ref <> '%persistent-generation)
                                            objs)))))
 
-;;   ��ǥ��åץǡ��Ȥ�����³���󥹥��󥹤Τ������ѹ����������
-;;   touch-kahua-instance! �ǡֿ���줿�פ�ΤΤߡ���³���󥹥��󥹤�
-;;   ���夬��������Ƥ��뤳�Ȥ��ǧ���롣
+;;   上でアップデートした永続インスタンスのうち、変更を受けたか
+;;   touch-kahua-instance! で「触られた」もののみ、永続インスタンスの
+;;   世代が更新されていることを確認する。
 
 (test* "translation (instances' persistent generations)"
        '(("1B" . 4) ("2B" . 4) ("3B" . 4) ("4B" . 4) ("5B" . 4)
@@ -829,7 +829,7 @@
             (string<? (car a) (car b))))))
 
 ;;----------------------------------------------------------
-;; �ȥ�󥶥����������Υƥ���
+;; トランザクション管理のテスト
 (test-section "transaction / default(read-only, no-sync)")
 
 (define-class <transaction-test-1> (<kahua-persistent-base>)
@@ -956,19 +956,19 @@
 ; (test "write out of transaction" 1
 ;       (lambda () (set! (ref object 'a) 1) 1))
 
-; ;; �ȥ�󥶥�����󳫻ϻ���on-memory cache��db�˽񤭹��ޤ�
-; ;; �뤳�Ȥ��ǧ���롣
+; ;; トランザクション開始時にon-memory cacheがdbに書き込まれ
+; ;; ることを確認する。
 ; (test* "read in other transaction (auto synched: 1)" 1
 ;        (with-db (db *dbname*)
 ;          (ref (find-kahua-instance <transaction-test-4> "key") 'a)))
 
-; ;; ���ȥ�󥶥������ǽ񤭹��ޤ줿�ǡ������̥ȥ�󥶥������
-; ;; �ˤ��ɤ߽Ф��뤳�Ȥ��ǧ���롣
+; ;; 前トランザクションで書き込まれたデータを別トランザクション
+; ;; にて読み出せることを確認する。
 ; (test* "read in other transaction (auto synched: 2)" 1
 ;        (with-db (db *dbname*) (ref object 'a)))
 
 ;;----------------------------------------------------------
-;; unbound�ʥ����åȤΥƥ���
+;; unboundなスロットのテスト
 (test-section "unbound slot")
 
 (define-class <unbound-slot-class> (<kahua-persistent-base>)
@@ -994,7 +994,7 @@
                  ))))
 
 ;;----------------------------------------------------------
-;; ������᥽�å�initialize��persistent-initialize method�Υ����å�
+;; 初期化メソッドinitializeとpersistent-initialize methodのチェック
 (test-section "initialize and persistent-initialize method")
 
 (define-class <init-A> (<kahua-persistent-base>)
@@ -1023,7 +1023,7 @@
                  (ref obj 'base2)))))
 
 ;;----------------------------------------------------------
-;; ��³���饹������Υ����å�
+;; 永続クラス再定義のチェック
 (test-section "persistent class redefine")
 
 (define-class <redefine-A> (<kahua-persistent-base>)
@@ -1081,8 +1081,8 @@
                  (ref obj 'base2)))))
 
 ;;----------------------------------------------------------
-;; ��³���饹��¾�Υ᥿���饹��Ʊ���˻Ȥ������å�
-;; �Ѿ����������å�
+;; 永続クラスと他のメタクラスを同時に使うチェック
+;; 継承順序もチェック
 
 (test-section "useing other metaclass")
 
@@ -1144,7 +1144,7 @@
            (string-length (ref obj 'a)))))
 
 ;;----------------------------------------------------------
-;; ���֥������Ȥκ��
+;; オブジェクトの削除
 (test-section "object deletion")
 
 ;; Fist: before commit.

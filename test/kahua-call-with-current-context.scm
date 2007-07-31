@@ -1,7 +1,7 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: kahua-call-with-current-context.scm,v 1.1 2006/04/01 08:26:49 cut-sea Exp $
+;; $Id$
 
 (use srfi-2)
 (use gauche.test)

@@ -1,9 +1,9 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test shell scripts.
 ;; this test isn't for modules, but for actual scripts.
-;; kahua-shell �Υƥ���
+;; kahua-shell のテスト
 
-;; $Id: shell.scm,v 1.7 2006/11/28 06:22:49 bizenn Exp $
+;; $Id$
 
 (use gauche.test)
 (use gauche.process)
@@ -46,10 +46,10 @@
 (define *shell*  #f)
 
 ;;---------------------------------------------------------------
-;; kahua-shell �Υƥ��Ȥ򳫻Ϥ��롣
+;; kahua-shell のテストを開始する。
 (test-section "run scripts")
 
-;; kahua-shell ���̿����� kahua-spvr ��ư���롣
+;; kahua-shell と通信する kahua-spvr を起動する。
 (test* "start spvr" #t
        (let ((p (run-process "../src/kahua-spvr" "--test"
 			     "-c" *config*)))
@@ -59,7 +59,7 @@
 	      (or (eq? (file-type "_tmp/kahua") 'socket)
                   (eq? (file-type "_tmp/kahua") 'fifo)))))
 
-;; kahua-shell ��ư���롣
+;; kahua-shell を起動する。
 (test* "start shell" "Welcome to Kahua."
        (let ((p (run-process 'env "-i" "../src/kahua-shell" "--test"
 			     "-c" *config* 
@@ -72,7 +72,7 @@
            ))
 
 ;;---------------------------------------------------------------
-;; �ƥ��Ȥ�ɬ�פʥ桼�ƥ���ƥ���������롣
+;; テストに必要なユーティリティを定義する。
 (test-section "define utilities")
 
 (define (shell-out)
@@ -120,13 +120,13 @@
 
 
 ;;------------------------------------------------------------
-;; �����륳�ޥ�ɤ�ƥ���
+;; シェルコマンドをテスト
 (test-section "shell command test")
 
 (sys-sleep 3)
 
-;; ǧ�ڥƥ��ȡ�
-;; ���ץꥱ������󥵡��Ф�����ץ���ץȤ��Ф뤳�Ȥ��ǧ���롣
+;; 認証テスト。
+;; アプリケーションサーバの選択プロンプトが出ることを確認する。
 (test* "shell: login" "select wno> "
        (begin
          (recv)
@@ -144,8 +144,8 @@
 	  (read-block 1000 (shell-in)))
          ))
 
-;; ǧ�ڤ��줿����³���륢�ץꥱ������󥵡��Ф����򤷤ƥ������󤹤롣
-;; �ץ���ץȤ���³��Υ��ץꥱ�������̾(hello)�Ǥ��뤳�Ȥ��ǧ���롣
+;; 認証されたら接続するアプリケーションサーバを選択してログインする。
+;; プロンプトが接続先のアプリケーション名(hello)であることを確認する。
 (test* "shell: select worker" #f
        (begin
          (sys-sleep 1)
@@ -157,8 +157,8 @@
            )))
          )
 
-;; ��³�褬���ץꥱ�������Ǥ��뤫��
-;; �����ȥ⥸�塼�뤬̵̾�⥸�塼��(����ɥܥå���)�Ǥ��뤳�Ȥ��ǧ���롣
+;; 接続先がアプリケーションであるか。
+;; カレントモジュールが無名モジュール(サンドボックス)であることを確認する。
 (test* "shell: evaluation" "#<module #>"
        (begin
          (sys-sleep 1)
@@ -172,10 +172,10 @@
 
 
 ;;------------------------------------------------------------
-;; �ƥ��Ȥν�λ������
+;; テストの終了処理。
 (test-section "finalize")
 
-;; kahua-spvr ��λ���롣
+;; kahua-spvr を終了する。
 (process-send-signal *spvr* SIGTERM)
 
 (test* "shutdown shell" #t

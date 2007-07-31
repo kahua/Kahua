@@ -1,6 +1,6 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test kahua.session
-;; $Id: session.scm,v 1.4 2007/07/13 08:37:13 bizenn Exp $
+;; $Id$
 
 ;; NB: first we test state session without session key server (local mode),
 ;; then start up the server process and test the shared key mode.

@@ -1,4 +1,4 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: kahua -*-
 
 (define-class <folder> (<kahua-persistent-base>)
   ((obj-id :allocation :persistent

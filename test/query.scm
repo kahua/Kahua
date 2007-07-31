@@ -1,4 +1,4 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;;; Copyright (c) 2004 Hisazumi, Kenji. All rights reserved.
 
 (use gauche.test)
@@ -216,7 +216,7 @@
 
 (test-section "update")
 
-;; UPDATE command§œÕﬂ§∑§§§«§π§´§Õ...
+;; UPDATE command„ÅØÊ¨≤„Åó„ÅÑ„Åß„Åô„Åã„Å≠...
 (with-db (db *dbname*)
   (for-each (lambda (o)
               (slot-set! o 'name "Hogee"))

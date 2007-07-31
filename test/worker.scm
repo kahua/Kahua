@@ -1,7 +1,7 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test worker scripts.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id: worker.scm,v 1.3 2005/08/06 06:33:18 cut-sea Exp $
+;; $Id$
 
 (use srfi-2)
 (use gauche.test)

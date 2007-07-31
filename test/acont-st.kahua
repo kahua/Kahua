@@ -1,4 +1,4 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- mode: kahua; coding: utf-8 -*-
 
 (define (acont/start)
   (page-frame (a/cont/ (@@/ (cont next)) "next")))
