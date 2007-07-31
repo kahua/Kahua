@@ -73,8 +73,8 @@ Kahua自体のインストールには、
 ~設定が不要になります。
 
 {{{
-% tar xvzf Kahua-1.0.5.tgz
-% cd Kahua-1.0.5
+% tar xvzf Kahua-1.0.6.tgz
+% cd Kahua-1.0.6
 % ./configure --prefix=${HOME}/kahua
 % make
 % make check
@@ -96,8 +96,8 @@ Kahua自体のインストールには、
 ~サイトバンドルを作ってその下にサンプルをインストールしています。
 
 {{{
-% tar xvzf Kahua-1.0.5.tgz
-% cd Kahua-1.0.5
+% tar xvzf Kahua-1.0.6.tgz
+% cd Kahua-1.0.6
 % ./configure --prefix=/usr/local/kahua --with-site-bundle=$HOME/site
 % make
 % make check
