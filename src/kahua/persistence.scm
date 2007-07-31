@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: persistence.scm,v 1.86 2007/07/27 05:12:28 bizenn Exp $
+;; $Id$
 
 (define-module kahua.persistence
   (use srfi-1)
@@ -1784,33 +1784,30 @@
    (instances :init-keyword :instances :init-value '())))
 
 (define-method make-kahua-collection ((class <kahua-persistent-meta>) . opts)
-  (define-method append-map (proc (col <collection>))
-    (fold (lambda (v r)
-	    (append (proc v) r))
-	  '()
-	  col))
-  (define-method class-subclasses ((class <class>))
-    (define-method class-subclasses* ((class <class>))
-      (let1 subs (class-direct-subclasses class)
-	(if (null? subs)
-	    '()
-	    (append subs
-		    (append-map class-subclasses* subs)))))
-    (delete-duplicates (class-subclasses* class)))
+  (define (class-subclasses-fold proc seed class)
+    (let loop ((class class)
+	       (subclasses (class-direct-subclasses class))
+	       (seed seed))
+      (if (null? subclasses)
+	  (proc class seed)
+	  (fold (lambda (c s)
+		  (loop c (class-direct-subclasses c) s))
+		(proc class seed)
+		subclasses))))
 
-  (let1 db (current-db)
-    (unless db (error "make-kahua-collection: database not active"))
-    (let-keywords* opts ((subclasses? :subclasses #f)
-			 (keys #f)	                ; pass through(to avoid WARNING)
-			 (index #f)			; pass through(to avoid WARNING)
-			 (predicate #f)			; pass through(to avoid WARNING)
-			 (include-removed-object? #f))	; pass through(to avoid WARNING)
-      (if subclasses?
-          (append-map (lambda (c)
-                        (coerce-to <list> (make-kahua-collection db c opts)))
-                      (cons class
-                            (class-subclasses class)))
-          (make-kahua-collection db class opts)))))
+  (cond ((current-db) =>
+	 (lambda (db)
+	   (let-keywords* opts ((subclasses? :subclasses #f) . opts)
+	     (if subclasses?
+		 (class-subclasses-fold
+		  (lambda (c r)
+		    ;; Performance hack
+		    (append (slot-ref (make-kahua-collection db c opts)
+				      'instances)
+			    r))
+		  '() class)
+		 (make-kahua-collection db class opts)))))
+	(else (error "make-kahua-collection: database not active"))))
 
 (define (kahua-cached-instances db class opts . may-be-sweep?)
   (define (make-basic-filter class filter-proc)
