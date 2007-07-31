@@ -1,3 +1,9 @@
+2007-07-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: doc/Modules/kahua.server.ja
+	  Add description of kahua-user?, with-kahua-user,
+	  with-kahua-local-user.
+
 2007-07-29  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: DIST
