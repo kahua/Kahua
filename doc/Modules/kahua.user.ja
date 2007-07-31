@@ -2,7 +2,7 @@
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.user.ja,v 1.3.2.1 2007/05/31 03:48:10 bizenn Exp $
+;; $Id$
 
 
 * [module] kahua.user
@@ -28,6 +28,11 @@ Kahuaアプリケーションのログインセッションにおいて、認証
 このユーザのroleを表現するリスト。今のところ、role-alistは単なる
 シンボルのリストです。
 roleの定義はアプリケーションサーバによって行われます。
+
+*** [procedure] kahua-user? ''obj''
+
+''obj''がこのアプリケーション内で認証に使用されている <kahua-user> もしくは
+そのサブクラスのインスタンスであれば #t を、そうでなければ #f を返します。
 
 ** [procedure] kahua-add-user ''login-name'' ''password''
 

@@ -125,11 +125,6 @@ session-stateに保持されている、「現在のユーザ」情報をget/set
    問題があるため、0.7から現在の仕様に変更されました。
 >>>
 
-*** [procedure] kahua-user? ''obj''
-
-''obj''がこのアプリケーション内で認証に使用されている <kahua-user> もしくは
-そのサブクラスのインスタンスであれば #t を、そうでなければ #f を返します。
-
 *** [procedure] with-kahua-user ''user'' ''proc''
 *** [procedure] with-kahua-local-user ''user'' ''proc''
 
