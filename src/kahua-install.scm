@@ -4,7 +4,7 @@
 ;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-install.scm,v 1.7 2007/05/30 07:54:12 bizenn Exp $
+;; $Id$
 
 ;; Installs Kahua's application server materials according to
 ;; the kahua.conf configuration settings.
@@ -14,18 +14,20 @@
 (use file.util)
 
 (define (usage)
-  (print "kahua-install [-c conf-file][-U][-t type][-r name][--no-overwrite] file ...")
-  (print "  Install files under kahua-managed directories.")
-  (print "   -U : uninstall files instead of installing.")
-  (print "   -t type: script | static | base | plugin | template.  static by default.")
-  (print "   -r (rename): rename file to name.  When this option is given,")
-  (print "      only one file can be specified.")
-  (print "   --no-overwrite : if the target file exists, the file won't be")
-  (print "         installed.")
-  (print)
-  (print "kahua-install [-c conf-file][-U] --dirs")
-  (print "  Creates (or removes) kahua-managed directories.")
-  (exit 0))
+  (display
+   "Usage: kahua-install [<options>] file ...
+options:
+  -c conf-file     specify configuration file.
+  -S path-to-site  specify path to a site bundle.
+  -U               uninstall files instead of installing.
+  -t type          specify install type:
+                   script|static|base|plugin|template.  static by default.
+  -r rename        rename file to name.  When this option is given,
+                   only one file can be specified.
+  --no-overwrite   if the target file exists, the file won't be installed.
+"
+   (current-error-port))
+  (exit 1))
 
 (define (main args)
   (let-args (cdr args)
