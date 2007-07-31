@@ -1,3 +1,9 @@
+2007-07-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/persistence.scm
+	  Arrange top level "make-kahua-collection" to be efficient,  and
+	  use new let-keywords* form and drop transitional code.
+
 2007-07-29  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: DIST
