@@ -44,11 +44,10 @@ options:
                     '("script" "static" "base" "plugin" "template")) (usage))
     (when (and rename (not (= (length files) 1))) (usage))
     (kahua-common-init site conf-file)
-    (if dirs?
-      (install-dirs uninstall?)
-      (if uninstall?
-        (for-each (cut uninstall-file <> material-type rename) files)
-        (for-each (cut install-file <> material-type rename no-over) files))))
+    (cond (dirs? (install-dirs uninstall?))
+	  ((null? files) (usage))
+	  (uninstall? (for-each (cut uninstall-file <> material-type rename) files))
+	  (else (for-each (cut install-file <> material-type rename no-over) files))))
   0)
 
 (define (install-file file material-type rename no-over)
