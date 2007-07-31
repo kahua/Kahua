@@ -2,7 +2,7 @@
 ;;
 ;; Copyright (c) 2006 Kahua Project
 ;;
-;; $Id: kahua.server.ja,v 1.9.2.2 2007/05/31 03:48:10 bizenn Exp $
+;; $Id$
 
 * [module] kahua.server
 
@@ -60,7 +60,8 @@ Kahuaサーバを外部から参照するためのuri ("scheme://server:port") �
 '''現在のアプリケーションサーバ内のリソース'''のURIを、
 ''path-components''から構築します。kahua-self-uriはURIのパス部分、
 kahua-self-uri-fullはスキーム、サーバ名、ポート番号を含めた絶対URIを返
-します。
+します。kahua-self-uriもkahua-self-uri-fullも、引数なしで呼ばれた場合は、
+返す値を#\/で終端します。
 
 *** [procedure] kahua-current-entry-name
 
@@ -123,6 +124,22 @@ session-stateに保持されている、「現在のユーザ」情報をget/set
    ログイン名が同じであれば同じユーザと見なされてしまい、セキュリティ上
    問題があるため、0.7から現在の仕様に変更されました。
 >>>
+
+*** [procedure] kahua-user? ''obj''
+
+''obj''がこのアプリケーション内で認証に使用されている <kahua-user> もしくは
+そのサブクラスのインスタンスであれば #t を、そうでなければ #f を返します。
+
+*** [procedure] with-kahua-user ''user'' ''proc''
+*** [procedure] with-kahua-local-user ''user'' ''proc''
+
+ログインユーザを一時的に ''user'' に変更して ''proc'' を実行します。
+''proc''の外で補足された継続が''proc''内で呼び出されると、元のユーザに
+戻った後その継続が実行されます。また、''proc''の中で補足された継続が
+''proc''の外で呼び出されると、ログインユーザを''user''に変更した後に
+継続が実行されます。with-kahua-userは、同一サイト内の同じデータベースに
+由来するログインセッション全てに影響が及びます。with-kahua-local-userは
+アプリケーション内のコンテキストのみに影響します。
 
 ** クライアント情報の問い合わせ
 
