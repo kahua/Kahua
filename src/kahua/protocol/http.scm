@@ -82,18 +82,18 @@
 	  ((string=? (car p) (car b)) (loop (cdr p) (cdr b)))
 	  (else #f))))
 
-;; path-info list -> scheme host port worker args
+;; path-info list -> scheme host port worker worker-uri args
 ;;
 ;; Elements of path-info must be decoded.
 ;;
 ;; e.g.
-;;   () => #f #f #f #f ()
-;;   ("worker") => #f #f #f "worker" ()
-;;   ("worker" "arg1" ...) => #f #f #f "worker" ("arg1" ...)
-;;   ("--vh--http:www.kahua.org:80" "--" "worker" "arg1" ...)
-;;     => http "www.kahua.org" 80 "worker" ("arg1" ...)
-;;   ("worker" "--vh--https:karetta.jp:443 "--" "arg1" ...)
-;;     => https "karetta.jp" 443 "worker" ("arg1" ...)
+;;   () => #f #f #f #f () ()
+;;   ("worker") => #f #f #f "worker" ("worker") ()
+;;   ("worker" "arg1" ...) => #f #f #f "worker" ("worker") ("arg1" ...)
+;;   ("worker" "--vh--http:www.kahua.org:80" "worker-url" ... "--" "worker" "arg1" ...)
+;;     => http "www.kahua.org" 80 "worker" ("worker-url" ...) ("arg1" ...)
+;;   ("worker" "--vh--https:karetta.jp:443 "worker-url" ... "--" "arg1" ...)
+;;     => https "karetta.jp" 443 "worker" ("worker-url" ...) ("arg1" ...)
 ;;
 ;; This function requires Gauche CVS 2006-09-29 or later.
 ;; Earlier version Gauche's util.match has a bug that
@@ -114,25 +114,32 @@
 	(#/^([-a-zA-Z0-9.]+):(\d+)$/                     ; Host name
 	    (#f h p) (values scheme h (x->integer p)))
 	(else (fail-cont)))))
+  (define (split-by ls pred?)
+    (let loop ((head '())
+	       (tail ls))
+      (if (null? tail)
+	  (list (reverse! head) tail)
+	  (let1 e (car tail)
+	    (if (pred? e)
+		(list (reverse! head) (cdr tail))
+		(loop (cons e head) (cdr tail)))))))
 
   (guard (e (else (if (null? path-info)
-		      (values #f #f #f #f '())
-		      (values #f #f #f (car path-info) (cdr path-info)))))
+		      (values #f #f #f #f '() '())
+		      (let1 w (car path-info)
+			(values #f #f #f w (list w) (cdr path-info))))))
     (match path-info
-      (((= vhosting vhost) "--" worker . args) (=> next)
+      ((worker (= vhosting vhost) . args) (=> next)
        (receive (scheme host port) (parse-vhost vhost next)
-	 (values scheme host port worker args)))
-      ((worker (= vhosting vhost) "--" . args) (=> next)
-       (receive (scheme host port) (parse-vhost vhost next)
-	 (values scheme host port worker args)))
-      ((worker . args) (values #f #f #f worker args))
-      (()              (values #f #f #f #f '())))))
+	 (apply values scheme host port worker (split-by args (pa$ equal? "--")))))
+      ((worker . args) (values #f #f #f worker (list worker) args))
+      (()              (values #f #f #f #f '() '())))))
 
 ;; Now support method GET, HEAD, POST only.
 (define (unsupported-method? method)
   (case method
-    ((PUT DELETE OPTIONS TRACE CONNECT) #t)
-    (else                               #f)))
+    ((GET HEAD POST) #f)
+    (else            #t)))
 
 (define (default-error-page status msg)
   (let1 status-msg (http-status-string status #f)
