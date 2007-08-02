@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test kahua.session
-;; $Id$
 
 ;; NB: first we test state session without session key server (local mode),
 ;; then start up the server process and test the shared key mode.
