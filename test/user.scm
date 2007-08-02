@@ -1,5 +1,4 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
-;; $Id$
 
 ;; test kahua.user
 

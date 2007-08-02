@@ -1,10 +1,9 @@
+;; -*- mode: scheme; coding: utf-8 -*-
 ;; Generic application server script.
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
-;;
-;; $Id: kahua-server.scm,v 1.29 2007/07/07 22:34:36 bizenn Exp $
 ;;
 ;; This script would be called with a name of the actual application server
 ;; module name.

@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
 ;; PostgreSQLバックエンドのテスト
-;; $Id$
 
 ;; Notes:
 ;;  * テストケース自体はpersistence.scmのものを使う。

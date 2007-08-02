@@ -1,9 +1,8 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
 ;;
-;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
-;;  See COPYING for terms and conditions of using this software
+;;  Copyright (c) 2006-2007 Kahua Project, All rights reserved.
+;;  See COPYING for terms and conditions of using this software.
 ;;
-;; $Id: kahua-dbutil.scm,v 1.7 2007/05/24 02:12:14 bizenn Exp $
 
 (use gauche.parseopt)
 (use kahua.persistence)

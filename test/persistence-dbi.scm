@@ -2,8 +2,6 @@
 ;; test kahua.persistence with dbi
 ;; DBIバックエンドを用いたkahua.persistenceモジュールのテスト
 
-;; $Id$
-
 ;; Clear the data remaining from the other test
 (define (cleanup-db dbtype user pass options)
 

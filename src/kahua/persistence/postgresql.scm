@@ -1,11 +1,10 @@
 ;;; -*- mode: scheme; coding: utf-8 -*-
 ;; Persistent on PostgreSQL storage
 ;;
-;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: postgresql.scm,v 1.12 2007/05/23 15:58:12 bizenn Exp $
 
 (define-module kahua.persistence.postgresql
   (use kahua.persistence.dbi))

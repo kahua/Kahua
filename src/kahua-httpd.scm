@@ -1,11 +1,10 @@
-;;; -*- mode: scheme; coding: utf-8-unix -*-
+;;; -*- mode: scheme; coding: utf-8 -*-
 ;; HTTPd for kahua
 ;;
-;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-httpd.scm,v 1.21 2007/06/13 03:49:07 bizenn Exp $
 
 (use srfi-1)
 (use srfi-11)

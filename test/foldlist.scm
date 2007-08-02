@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test of foldlist.scm
-;; $Id$
 
 (use srfi-2)
 (use srfi-11)

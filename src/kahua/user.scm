@@ -3,7 +3,6 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: user.scm,v 1.14 2007/07/05 05:10:00 bizenn Exp $
 
 (define-module kahua.user
   (use kahua.persistence)

@@ -1,4 +1,4 @@
-;; -*-scheme-*-
+;; -*- mode: scheme -*-
 ;; Sample app-servers file.
 (
 ;; (<type> :arguments (<arg> ...) :run-by-default <num>)

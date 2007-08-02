@@ -1,5 +1,4 @@
 # Makefile for %%_PROJECT_NAME_%%
-# $Id:$
 
 package	          = @PACKAGE_NAME@
 package_version   = @PACKAGE_VERSION@

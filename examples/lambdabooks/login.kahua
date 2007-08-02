@@ -5,7 +5,6 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: login.kahua,v 1.11 2007/06/28 14:08:20 bizenn Exp $
 
 ;; User login management ----------------------------------------
 ;;   Receives two continuation procedure.

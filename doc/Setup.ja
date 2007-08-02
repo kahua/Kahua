@@ -1,9 +1,8 @@
-;; Setup  -*- coding: utf-8 -*-
+;; Setup  -*- mode: text; coding: utf-8 -*-
 ;;
 ;; Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
 ;; Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id$
 
 * Kahuaをセットアップする
 

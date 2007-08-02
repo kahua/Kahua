@@ -1,10 +1,10 @@
+;; -*- mode: scheme; coding: utf-8 -*-
 ;; "Supervisor" or super server for kahua
 ;;
 ;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-spvr.scm,v 1.31 2007/06/13 03:49:07 bizenn Exp $
 
 ;; For clients, this server works as a receptionist of kahua system.
 ;; It opens a socket where initial clients will connect.

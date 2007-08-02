@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test kahua.partcont
-;; $Id$
 
 (use gauche.test)
 

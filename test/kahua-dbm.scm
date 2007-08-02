@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test kahua.dbm module
-;; $Id$
 
 (use gauche.test)
 (use srfi-1)

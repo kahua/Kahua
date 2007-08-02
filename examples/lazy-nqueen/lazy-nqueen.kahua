@@ -1,11 +1,9 @@
-;; -*- coding: utf-8 ; mode: scheme-*-
+;; -*- coding: utf-8 ; mode: kahua -*-
 ;; lazy-nqueen.kahua
 ;;
 ;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
-;;
-;; $Id: lazy-nqueen.kahua,v 1.6 2007/06/27 07:20:51 bizenn Exp $
 ;;
 ;; This example shows how to lazy style works.
 ;; 

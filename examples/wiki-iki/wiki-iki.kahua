@@ -5,7 +5,6 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: wiki-iki.kahua,v 1.13 2007/06/29 05:02:48 bizenn Exp $
 
 (use srfi-1)
 (use srfi-13)

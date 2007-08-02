@@ -5,8 +5,6 @@
 ;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: nqueen.kahua,v 1.7 2007/06/27 05:22:43 bizenn Exp $
-;;
 ;; This example shows how to capture continuations within Kahua application.
 ;; You need to use call/pc instead of call/cc --- that's it.
 

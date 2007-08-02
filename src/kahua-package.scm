@@ -1,10 +1,11 @@
+;; -*- mode: scheme; coding: utf-8 -*-
 ;; package maintainance shell script
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-package.scm,v 1.12 2007/05/25 01:38:47 cut-sea Exp $
+
 (use srfi-13)
 
 (use file.util)

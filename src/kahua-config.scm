@@ -1,10 +1,9 @@
 ;; package maintainance shell script
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-config.scm,v 1.5 2006/10/08 07:13:27 bizenn Exp $
 (use gauche.parseopt)
 (use kahua.config)
 

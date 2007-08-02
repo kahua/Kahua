@@ -1,10 +1,9 @@
 ;; Manages global session ID
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: gsid.scm,v 1.4 2004/02/18 22:01:25 shiro Exp $
 
 (define-module kahua.gsid
   (use gauche.uvector)

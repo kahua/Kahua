@@ -1,9 +1,7 @@
 ;; Modules/kahua.sandbox -*- mode: text; coding: utf-8 -*-
 ;;
-;; Copyright (c) 2006 Kahua Project
+;; Copyright (c) 2006-2007 Kahua Project, All rights reserved.
 ;;
-;; $Id$
-
 
 * [module] kahua.sandbox
 

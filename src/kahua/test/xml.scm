@@ -1,11 +1,10 @@
-;; -*- coding: euc-jp -*-
+;; -*- coding: utf-8; mode: scheme -*-
 ;; generic framework to test XML generation code
 ;;
-;;  Copyright (c) 2003 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: xml.scm,v 1.12 2006/03/18 11:12:03 shibata Exp $
 
 ;; This module provides the means of test the result of HTML
 ;; generating code, such as CGI programs.   The output of
@@ -131,26 +130,26 @@
 ;;     #f if the check fails, or #t if succeeds.
 ;; -------------------------------------------------------------------------
 ;;
-;; ���Υ⥸�塼��� HTML ���������륳���ɡ����Ȥ��С�CGI�ץ�������
-;; ��̤�ƥ��Ȥ�����ʤ��󶡤����ΤǤ����������������ɤν��Ϥϡ�
-;; �ƥ��Ȥ�񤤤��Ȥ��ˤϡ�ʬ��ʤ����󤬴ޤޤ�뤳�Ȥ�����ޤ���
-;; ���Τ褦�ʾ������Ȥ��Ƥϡ������ॹ����פ䥻�å����ɣĤ�����ޤ���
+;; このモジュールは HTML を生成するコード、たとえば、CGIプログラムの
+;; 結果をテストする手段を提供するものです。こうしたコードの出力は、
+;; テストを書いたときには、分らない情報が含まれることがあります。
+;; このような情報の例としては、タイムスタンプやセッションＩＤがあります。
 ;;
-;; test-xml-match? ��³���ϥƥ��Ȥ���륳���ɤν��Ϥ˥ޥå�����
-;; �ѥ������Ȥ��ޤ������Υѥ�����ˤϡ��ֳ����̡����ޤ�뤳�Ȥ�
-;; �Ǥ��ޤ����ޤ��������Ĥ������������å�����Τ˻Ȥ���ѥ�����
-;; �ѿ���ޤ���ޤ���
+;; test-xml-match? 手続きはテストされるコードの出力にマッチする
+;; パターンを使います。このパターンには、「鎌○ぬ」節を含めることが
+;; できます。また、いくつかの制約をチェックするのに使えるパターン
+;; 変数も含められます。
 ;;
 ;;   test-xml-match? pattern input &optional extra-check
 ;;
-;;     input ��ʸ����ޤ��ϥꥹ�ȡ��ꥹ�Ȥʤ顢�褺 text.tree �⥸�塼���
-;;     tree->string ��³���ǥꥹ�Ȥ���ʸ������Ѵ����ޤ���
+;;     input は文字列またはリスト。リストなら、先ず text.tree モジュールの
+;;     tree->string 手続きでリストから文字列に変換します。
 ;;
-;;     ���θ塢���Ϥ��줿ʸ����ϡ�ssax XML �ѡ����ǹ�ʸ���Ϥ���ơ�
-;;     SXML ��ʸ���������졢���줬���ѥ�����Ⱦȹ礵��ޤ���
+;;     その後、入力された文字列は、ssax XML パーザで構文解析されて、
+;;     SXML 構文が生成され、これが、パターンと照合されます。
 ;;
-;;     �ѥ������ SXML ����������Ӽ��Ǥ������ѥ������ѿ���ޤ���ޤ���
-;;     ����Ū���Ѥϰʲ��Τ褦�ˤʤäƤ��ޤ���
+;;     パターンは SXML に類似したＳ式ですが、パターン変数を含められます。
+;;     形式的使用は以下のようになっています。
 ;;
 ;;      <pattern> : <node>
 ;;      <node>    : <string> | <pattern-variable>
@@ -166,83 +165,83 @@
 ;;                | (!or      <pattern> ...)
 ;;                | (!repeat  <pattern> ...)
 ;;
-;;      <literal-symbol> : ��Ƭ��'?'���뤤��'!'�ǤϤʤ����٤ƤΥ���ܥ�
+;;      <literal-symbol> : 先頭が'?'あるいは'!'ではないすべてのシンボル
 ;;
-;;      <pattern-variable> : ��Ƭ��'?'�Ǥ��륷��ܥ�
+;;      <pattern-variable> : 先頭が'?'であるシンボル
 ;;
-;;     <string> �� <literal-symbol> �Ϥ��Τޤ����ϤȾȹ礵��ޤ���
+;;     <string> と <literal-symbol> はそのまま入力と照合されます。
 ;;
-;;     <pattern-variable> ��������Τ��٤ƤΥ��֥������Ȥȥޥå����ޤ���
-;;     �ȹ��ϥѥ������ѿ��ȥޥå��������֥������ȤȤ�Ͽ���ޤ���
-;;     �����ϡ���Ҥ��ɲå����å���³���ˤ���ɲå����å��ǻȤ��ޤ���
+;;     <pattern-variable> は入力中のすべてのオブジェクトとマッチします。
+;;     照合器はパターン変数とマッチしたオブジェクトとを記録します。
+;;     これらは、後述の追加チェック手続きによる追加チェックで使われます。
 ;;
-;;     (���С������Ǥϡ��ѥ������ѿ�̾�ˤĤ��Ƥϡ�����ȤäƤ⤫�ޤ��ޤ���
-;;     �����������衢Ʊ���ѿ�̾�ʤ�Ʊ���ι�¤�򻲾Ȥ���Ȥ��������ä���
-;;     ��ǽ��������ޤ����ֹ���ʤ�����ʬ��ɽ������Τˡ��ѥ������ѿ� ?_ ��
-;;     �Ȥ��ޤ�������ϡ��������ӤΤ����ͽ�󤷤ޤ���
+;;     (現バージョンでは、パターン変数名については、何を使ってもかまいません
+;;     しかし、将来、同じ変数名なら同型の構造を参照するという制約を加える
+;;     可能性があります。「構わない」部分を表現するのに、パターン変数 ?_ を
+;;     使います。これは、その用途のために予約します。
 ;;
-;;     �ѥ������ѿ�?@�ϡ�attr-node���⤷����Ф���˥ޥå����ޤ���
-;;     ���ȥ�ӥ塼�Ȥ�̵�뤷�������������Ǥ���
+;;     パターン変数?@は、attr-nodeがもしあればそれにマッチします。
+;;     アトリビュートを無視したい場合に便利です。
 ;;
-;;     �ѥ������ѿ�?*�ϡ�(!repeat ?_)��Ʊ���Ǥ���
+;;     パターン変数?*は、(!repeat ?_)と同じです。
 ;;
 ;;     (!seq <pattern> ...)
 ;;
-;;         <pattern> ... ���¤Ӥ˥ޥå����ޤ���<content> �γ��ѤǤ����
-;;         <pattern> ... �ϷҤ����蘆��� <content> ���¤ӤȤʤ�ޤ���
-;;         ���ʤ�����ʲ��Υѥ�����
+;;         <pattern> ... の並びにマッチします。<content> の外観であれば
+;;         <pattern> ... は繋ぎあわされて <content> の並びとなります。
+;;         すなわち、以下のパターン
 ;;
 ;;          (ul (li "foo") (!seq (li "bar") (li "baz")) (li "oof"))
 ;;
-;;         �ϡ��ʲ������Ϥȥޥå����ޤ���
+;;         は、以下の入力とマッチします。
 ;;
 ;;          (ul (li "foo") (li "bar") (li "baz") (li "oof"))
 ;;
 ;;     (!permute <pattern> ...)
 ;;
-;;         <pattern> ... �Τ��٤Ƥν���Τɤ줫���¤Ӥ˥ޥå����ޤ���
-;;         �¤Ӥϡ��Ҥ����蘆�� <content> ���¤Ӥ�ޤ��Τˤʤ�ޤ���
-;;         ���ʤ�����ʲ��Υѥ�����
+;;         <pattern> ... のすべての順列のどれかの並びにマッチします。
+;;         並びは、繋ぎあわされ <content> の並びを含むものになります。
+;;         すなわち、以下のパターン
 ;;
 ;;          (ul (li "foo") (!permute (li "bar") (li "baz")) (li "oof"))
 ;;
-;;         �ϰʲ������Ϥ˥ޥå����ޤ���
+;;         は以下の入力にマッチします。
 ;;
 ;;          (ul (li "foo") (li "baz") (li "bar") (li "oof"))
 ;;
 ;;     (!or <pattern> ...)
 ;;
-;;         <pattern> ... �Τɤ�ˤ�ޥå����ޤ����Ҥ����碌�Υ롼���
-;;         �Ƶ�Ū��Ŭ�Ѥ���ޤ����ʲ��Υѥ�����
+;;         <pattern> ... のどれにもマッチします。繋ぎあわせのルールは
+;;         再帰的に適用されます。以下のパターン
 ;;
 ;;          (ul (li "foo") (!or (!seq (li "bar") (li "baz")) (li "ZZ")))
 ;;
-;;         �ϡ��ʲ������Ϥ�ξ���˥ޥå����ޤ���
+;;         は、以下の入力の両方にマッチします。
 ;;
 ;;          (ul (li "foo") (li "bar") (li "baz"))
 ;;          (ul (li "foo") (li "ZZ"))
 ;;
 ;;     (!repeat <pattern> ...)
 ;;
-;;         ���ϤΤʤ��� <pattern> ... �˥ޥå������ΤΥ����İʾ�νи���
-;;         �ޥå����ޤ�����ȿ����ǡ��ޥå������ѥ������ѿ��ϺǸ�ΤΤ���
-;;         �Ф����Ƥ��ޤ��󡣥ѥ�����
+;;         入力のなかの <pattern> ... にマッチするもののゼロ個以上の出現に
+;;         マッチします。各反復中で、マッチしたパターン変数は最後ののぞき
+;;         覚えられていません。パターン
 ;;
 ;;          (dl (!repeat (dt ?_) (dd ?_)))
 ;;
-;;         �ϰʲ������Ϥ˥ޥå����ޤ���
+;;         は以下の入力にマッチします。
 ;;
 ;;          (dl (dt "foo") (dd "bar") (dt "foo2") (dd "bar2"))
 ;;
-;;     ���ץ������� extra-check ��Ϳ����ȡ�����ϡ��ѥ������ѿ���
-;;     �ޥå������ͤȤ�Ϣ�ۥꥹ�Ȥ�����Ȥ��ƸƤӽФ���ޤ�������ˤ��
-;;     �ɲäΥ����å����Ԥʤ�졢���Ԥ���� #f ��������� #t ���֤�ޤ���
+;;     オプション引数 extra-check を与えると、これは、パターン変数と
+;;     マッチした値との連想リストを引数として呼び出されます。これにより
+;;     追加のチェックが行なわれ、失敗すると #f 成功すると #t が返ります。
 ;; -------------------------------------------------------------------------
 
 ;; NB: the module name is provisional.  Will be either a part of
 ;; Kahua, or a part of Gauche.
-;; ����: ���Υ⥸�塼��̾�ϻ���Ū�ʤ�ΤǤ���Kahua �ΰ����Ȥ��뤫
-;; Gauche �ΰ����Ȥ��뤫�Τɤ��餫�ˤʤ�ޤ���
+;; 注意: このモジュール名は暫定的なものです。Kahua の一部とするか
+;; Gauche の一部とするかのどちらかになります。
 
 (define-module kahua.test.xml
   (use srfi-1)
@@ -287,9 +286,9 @@
 ;; Because of "splicing" nature of the pattern, it takes a list of inputs.
 ;; When matched, the continuation procedure is called with the rest of
 ;; inputs and the pattern binding alist.
-;; �ҤȤĤΥѥ�������ܤ˥ޥå����롣�ѥ������"�Ҥ�"�����ˤ�����ϤΥꥹ��
-;; ������Ȥ��Ƽ�롣�ޥå�������硢��³��³�������Ĥ�����Ϥȡ��ѥ�����
-;; «�� A-�ꥹ�Ȥ�����Ȥ��ƸƤӤ�����ޤ���
+;; ひとつのパターン項目にマッチする。パターンを"繋ぐ"性質により入力のリスト
+;; を引数として取る。マッチした場合、継続手続きが、残りの入力と、パターン
+;; 束縛 A-リストを引数として呼びだされます。
 
 (define (match-pattern pat ls cont r)
   (cond

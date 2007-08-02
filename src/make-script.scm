@@ -1,11 +1,9 @@
-;;;
+;;; -*- mode: scheme; coding: utf-8 -*-
 ;;; Generate a shell script to invoke kahua operations.
 ;;;
-;;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
-;;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
-;;;
-;;; $Id: make-script.scm,v 1.2 2004/10/19 02:37:34 shiro Exp $
 ;;;
 
 ;; Example:
@@ -15,7 +13,7 @@
 ;;    Creates a shell script kahua-admin that kicks kahua-admin.scm
 ;;
 
-(define *ident* "$Id: make-script.scm,v 1.2 2004/10/19 02:37:34 shiro Exp $")
+(define *ident* "make-script.scm")
 
 (use file.util)
 (use util.match)

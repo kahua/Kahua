@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test for kahua.test.xml
-;; $Id$
 
 (use gauche.test)
 

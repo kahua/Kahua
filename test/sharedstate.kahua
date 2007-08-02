@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 ; mode: kahua -*-
 ;; Test kahua application that shares <session-state> between processes.
-;; $Id$
 
 (use srfi-1)
 (use srfi-13)

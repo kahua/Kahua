@@ -2,10 +2,9 @@
 ;; This document is written in WiLiKi format.
 ;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
 ;;
-;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;; Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id$
 
 * kahua-admin [-c conf-file]
 

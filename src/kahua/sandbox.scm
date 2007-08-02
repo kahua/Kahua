@@ -3,9 +3,8 @@
 ;; this module is based on banyan/sandbox.scm
 ;; written by Shiro Kawai (shiro@acm.org).
 ;;
-;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
+;;  Copyright(C) 2003-2007 by Shiro Kawai (shiro@acm.org)
 ;;
-;; $Id: sandbox.scm,v 1.14 2007/05/30 08:46:56 bizenn Exp $
 
 (define-module kahua.sandbox
   (use srfi-1)

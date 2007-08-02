@@ -1,11 +1,10 @@
 ;;; -*- mode: scheme; coding: utf-8 -*-
 ;; Persistent on File System storage
 ;;
-;;  Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: fs.scm,v 1.16 2006/11/19 22:02:26 bizenn Exp $
 
 (define-module kahua.persistence.fs
   (use srfi-1)

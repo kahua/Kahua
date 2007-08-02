@@ -2,8 +2,6 @@
 ;; test kahua.developer
 ;; Kahua.developer モジュールのテスト
 
-;; $Id$
-
 (use gauche.test)
 (use srfi-1)
 (use file.util)

@@ -2,10 +2,9 @@
 ;;
 ;; kahua.template - Page Template Engine
 ;;
-;;  Copyright (c) 2006 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2006-2007 Kahua Project, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software.
 ;;
-;; $Id: xml-template.scm,v 1.7 2007/02/15 02:18:16 bizenn Exp $
 
 (define-module kahua.xml-template
   (use srfi-1)

@@ -2,9 +2,6 @@
 ;; test sandbox module.
 ;; Kahua.sandbox モジュールのテスト
 
-;; $Id$
-
-
 (use gauche.test)
 (use kahua.plugin)
 

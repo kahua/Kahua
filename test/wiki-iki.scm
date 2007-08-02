@@ -1,7 +1,6 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test wiki-iki script.
 ;; this test isn't for modules, but the actual scripts.
-;; $Id$
 
 (use srfi-2)
 (use srfi-11)

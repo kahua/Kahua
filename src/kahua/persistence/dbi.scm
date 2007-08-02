@@ -5,7 +5,6 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbi.scm,v 1.22 2007/06/25 03:49:26 bizenn Exp $
 
 (define-module kahua.persistence.dbi
   (use srfi-1)

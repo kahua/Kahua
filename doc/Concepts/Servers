@@ -1,89 +1,88 @@
-;; Cocepts/Servers  -*- coding: euc-jp -*-
+;; Cocepts/Servers  -*- coding: utf-8 -*-
 ;;
-;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
-;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;; Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;
-;; $Id: Servers,v 1.1 2006/12/25 02:33:43 bizenn Exp $
 
-kahua-spvr(�����ѥХ���������)��ҤȤĵ�ư����ȡ�
-Ʊ���ˤ����Ĥ��Υץ���������ư���ޤ��������Ǥϡ�
-���줾��Υץ�����(�ץ������)���ɤΤ褦������
-ô�äƤ��뤫���������ޤ���
+kahua-spvr(スーパバイザサーバ)をひとつ起動すると、
+同時にいくつかのプロセスが起動します。ここでは、
+それぞれのプロセス(プログラム)がどのような役割を
+担っているかを説明します。
 
-* �����ȤΥץ���������
+* サイトのプロセス構成
 
-�ҤȤĤ�kahua-spvr(�����ѥХ����ץ�����)�Ȥ��λ��۲��ˤ���ץ���������
-�֥����ȡפȸƤ�Ǥ��ޤ���
+ひとつのkahua-spvr(スーパバイザプロセス)とその支配下にあるプロセス群を
+「サイト」と呼んでいます。
 
-** �ƥץ������/�ץ����������
+** 各プログラム/プロセスの役割
 
 - kahua-spvr:
--- �ǽ�˵�ư�������å���������Ԥ�kahua-keyserv�ȡ�app-servers�ե������
-���Ҥ˽��äƤ�����٤����ץꥱ������������ɤ���kahua-server��ư���ޤ���
--- kahua-admin����Υꥯ�����Ȥ˽��äơ�kahua-server�ε�ư����λ�����ץꥱ��
-�����ե�����κƥ����ɤʤɤ�Ԥ��ޤ���
--- Kahua���饤����ȤȤΥ��å����ˤ����ơ����ꥨ��ȥ�ؤΥꥯ�����Ȥ�
-�����Ĥ���������٤�����ץ�����(kahua-server)�˥ǥ����ѥå����ޤ���
+-- 最初に起動し、セッション管理を行うkahua-keyservと、app-serversファイルの
+記述に従ってしかるべきアプリケーションをロードしたkahua-serverを起動します。
+-- kahua-adminからのリクエストに従って、kahua-serverの起動、終了、アプリケー
+ションファイルの再ロードなどを行います。
+-- Kahuaクライアントとのセッションにおいて、固定エントリへのリクエストを
+受けつけ、しかるべきワーカプロセス(kahua-server)にディスパッチします。
 - kahua-keyserv:
--- kahua-spvr���鵯ư����롢���å���������ݻ���������ץ������Ǥ���
-�ƥ���ϡ����饤����ȤȤΥ��å��������kahua-keyserv���Ф����䤤
-��碌���ꡢ��¸�����ꤷ�ޤ���
--- Ʊ�쥵������Ǥ����(�Ĥޤ�Ʊ��kahua-keyserv���̿����Ƥ���ʤ�)�ۤʤ�
-����䥢�ץꥱ�������֤ǥ��å��������ͭ���뤳�Ȥ��Ǥ��ޤ���
+-- kahua-spvrから起動される、セッション情報を保持管理するプロセスです。
+各ワーカは、クライアントとのセッション情報をkahua-keyservに対して問い
+合わせたり、保存したりします。
+-- 同一サイト内であれば(つまり同じkahua-keyservと通信しているなら)異なる
+ワーカやアプリケーション間でセッション情報を共有することができます。
 - kahua-server:
--- kahua-spvr���鵯ư�����Kahua���ץꥱ�����������ΤǤ������ץꥱ�������
-�����ɤ�����ɤ��Ƶ�ư�����ºݤΥ����ӥ���Ԥ��ޤ���
--- �ҤȤĤΥ��ץꥱ���������Ф���ʣ����kahua-server��ư���뤳�Ȥ�
-�Ǥ��ޤ�����kahua-server�ץ������ϡ����Υ��ץꥱ��������'''����ץ�����'''
-�ȸƤФ�ޤ���
-##(img "images/KahuaServers.png" (width "532") (height "297") (title "�����Ȥ�������Kahua�����з�") (alt ""))
+-- kahua-spvrから起動されるKahuaアプリケーションの本体です。アプリケーション
+コードをロードして起動し、実際のサービスを行います。
+-- ひとつのアプリケーションに対して複数のkahua-serverを起動することが
+できます。各kahua-serverプロセスは、そのアプリケーションの'''ワーカプロセス'''
+と呼ばれます。
+##(img "images/KahuaServers.png" (width "532") (height "297") (title "サイトを構成するKahuaサーバ群") (alt ""))
 
-** ��������Υץ��������̿�
+** サイト内のプロセス間通信
 
-- kahua-spvr�ϡ�Kahua���饤�����(kahua-admin��kahua.cgi��kahua-httpd�ʤ�)
-�������³������Ĥ��뤿��Υ����Х����å�(���ߤ�UNIX�ɥᥤ�󥽥��å�)��
-���Τξ��˥����ץ󤷤ޤ������Υ����åȤ�Kahua�����åȤȸƤӤޤ���
-- kahua-spvr����ư����ץ�������(kahua-server��kahua-keyserv)�⡢�ץ��������
-��ͭ�Υ����Х����å�(���ߤϤ����UNIX�ɥᥤ�󥽥��å�)�򥪡��ץ󤷤ޤ���
-kahua-spvr�ϳƻҥץ�������ư�塢�����Υ����åȤξ��(UNIX�ɥᥤ�󥽥��å�
-�Υѥ�)��ҥץ��������������ꡢ�ץ������Ȥ��б����������ݻ����ޤ���
-- kahua-keyserv���̿����ϳ�kahua-server�Ǥ���kahua-server�ϡ���ư����
-kahua-spvr����kahua-keyserv�Υ����Х����åȤξ���������ޤ��������ơ�
-���饤����ȤΥ��å��������kahua-keyserv���䤤��碌���ꡢ��¸������
-���ޤ���
-- kahua-server���̿�����kahua-spvr�⤷���ϳƼ�Kahua���饤����ȤǤ���
+- kahua-spvrは、Kahuaクライアント(kahua-adminやkahua.cgi、kahua-httpdなど)
+からの接続を受けつけるためのサーバソケット(現在はUNIXドメインソケット)を、
+既知の場所にオープンします。このソケットをKahuaソケットと呼びます。
+- kahua-spvrが起動するプロセス群(kahua-server、kahua-keyserv)も、プロセス毎に
+固有のサーバソケット(現在はこれもUNIXドメインソケット)をオープンします。
+kahua-spvrは各子プロセスを起動後、これらのソケットの場所(UNIXドメインソケット
+のパス)を子プロセスから受け取り、プロセスとの対応を内部に保持します。
+- kahua-keyservの通信相手は各kahua-serverです。kahua-serverは、起動時に
+kahua-spvrからkahua-keyservのサーバソケットの場所を受け取ります。そして、
+クライアントのセッション情報をkahua-keyservに問い合わせたり、保存したり
+します。
+- kahua-serverの通信相手はkahua-spvrもしくは各種Kahuaクライアントです。
 
-** Kahua���饤����ȤȤ��̿�
+** Kahuaクライアントとの通信
 
-�����ǤΡ�Kahua���饤����ȡפȤϡ�cgi�֥�å�(kahua.cgi/kahua.fcg)��
-HTTP������(kahua-httpd)�Τ��ȤǤ��������д����ץ������(kahua-admin)
-�䥷����(kahua-shell)�Ͼ������𤬰㤤�ޤ���
+ここでの「Kahuaクライアント」とは、cgiブリッジ(kahua.cgi/kahua.fcg)や
+HTTPサーバ(kahua-httpd)のことです。サーバ管理プログラム(kahua-admin)
+やシェル(kahua-shell)は少し事情が違います。
 
-- ���饤����Ȥ�������³����� (session initiating request) �ϡ�
-�ޤ����Τ�Kahua�����åȤ���³����kahua-spvr���Ф��ƥꥯ�����Ȥ�����ޤ���
-## kahua-spvr�ϥꥯ�����ȥإå���x-kahua-worker�ե�����ɤ��ͤ���
-�оݤȤʤ륢�ץꥱ�����������򤷡����Υ��ץꥱ��������������
-����ץ���������ҤȤĤ�����ǥꥯ�����Ȥ�ž�����ޤ���
-���ߤ�ñ��˥饦��ɥ��ӥ󤷤Ƥ��ޤ���
-## ����ץ�������ž������Ƥ����ꥯ�����Ȥ��������
-kahua-spvr�˥쥹�ݥ󥹤��֤��ޤ����쥹�ݥ󥹤ˤϥ��å���󥭡����ޤޤ�Ƥ��ޤ���
-## kahua-spvr�ϥ���ץ�������������줿�쥹�ݥ󥹤򥯥饤����Ȥ�
-ž�����ޤ���
+- クライアントが初めて接続する際 (session initiating request) は、
+まず既知のKahuaソケットに接続し、kahua-spvrに対してリクエストを送ります。
+## kahua-spvrはリクエストヘッダのx-kahua-workerフィールドの値から
+対象となるアプリケーションを選択し、そのアプリケーションを構成する
+ワーカプロセスからひとつを選んでリクエストを転送します。
+現在は単純にラウンドロビンしています。
+## ワーカプロセスは転送されてきたリクエストを処理し、
+kahua-spvrにレスポンスを返します。レスポンスにはセッションキーが含まれています。
+## kahua-spvrはワーカプロセスから送られたレスポンスをクライアントに
+転送します。
 
-- �ҤȤ��ӥ��å���󤬳��Ϥ��줿��...
-## ���饤����Ȥϥ��å���󥭡����顢�ɤΥ���ץ���������ʬ�Υ��å�����
-ô�����Ƥ��뤫���Τ�(�Ĥޤꡢ���Υ���ץ������������Ƥ��륵���Х����åȤ�
-�����Τ�)���ʹߤϤ��Υ���ץ��������Ф���ľ�ܥꥯ�����Ȥ�����ޤ���
-## ����ץ�����������ä��ꥯ�����Ȥ�����������饤����Ȥ˥쥹�ݥ�
-����ӹ������줿���å���󥭡����֤��ޤ���
-## ���å���󤬽�λ�������(�Ĥޤꡢ���饤����Ȥξ��֤��ݻ�����
-ɬ�פ��ʤ��ʤä����)�ϡ�����ץ������ϥ��å���󥭡�������ʤ�
-��ץ饤���֤��Ƥ�褤���ȤˤʤäƤ��ޤ������ξ�祯�饤����Ȥϡ�
-����Υꥯ�����Ȥ�kahua-spvr���Ф������뤳�Ȥˤʤ�ޤ���
-##(img "images/KahuaServers2.png" (width "525") (height "305") (title "Kahua�����д֤��̿�") (alt ""))
+- ひとたびセッションが開始されたら...
+## クライアントはセッションキーから、どのワーカプロセスが自分のセッションを
+担当しているかを知り(つまり、そのワーカプロセスが開いているサーバソケットの
+場所を知り)、以降はそのワーカプロセスに対して直接リクエストを送ります。
+## ワーカプロセス受け取ったリクエストを処理し、クライアントにレスポンス
+および更新されたセッションキーを返します。
+## セッションが終了した場合(つまり、クライアントの状態を保持する
+必要がなくなった場合)は、ワーカプロセスはセッションキーを持たない
+リプライを返してもよいことになっています。その場合クライアントは、
+次回のリクエストをkahua-spvrに対して送ることになります。
+##(img "images/KahuaServers2.png" (width "525") (height "305") (title "Kahuaサーバ間の通信") (alt ""))
 
-���������Υ��åȤϡ����å���󳫻ϸ��kahua-spvr��Х��ѥ�����Τ�
-kahua-spvr���ܥȥ�ͥå��ˤʤ�ʤ����ȤǤ��������������ƥ�����Ū�ˤϡ�
-���å���󥭡��Ȥ��ƥ���ץ������ˤ�äƻȤ���opaque�ʾ���ȡ�
-���饤����Ȥ�����ץ�����(�Υ����Х����å�)���դ�����褦�ˤ��뤿��ξ���Ȥ�
-��������ɬ�פ����äơ�����ä�ʣ���ˤʤ�ޤ���
+この方式のメリットは、セッション開始後はkahua-spvrをバイパスするので
+kahua-spvrがボトルネックにならないことです。一方アーキテクチャ的には、
+セッションキーとしてワーカプロセスによって使われるopaqueな情報と、
+クライアントがワーカプロセス(のサーバソケット)を見付けられるようにするための情報とを
+持たせる必要があって、ちょっと複雑になります。

@@ -3,8 +3,6 @@
 ;; this test isn't for modules, but for actual scripts.
 ;; kahua-shell のテスト
 
-;; $Id$
-
 (use gauche.test)
 (use gauche.process)
 (use gauche.net)

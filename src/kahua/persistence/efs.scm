@@ -5,7 +5,6 @@
 ;;  Copyright (c) 2006-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: efs.scm,v 1.15 2007/07/07 22:34:36 bizenn Exp $
 
 (define-module kahua.persistence.efs
   (use srfi-1)

@@ -1,11 +1,9 @@
 ;; Provides SXML tags implemented as functions
 ;;
-;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: elem.scm,v 1.33 2007/04/26 03:56:21 bizenn Exp $
-
 ;; This module implements tags of SXML as functions
 
 (define-module kahua.elem

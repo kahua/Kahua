@@ -4,7 +4,6 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: dbm.scm,v 1.2 2007/06/20 06:35:54 bizenn Exp $
 
 ;; This module implements dbm protocol on top of kahua's persistent objects.
 

@@ -1,11 +1,10 @@
 ;;
 ;; kahua.util - miscellaneous utility collection
 ;;
-;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: util.scm,v 1.11 2007/07/07 22:34:36 bizenn Exp $
 
 ;; This module contains generally useful routines, which don't belong to
 ;; a particular module.

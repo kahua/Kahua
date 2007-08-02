@@ -1,10 +1,10 @@
+;; -*- mode: scheme; coding; utf-8 -*-
 ;; Kahua user (<kahua-user> instance) management tool
 ;;
 ;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
 ;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: kahua-user.scm,v 1.3 2007/06/19 23:15:29 bizenn Exp $
 
 (use kahua.user)
 (use kahua.persistence)

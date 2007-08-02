@@ -4,8 +4,6 @@
 # Created: 1993-05-16
 # Public domain
 
-# $Id: mkinstalldirs,v 1.1 2003/12/11 05:39:09 nobsun Exp $
-
 errstatus=0
 
 for file

@@ -1,7 +1,6 @@
 dnl ============================================================
 dnl Configuring %%_PROJECT_NAME_%%
 dnl  process this file with "autoconf" to generate 'configure'.
-dnl $Id:$
 dnl ============================================================
 
 AC_PREREQ(2.59)

@@ -1,11 +1,10 @@
-;;;
+;;; -*- mode: scheme; coding: utf-8 -*-
 ;;; Generate test environment
 ;;;
-;;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
-;;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;;  See COPYING for terms and conditions of using this software
 ;;;
-;;;  $Id: make-testconf.scm,v 1.3 2004/10/19 02:41:52 shiro Exp $
 
 ;; Usage:
 ;;

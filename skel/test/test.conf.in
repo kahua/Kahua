@@ -4,7 +4,6 @@
 ;;  See COPYING for terms and conditions of using this software
 ;;
 ;; test configuration file
-;; $Id:$
 
 (make <kahua-config>
   :sockbase "unix:##TEST_DIR##/test/_tmp"

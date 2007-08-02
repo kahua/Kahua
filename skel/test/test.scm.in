@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8; mode: scheme -*-
 ;; test %%_PROJECT_NAME_%% script.
-;; $Id:$
 
 (use gauche.test)
 (use file.util)

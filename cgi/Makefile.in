@@ -3,7 +3,6 @@
 # The destination should be specified by --with-cgidir argument of configure
 # script.
 #
-# $Id: Makefile.in,v 1.15 2007/07/03 07:12:17 bizenn Exp $
 #
 
 package	          = kahua

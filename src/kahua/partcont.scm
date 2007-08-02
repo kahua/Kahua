@@ -1,10 +1,9 @@
 ;; Implements partial continuation
 ;;
-;;  Copyright (c) 2004 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2004 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: partcont.scm,v 1.1 2004/02/07 09:10:57 shiro Exp $
 
 ;; Cf.
 ;; Martin Gasbichler and Michael Sperber, Final Shift for Call/cc:

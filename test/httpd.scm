@@ -1,7 +1,6 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test supervisor scripts in http mode.
 ;; this test isn't for modules, but for actual scripts.
-;; $Id$
 
 (use gauche.test)
 (use gauche.process)

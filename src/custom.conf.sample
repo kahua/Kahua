@@ -1,7 +1,6 @@
-;;
+;; -*- mode: scheme -*-
 ;; Sample Kahua user customize configuration file
 ;;
-;; $Id: custom.conf.sample,v 1.1 2004/02/16 13:03:04 tahara Exp $
 
 (make <kahua-custom>
   :working-directory    "/var/lib/kahua/user/sussman"
@@ -9,7 +8,3 @@
   :static-document-url  "/kahua"
   :timeout-mins         60
   )
-
-;; Local variables:
-;; mode: scheme
-;; end:

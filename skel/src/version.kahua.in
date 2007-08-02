@@ -3,7 +3,6 @@
 ;;
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: version.kahua.in,v 1.1 2007/05/25 01:49:53 cut-sea Exp $
 
 ;;---------------------------------------------------------
 (define *%%_PROJECT_NAME_%%-version* "##PROJECT_VERSION##")

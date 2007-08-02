@@ -2,8 +2,6 @@
 ;; test kahua.config
 ;; Kahua.config モジュールのテスト
 
-;; $Id$
-
 (use gauche.test)
 
 (sys-system "rm -rf _work")

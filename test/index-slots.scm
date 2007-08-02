@@ -1,7 +1,6 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
 ;; Tests for Index Slots
 ;;
-;; $Id: index-slots.scm,v 1.6 2007/06/19 03:55:40 bizenn Exp $
 
 (use gauche.test)
 (use gauche.collection)

@@ -5,10 +5,6 @@
 ;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id: lambdacalcul.kahua,v 1.4 2007/06/27 05:22:43 bizenn Exp $
-;;
-;; This example shows simple application by kahua.
-;;
 
 (use srfi-1)
 

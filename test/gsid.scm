@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test gsid module
-;; $Id$
 
 (use gauche.test)
 (use gauche.net)

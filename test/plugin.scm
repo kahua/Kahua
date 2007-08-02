@@ -2,8 +2,6 @@
 ;; test plugin module.
 ;; Kahua.plugin モジュールのテスト
 
-;; $Id$
-
 (use gauche.test)
 (use file.util)
 (use kahua.sandbox)

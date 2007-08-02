@@ -3,7 +3,6 @@
 ;;  Copyright (c) 2005-2007 Tatsuya BIZENN.
 ;;
 ;; upload and download plugin
-;; $Id: fileio.scm,v 1.5 2007/06/29 09:01:23 bizenn Exp $
 
 (define-plugin "fileio"
   (version "0.7")

@@ -2,8 +2,6 @@
 ;; test kahua.persistence
 ;; Kahua.persistenceモジュールのテスト
 
-;; $Id$
-
 (use gauche.test)
 (use gauche.collection)
 (use file.util)

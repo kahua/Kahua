@@ -4,7 +4,6 @@
 ;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
-;; $Id$
 
 (define-module kahua.persistence
   (use srfi-1)

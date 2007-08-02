@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test supervisor's dead-lock
-;; $Id$
 
 (use srfi-1)
 (use gauche.test)
