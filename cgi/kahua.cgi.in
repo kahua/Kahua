@@ -163,11 +163,9 @@
 
 (define *worker-uri* (make-parameter #f))
 
-(define (analize-virtual-hosting)
-  (let1 path-info (cgi-get-metavariable "PATH_INFO")
-    (if (not path-info)
-        (cgi-metavariables)
-
+(define (analyze-virtual-hosting path-info)
+  (if (not path-info)
+      (cgi-metavariables)
       (let loop ((paths (cdr (string-split path-info #\/)))
                  (path-info '())
                  (metavariables (cgi-metavariables)))
@@ -194,11 +192,11 @@
 
          (else (loop (cdr paths)
                      (cons (car paths) path-info)
-                     metavariables)))))))
+                     metavariables))))))
 
-;; publish html. provide ~user authentication.
 (define (publisher params)
-  (parameterize ((cgi-metavariables (analize-virtual-hosting)))
+  (parameterize
+      ((cgi-metavariables (analyze-virtual-hosting (cgi-get-metavariable "PATH_INFO"))))
     (send-reply params)))
 
 (define (main args)
