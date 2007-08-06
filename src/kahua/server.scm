@@ -174,37 +174,19 @@
 (define (kahua-default-handler header body reply-cont default-proc . args)
   
   (let-keywords* args ((render-proc kahua-render-proc)
-                       (stale-proc kahua-stale-proc)
+                       (stale-proc kahua-default-stale-proc)
                        (eval-proc  kahua-eval-proc)
                        (eval-environment (find-module 'user))
-                       (error-proc #f))
+                       (error-proc kahua-default-error-proc))
 
     ;; (Handler, Context) -> (Stree, Context)
     (define (run-cont handler context)
       (parameterize ((kahua-current-context context))
-        (with-error-handler
-	  (lambda (e)
-	    ;; This is the last resort to capture an error.
-	    ;; App server should provide more appropriate error page
-	    ;; within its handler.
-	    (raise-with-db-error e)
-	    (values
-	     (html:html
-	      (html:head (html:title "Kahua error"))
-	      (html:body (html:pre
-			  (html-escape-string
-			   (kahua-error-string e #t)))))
-	     context))
-          (if error-proc
-	      (lambda ()
-		(with-error-handler
-                  (lambda (e)
-                    (raise-with-db-error e)
-                    (render-proc (error-proc e) context))
-		  (lambda ()
-		    (render-proc (reset/pc (handler)) context))))
-	      (lambda ()
-		(render-proc (reset/pc (handler)) context))))))
+	(guard (e (else
+		   (raise-with-db-error e)
+		   (guard (e2 (else (render-proc (kahua-default-error-proc e) context)))
+		     (render-proc (error-proc e) context))))
+	  (render-proc (reset/pc (handler)) context))))
 
     ;; Handles 'eval' protocol
     ;; () -> ([Headers], [Result])
@@ -281,10 +263,19 @@
   )
 
 ;; default stale proc
-(define (kahua-stale-proc)
-  `((html (head (title "Kahua error"))
-          (body (h1 "Kahua error - stale session key")
-                (p "The given session key is wrong, or expired.")))))
+(define (kahua-default-stale-proc)
+  `((html
+     (extra-header (@ (name "Status") (value "404 Not Found")))
+     (head (title "Kahua error"))
+     (body (h1 "Kahua error - stale session key")
+	   (p "The given session key is wrong, or expired.")))))
+
+;; default error proc
+(define (kahua-default-error-proc e)
+  `((html
+     (extra-header (@ (name "Status") (value "500 Internal Server Error")))
+     (head (title "Kahua error"))
+     (body (pre ,(html-escape-string (kahua-error-string e #t)))))))
 
 ;; default eval proc
 (define (kahua-eval-proc body env)
