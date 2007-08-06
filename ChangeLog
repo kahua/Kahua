@@ -1,3 +1,10 @@
+2007-08-06  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm
+	  kahua-stale-proc(kahua-default-stale-proc now) return with 404
+	  HTTP status,  and default error handler (kahua-default-error-proc
+	  now) return with 500 HTTP status.
+
 2007-07-31  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/persistence.scm
