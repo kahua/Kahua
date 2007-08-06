@@ -42,8 +42,6 @@
 
 	  ;; Global Getter
           kahua-timeout-mins
-	  kahua-ping-timeout-sec
-	  kahua-ping-interval-sec
           kahua-userconf-file
 	  kahua-auto-restart
 	  kahua-secure-sandbox
@@ -135,10 +133,6 @@
    (timeout-mins :init-keyword :timeout-mins
                  :init-value 60)
    
-   ;; ping setting
-   (ping-timeout-sec :init-keyword :ping-timeout-sec :init-value 120)
-   (ping-interval-sec :init-keyword :ping-interval-sec :init-value 30)
-
    ;; auto restart setting
    (auto-restart :init-keyword :auto-restart :init-value #f)
 
@@ -277,8 +271,6 @@
 (apply-define define-kahua-config-getter
 	      site-root
 	      timeout-mins
-	      ping-timeout-sec
-	      ping-interval-sec
 	      userconf-file
 	      secure-sandbox
 	      spvr-concurrency

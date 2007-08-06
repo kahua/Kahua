@@ -93,31 +93,26 @@
     (with-db (db dbname)
              (run-hook (kahua-hook-initial)))))
 
-(define (ping-request? header)
-  (assoc "x-kahua-ping" header))
-
 (define (handle-request header body reply-cont selector)
-  (if (ping-request? header)
-      (reply-cont #t #t)		; deprecated
-      (with-sigmask SIG_BLOCK *TERMINATION-SIGNALS*
-	(lambda ()
-	  (let1 db (current-db)
-	    (unless (kahua-db-ping db)
-	      (kahua-db-reopen db))
-	    (let1 do-reply (guard (e (else
-				      (log-format "[worker]: Unknown error: ~a" (ref e 'message))
-				      (lambda ()
-					(reply-cont '(("x-kahua-status" "ERROR")) (kahua-error-string e #t)))))
-			     (with-kahua-db-transaction db
-			       (lambda (db)
-				 (run-hook (kahua-hook-before))
-				 (begin0
-				   (kahua-default-handler header body reply-cont default-handler
-							  :error-proc (kahua-error-proc)
-							  :eval-environment (current-module))
-				   (run-hook (kahua-hook-after))))))
-	      (do-reply)))))
-      ))
+  (with-sigmask SIG_BLOCK *TERMINATION-SIGNALS*
+    (lambda ()
+      (let1 db (current-db)
+	(unless (kahua-db-ping db)
+	  (kahua-db-reopen db))
+	(let1 do-reply (guard (e (else
+				  (log-format "[worker]: Unknown error: ~a" (ref e 'message))
+				  (lambda ()
+				    (reply-cont '(("x-kahua-status" "ERROR"))
+						(kahua-error-string e #t)))))
+			 (with-kahua-db-transaction db
+			   (lambda (db)
+			     (run-hook (kahua-hook-before))
+			     (begin0
+			       (kahua-default-handler header body reply-cont default-handler
+						      :error-proc (kahua-error-proc)
+						      :eval-environment (current-module))
+			       (run-hook (kahua-hook-after))))))
+	  (do-reply))))))
 
 (define (default-handler) ((main-proc)))
 
