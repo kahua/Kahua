@@ -176,7 +176,7 @@
 (define (kahua-default-handler header body reply-cont default-proc . args)
   
   (let-keywords* args ((render-proc kahua-render-proc)
-                       (stale-proc kahua-stale-proc)
+                       (stale-proc kahua-default-stale-proc)
                        (eval-proc  kahua-eval-proc)
                        (eval-environment (find-module 'user))
                        (error-proc kahua-default-error-proc))
@@ -265,7 +265,7 @@
   )
 
 ;; default stale proc
-(define (kahua-stale-proc)
+(define (kahua-default-stale-proc)
   `((html
      (extra-header (@ (name "Status") (value "404 Not Found")))
      (head (title "Kahua error"))
