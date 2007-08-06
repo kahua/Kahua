@@ -179,14 +179,14 @@
                        (stale-proc kahua-stale-proc)
                        (eval-proc  kahua-eval-proc)
                        (eval-environment (find-module 'user))
-                       (error-proc kahua-error-proc))
+                       (error-proc kahua-default-error-proc))
 
     ;; (Handler, Context) -> (Stree, Context)
     (define (run-cont handler context)
       (parameterize ((kahua-current-context context))
 	(guard (e (else
 		   (raise-with-db-error e)
-		   (guard (e2 (else (render-proc (kahua-error-proc e) context)))
+		   (guard (e2 (else (render-proc (kahua-default-error-proc e) context)))
 		     (render-proc (error-proc e) context))))
 	  (render-proc (reset/pc (handler)) context))))
 
@@ -273,7 +273,7 @@
 	   (p "The given session key is wrong, or expired.")))))
 
 ;; default error proc
-(define (kahua-error-proc e)
+(define (kahua-default-error-proc e)
   `((html
      (extra-header (@ (name "Status") (value "500 Internal Server Error")))
      (head (title "Kahua error"))
