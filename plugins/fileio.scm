@@ -1,6 +1,7 @@
 ;; -*- mode: scheme; coding: utf-8 -*-
 ;;
-;;  Copyright (c) 2005-2007 Tatsuya BIZENN.
+;;  Copyright (c) 2005-2006 Tatsuya BIZENN.
+;;  Copyright (c) 2006-2007 Kahua Project, All rights reserved.
 ;;
 ;; upload and download plugin
 
