@@ -184,29 +184,21 @@
     ;; (Handler, Context) -> (Stree, Context)
     (define (run-cont handler context)
       (parameterize ((kahua-current-context context))
-        (with-error-handler
-	  (lambda (e)
-	    ;; This is the last resort to capture an error.
-	    ;; App server should provide more appropriate error page
-	    ;; within its handler.
-	    (raise-with-db-error e)
-	    (values
-	     (html:html
-	      (html:head (html:title "Kahua error"))
-	      (html:body (html:pre
-			  (html-escape-string
-			   (kahua-error-string e #t)))))
-	     context))
-          (if error-proc
-	      (lambda ()
-		(with-error-handler
-                  (lambda (e)
-                    (raise-with-db-error e)
-                    (render-proc (error-proc e) context))
-		  (lambda ()
-		    (render-proc (reset/pc (handler)) context))))
-	      (lambda ()
-		(render-proc (reset/pc (handler)) context))))))
+	(guard (e (else
+		   (raise-with-db-error e)
+		   (values
+		    (html:html
+		     (html:head (html:title "Kahua error"))
+		     (html:body (html:pre
+				 (html-escape-string
+				  (kahua-error-string e #t)))))
+		    context)))
+	  (if error-proc
+	      (guard (e (else
+			 (raise-with-db-error e)
+			 (render-proc (error-proc e) context)))
+		(render-proc (reset/pc (handler)) context))
+	      (render-proc (reset/pc (handler)) context)))))
 
     ;; Handles 'eval' protocol
     ;; () -> ([Headers], [Result])
