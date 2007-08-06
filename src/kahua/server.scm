@@ -266,14 +266,18 @@
 
 ;; default stale proc
 (define (kahua-stale-proc)
-  `((html (head (title "Kahua error"))
-          (body (h1 "Kahua error - stale session key")
-                (p "The given session key is wrong, or expired.")))))
+  `((html
+     (extra-header (@ (name "Status") (value "404 Not Found")))
+     (head (title "Kahua error"))
+     (body (h1 "Kahua error - stale session key")
+	   (p "The given session key is wrong, or expired.")))))
 
 ;; default error proc
 (define (kahua-error-proc e)
-  `((html (head (title "Kahua error"))
-	  (body (pre ,(html-escape-string (kahua-error-string e #t)))))))
+  `((html
+     (extra-header (@ (name "Status") (value "500 Internal Server Error")))
+     (head (title "Kahua error"))
+     (body (pre ,(html-escape-string (kahua-error-string e #t)))))))
 
 ;; default eval proc
 (define (kahua-eval-proc body env)
