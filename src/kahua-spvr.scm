@@ -423,18 +423,17 @@
 		    (wid-table-of spvr))
       (and k&v (cdr k&v))))
 
-  (with-locking spvr
-    (lambda ()
       (while (process-wait-any #t) => p
-	(and-let* ((w (find-worker-by-process p))
-		   (wtype (type-of w)))
-	  (%unregister-worker spvr wtype w)
-	  (log-worker-action "unexpected terminated worker" w)
-	  (when (kahua-auto-restart)
-	    (let1 w (%run-worker spvr wtype)
-	      (log-worker-action "restarted terminated worker type:" w)))
-	  )))))
-	
+	(with-locking spvr
+	  (lambda ()
+	    (and-let* ((w (find-worker-by-process p))
+		       (wtype (type-of w)))
+	      (%unregister-worker spvr wtype w)
+	      (log-worker-action "unexpected terminated worker" w)
+	      (when (kahua-auto-restart)
+		(let1 w (%run-worker spvr wtype)
+		  (log-worker-action "restarted terminated worker type:" w)))
+	      )))))
 
 ;; terminate all workers
 (define-method nuke-all-workers ((self <kahua-spvr>))
