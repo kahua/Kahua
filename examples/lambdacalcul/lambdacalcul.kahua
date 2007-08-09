@@ -81,9 +81,8 @@
 
     (define calcul
       (entry-lambda (:keyword expr)
-        (let1 x (with-error-handler
-                    (lambda (e) (input "文法が不正です" expr))
-                  (lambda () (read-from-string expr)))
+        (let1 x (guard (e (else (input "文法が不正です" expr)))
+                  (read-from-string expr))
           (cond ((eof-object? x) (input "" ""))
                 ((and (pair? x)
                       (eq? (car x) 'def))

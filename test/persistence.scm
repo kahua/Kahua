@@ -165,30 +165,25 @@
 ;;   再びトランザクションを開始して、永続インスタンスが変更されて
 ;;   いないことを確認する。
 (test* "abort transaciton" '(2 "hh" a "PP")
-       (with-error-handler
-           (lambda (e)
-             (with-clean-db (db *dbname*)
-               (list-slots (get-test-obj 2))))
-         (lambda ()
-           (with-clean-db (db *dbname*)
-             (set! (ref (get-test-obj 2) 'quick) 'whoops)
-             (error "abort!")))))
+       (guard (e (else (with-clean-db (db *dbname*)
+			 (list-slots (get-test-obj 2)))))
+	 (with-clean-db (db *dbname*)
+	   (set! (ref (get-test-obj 2) 'quick) 'whoops)
+	   (error "abort!"))))
 
 ;;   永続インスタンス変更後に一度中間commitしてからまたインスタンスを
 ;;   変更し、トランザクションをerrorで中断する。
 ;;   再びトランザクションを開始して、永続インスタンスが中間commitまでの
 ;;   変更を受け、それ以降の変更は受けていないことを確認する。
 (test* "commit & abort" '(2 whoops a "PP")
-       (with-error-handler
-           (lambda (e)
-             (with-clean-db (db *dbname*)
-               (list-slots (get-test-obj 2))))
-         (lambda ()
-           (with-clean-db (db *dbname*)
-             (set! (ref (get-test-obj 2) 'quick) 'whoops)
-             (kahua-db-sync db)
-             (set! (ref (get-test-obj 2) 'quock) 'whack)
-             (error "abort!")))))
+       (guard (e (else
+		  (with-clean-db (db *dbname*)
+		    (list-slots (get-test-obj 2)))))
+	 (with-clean-db (db *dbname*)
+	   (set! (ref (get-test-obj 2) 'quick) 'whoops)
+	   (kahua-db-sync db)
+	   (set! (ref (get-test-obj 2) 'quock) 'whack)
+	   (error "abort!"))))
 
 ;;----------------------------------------------------------
 ;; 永続オブジェクト間の参照に関するテスト

@@ -281,15 +281,12 @@
 
 ;; default eval proc
 (define (kahua-eval-proc body env)
-  (with-error-handler
-    (lambda (e)
-      (raise-with-db-error e)
-      (values #f (kahua-error-string e #t)))
-    (lambda ()
-      (receive r (eval body env)
-        (values #t
-                (map (cut write-to-string <>) r))))
-    ))
+  (guard (e (else
+	     (raise-with-db-error e)
+	     (values #f (kahua-error-string e #t))))
+    (receive r (eval body env)
+      (values #t
+	      (map (cut write-to-string <>) r)))))
 
 ;; default render proc
 ;; TODO: should apply interp-html-rec to all nodes!

@@ -21,9 +21,9 @@
 (define-syntax catch
   (syntax-rules ()
     ((_ body ...)
-     (with-error-handler
-      (lambda (e) #t)
-      (lambda () body ... #f)))))
+     (guard (e (else #t))
+       body ...
+       #f))))
 
 (define *test-dbm* #f)
 (define *current-dbm* #f)
