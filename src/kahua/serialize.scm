@@ -3,7 +3,6 @@
 ;; Please don't use this module for production:-)
 ;; Bytecode will change in future version.
 ;;
-;; $Id: serialize.scm,v 1.8 2006/01/10 15:30:43 tahara Exp $
 
 (define-module kahua.serialize
   (export serialize-string deserialize-string extension-register)
