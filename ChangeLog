@@ -1,3 +1,9 @@
+2007-08-10  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/persistence.scm
+	  sort method for <kahua-collection> is added for convenience
+	  that returns sorted list of instances of <kahua-collection>.
+
 2007-08-06  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/server.scm

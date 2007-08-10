@@ -85,7 +85,6 @@
 	  make-kahua-collection
 	  remove-kahua-instance
 	  make-kahua-collection-filter
-
 	  kahua-persistent-instances
 
 	  ;; for Check and fix database consistency.
@@ -1888,6 +1887,13 @@
   (let1 p (ref coll 'instances)
     (proc (cut null? p)
           (lambda () (let1 r (car p) (pop! p) r)))))
+
+(define sort (with-module gauche sort))
+(define-method sort ((kcol <kahua-collection>) . maybe-cmpfn)
+  (define (cmp-by-id obj1 obj2)
+    (< (kahua-persistent-id obj1) (kahua-persistent-id obj2)))
+  (sort (slot-ref kcol 'instances)
+	(get-optional maybe-cmpfn cmp-by-id)))
     
 ;;
 ;; Support for Class Redefinition
