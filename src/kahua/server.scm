@@ -1499,36 +1499,6 @@
 			  contents)))
 	context))
 
-;; DEAD CODE - OMITTED
-;;
-;;==========================================================
-;;  SXML tree interpreter - generates PDF
-;;
-;; interp-pdf :: Node -> Context -> Stree
-;(define (interp-pdf nodes context cont)
-;  (let ((data (reverse (map reverse-lines
-;                            (boxes-of-state
-;                             (exec/state (make-state 0 0 #t '() '())
-;                                         (interp-html-pdf nodes))))))
-;        (port (open-output-string)))
-;    (with-docdata-to-port port (lambda () data))
-;
-;    ;;for extra headers
-;    (receive (stree context)
-;        (interp-html-rec nodes context cont)
-;      (let1 headers (assoc-ref-car context "extra-headers" '())
-;        (cont
-;         (list (get-output-string port))
-;         (if (assoc "content-type" headers)
-;           context
-;           (cons `("extra-headers"
-;                   ,(kahua-merge-headers
-;                     headers '(("content-type" "application/pdf"))))
-;                 context)))))
-;    ))
-;
-;(add-interp! 'pdf interp-pdf)
-
 ;;===========================================================
 ;; SXML tree interpreter - for RSS
 ;;
