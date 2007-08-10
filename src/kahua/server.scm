@@ -256,7 +256,8 @@
 		    (assoc-ref-car context "extra-headers" '())
 		  (lambda ()
 		    (reply-cont
-		     (kahua-merge-headers header extra-headers
+		     (kahua-merge-headers (add-gsid-to-header '() state-id #f)
+					  extra-headers
 					  (hash-table-map
 					      (assoc-ref-car context "x-kahua-headers" '())
 					    list))

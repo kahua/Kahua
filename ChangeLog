@@ -1,5 +1,9 @@
 2007-08-10  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: src/kahua/server.scm
+	  Worker return only x-kahua-sgsid (instead of all headers passed
+	  from bridge program) and extra-headers and x-kahua-headers.
+
 	* Add: src/kahua/persistence.scm
 	  sort method for <kahua-collection> is added for convenience
 	  that returns sorted list of instances of <kahua-collection>.
