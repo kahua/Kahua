@@ -212,24 +212,15 @@
 
     ;; FIXME!!
     (define (make-context state header body)
-      (list*
-       `("session-state" ,state)
-       `("x-kahua-path-info"
-	 ,(drop* (assoc-ref-car header "x-kahua-path-info"
-				'())
-		 2))
-       `("x-kahua-path-full-info"
-	 ,(assoc-ref-car header "x-kahua-path-info"
-			 '()))
-       `("x-kahua-metavariables"
-	 ,(assoc-ref-car header "x-kahua-metavariables"
-			 '()))
-       `("x-kahua-headers" ,(make-hash-table 'string=?))
-       `("x-kahua-remote-addr"
-	 ,(assoc-ref-car header "x-kahua-remote-addr"))
-       `("x-kahua-worker-uri"
-	 ,(assoc-ref-car header "x-kahua-worker-uri"))
-       body))
+      `(("session-state" ,state)
+	,@(map (lambda (hdr)
+		 (receive (k v) (car+cdr hdr)
+		   (cond ((string=? "x-kahua-path-info" k)
+			  (list "x-kahua-path-info" (drop* (car v) 2)))
+			 (else hdr))))
+	       header)
+	("x-kahua-headers" ,(make-hash-table 'string=?))
+	,@body))
      
     ;; Main dispatcher body
     (receive (state-id cont-id) (get-gsid-from-header header)
@@ -865,7 +856,7 @@
      (begin
        (define-method name ()
          (parameterize ((kahua-current-entry-name (symbol->string 'name)))
-           (let1 path (kahua-context-ref "x-kahua-path-info")
+           (let1 path (kahua-context-ref "x-kahua-path-info" '())
              (apply name entry-specializer (path->objects path)))))
        (add-entry! 'name name)))))
 
