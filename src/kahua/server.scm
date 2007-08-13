@@ -237,7 +237,7 @@
 			    (make-context state header body))
 		(lambda ()
 		  (reply-cont
-		   (kahua-merge-headers (add-gsid-to-header '() state-id #f)
+		   (kahua-merge-headers (alist-delete "x-kahua-metavariables" header)
 					(assoc-ref-car context "extra-headers" '())
 					(hash-table-map
 					    (assoc-ref-car context "x-kahua-headers" '())
