@@ -210,7 +210,6 @@
 				       (get-output-string std-output)
 				       result)))))))
 
-    ;; FIXME!!
     (define (make-context state header body)
       `(("session-state" ,state)
 	,@(map (lambda (hdr)
