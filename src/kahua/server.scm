@@ -131,11 +131,10 @@
 ;;   Generates a self-referencing uri.  arguments has to be uriencoded.
 
 (define (kahua-self-uri . paths)
-  (simplify-path
-   (apply build-path
-	  (or (worker-uri)
-	      (format "~a/~a/" (kahua-bridge-name) (kahua-worker-type)))
-	  paths)))
+  (apply build-path
+	 (or (worker-uri)
+	     (format "~a/~a/" (kahua-bridge-name) (kahua-worker-type)))
+	 (simplify-path-info paths)))
 
 (define (kahua-self-uri-full . paths)
   (string-append (kahua-server-uri) (apply kahua-self-uri paths)))

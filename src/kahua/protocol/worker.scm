@@ -28,6 +28,7 @@
 	  kahua-worker-not-respond?
 	  kahua-worker-unknown-error?
 	  kahua-spvr-session-expired?
+	  simplify-path-info
 	  path->path-info
 	  path-info->abs-path
 	  normalize-path
@@ -110,20 +111,21 @@
 	  (values w-header w-body))))))
 
 ;; This function assumes path is already applied uri-decode-string.
+(define (simplify-path-info path-info)
+  (reverse!
+   (fold (lambda (comp res)
+	   (cond ((not comp) res)
+		 ((string-null? comp) res)
+		 ((string=? "." comp) res)
+		 ((string=? ".." comp)
+		  (if (null? res)
+		      res
+		      (cdr res)))
+		 (else (cons comp res))))
+	 '()
+	 path-info)))
+
 (define (path->path-info path)
-  (define (simplify-path-info path-info)
-    (reverse!
-     (fold (lambda (comp res)
-	     (cond ((not comp) res)
-		   ((string-null? comp) res)
-		   ((string=? "." comp) res)
-		   ((string=? ".." comp)
-		    (if (null? res)
-			res
-			(cdr res)))
-		   (else (cons comp res))))
-	   '()
-	   path-info)))
   (simplify-path-info (string-split path #[/])))
 
 (define (path-info->abs-path path-info)
