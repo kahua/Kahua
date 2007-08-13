@@ -1,3 +1,13 @@
+2007-08-13  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: examples/login/login.kahua
+	  Build URI of redirect location using kahua-self-uri-full
+	  intead of ad-hoc path building.
+
+	* Fix: src/kahua/server.scm
+	  Build path of return-cont or remote-cont using kahua-self-uri
+	  instead of ad-hoc path building.
+
 2007-08-11  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/server.scm
