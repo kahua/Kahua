@@ -1270,7 +1270,7 @@
         (format "~a/~a~a" (kahua-worker-type) id argstr)))
 
     (match clause
-      (((? string? ret)) (format "~a/~a" (kahua-bridge-name) ret))
+       (((? string? ret)) (kahua-self-uri ".." ret))
       (else (let* ((server-type (car clause))
 		   (cont-id (cadr clause))
 		   (return  (return-cont-uri))
@@ -1280,8 +1280,8 @@
 					    (if return
 						`(("return-cont" . ,return) ,@kargs)
 						kargs)))))
-	      (format "~a/~a/~a~a~a"
-		      (kahua-bridge-name) server-type cont-id argstr (fragment auxs)))))))
+	      (kahua-self-uri ".." (x->string server-type)
+			      #`",|cont-id|,|argstr|,(fragment auxs)"))))))
 
 (define-element a/cont (attrs auxs contents context cont)
 
