@@ -19,7 +19,9 @@
   (use gauche.parseopt)
   (use gauche.charconv)
   (use kahua.config)
-  (export kahua-error-string
+  (export *default-charset*
+	  make-content-type
+	  kahua-error-string
 	  <kahua-error>
 	  kahua-error?
 	  with-sigmask
@@ -41,6 +43,18 @@
 
 (define-condition-type <kahua-error> <error> kahua-error?)
 (define-condition-type <kahua-exception> <message-condition> kahua-exception?)
+
+(define-constant *default-charset*
+  (case (gauche-character-encoding)
+    ((utf-8)  'UTF-8)
+    ((euc-jp) 'EUC-JP)
+    ((sjis)   'Shift_JIS)
+    (else     #f)))
+
+(define (make-content-type ct)
+  (if *default-charset*
+      (format "~a; charset=~a" ct *default-charset*)
+      ct))
 
 ;; utility
 (define (ref-car cmp lis item . maybe-default)

@@ -83,13 +83,6 @@
   )
 (select-module kahua.server)
 
-(define-constant *default-charset*
-  (case (gauche-character-encoding)
-    ((utf-8)  'UTF-8)
-    ((euc-jp) 'EUC-JP)
-    ((sjis)   'Shift_JIS)
-    (else     #f)))
-
 ;; internally keep worker-id
 (define worker-id (make-parameter "dummy"))
 
@@ -242,18 +235,15 @@
 				(or (session-cont-get cont-id) stale-proc)
 				default-proc)
 			    (make-context state header body))
-		(let1 extra-headers
-		    (assoc-ref-car context "extra-headers" '())
-		  (lambda ()
-		    (reply-cont
-		     (kahua-merge-headers (add-gsid-to-header '() state-id #f)
-					  extra-headers
-					  (hash-table-map
-					      (assoc-ref-car context "x-kahua-headers" '())
-					    list))
-		     stree))))))
-        )))
-  )
+		(lambda ()
+		  (reply-cont
+		   (kahua-merge-headers (add-gsid-to-header '() state-id #f)
+					(assoc-ref-car context "extra-headers" '())
+					(hash-table-map
+					    (assoc-ref-car context "x-kahua-headers" '())
+					  list))
+		   stree)))))))
+    ))
 
 ;; default stale proc
 (define (kahua-default-stale-proc)
@@ -1445,16 +1435,24 @@
 ;; `(extra-header (@ (name ,name) (value ,value)))
 ;;
 
-(define-element extra-header (attrs auxs contents context cont)
-  (let* ((name    (assq-ref-car attrs 'name))
-         (value   (assq-ref-car attrs 'value))
-         (headers (assoc-ref-car context "extra-headers" '())))
-    (and name value
-         (cont '()
-               (cons `("extra-headers"
-                       ,(kahua-merge-headers headers `((,name ,value))))
-                     context)))))
+(define (add-extra-header context name value)
+  (let loop ((ctxt context)
+	     (done '()))
+    (if (null? ctxt)
+	(cons `("extra-headers" ((,name ,value))) context)
+	(let1 e (car ctxt)
+	  (if (string=? "extra-headers" (car e))
+	      (fold cons (cons `("extra-headers"
+				 ,(kahua-merge-headers (cadr e)
+						       `((,name ,value))))
+			       (cdr ctxt))
+		    done)
+	      (loop (cdr ctxt) (cons e done)))))))
 
+(define-element extra-header (attrs auxs contents context cont)
+  (and-let* ((name (assq-ref-car attrs 'name))
+	     (value (assq-ref-car attrs 'value)))
+    (cont '() (add-extra-header context name value))))
 
 ;; Conditional Comments for Internet Explorer
 ;; <!--[if gte IE 5]> IE 5.0 - 6.x
@@ -1496,24 +1494,16 @@
 
 (define interp-rss
   (let1 enc (symbol->string (gauche-character-encoding))
-        (lambda (nodes context cont)
-          (receive (stree context)
-             (interp-html-rec-bis nodes context cont)
-             (values
-              ;; Stree
-              (cons #`"<?xml version=\"1.0\" encoding=\",|enc|\" ?>\n"
-                    stree)
-              ;; Context
-              (let1 headers (assoc-ref-car context "extra-headers" '())
-                    (if (assoc "content-type" headers)
-                        context
-                        (cons `("extra-headers"
-                                ,(kahua-merge-headers
-                                  headers 
-                                  `(("content-type" 
-                                     ,#`"text/xml; charset=,|enc|"
-                                     ))))
-                              context))))))))
+    (lambda (nodes context cont)
+      (receive (stree context)
+	  (interp-html-rec-bis nodes context cont)
+	(values
+	 ;; Stree
+	 (cons #`"<?xml version=\"1.0\" encoding=\",|enc|\" ?>\n"
+	       stree)
+	 ;; Context
+	 (add-extra-header context "content-type"
+			   (make-content-type "text/xml")))))))
 
 (add-interp! 'rss interp-rss)
 
@@ -1527,26 +1517,18 @@
 ;;
 (define interp-xml
   (let1 enc (symbol->string (gauche-character-encoding))
-        (lambda (nodes context cont)
-          (receive (stree context)
-              ;; (cadr nodes) deletes xml symbol tag.
-              ;;
-             (interp-html-rec-bis (cadr nodes) context cont)
-             (values
-              ;; Stree
-              (cons #`"<?xml version=\"1.0\" encoding=\",|enc|\" ?>\n"
-                    stree)
-              ;; Context
-              (let1 headers (assoc-ref-car context "extra-headers" '())
-                    (if (assoc "content-type" headers)
-                        context
-                        (cons `("extra-headers"
-                                ,(kahua-merge-headers
-                                  headers 
-                                  `(("content-type" 
-                                     ,#`"text/xml; charset=,|enc|"
-                                     ))))
-                              context))))))))
+    (lambda (nodes context cont)
+      (receive (stree context)
+	  ;; (cadr nodes) deletes xml symbol tag.
+	  ;;
+	  (interp-html-rec-bis (cadr nodes) context cont)
+	(values
+	 ;; Stree
+	 (cons #`"<?xml version=\"1.0\" encoding=\",|enc|\" ?>\n"
+	       stree)
+	 ;; Context
+	 (add-extra-header context "content-type"
+			   (make-content-type "text/xml")))))))
 
 (add-interp! 'xml interp-xml)
 
@@ -1567,15 +1549,10 @@
 (define-constant *css-media-type* "text/css")
 
 (define (interp-css nodes context cont)
-  (let1 headers (assoc-ref-car context "extra-headers" '())
-    (cont
-     (parse-stylesheet (cdr nodes))
-     (if (assoc "content-type" headers)
-         context
-       (cons `("extra-headers"
-               ,(kahua-merge-headers
-                 headers `(("content-type" ,*css-media-type*))))
-             context)))))
+  (cont
+   (parse-stylesheet (cdr nodes))
+   (add-extra-header context "content-type"
+		     (make-content-type *css-media-type*))))
 
 (add-interp! 'css interp-css)
 
@@ -1638,15 +1615,9 @@
      ;; ((eq? x (void)) (display "null" p))
      (else (error "Invalid JSON object in interp-json" x))))
 
-  (let1 headers (assoc-ref-car context "extra-headers" '())
-    (cont (list "(" (x->json (cadr nodes)) ")\n")
-          (cons `("extra-headers"
-                  ,(kahua-merge-headers
-                    headers `(("content-type"
-			       ,(if *default-charset*
-				    (format "~a; charset=~a" *json-media-type* *default-charset*)
-				    *json-media-type*)))))
-                context))))
+  (cont (list "(" (x->json (cadr nodes)) ")\n")
+	(add-extra-header context "content-type"
+			  (make-content-type *json-media-type*))))
 
 (add-interp! 'json interp-json)
 

@@ -1,11 +1,24 @@
+2007-08-11  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/server.scm
+	  Add add-extra-header(internal) and arrange code that handle
+	  extra-header (almost content-type).
+
+	* Change: src/kahua/protocol/http.scm
+	  Use functionality below to define *default-content-type*.
+
+	* Change: src/kahua/util.scm
+	  Add *default-charset*(move from kahua.protocol.http) and
+          make-content-type.
+
 2007-08-10  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/server.scm
 	  Worker return only x-kahua-sgsid (instead of all headers passed
 	  from bridge program) and extra-headers and x-kahua-headers.
 
-	* Add: src/kahua/persistence.scm
-	  sort method for <kahua-collection> is added for convenience
+	* Change: src/kahua/persistence.scm
+	  Add sort method for <kahua-collection> is added for convenience
 	  that returns sorted list of instances of <kahua-collection>.
 
 2007-08-06  Tatsuya BIZENN  <bizenn@arthub.net>

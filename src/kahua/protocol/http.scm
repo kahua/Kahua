@@ -42,11 +42,7 @@
 	  ))
 (select-module kahua.protocol.http)
 
-(define-constant *default-content-type*
-  (let1 encoding (gauche-character-encoding)
-    (if (eq? 'none encoding)
-	"text/html"
-        (format "text/html; charset=~s" encoding))))
+(define-constant *default-content-type* (make-content-type "text/html"))
 
 (define (http-date t)
   (time->rfc1123-string t))
