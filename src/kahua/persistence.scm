@@ -1888,7 +1888,6 @@
     (proc (cut null? p)
           (lambda () (let1 r (car p) (pop! p) r)))))
 
-(define sort (with-module gauche sort))
 (define-method sort ((kcol <kahua-collection>) . maybe-cmpfn)
   (define (cmp-by-id obj1 obj2)
     (< (kahua-persistent-id obj1) (kahua-persistent-id obj2)))
