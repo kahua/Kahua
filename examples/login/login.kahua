@@ -126,10 +126,7 @@
     (html/ ;; Needed to make a single SXML node (for now)
      (extra-header/ (@/ (name "Status") (value "302 Moved")))
      (extra-header/ (@/ (name "Location")
-			(value (format "~a~a/~a"
-				       (kahua-server-uri)
-				       (kahua-bridge-name)
-				       path)))))))
+			(value (kahua-self-uri-full ".." path)))))))
 
 (initialize-main-proc login)
 
