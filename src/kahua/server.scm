@@ -1240,7 +1240,7 @@
         (format "~a/~a~a" (kahua-worker-type) id argstr)))
 
     (match clause
-      (((? string? ret)) (format "~a/~a" (kahua-bridge-name) ret))
+      (((? string? ret)) (kahua-self-uri ".." ret))
       (else (receive (pargs kargs) (extract-cont-args (cddr clause) 'a/cont)
 	      (let* ((server-type (car clause))
 		     (cont-id (cadr clause))
@@ -1248,8 +1248,8 @@
 		     (kargs (if return (cons `("return-cont" ,return) kargs) kargs))
 		     (params-proc (get-optional maybe-params-proc #f))
 		     (argstr (build-argstr pargs (if params-proc '() kargs)))
-		     (uri (format "~a/~a/~a~a~a"
-				  (kahua-bridge-name) server-type cont-id argstr (fragment auxs))))
+		     (uri (kahua-self-uri ".." (x->string server-type)
+					  #`",|cont-id|,|argstr|,(fragment auxs)")))
 		(if params-proc
 		    (values uri (params-proc kargs))
 		    uri)))))))
