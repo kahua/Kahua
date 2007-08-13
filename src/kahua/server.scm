@@ -34,6 +34,7 @@
   (use kahua.user)
   (use kahua.util)
   (use kahua.elem)
+  (use kahua.protocol.worker)
   (extend kahua.css)
   (export kahua-init-server
           kahua-bridge-name

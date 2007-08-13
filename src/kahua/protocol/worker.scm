@@ -7,8 +7,11 @@
 ;;  See COPYING for terms and conditions of using this software
 ;;
 (define-module kahua.protocol.worker
+  (use srfi-1)
+  (use srfi-13)
   (use util.list)
   (use util.match)
+  (use file.util)
   (use gauche.net)
   (use gauche.logger)
   (use kahua.gsid)
@@ -24,7 +27,12 @@
 	  kahua-worker-not-found?
 	  kahua-worker-not-respond?
 	  kahua-worker-unknown-error?
-	  kahua-spvr-session-expired?)
+	  kahua-spvr-session-expired?
+	  path->path-info
+	  path-info->abs-path
+	  normalize-path
+	  rel-path-info
+	  )
   )
 
 (select-module kahua.protocol.worker)
@@ -100,5 +108,37 @@
 	  (log-format "C<-W header: ~s" w-header)
 	  (check-kahua-status w-header w-body)
 	  (values w-header w-body))))))
+
+;; This function assumes path is already applied uri-decode-string.
+(define (path->path-info path)
+  (define (simplify-path-info path-info)
+    (reverse!
+     (fold (lambda (comp res)
+	     (cond ((not comp) res)
+		   ((string-null? comp) res)
+		   ((string=? "." comp) res)
+		   ((string=? ".." comp)
+		    (if (null? res)
+			res
+			(cdr res)))
+		   (else (cons comp res))))
+	   '()
+	   path-info)))
+  (simplify-path-info (string-split path #[/])))
+
+(define (path-info->abs-path path-info)
+  (if (null? path-info)
+      "/"
+      (string-join path-info "/" 'prefix)))
+
+(define normalize-path (compose path-info->abs-path path->path-info))
+
+(define (rel-path-info path-info base-info)
+  (let loop ((p path-info)
+	     (b base-info))
+    (cond ((null? b) p)
+	  ((null? p) #f)
+	  ((string=? (car p) (car b)) (loop (cdr p) (cdr b)))
+	  (else #f))))
 
 (provide "kahua/protocol/worker")
