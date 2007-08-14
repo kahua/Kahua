@@ -128,17 +128,24 @@
 	(string-append base spec))))
 
 (define (kahua-header->http-header kheader . maybe-path)
-  (let1 path (get-optional maybe-path "/")
-    (filter-map (lambda (e)
-		  (rxmatch-case (car e)
-		    (#/^x-kahua-sgsid$/ (#f)
-		       (cons "set-cookie" (construct-cookie-string
-					   `(("x-kahua-sgsid" ,(cadr e) :path ,path)))))
-		    (#/^x-kahua-/ (#f) #f)
-		    (#/(?i:^location$)/ (h)
-		       (list h (abs-uri (cadr e) (assoc-ref-car kheader "x-kahua-server-uri"))))
-		    (else e)))
-		kheader)))
+  (define (make-cookie e)
+    (cons "set-cookie"
+	  (construct-cookie-string
+	   (or (and-let* ((domain (assoc-ref-car kheader "x-kahua-session-domain")))
+		 (receive (scheme _ host port path _ _) (uri-parse domain)
+		   `(("x-kahua-sgsid" ,(cadr e)
+		      :domain ,host :path ,path :port ,(if port (x->string port) "80")
+		      :secure ,(equal? "https" scheme) :discard #t))))
+	       `(("x-kahua-sgsid" ,(cadr e) :discard #t))))))
+		      
+  (filter-map (lambda (e)
+		(rxmatch-case (car e)
+		  (#/^x-kahua-sgsid$/ (#f) (make-cookie e))
+		  (#/^x-kahua-/ (#f) #f)
+		  (#/(?i:^location$)/ (h)
+		     (list h (abs-uri (cadr e) (assoc-ref-car kheader "x-kahua-server-uri"))))
+		  (else e)))
+	      kheader))
 
 (define (send-http-header out header)
   (define (display-titlecase name)

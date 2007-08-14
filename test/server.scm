@@ -307,7 +307,7 @@
 	 '()
 	 '()
 	 (lambda (h b)
-	   (list (alist-delete "x-kahua-sgsid" h) b))
+	   (list (filter (lambda (e) (not (#/^x-kahua-/ (car e)))) h) b))
 	 (lambda ()
 	   '((extra-header (@ (name "foo") (value "bar"))))))))
 
@@ -316,7 +316,7 @@
 	 '()
 	 '()
 	 (lambda (h b)
-	   (alist-delete "x-kahua-sgsid" h))
+	   (filter (lambda (e) (not (#/^x-kahua-/ (car e)))) h))
 	 (lambda ()
 	   '((html
 	      (head

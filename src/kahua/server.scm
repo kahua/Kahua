@@ -34,6 +34,7 @@
   (use kahua.user)
   (use kahua.util)
   (use kahua.elem)
+  (use kahua.config)
   (use kahua.protocol.worker)
   (extend kahua.css)
   (export kahua-init-server
@@ -126,6 +127,8 @@
 ;;   The cgi-bridge tells this info to the app server.
 (define kahua-server-uri (make-parameter "http://localhost")) ;; dummy
 
+(define kahua-worker-uri (make-parameter #f))
+
 ;; KAHUA-SELF-URI path ...
 ;; KAHUA-SELF-URI-FULL path ...
 ;;   Generates a self-referencing uri.  arguments has to be uriencoded.
@@ -141,6 +144,34 @@
 
 (define (kahua-self-uri-full . paths)
   (string-append (kahua-server-uri) (apply kahua-self-uri paths)))
+
+(define (kahua-session-domain-uri)
+  (define (drop-worker-name paths)
+    (cond ((null? paths) (string-append (kahua-server-uri) "/"))
+	  (else (string-append (kahua-server-uri)
+			       (path-info->abs-path
+				(let1 paths (reverse! paths)
+				  (if (string=? (car paths) (kahua-worker-type))
+				      (reverse! (cdr paths))
+				      (reverse! paths))))))))
+  (define (site-domain-uri)
+    (cond ((path->path-info (kahua-worker-uri)) => drop-worker-name)
+	  (else
+	   (string-append (kahua-server-uri)
+			  (path-info->abs-path
+			   (simplify-path-info
+			    (append! (string-split (kahua-bridge-name) #\/)
+				     '(".."))))))))
+  (define (bridge-domain-uri)
+    (cond ((path->path-info (kahua-worker-uri)) => drop-worker-name)
+	  ((kahua-bridge-name) (compose not string-null?)
+	   => (cut string-append (kahua-server-uri) <>))
+	  (else (string-append (kahua-server-uri) "/"))))
+  (case (kahua-session-domain)
+    ((:site) (site-domain-uri))
+    ((:bridge) (bridge-domain-uri))
+    ((:worker) (kahua-self-uri-full))
+    (else => (lambda (d) (and (string? d) d)))))
 
 ;; KAHUA-DEFAULT-HANDLER header body reply-cont default-proc
 ;;                       &keyword stale-proc error-proc eval-proc
@@ -229,7 +260,9 @@
                        (kahua-server-uri
                         (assoc-ref-car header "x-kahua-server-uri"
                                        (kahua-server-uri)))
-                       )
+		       (kahua-worker-uri
+			(assoc-ref-car header "x-kahua-worker-uri"
+				       (kahua-worker-uri))))
           (if (assoc-ref-car header "x-kahua-eval" #f)
 	      (receive (headers result) (run-eval state)
 		(lambda ()
@@ -239,14 +272,16 @@
 				(or (session-cont-get cont-id) stale-proc)
 				default-proc)
 			    (make-context state header body))
-		(lambda ()
-		  (reply-cont
-		   (kahua-merge-headers (alist-delete "x-kahua-metavariables" header)
-					(assoc-ref-car context "extra-headers" '())
-					(hash-table-map
-					    (assoc-ref-car context "x-kahua-headers" '())
-					  list))
-		   stree)))))))
+		(let1 session-domain-uri (kahua-session-domain-uri)
+		  (lambda ()
+		    (reply-cont
+		     (kahua-merge-headers (cons `("x-kahua-session-domain" ,session-domain-uri)
+						(alist-delete "x-kahua-metavariables" header))
+					  (assoc-ref-car context "extra-headers" '())
+					  (hash-table-map
+					      (assoc-ref-car context "x-kahua-headers" '())
+					    list))
+		     stree))))))))
     ))
 
 ;; default stale proc
