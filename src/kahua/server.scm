@@ -35,6 +35,7 @@
   (use kahua.user)
   (use kahua.util)
   (use kahua.elem)
+  (use kahua.protocol.worker)
   (export kahua-init-server
           kahua-bridge-name
           kahua-server-uri
@@ -135,11 +136,13 @@
 ;;   Generates a self-referencing uri.  arguments has to be uriencoded.
 
 (define (kahua-self-uri . paths)
-  (simplify-path
-   (apply build-path
-	  (or (worker-uri)
-	      (format "~a/~a/" (kahua-bridge-name) (kahua-worker-type)))
-	  paths)))
+  (path-info->abs-path
+   (simplify-path-info
+    (cond ((worker-uri) =>
+	   (lambda (w) (append! (string-split w #\/) paths)))
+	  (else
+	   (append! (string-split (kahua-bridge-name) #\/)
+		    (cons (kahua-worker-type) paths)))))))
 
 (define (kahua-self-uri-full . paths)
   (string-append (kahua-server-uri) (apply kahua-self-uri paths)))
