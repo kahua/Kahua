@@ -79,11 +79,6 @@
     "SERVER_SOFTWARE"
     ))
 
-(define (cookie-path)
-  (or (*worker-uri*)
-      (sys-dirname
-       (or (cgi-get-metavariable "SCRIPT_NAME") "/"))))
-
 (define (metavariable-list)
   (filter-map (lambda (meta)
                 (and-let* ((meta-var (cgi-get-metavariable meta)))
@@ -91,7 +86,7 @@
               *metavariables*))
 
 (define (compose-reply header body)
-  (let1 header (kahua-header->http-header header (cookie-path))
+  (let1 header (kahua-header->http-header header)
     (list (if (assoc-ref-car header "content-type")
 	      header
 	      (assoc-set! header "content-type" *default-content-type*))

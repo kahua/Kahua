@@ -51,6 +51,7 @@
 	  kahua-spvr-concurrency
 	  kahua-httpd-concurrency
 	  kahua-keyserv-concurrency
+	  kahua-session-domain
           kahua-config-file
 
 	  ;; Utilities
@@ -151,6 +152,8 @@
    (httpd-concurrency :init-keyword :httpd-concurrency :init-value 10)
 
    (keyserv-concurrency :init-keyword :keyserv-concurrency :init-value 10)
+
+   (session-domain :init-keyword :session-domain :init-value :site)
 
    ;; internal
    (user-mode :init-value #f)
@@ -280,6 +283,7 @@
 	      spvr-concurrency
 	      httpd-concurrency
 	      keyserv-concurrency
+	      session-domain
 	      config-file)
 
 ;; Utilities
