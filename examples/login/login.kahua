@@ -124,7 +124,7 @@
 (define (redirect return-cont)
   (let ((path (or return-cont "")))
     (html/ ;; Needed to make a single SXML node (for now)
-     (extra-header/ (@/ (name "Status") (value "302 Moved")))
+     (extra-header/ (@/ (name "Status") (value "302 Found")))
      (extra-header/ (@/ (name "Location")
 			(value (kahua-self-uri-full ".." path)))))))
 
