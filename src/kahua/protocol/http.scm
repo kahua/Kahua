@@ -131,7 +131,7 @@
   (define (make-cookie e)
     (define (make-karg k v)
       (if v (list k (x->string v)) '()))
-    (cons "set-cookie"
+    (cons "set-cookie2"
 	  (construct-cookie-string
 	   (or (and-let* ((domain (assoc-ref-car kheader "x-kahua-session-domain")))
 		 (receive (scheme _ host port path _ _) (uri-parse domain)
