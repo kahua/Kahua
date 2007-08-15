@@ -129,13 +129,17 @@
 
 (define (kahua-header->http-header kheader . maybe-path)
   (define (make-cookie e)
+    (define (make-karg k v)
+      (if v (list k (x->string v)) '()))
     (cons "set-cookie"
 	  (construct-cookie-string
 	   (or (and-let* ((domain (assoc-ref-car kheader "x-kahua-session-domain")))
 		 (receive (scheme _ host port path _ _) (uri-parse domain)
 		   `(("x-kahua-sgsid" ,(cadr e)
-		      :domain ,host :path ,path :port ,(if port (x->string port) "80")
-		      :secure ,(equal? "https" scheme) :discard #t))))
+		      ,@(make-karg :domain host) ,@(make-karg :path path)
+		      ,@(make-karg :port (or port 80))
+		      ,@(make-karg :secure (equal? "https" scheme))
+		      :discard #t))))
 	       `(("x-kahua-sgsid" ,(cadr e) :discard #t))))))
 		      
   (filter-map (lambda (e)
