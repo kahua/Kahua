@@ -131,15 +131,18 @@
   (define (make-cookie e)
     (define (make-karg k v)
       (if v (list k (x->string v)) '()))
-    (cons "set-cookie2"
+    (cons "set-cookie"
 	  (construct-cookie-string
 	   (or (and-let* ((domain (assoc-ref-car kheader "x-kahua-session-domain")))
 		 (receive (scheme _ host port path _ _) (uri-parse domain)
 		   `(("x-kahua-sgsid" ,(cadr e)
-		      ,@(make-karg :domain host) ,@(make-karg :path path)
+		      ,@(make-karg :domain (and (not (equal? host "localhost")) host))
+		      ,@(make-karg :path path)
 		      ,@(make-karg :port (or port 80))
 		      ,@(make-karg :secure (equal? "https" scheme))
-		      :discard #t :version 1))))
+		      :discard #t
+		      :version 1
+		      ))))
 	       `(("x-kahua-sgsid" ,(cadr e) :discard #t :version 1))))))
 		      
   (filter-map (lambda (e)

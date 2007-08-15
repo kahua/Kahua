@@ -1528,22 +1528,31 @@
 	context))
 
 ;;===========================================================
+;; Text tree interpreter - for Plain Text
+;;
+;; interp-text ;; Nodes(Stree) -> Context -> Stree
+
+(define (interp-text nodes context cont)
+  (cont nodes (add-extra-header context "content-type"
+				(make-content-type "text/plain"))))
+
+(add-interp! 'text interp-text)
+
+;;===========================================================
 ;; SXML tree interpreter - for RSS
 ;;
 ;; interp-rss :: Node -> Context -> Stree
 
-(define interp-rss
-  (let1 enc (symbol->string (gauche-character-encoding))
-    (lambda (nodes context cont)
-      (receive (stree context)
-	  (interp-html-rec-bis nodes context cont)
-	(values
-	 ;; Stree
-	 (cons #`"<?xml version=\"1.0\" encoding=\",|enc|\" ?>\n"
-	       stree)
-	 ;; Context
-	 (add-extra-header context "content-type"
-			   (make-content-type "text/xml")))))))
+(define (interp-rss nodes context cont)
+  (receive (stree context)
+      (interp-html-rec-bis nodes context cont)
+    (values
+     ;; Stree
+     (cons #`"<?xml version=\"1.0\" encoding=\",|*default-charset*|\" ?>\n"
+	   stree)
+     ;; Context
+     (add-extra-header context "content-type"
+		       (make-content-type "text/xml")))))
 
 (add-interp! 'rss interp-rss)
 
