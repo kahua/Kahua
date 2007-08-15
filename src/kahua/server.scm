@@ -95,7 +95,8 @@
 
 ;; internally keep explicitly specified worker uri
 (define (worker-uri)
-  (kahua-context-ref "x-kahua-worker-uri"))
+  (or (kahua-worker-uri)
+      (kahua-context-ref "x-kahua-worker-uri")))
 
 ;; Context
 ;;  A context is established every time the control is passed from
