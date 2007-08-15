@@ -139,8 +139,8 @@
 		      ,@(make-karg :domain host) ,@(make-karg :path path)
 		      ,@(make-karg :port (or port 80))
 		      ,@(make-karg :secure (equal? "https" scheme))
-		      :discard #t))))
-	       `(("x-kahua-sgsid" ,(cadr e) :discard #t))))))
+		      :discard #t :version 1))))
+	       `(("x-kahua-sgsid" ,(cadr e) :discard #t :version 1))))))
 		      
   (filter-map (lambda (e)
 		(rxmatch-case (car e)
