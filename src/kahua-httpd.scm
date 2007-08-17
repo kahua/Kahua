@@ -78,7 +78,7 @@
 				("htm"  . "text/html")
 				("css"  . "text/css")
 				("js"   . "application/x-javascript")
-				("xml"  . "text/xml")
+				("xml"  . "application/xml")
 				("txt"  . "text/plain")))
 (define (mime-type ext)
   (assoc-ref *MIME-TYPES* ext "application/octet-stream"))
