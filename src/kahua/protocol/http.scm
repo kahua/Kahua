@@ -49,14 +49,10 @@
 ;;   () => #f #f #f #f () ()
 ;;   ("worker") => #f #f #f "worker" ("worker") ()
 ;;   ("worker" "arg1" ...) => #f #f #f "worker" ("worker") ("arg1" ...)
-;;   ("worker" "--vh--http:www.kahua.org:80" "worker-url" ... "--" "worker" "arg1" ...)
+;;   ("worker" "--vh--http:www.kahua.org:80" "worker-url" ... "--" "arg1" ...)
 ;;     => http "www.kahua.org" 80 "worker" ("worker-url" ...) ("arg1" ...)
 ;;   ("worker" "--vh--https:karetta.jp:443 "worker-url" ... "--" "arg1" ...)
 ;;     => https "karetta.jp" 443 "worker" ("worker-url" ...) ("arg1" ...)
-;;
-;; This function requires Gauche CVS 2006-09-29 or later.
-;; Earlier version Gauche's util.match has a bug that
-;; cannot handle returning multiple values properly.
 ;;
 (define (parse-path-info path-info)
   (define (vhosting str)
