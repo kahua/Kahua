@@ -1552,7 +1552,7 @@
 	   stree)
      ;; Context
      (add-extra-header context "content-type"
-		       (make-content-type "text/xml")))))
+		       (make-content-type "application/xml")))))
 
 (add-interp! 'rss interp-rss)
 
@@ -1577,7 +1577,7 @@
 	       stree)
 	 ;; Context
 	 (add-extra-header context "content-type"
-			   (make-content-type "text/xml")))))))
+			   (make-content-type "application/xml")))))))
 
 (add-interp! 'xml interp-xml)
 
