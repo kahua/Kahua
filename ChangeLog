@@ -1,3 +1,9 @@
+2007-08-17  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-httpd.scm
+	  Content-type of .xml document is application/xml
+	  instead of text/xml.
+
 2007-08-15  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/server.scm
