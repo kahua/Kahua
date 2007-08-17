@@ -1507,7 +1507,7 @@
                                 ,(kahua-merge-headers
                                   headers 
                                   `(("content-type" 
-                                     ,#`"text/xml; charset=,|enc|"
+                                     ,#`"application/xml; charset=,|enc|"
                                      ))))
                               context))))))))
 
@@ -1540,7 +1540,7 @@
                                 ,(kahua-merge-headers
                                   headers 
                                   `(("content-type" 
-                                     ,#`"text/xml; charset=,|enc|"
+                                     ,#`"application/xml; charset=,|enc|"
                                      ))))
                               context))))))))
 
