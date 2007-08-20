@@ -34,7 +34,6 @@ KAHUA_GROUP_OPTION= @KAHUA_GROUP_OPTION@
 DESTDIR           =
 
 KAHUA_CGI_DIR = @KAHUA_CGIDIR@
-KAHUA_CGILOG_DIR = @KAHUA_CGILOGDIR@
 
 SOCKET_BASE_DIR = $(prefix)/tmp/$(package)
 
@@ -55,12 +54,12 @@ all: $(SCRIPTS)
 
 kahua.cgi: kahua.cgi.in
 	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(localstatedir)" \
-		"$(SOCKET_BASE_DIR)" "$(KAHUA_CGILOG_DIR)" no kahua.cgi.in kahua.cgi
+		"$(SOCKET_BASE_DIR)" no kahua.cgi.in kahua.cgi
 	chmod -w $@
 
 $(FASTCGI_SCRIPT): kahua.cgi.in
 	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(localstatedir)" \
-		"$(SOCKET_BASE_DIR)" "$(KAHUA_CGILOG_DIR)" yes kahua.cgi.in $(FASTCGI_SCRIPT)
+		"$(SOCKET_BASE_DIR)" yes kahua.cgi.in $(FASTCGI_SCRIPT)
 	chmod -w $@
 
 check:

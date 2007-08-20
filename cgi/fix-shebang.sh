@@ -3,17 +3,16 @@ GOSH="$1"
 LIB="$2"
 WORKDIR="$3"
 SOCKBASE="$4"
-LOGPATH="$5"
-FASTCGIP="$6"
-SCRIPT_IN="$7"
-SCRIPT_OUT="$8"
+FASTCGIP="$5"
+SCRIPT_IN="$6"
+SCRIPT_OUT="$7"
 
 sed "1s@#!/usr/bin/env gosh@#!$GOSH@" $SCRIPT_IN > $SCRIPT.tmp && \
 mv $SCRIPT.tmp $SCRIPT.pre0 && \
 sed -e "s@##libdir##@$LIB@" \
     -e "s@##KAHUA_SOCKET_BASE##@$SOCKBASE@" \
     -e "s@##localstatedir##@$WORKDIR@" \
-    -e "s@##KAHUA_CGI_LOGPATH##@$LOGPATH@" $SCRIPT.pre0 > $SCRIPT.pre1 && \
+    $SCRIPT.pre0 > $SCRIPT.pre1 && \
 
 case $FASTCGIP in
     yes|y)

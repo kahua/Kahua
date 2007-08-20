@@ -31,10 +31,7 @@
 (use kahua.protocol.worker)
 ##ADDITIONAL_LIBS##
 
-;; Change this if you're using non-default log path
-(define-constant *LOG-PATH* "##KAHUA_CGI_LOGPATH##/kahua-cgi.log")
 (define-constant *LOG-PREFIX* "~Y ~T ~P[~$]: ")
-
 (define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP SIGPIPE))
 
 ;; send standard metavariables to worker.
@@ -93,10 +90,9 @@
 ;; returns: (worker-type cont-gsid path-info)
 (define (dispatch-destination params)
   (let* ((path-info   (get-path-info))
-         (cont-gsid   (or (cgi-get-parameter "x-kahua-cgsid" params)
-                          (if (and path-info (pair? (cdr path-info)))
-                            (cadr path-info)
-                            #f)))
+         (cont-gsid   (cond ((cgi-get-parameter "x-kahua-cgsid" params) => values)
+			    ((and path-info (pair? (cdr path-info))) (cadr path-info))
+			    (else #f)))
          (worker-type (and path-info (car path-info))))
     (values worker-type cont-gsid path-info)))
 
@@ -116,31 +112,6 @@
                     (and (string=? scheme "https") (= port 443)))
                  ""
                  #`":,port"))))
-
-;; prepare headers and dispatch the request to the appropriate server,
-;; then receives the reply and forward it to the client.
-(define (send-reply param)
-  (receive (worker-type cont-gsid path-info)
-      (dispatch-destination param)
-    (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
-           (remote-addr (or (and-let* ((xff (cgi-get-metavariable "HTTP_X_FORWARDED_FOR"))
-				       (hops (string-split xff #/\, */)))
-			      (and (pair? hops) (car hops)))
-			    (cgi-get-metavariable "REMOTE_ADDR")))
-           (header (kahua-worker-header worker-type path-info
-					:server-uri (server-uri)
-					:worker-uri (*worker-uri*)
-					:metavariables (metavariable-list)
-					:sgsid state-gsid
-					:cgsid cont-gsid
-					:remote-addr remote-addr
-					:bridge (cgi-get-metavariable "SCRIPT_NAME"))))
-      (for-each (lambda (f)
-		  (if (file-exists? f)
-		      (sys-chmod f #o660)))
-		(cgi-temporary-files))
-      (receive (header body) (talk-to-worker cont-gsid header param)
-	(compose-reply header body)))))
 
 (define *worker-uri* (make-parameter #f))
 
@@ -175,6 +146,31 @@
                      (cons (car paths) path-info)
                      metavariables))))))
 
+;; prepare headers and dispatch the request to the appropriate server,
+;; then receives the reply and forward it to the client.
+(define (send-reply param)
+  (receive (worker-type cont-gsid path-info)
+      (dispatch-destination param)
+    (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
+           (remote-addr (or (and-let* ((xff (cgi-get-metavariable "HTTP_X_FORWARDED_FOR"))
+				       (hops (string-split xff #/\, */)))
+			      (and (pair? hops) (car hops)))
+			    (cgi-get-metavariable "REMOTE_ADDR")))
+           (header (kahua-worker-header worker-type path-info
+					:server-uri (server-uri)
+					:worker-uri (*worker-uri*)
+					:metavariables (metavariable-list)
+					:sgsid state-gsid
+					:cgsid cont-gsid
+					:remote-addr remote-addr
+					:bridge (cgi-get-metavariable "SCRIPT_NAME"))))
+      (for-each (lambda (f)
+		  (if (file-exists? f)
+		      (sys-chmod f #o660)))
+		(cgi-temporary-files))
+      (receive (header body) (talk-to-worker cont-gsid header param)
+	(compose-reply header body)))))
+
 (define (publisher params)
   (parameterize
       ((cgi-metavariables (analyze-virtual-hosting (cgi-get-metavariable "PATH_INFO"))))
@@ -187,7 +183,7 @@
       (display "\r\n" out)
       (send-http-body out (cgi-output-character-encoding) (cadr sexp))))
   (kahua-common-init #f #f)
-  (log-open *LOG-PATH* :prefix *LOG-PREFIX*)
+  (log-open (kahua-cgilogpath "kahua-cgi.log") :prefix *LOG-PREFIX*)
   (call/cc
    (lambda (bye)
      (define (cleanup) (for-each sys-unlink (cgi-temporary-files)))

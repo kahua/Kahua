@@ -1,3 +1,10 @@
+2007-08-20  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/config.scm.in, src/Makefile.in
+	          cgi/kahua.cgi.in, cgi/fix-shebang.sh, cgi/Makefile.in
+	  Add new procedures "kahua-cgilog-directory" and "kahua-cgilogpath".
+	  So now kahua.fcg or kahua.cgi get log directory from kahua.conf.
+
 2007-08-17  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua-httpd.scm, src/kahua/server.scm

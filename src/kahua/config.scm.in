@@ -36,6 +36,7 @@
 	  kahua-data-directory
 	  kahua-temporary-directory
 	  kahua-log-directory
+	  kahua-cgilog-directory
 	  kahua-run-directory
 	  kahua-etc-directory
 	  kahua-default-database-name
@@ -57,6 +58,7 @@
 	  kahua-dbpath
 	  kahua-datapath
           kahua-logpath
+	  kahua-cgilogpath
 	  kahua-spvr-pidpath
           kahua-keyserv-pidpath
 	  kahua-httpd-pidpath
@@ -114,6 +116,8 @@
 			:init-value "tmp" :place :wdir)
 
    (log-directory :init-keyword :log-directory :init-value "logs" :place :wdir)
+   (cgilog-directory :init-keyword :cgilog-directory :init-value "##KAHUA_CGI_LOGPATH##"
+		     :place :site)
    (run-directory :init-keyword :run-directory :init-value "" :place :wdir)
    (etc-directory :init-keyword :etc-directory :init-value "##sysconfdir##" :place :site)
 
@@ -262,6 +266,7 @@
 	      data-directory
 	      temporary-directory
 	      log-directory
+	      cgilog-directory
 	      run-directory
 	      etc-directory
 	      default-database-name
@@ -315,6 +320,9 @@
 
 (define (kahua-logpath filename)
   (build-path (kahua-log-directory) filename))
+
+(define (kahua-cgilogpath filename)
+  (build-path (kahua-cgilog-directory) filename))
 
 (define (kahua-pidpath file)
   (build-path (kahua-run-directory) file))

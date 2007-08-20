@@ -33,6 +33,7 @@ INSTALL_TYPE           = @INSTALL_TYPE@
 SCM_INSTALL_DIR        = $(libdir)
 SCRIPT_INSTALL_DIR     = $(bindir)
 KAHUA_STATICDIR        = @KAHUA_STATICDIR@
+KAHUA_CGILOG_DIR       = @KAHUA_CGILOGDIR@
 SOCKET_BASE_DIR        = $(prefix)/tmp/$(package)
 TMP_BASE_DIR           = $(localstatedir)/tmp
 
@@ -127,6 +128,7 @@ kahua/config.scm: kahua/config.scm.in
 	    -e "s@##localstatedir##@$(localstatedir)@" \
 	    -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" \
 	    -e "s@##KAHUA_STATICDIR##@$(KAHUA_STATICDIR)@" \
+	    -e "s@##KAHUA_CGI_LOGPATH##@$(KAHUA_CGILOG_DIR)@" \
 	    -e "s@##package##@$(package)@" \
 	    -e "s@##KAHUA_VERSION##@$(package_version)@" \
             $@.in > $@
