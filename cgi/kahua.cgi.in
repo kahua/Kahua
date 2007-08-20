@@ -19,26 +19,16 @@
 
 (add-load-path "##libdir##")
 
-(use gauche.net)
-(use gauche.charconv)
 (use gauche.logger)
 (use gauche.parameter)
 (use srfi-1)
-(use srfi-2)
 (use srfi-13)
-(use srfi-19)
 (use www.cgi)
 (use util.list)
-(use rfc.cookie)
-(use text.tree)
-(use text.html-lite)
 (use kahua.util)
-(use kahua.gsid)
 (use kahua.config)
-(use kahua.developer)
 (use kahua.protocol.http)
 (use kahua.protocol.worker)
-(use file.util)
 ##ADDITIONAL_LIBS##
 
 ;; Change this if you're using non-default log path
@@ -92,10 +82,10 @@
 ;; retrieve PATH_INFO, with processing ~user component.
 ;; returns #f if there's no PATH_INFO.
 (define (get-path-info)
+  (define string-not-null? (compose not string-null?))
   (and-let* ((p (cgi-get-metavariable "PATH_INFO"))
              (l (cdr (string-split p #\/)))
 	     ((pair? l))
-	     (string-not-null? (compose not string-null?))
 	     ((string-not-null? (car l))))
     (filter string-not-null? l)))
 
