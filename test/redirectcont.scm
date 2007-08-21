@@ -40,29 +40,32 @@
  (test* "run redirectcont.kahua" #t (worker-running? w))
 
  (test* "header->sxml"
-        '(*TOP* (!contain (Status "302 Found")
-                          (Location ?&)))
-        (call-worker/gsid
-         w
-         '()
-         '(("arg" "aaaa")
-           )
-         header->sxml)
+        '(*TOP* (!contain (Status "302 Found") (Location ?&)))
+        (call-worker/gsid w '() '(("arg" "aaaa")) header->sxml)
         (make-match&pick w))
 
  (test* "next acont.kahua"
-        '(*TOP* (html (body "aaaa"
-                            (a (@ (href ?&)) "top"))))
+        '(*TOP* (html (body "aaaa" (a (@ (href ?&)) "top"))))
         (call-worker/gsid->sxml w '() '())
         (make-match&pick w))
 
  (test/send&pick "test/send&pick" w '())
 
  (test* "next acont.kahua"
-        '(*TOP* (html (body ?@
-                            (a (@ (href ?&)) "top"))))
+        '(*TOP* (html (body ?@ (a (@ (href ?&)) "top"))))
         (call-worker/gsid->sxml w '() '())
         (make-match&pick w))
+
+ (test* "header->sxml"
+	'(*TOP* (!contain (Status "303 See Other") (Location ?&)))
+	(call-worker/gsid w '(("x-kahua-cgsid" "redirectcont/second"))
+			  '(("arg" "bbbb")) header->sxml)
+	(make-match&pick w))
+
+ (test* "next acont.kahua"
+	'(*TOP* (html (body "bbbb" (a (@ (href ?&)) "top"))))
+	(call-worker/gsid->sxml w '() '())
+	(make-match&pick w))
  )
 
 (test-end)

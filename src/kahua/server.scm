@@ -36,6 +36,7 @@
   (use kahua.elem)
   (use kahua.config)
   (use kahua.protocol.worker)
+  (use kahua.protocol.http)
   (extend kahua.css)
   (export kahua-init-server
           kahua-bridge-name
@@ -1401,19 +1402,19 @@
      (%redirect/cont% (list (list 'name var ...) ...)))))
 
 (define (%redirect/cont% auxs)
-
-  (define (nodes path)
+  (define (nodes path status)
     (let/pc pc
       `((html (extra-header
-               (@ (name "Status") (value "302 Found")))
-              (extra-header
-               (@ (name "Location")
-                  (value ,path)))))))
+	       (@ (name "Status") (value ,(http-status-string status 'HTTP/1.1)))) ; FIXME!!
+	      (extra-header
+	       (@ (name "Location") (value ,path)))))))
 
-  (cond ((assq-ref auxs 'cont) => (compose nodes (local-cont auxs)))
-        ((assq-ref auxs 'remote-cont) => (compose nodes (remote-cont auxs)))
-        (else (nodes (kahua-self-uri (fragment auxs))))))
-
+  (let1 status (assq-ref-car auxs 'status 302)
+    (cond ((assq-ref auxs 'cont) =>
+	   (compose (cut nodes <> status) (local-cont auxs)))
+	  ((assq-ref auxs 'remote-cont) =>
+	   (compose (cut nodes <> status) (remote-cont auxs)))
+	  (else (nodes (kahua-self-uri (fragment auxs)) status)))))
 
 ;;
 ;; script

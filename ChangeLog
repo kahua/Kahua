@@ -1,5 +1,10 @@
 2007-08-21  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: src/kahua/server.scm, test/redirectcont.kahua
+	          test/redirectcont.scm
+	  Now redirect/cont specify status code like this:
+	  (redirect/cont (cont entry arg1 arg2) (status 303))
+
 	* Change: cgi/kahua.cgi.in
 	  Drop "PATH", "SERVER_ADMIN", "SERVER_SIGNATURE", "DOCUMENT_ROOT",
 	  "KAHUA_DEFAULT_SITE" from metavariables explicitly.

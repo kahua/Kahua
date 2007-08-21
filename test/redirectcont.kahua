@@ -1,14 +1,17 @@
 ;; -*- coding: utf-8 ; mode: kahua -*-
 
-(define-entry (redirectcont/start :keyword arg)
+(define-entry (redirectcont/first :keyword arg)
   (redirect/cont (cont next `(arg ,arg))))
+
+(define-entry (redirectcont/second :keyword arg)
+  (redirect/cont (cont next `(arg ,arg)) (status 303)))
 
 (define-entry (next :keyword arg)
   (page-frame
-   (or arg '())
-   (a/cont: "top")))
+   (or arg empty)
+   (a/cont/ "top")))
 
 (define (page-frame . contents)
-  (node-set: (html: (body: (node-list-to-node-set contents)))))
+  (html/ (apply body/ contents)))
 
-(initialize-main-proc redirectcont/start)
+(initialize-main-proc redirectcont/first)
