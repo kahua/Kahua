@@ -32,6 +32,8 @@
 ##ADDITIONAL_LIBS##
 
 (define-constant *LOG-PREFIX* "~Y ~T ~P[~$]: ")
+(define-constant *OMIT-FIELDS*
+  '("PATH" "SERVER_SIGNATURE" "SERVER_ADMIN" "DOCUMENT_ROOT" "KAHUA_DEFAULT_SITE"))
 (define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP SIGPIPE))
 
 (define (compose-reply header body)
@@ -104,6 +106,7 @@
 		 (k (car e)))
 	    (cond ((assoc k mv-list) =>
 		   (lambda (e) (loop (cons e accum) (cdr cmv) (alist-delete k mv-list equal?))))
+		  ((member k *OMIT-FIELDS*) (loop accum (cdr cmv) mv-list))
 		  (else (loop (cons e accum) (cdr cmv) mv-list)))))))
   (receive (scheme host port worker worker-uri paths)
       (parse-path-info (path->path-info (cgi-get-metavariable "PATH_INFO")))

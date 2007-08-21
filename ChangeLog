@@ -1,5 +1,9 @@
 2007-08-21  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: cgi/kahua.cgi.in
+	  Drop "PATH", "SERVER_ADMIN", "SERVER_SIGNATURE", "DOCUMENT_ROOT",
+	  "KAHUA_DEFAULT_SITE" from metavariables explicitly.
+
 	* Change: src/kahua/protocol/worker.scm, src/kahua/protocol/http.scm,
 	          cgi/kahua.cgi.in
 	  Use kahua.protocol.http/worker module and drop extra(dead) code.
