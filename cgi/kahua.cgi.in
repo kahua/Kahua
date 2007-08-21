@@ -87,8 +87,8 @@
 					:remote-addr remote-addr
 					:bridge (cgi-get-metavariable "SCRIPT_NAME"))))
       (for-each (lambda (f)
-		  (if (file-exists? f)
-		      (sys-chmod f #o660)))
+		  (when (file-exists? f)
+		    (sys-chmod f #o660)))
 		(cgi-temporary-files))
       (receive (header body) (talk-to-worker cont-gsid header param)
 	(compose-reply header body)))))
