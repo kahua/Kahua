@@ -1,3 +1,9 @@
+2007-08-21  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/protocol/worker.scm, src/kahua/protocol/http.scm,
+	          cgi/kahua.cgi.in
+	  Use kahua.protocol.http/worker module and drop extra(dead) code.
+
 2007-08-20  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/config.scm.in, src/Makefile.in

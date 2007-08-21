@@ -4,7 +4,7 @@ dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
 AC_PREREQ(2.59)
-AC_INIT(kahua, 1.1_pre15, info@kahua.org)
+AC_INIT(kahua, 1.1_pre16, info@kahua.org)
 AC_GAUCHE_INIT_EXT
 
 AC_SUBST(PACKAGE_NAME)
