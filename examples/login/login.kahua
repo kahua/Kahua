@@ -14,7 +14,7 @@
 (use file.util)
 (use gauche.logger)
 
-(kahua:log-open (kahua-logpath "login.log"))
+(log-open (kahua-logpath "login.log"))
 
 ;; The application server can put a link to login manager like this:
 ;;

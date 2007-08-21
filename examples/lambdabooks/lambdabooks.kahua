@@ -13,7 +13,7 @@
 (use util.list)
 (use srfi-2)
 
-(kahua:log-open (kahua-logpath "lambdabooks.log"))
+(log-open (kahua-logpath "lambdabooks.log"))
 
 (load "lambdabooks/login.kahua")
 (load "lambdabooks/lister.kahua")
