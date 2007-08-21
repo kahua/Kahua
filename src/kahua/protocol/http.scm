@@ -46,9 +46,9 @@
 ;; Elements of path-info must be decoded.
 ;;
 ;; e.g.
-;;   () => #f #f #f #f () ()
-;;   ("worker") => #f #f #f "worker" ("worker") ()
-;;   ("worker" "arg1" ...) => #f #f #f "worker" ("worker") ("arg1" ...)
+;;   () => #f #f #f #f #f ()
+;;   ("worker") => #f #f #f "worker" #f ()
+;;   ("worker" "arg1" ...) => #f #f #f "worker" #f ("arg1" ...)
 ;;   ("worker" "--vh--http:www.kahua.org:80" "worker-url" ... "--" "arg1" ...)
 ;;     => http "www.kahua.org" 80 "worker" ("worker-url" ...) ("arg1" ...)
 ;;   ("worker" "--vh--https:karetta.jp:443 "worker-url" ... "--" "arg1" ...)
@@ -63,11 +63,11 @@
 	       (host (rxmatch-after m)))
       (rxmatch-case host
 	(#/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/ ; IPv4 address w/ port
-	    (#f h p) (values scheme h (x->integer p)))
+	    (#f h p) (values scheme h p))
 	(#/^\[([0-9A-Fa-f:]+)\]:(\d+)$/                  ; IPv6 address w/ port
-	      (#f h p) (values scheme h (x->integer p)))
+	      (#f h p) (values scheme h p))
 	(#/^([-a-zA-Z0-9.]+):(\d+)$/                     ; Host name
-	    (#f h p) (values scheme h (x->integer p)))
+	    (#f h p) (values scheme h p))
 	(else (fail-cont)))))
   (define (split-by ls pred?)
     (let loop ((head '())
@@ -87,8 +87,8 @@
       ((worker (= vhosting vhost) . args) (=> next)
        (receive (scheme host port) (parse-vhost vhost next)
 	 (apply values scheme host port worker (split-by args (pa$ equal? "--")))))
-      ((worker . args) (values #f #f #f worker (list worker) args))
-      (()              (values #f #f #f #f '() '())))))
+      ((worker . args) (values #f #f #f worker #f args))
+      (()              (values #f #f #f #f #f '())))))
 
 ;; Now support method GET, HEAD, POST only.
 (define (unsupported-method? method)

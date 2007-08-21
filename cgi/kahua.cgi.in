@@ -34,41 +34,6 @@
 (define-constant *LOG-PREFIX* "~Y ~T ~P[~$]: ")
 (define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP SIGPIPE))
 
-;; send standard metavariables to worker.
-(define *metavariables*
-  '("AUTH_TYPE"
-    "CONTENT_LENGTH"
-    "CONTENT_TYPE"
-    "GATEWAY_INTERFACE"
-    "HTTP_ACCEPT"
-    "HTTP_ACCEPT_CHARSET"
-    "HTTP_ACCEPT_ENCODING"
-    "HTTP_ACCEPT_LANGUAGE"
-    "HTTP_COOKIE"
-    "HTTP_HOST"
-    "HTTP_KEEP_ALIVE"
-    "HTTP_USER_AGENT"
-    "HTTP_X_FORWARDED_FOR"
-    "PATH_INFO"
-    "PATH_TRANSLATED"
-    "REMOTE_ADDR"
-    "REMOTE_HOST"
-    "REMOTE_IDENT"
-    "REMOTE_USER"
-    "REQUEST_METHOD"
-    "SCRIPT_NAME"
-    "SERVER_NAME"
-    "SERVER_PORT"
-    "SERVER_PROTOCOL"
-    "SERVER_SOFTWARE"
-    ))
-
-(define (metavariable-list)
-  (filter-map (lambda (meta)
-                (and-let* ((meta-var (cgi-get-metavariable meta)))
-                  (list meta meta-var)))
-              *metavariables*))
-
 (define (compose-reply header body)
   (let1 header (kahua-header->http-header header)
     (list (if (assoc-ref-car header "content-type")
@@ -76,25 +41,14 @@
 	      (assoc-set! header "content-type" *default-content-type*))
 	  body)))
 
-;; retrieve PATH_INFO, with processing ~user component.
-;; returns #f if there's no PATH_INFO.
-(define (get-path-info)
-  (define string-not-null? (compose not string-null?))
-  (and-let* ((p (cgi-get-metavariable "PATH_INFO"))
-             (l (cdr (string-split p #\/)))
-	     ((pair? l))
-	     ((string-not-null? (car l))))
-    (filter string-not-null? l)))
-
 ;; determine dispatch destination.
-;; returns: (worker-type cont-gsid path-info)
-(define (dispatch-destination params)
-  (let* ((path-info   (get-path-info))
-         (cont-gsid   (cond ((cgi-get-parameter "x-kahua-cgsid" params) => values)
-			    ((and path-info (pair? (cdr path-info))) (cadr path-info))
-			    (else #f)))
-         (worker-type (and path-info (car path-info))))
-    (values worker-type cont-gsid path-info)))
+;; returns: worker-type cont-gsid
+(define (dispatch-destination params path-info)
+  (let1 cgsid (cgi-get-parameter "x-kahua-cgsid" params)
+    (cond ((null? path-info) (values #f cgsid))
+	  ((pair? (cdr path-info))
+	   (values (car path-info) (or cgsid (cadr path-info))))
+	  (else (values (car path-info) cgsid)))))
 
 ;; construct absolute uri for the server root.
 ;; note that we can only guess the protocol scheme.
@@ -113,53 +67,21 @@
                  ""
                  #`":,port"))))
 
-(define *worker-uri* (make-parameter #f))
-
-(define (analyze-virtual-hosting path-info)
-  (if (not path-info)
-      (cgi-metavariables)
-      (let loop ((paths (cdr (string-split path-info #\/)))
-                 (path-info '())
-                 (metavariables (cgi-metavariables)))
-        (cond
-         ;; finish
-         ((null? paths) (cons (list "PATH_INFO"
-                                    (string-join (reverse path-info) "/" 'prefix))
-                              metavariables))
-
-         ;; set virtual hosting
-         ((#/--vh--(https?):([^:]*):(\d+)/ (car paths))
-          => (lambda (m)
-               (let1 idx (list-index (pa$ equal? "--") (cdr paths))
-                 (*worker-uri*
-                  (format "~a/"
-                          (string-join (take (cdr paths) idx) "/" 'prefix)))
-                 (loop (drop (cdr paths) (+ idx 1))
-                       path-info
-                       `(("HTTPS" ,(if (equal? "https" (m 1))
-                                       "on" #f))
-                         ("SERVER_NAME" ,(m 2))
-                         ("SERVER_PORT" ,(m 3))
-                         ,@metavariables)))))
-
-         (else (loop (cdr paths)
-                     (cons (car paths) path-info)
-                     metavariables))))))
-
 ;; prepare headers and dispatch the request to the appropriate server,
 ;; then receives the reply and forward it to the client.
-(define (send-reply param)
-  (receive (worker-type cont-gsid path-info)
-      (dispatch-destination param)
+(define (send-reply param path-info worker-uri)
+  (receive (worker-type cont-gsid)
+      (dispatch-destination param path-info)
     (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
            (remote-addr (or (and-let* ((xff (cgi-get-metavariable "HTTP_X_FORWARDED_FOR"))
 				       (hops (string-split xff #/\, */)))
 			      (and (pair? hops) (car hops)))
 			    (cgi-get-metavariable "REMOTE_ADDR")))
+	   (worker-uri (and worker-uri #`",(string-join worker-uri \"/\" 'prefix)/"))
            (header (kahua-worker-header worker-type path-info
 					:server-uri (server-uri)
-					:worker-uri (*worker-uri*)
-					:metavariables (metavariable-list)
+					:worker-uri worker-uri
+					:metavariables (cgi-metavariables)
 					:sgsid state-gsid
 					:cgsid cont-gsid
 					:remote-addr remote-addr
@@ -172,9 +94,27 @@
 	(compose-reply header body)))))
 
 (define (publisher params)
-  (parameterize
-      ((cgi-metavariables (analyze-virtual-hosting (cgi-get-metavariable "PATH_INFO"))))
-    (send-reply params)))
+  (define (override-metavariables mv-list)
+    (let loop ((accum '())
+	       (cmv (cgi-metavariables))
+	       (mv-list mv-list))
+      (if (null? cmv)
+	  (append mv-list accum)
+	  (let* ((e (car cmv))
+		 (k (car e)))
+	    (cond ((assoc k mv-list) =>
+		   (lambda (e) (loop (cons e accum) (cdr cmv) (alist-delete k mv-list equal?))))
+		  (else (loop (cons e accum) (cdr cmv) mv-list)))))))
+  (receive (scheme host port worker worker-uri paths)
+      (parse-path-info (path->path-info (cgi-get-metavariable "PATH_INFO")))
+    (let* ((path-info (if worker (cons worker paths) '()))
+	   (override-mv `(,@(if (eq? scheme 'https) '(("HTTPS" "on")) '())
+			  ,@(if host `(("SERVER_NAME" ,host)) '())
+			  ,@(if port `(("SERVER_PORT" ,port)) '())
+			  ("PATH_INFO"
+			   ,(if (pair? path-info) (path-info->abs-path path-info) "/")))))
+      (parameterize ((cgi-metavariables (override-metavariables override-mv)))
+	(send-reply params path-info worker-uri)))))
 
 (define (main args)
   (define (output-handler sexp)

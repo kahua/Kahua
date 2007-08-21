@@ -126,8 +126,9 @@
 	 path-info)))
 
 (define (path->path-info path)
-  (and path
-       (simplify-path-info (string-split path #[/]))))
+  (if path
+      (simplify-path-info (string-split path #[/]))
+      '()))
 
 (define (path-info->abs-path path-info)
   (if (null? path-info)
