@@ -1,6 +1,5 @@
 ;; -*- mode: scheme; coding: utf-8 -*- 
 (define-module kahua.error-report
-  (use gauche.logger)
   (use kahua.util)
   (use kahua.elem)
   
@@ -24,17 +23,17 @@
 ;; returns bug-id
 (define (kahua-log-bug exc)
   (let ((id (generate-bug-id)))
-    (log-format "begin error: (~d)" id)
+    (kahua:log-format "begin error: (~d)" id)
     (kahua-dump-user)
-    (log-format "~a" (kahua-error-string exc #t))
-    (log-format "end   error: (~d)" id)
+    (kahua:log-format "~a" (kahua-error-string exc #t))
+    (kahua:log-format "end   error: (~d)" id)
     id))
 
 (define (generate-bug-id)
   (format #f "~d-~d" (sys-time) (modulo (sys-random) 1000)))
 
 (define (kahua-dump-user)
-  (guard (e (else (log-format "user dump failed")))
-    (log-format "user ~a" (kahua-current-user-name))))
+  (guard (e (else (kahua:log-format "user dump failed")))
+    (kahua:log-format "user ~a" (kahua-current-user-name))))
 
 (provide "kahua/error-report")

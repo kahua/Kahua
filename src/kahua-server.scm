@@ -18,7 +18,6 @@
 ;;
 
 (define-module kahua-server
-  (use gauche.logger)
   (use gauche.net)
   (use gauche.selector)
   (use gauche.parameter)
@@ -100,7 +99,7 @@
 	(unless (kahua-db-ping db)
 	  (kahua-db-reopen db))
 	(let1 do-reply (guard (e (else
-				  (log-format "[worker]: Unknown error: ~a" (ref e 'message))
+				  (kahua:log-format "[worker]: Unknown error: ~a" (ref e 'message))
 				  (lambda ()
 				    (reply-cont '(("x-kahua-status" "ERROR"))
 						(kahua-error-string e #t)))))
@@ -131,12 +130,12 @@
 	(call-with-client-socket client
 	  (lambda (input output)
 	    (set! (port-buffering input) :none)
-	    (guard (e (else (log-format "[worker]: Read error occured in accept-handler: ~a" (ref e 'message))))
+	    (guard (e (else (kahua:log-format "[worker]: Read error occured in accept-handler: ~a" (ref e 'message))))
 	      (let ((header (read input))
 		    (body   (read input)))
 		(handle-request header body
 				(lambda (r-header r-body)
-				  (guard (e (else (log-format "[server]: client closed connection")))
+				  (guard (e (else (kahua:log-format "[server]: client closed connection")))
 				    (begin
 				      (write r-header output) (newline output)
 				      (write r-body output)   (newline output)
@@ -173,12 +172,12 @@
 
 (define (kahua-profiler-start pfile)
   (when pfile
-    (guard (e (else (log-format "[server] cannot start profiler: ~a" (ref e 'message))))
+    (guard (e (else (kahua:log-format "[server] cannot start profiler: ~a" (ref e 'message))))
       (profiler-start))))
 
 (define (kahua-profiler-flush pfile)
   (when pfile
-    (guard (e (else (log-format "[server] fail to flush profiling result: ~a" (ref e 'message))))
+    (guard (e (else (kahua:log-format "[server] fail to flush profiling result: ~a" (ref e 'message))))
       (profiler-stop)
       (with-output-to-file pfile
 	(lambda ()
@@ -209,7 +208,7 @@
            (sockbase  (kahua-sockbase))
            (sockaddr  (worker-id->sockaddr worker-id sockbase))
            (cleanup   (lambda ()
-                        (log-format "[~a] exit" worker-name)
+                        (kahua:log-format "[~a] exit" worker-name)
                         (when (is-a? sockaddr <sockaddr-un>)
                           (sys-unlink (sockaddr-name sockaddr)))
 			(and-let* ((db (current-db))
@@ -219,15 +218,15 @@
 	(call/cc
 	 (lambda (bye)
 	   (define (finish-server sig)
-	     (log-format "[~a] ~a" worker-name (sys-signal-name sig)) (bye 0))
-	   (log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
+	     (kahua:log-format "[~a] ~a" worker-name (sys-signal-name sig)) (bye 0))
+	   (kahua:log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
 	   (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
 	   (guard (e (else
-		      (log-format "[server] error in main:\n~a"
+		      (kahua:log-format "[server] error in main:\n~a"
 				  (kahua-error-string e #t))
 		      (report-error e)
 		      (bye 70)))
-	     (log-format "[~a] start" worker-name)
+	     (kahua:log-format "[~a] start" worker-name)
 	     (run-server worker-id sockaddr profile)
 	     (bye 0))))
 	(cleanup))

@@ -44,7 +44,6 @@
 
 (use gauche.net)
 (use gauche.parseopt)
-(use gauche.logger)
 (use gauche.selector)
 (use util.list)
 (use util.match)
@@ -65,7 +64,7 @@
 			(thnum "t:threads=i" #f))
     (kahua-common-init site conf-file)
     (write-pid-file (kahua-keyserv-pidpath))
-    (log-open (kahua-logpath "kahua-keyserv.log") :prefix "~Y ~T ~P[~$]: ")
+    (kahua:log-open (kahua-logpath "kahua-keyserv.log") :prefix "~Y ~T ~P[~$]: ")
     (random-source-randomize! default-random-source)
     (let* ((wid (make-worker-id "%keyserv"))
            (sockaddr (worker-id->sockaddr wid (kahua-sockbase)))
@@ -113,7 +112,7 @@
     (lambda (input output)
       (guard (e (else #f))
 	(unwind-protect
-	 (guard (e (else (log-format "~a" (kahua-error-string e #t))))
+	 (guard (e (else (kahua:log-format "~a" (kahua-error-string e #t))))
 	   (let loop ((request (read input)))
 	     (unless (eof-object? request)
 	       (let1 result (match request

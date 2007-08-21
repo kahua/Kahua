@@ -19,12 +19,11 @@
 
 (add-load-path "##libdir##")
 
-(use gauche.logger)
-(use gauche.parameter)
 (use srfi-1)
 (use srfi-13)
 (use www.cgi)
 (use util.list)
+(use gauche.parameter)
 (use kahua.util)
 (use kahua.config)
 (use kahua.protocol.http)
@@ -126,15 +125,15 @@
       (display "\r\n" out)
       (send-http-body out (cgi-output-character-encoding) (cadr sexp))))
   (kahua-common-init #f #f)
-  (log-open (kahua-cgilogpath "kahua-cgi.log") :prefix *LOG-PREFIX*)
+  (kahua:log-open (kahua-cgilogpath "kahua-cgi.log") :prefix *LOG-PREFIX*)
   (call/cc
    (lambda (bye)
      (define (cleanup) (for-each sys-unlink (cgi-temporary-files)))
      (define (finish-server sig)
-       (log-format (sys-signal-name sig))
+       (kahua:log-format (sys-signal-name sig))
        (cleanup) (bye 0))
      ##CGIBEGIN##
-     (guard (e (else (log-format "error(ignored): ~a" (slot-ref e 'message))))
+     (guard (e (else (kahua:log-format "error(ignored): ~a" (slot-ref e 'message))))
        (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
        (cgi-main publisher
 		 :merge-cookies #t
@@ -151,7 +150,7 @@
 	(status (cond ((<kahua-worker-not-found> e)   404)
 		      ((<kahua-worker-not-respond> e) 503)
 		      (else                           500))))
-    (log-format "CGI error caught: ~a" errmsg)
+    (kahua:log-format "CGI error caught: ~a" errmsg)
     `((("status" ,(http-status-string status #f))
        ("content-type" "text/html"))
       ,(default-error-page status errmsg))))

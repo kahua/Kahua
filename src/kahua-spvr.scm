@@ -19,7 +19,6 @@
 (use gauche.net)
 (use gauche.threads)
 (use gauche.process)
-(use gauche.logger)
 (use gauche.selector)
 (use gauche.listener)
 (use gauche.parseopt)
@@ -152,7 +151,7 @@
 ;;;
 
 (define (spvr-errorf class fmt . args)
-  (apply log-format fmt args)
+  (apply kahua:log-format fmt args)
   (apply errorf class fmt args))
 
 (define (spvr-error-header err)
@@ -195,13 +194,13 @@
          (apply append option-list)))
 
 (define (run-piped-cmd cmd)
-  (log-format "[spvr] running ~a" cmd)
+  (kahua:log-format "[spvr] running ~a" cmd)
   (guard (e (else 
-	     (log-format "[spvr] running ~a failed: ~a"
+	     (kahua:log-format "[spvr] running ~a failed: ~a"
 			 (car cmd) (kahua-error-string e #t))
 	     (raise e)))
     (let1 p (apply run-process `(,@cmd :input "/dev/null" :output :pipe :sigmask ,*default-sigmask*))
-      (log-format "[spvr] running ~a: pid ~a" (car cmd) (process-pid p))
+      (kahua:log-format "[spvr] running ~a: pid ~a" (car cmd) (process-pid p))
       p)))
 
 (define (circular-list->list cl)
@@ -327,19 +326,19 @@
     (cond
      ((file-exists? app-map)
       (guard (e (else
-                 (log-format "[spvr] error in reading ~a" app-map)
+                 (kahua:log-format "[spvr] error in reading ~a" app-map)
                  #f))
         (let1 lis (call-with-input-file app-map read)
           (cond ((check-entries lis)
-                 (log-format "[spvr] loaded ~a" app-map)
+                 (kahua:log-format "[spvr] loaded ~a" app-map)
                  (set! *worker-types* lis)
 		 (set! *default-worker-type* (find-default-worker-type *worker-types*))
                  #t)
                 (else
-                 (log-format "[spvr] malformed app-servers file: ~a" app-map)
+                 (kahua:log-format "[spvr] malformed app-servers file: ~a" app-map)
                  #f)))))
      (else
-      (log-format "app-servers file does not exist: ~a" app-map)
+      (kahua:log-format "app-servers file does not exist: ~a" app-map)
       #f))))
 
 (define (%register-worker spvr type worker)
@@ -437,7 +436,7 @@
 
 ;; terminate all workers
 (define-method nuke-all-workers ((self <kahua-spvr>))
-  (log-format "[spvr] nuke-all-workers")
+  (kahua:log-format "[spvr] nuke-all-workers")
   (for-each (pa$ terminate!) (hash-table-values (wtype-table-of self))))
 
 ;; terminates given workers, and starts the same number of
@@ -558,7 +557,7 @@
          (id    (read-line (process-output p)))
          (wno   (slot-ref self 'next-wno))
 	 (log-str (format "[worker] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
-    (slot-set! self 'logger (pa$ log-format log-str))
+    (slot-set! self 'logger (pa$ kahua:log-format log-str))
     (slot-set! self 'wid id)
     (slot-set! self 'wno wno)
     (slot-set! self 'process p)
@@ -667,7 +666,7 @@
 				'()
 				args)))
 		(shutdown . ,(lambda _
-			       (log-format "[spvr] shutdown requested")
+			       (kahua:log-format "[spvr] shutdown requested")
 			       (sys-kill (sys-getpid) SIGTERM)))
 		(help     . ,(lambda _ (hash-table-keys t)))
 		(version  . ,(lambda _ (kahua-version)))))
@@ -689,7 +688,7 @@
                 ((stat-h stat-b) (decompose-gsid stat-gsid))
                 ((cont-h cont-b) (decompose-gsid cont-gsid))
                 ((wtype) (get-worker-type header)))
-    (log-format "[spvr] header: ~s" header)
+    (kahua:log-format "[spvr] header: ~s" header)
     (cond ((equal? wtype 'spvr)
 	   ;; this is a supervisor command.
 	   (cont '(("x-kahua-status" "OK")) (handle-spvr-command body)))
@@ -720,7 +719,7 @@
 	  (handle-common self header body
 			 (lambda (header body)
 			   (guard (e
-				   (#t (log-format "[spvr]: client closed connection")))
+				   (#t (kahua:log-format "[spvr]: client closed connection")))
 			     (send-message out header body))))))
       (socket-shutdown client-sock 1))))
 
@@ -794,9 +793,9 @@
 					 ; since kahua-init adds to *load-path*
       (when sockbase (set! (kahua-sockbase) sockbase))
       (write-pid-file (kahua-spvr-pidpath))
-      (cond ((equal? logfile "-") (log-open #t :prefix "~Y ~T ~P[~$]: "))
-            (logfile (log-open logfile :prefix "~Y ~T ~P[~$]: "))
-            (else    (log-open (kahua-logpath "kahua-spvr.log")
+      (cond ((equal? logfile "-") (kahua:log-open #t :prefix "~Y ~T ~P[~$]: "))
+            (logfile (kahua:log-open logfile :prefix "~Y ~T ~P[~$]: "))
+            (else    (kahua:log-open (kahua-logpath "kahua-spvr.log")
                                :prefix "~Y ~T ~P[~$]: ")))
       
       (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
@@ -811,18 +810,18 @@
           (sys-chmod (sockaddr-name sockaddr) #o770))
         (start-keyserv spvr)
 	(when httpd (start-httpd spvr httpd))
-        (log-format "[spvr] started at ~a" sockaddr)
+        (kahua:log-format "[spvr] started at ~a" sockaddr)
 	(let1 ret
 	    (call/cc
 	     (lambda (bye)
 	       (define (finish-server sig)
-		 (log-format "[spvr] ~a" (sys-signal-name sig))
+		 (kahua:log-format "[spvr] ~a" (sys-signal-name sig))
 		  (bye 0))
 	       (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
 	       (set-signal-handler! SIGPIPE #f) ; ignore SIGPIPE
 	       (set! *default-sigmask* (sys-sigmask 0 #f))
 	       (guard (e (else
-			  (log-format "[spvr] error in main:\n~a" 
+			  (kahua:log-format "[spvr] error in main:\n~a" 
 				      (kahua-error-string e #t))
 			  (report-error e)
 			  (bye 70)))
@@ -837,7 +836,7 @@
 	  (thread-pool-finish-all tpool)
 	  (stop-httpd spvr)
 	  (stop-keyserv spvr)
-	  (log-format "[spvr] exitting")
+	  (kahua:log-format "[spvr] exitting")
 	  (sys-unlink (kahua-spvr-pidpath))
 	  ret)
 	))))

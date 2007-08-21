@@ -12,8 +12,7 @@
   (extend kahua.persistence
 	  dbi util.list
 	  gauche.collection
-	  gauche.parameter
-	  gauche.logger)
+	  gauche.parameter)
   (export <kahua-db-dbi>
 	  set-default-character-encoding!
 	  kahua-db-dbi-open
@@ -108,7 +107,7 @@
       (set! (dsn-of db) (kahua-db-dbi-build-dsn db d o))
       (set! (user-of db) u)
       (set! (password-of db) p)
-      (log-format "DBI(~a): user ~a" (dsn-of db) u))))
+      (kahua:log-format "DBI(~a): user ~a" (dsn-of db) u))))
 
 (define-method kahua-db-dbi-build-dsn ((db <kahua-db-dbi>) driver options)
   (format "dbi:~a:~a" driver options))

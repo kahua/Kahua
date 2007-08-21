@@ -14,7 +14,6 @@
   (use gauche.fcntl)
   (use gauche.collection)
   (use gauche.charconv)
-  (use gauche.logger)
   (use kahua.persistence)
   (use kahua.util))
 
@@ -151,8 +150,8 @@
 	    (unless (and (symbol? ce) (ces-conversion-supported? ce ne))
 	      (kahua-db-efs-error "kahua-db-open: cannot convert from ~s to ~s" ce ne))
 	    (unless (ces-upper-compatible? ne ce) ; Warning: because there is a big overhead.
-	      (log-format "DB character encoding ~a differ from native ~a" ce ne)
-	      (log-format "You should convert it into native encoding ~a" ne))
+	      (kahua:log-format "DB character encoding ~a differ from native ~a" ce ne)
+	      (kahua:log-format "You should convert it into native encoding ~a" ne))
 	    ce)
 	  (let1 ce ne
 	    (with-output-to-file cefile (cut write ce))

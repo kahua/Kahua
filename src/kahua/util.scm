@@ -18,6 +18,7 @@
   (use gauche.sequence)
   (use gauche.parseopt)
   (use gauche.charconv)
+  (use gauche.logger)
   (use kahua.config)
   (export *default-charset*
 	  make-content-type
@@ -38,6 +39,8 @@
 	  check-pid
 	  make-filter-pipeline
 	  kahua:call-with-output-file
+	  kahua:log-open
+	  kahua:log-format
 	  ))
 (select-module kahua.util)
 
@@ -214,5 +217,8 @@
 	    (when perm
 	      (sys-chmod tmpfile perm))
 	    (sys-rename tmpfile outfile)))))))
+
+(define kahua:log-open log-open)
+(define kahua:log-format log-format)
 
 (provide "kahua/util")

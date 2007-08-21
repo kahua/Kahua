@@ -19,7 +19,7 @@
 ;; This program uses 'login-manager' application server for
 ;; user authentication handling.
 
-(log-open (kahua-logpath "wiki-iki.log"))
+(kahua:log-open (kahua-logpath "wiki-iki.log"))
 
 (define-constant *welcome-page* "Welcome to Wiki Iki")
 

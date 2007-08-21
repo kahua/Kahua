@@ -13,7 +13,6 @@
   (use gauche.fcntl)
   (use gauche.collection)
   (use gauche.charconv)
-  (use gauche.logger)
   (use kahua.persistence)
   (use kahua.util))
 
@@ -132,8 +131,8 @@
 	    (unless (symbol? ce)
 	      (error "kahua-db-open: symbol required but got as character-encoding: " ce))
 	    (unless (ces-upper-compatible? (gauche-character-encoding) ce)
-	      (log-format "DB character encoding ~a differ from native ~a" ce (gauche-character-encoding))
-	      (log-format "You should convert it into native encoding ~a" (gauche-character-encoding)))
+	      (kahua:log-format "DB character encoding ~a differ from native ~a" ce (gauche-character-encoding))
+	      (kahua:log-format "You should convert it into native encoding ~a" (gauche-character-encoding)))
 	    ce)
 	  (let1 ce (gauche-character-encoding)
 	    (with-output-to-file cefile (cut write ce))
