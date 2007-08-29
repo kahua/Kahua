@@ -1,3 +1,8 @@
+2007-08-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/persistence/mysql.scm
+	  Switch default table type from MyISAM to InnoDB.
+
 2007-08-21  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/server.scm, test/redirectcont.kahua

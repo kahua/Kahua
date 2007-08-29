@@ -14,7 +14,7 @@
 
 (define-class <kahua-db-mysql> (<kahua-db-dbi>)
   ;; Now support :MyISAM and :InnoDB
-  ((table-type :init-keyword :table-type :init-value :MyISAM :getter table-type-of)))
+  ((table-type :init-keyword :table-type :init-value :InnoDB :getter table-type-of)))
 
 (define-method set-default-character-encoding! ((db <kahua-db-mysql>))
   (safe-execute
