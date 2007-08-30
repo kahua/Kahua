@@ -438,48 +438,6 @@
 	  (lambda (val) (set! (ref (,get-session) ',name) val)))))))
 			 
 
-;; KAHUA-LOCAL-SESSION-REF var
-;;
-;; var is symbol, which is any slot name of <session-state>.
-;;
-(define kahua-local-session-ref
-  (let1 get-session
-      (lambda ()
-	(kahua-context-ref "session-state"))
-    (getter-with-setter
-     (lambda (key) (ref (get-session) key))
-     (lambda (key val) (set! (ref (get-session) key) val)))))
-
-;; KAHUA-LOCAL-SESSION-SET! var val
-;;
-;; var is symbol, which is any slot name of <session-state>.
-;; and val is permitted every value include non-persistent object.
-;; the value object is local object in only app server.
-;;
-(define (kahua-local-session-set! key val)
-  (set! (kahua-local-session-ref key) val))
-
-;; DEFINE-SESSION-OBJECT name create
-;;
-;; name is the object name which we use session object.
-;; and init-value is normally make expression.
-;; so, the init-value expression is called only first. 
-;;
-;; it's used as like as parameter.
-;;
-(define-macro (define-session-object name init-value)
-  (let1 get-session (gensym)
-    `(define ,name
-       (let1 ,get-session
-	   (lambda ()
-	     (kahua-context-ref "session-state"))
-	 (getter-with-setter
-	  (lambda () (cond ((ref (,get-session) ',name))
-			   (else (set! (ref (,get-session) ',name) ,init-value)
-				 (ref (,get-session) ',name))))
-	  (lambda (val) (set! (ref (,get-session) ',name) val)))))))
-			 
-
 ;; KAHUA-CURRENT-ENTRY-NAME
 ;;  A parameter that holds the name of entry.
 
@@ -635,7 +593,10 @@
 ;; and/or by position (using PATH_INFO).
 ;;
 
-;;  [syntax] entry-lambda (arg ... :keyword karg ... :rest restarg)
+;;  [syntax] entry-lambda ([arg ...]
+;;                         [:keyword karg ...]
+;;                         [:mvkeyword mvkarg ...]
+;;                         [:rest restarg])
 ;;
 ;;   This creates a special procedure, which can be used as an entry
 ;;   procedure.  arg ... will be bound to a positional arguments,
@@ -747,7 +708,10 @@
                          '())))))
     ))
 
-;;  [syntax] define-entry (name arg ... :keyword karg ...)
+;;  [syntax] define-entry (name [arg ...]
+;;                              [:keyword karg ...]
+;;                              [:mvkeyword mvkarg ...]
+;;                              [:rest restarg])
 ;;  [syntax] define-entry name (entry-lambda ....)
 
 (define-syntax define-entry
