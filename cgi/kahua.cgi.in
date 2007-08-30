@@ -47,9 +47,6 @@
 
 (define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP SIGPIPE))
 
-;; bridge name option, mainly to pass "~user" information
-(define *bridge-option* "")
-
 ;; send standard metavariables to worker.
 (define *metavariables*
   '("AUTH_TYPE"
@@ -147,8 +144,7 @@
 					:sgsid state-gsid
 					:cgsid cont-gsid
 					:remote-addr remote-addr
-					:bridge (string-append (cgi-get-metavariable "SCRIPT_NAME")
-							       *bridge-option*))))
+					:bridge (cgi-get-metavariable "SCRIPT_NAME"))))
       (for-each (lambda (f)
 		  (if (file-exists? f)
 		      (sys-chmod f #o660)))
