@@ -625,54 +625,6 @@
 ;;   and kargs ... will be bound to a keyword arguments.
 ;;   restarg can be used to receive remaining positional arguments.
 ;;   (NB: it doesn't include keyword args).
-
-; (define-syntax entry-lambda
-;   (syntax-rules ()
-;     ;; finishing expansion
-;     ((entry-lambda "finish" args pargs kargs #f body)
-;      '(make-parameterized-entry-closure 'pargs 'kargs #f
-;                                        (lambda args . body)))
-;     ((entry-lambda "finish" () pargs kargs rarg body)
-;      '(make-parameterized-entry-closure 'pargs 'kargs 'rarg
-;                                        (lambda rarg . body)))
-;     ((entry-lambda "finish" (args ...) pargs kargs rarg body)
-;      '(make-parameterized-entry-closure 'pargs 'kargs 'rarg
-;                                        (lambda (args ... . rarg) . body)))
-;     ;; collecting positional args
-;     ((entry-lambda "pargs" () pargs body)
-;      (entry-lambda "finish" pargs pargs () #f body))
-;     ((entry-lambda "pargs" (:rest rarg) pargs body)
-;      (entry-lambda "finish" pargs pargs () rarg body))
-;     ((entry-lambda "pargs" (:rest rarg :keyword . syms) pargs body)
-;      (entry-lambda "kargs" syms pargs pargs () rarg body))
-;     ((entry-lambda "pargs" (:rest . _) pargs body)
-;      (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
-;     ((entry-lambda "pargs" (:keyword . syms) pargs body)
-;      (entry-lambda "kargs" syms pargs pargs () #f body))
-;     ((entry-lambda "pargs" (sym . syms) (parg ...) body)
-;      (entry-lambda "pargs" syms (parg ... sym) body))
-;     ;; collecting keyword args
-;     ((entry-lambda "kargs" () args pargs kargs rarg body)
-;      (entry-lambda "finish" args pargs kargs rarg body))
-;     ((entry-lambda "kargs" (:rest rarg) args pargs kargs #f body)
-;      (entry-lambda "finish" args pargs kargs rarg body))
-;     ((entry-lambda "kargs" (:rest rarg) args pargs kargs rarg1 body)
-;      (syntax-error "duplicate :rest args in entry-lambda:" (:rest rarg)))
-;     ((entry-lambda "kargs" (:rest . _) args pargs kargs rarg1 body)
-;      (syntax-error "malformed entry-lambda :rest form:" (:rest . _)))
-;     ((entry-lambda "kargs" (sym . syms) (arg ...) pargs (karg ...) rarg body)
-;      (entry-lambda "kargs" syms (arg ... sym) pargs (karg ... sym) rarg body))
-;     ;; initial entry
-;     ((entry-lambda args body1 . bodies)
-;      (entry-lambda "pargs" args () (body1 . bodies)))
-;     ;; error handling
-;     ((entry-lambda . _)
-;      (syntax-error "malformed entry-lambda:" (entry-lambda . _)))
-;     ))
-
-;
-; entry-lambda
-;
 (define-macro (entry-lambda args body1 . bodys)
   ;; helper
   (define (parse-args args)
