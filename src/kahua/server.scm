@@ -618,7 +618,10 @@
 ;; and/or by position (using PATH_INFO).
 ;;
 
-;;  [syntax] entry-lambda (arg ... :keyword karg ... :rest restarg)
+;;  [syntax] entry-lambda ([arg ...]
+;;                         [:keyword karg ...]
+;;                         [:mvkeyword mvkarg ...]
+;;                         [:rest restarg])
 ;;
 ;;   This creates a special procedure, which can be used as an entry
 ;;   procedure.  arg ... will be bound to a positional arguments,
@@ -682,7 +685,10 @@
                          '())))))
     ))
 
-;;  [syntax] define-entry (name arg ... :keyword karg ...)
+;;  [syntax] define-entry (name [arg ...]
+;;                              [:keyword karg ...]
+;;                              [:mvkeyword mvkarg ...]
+;;                              [:rest restarg])
 ;;  [syntax] define-entry name (entry-lambda ....)
 
 (define-syntax define-entry
