@@ -6,7 +6,7 @@ dnl
 dnl $Id$
 dnl
 AC_PREREQ(2.59)
-AC_INIT(kahua, 1.0.7_pre1, info@kahua.org)
+AC_INIT(kahua, 1.0.7_pre2, info@kahua.org)
 AC_GAUCHE_INIT_EXT
 
 AC_SUBST(PACKAGE_NAME)
