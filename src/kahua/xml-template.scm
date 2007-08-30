@@ -72,6 +72,7 @@
 	     => (lambda (node)
 		  (let1 node (cond ((procedure? node)
 				    (rev-nodes (exec '() node)))
+				   ((or (null? node) (not node)) '())
 				   ((pair? node)
 				    (let1 n (car node)
 				      (cond ((eq? n 'node-set) (cdr node))

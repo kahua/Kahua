@@ -1,3 +1,9 @@
+2007-08-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/xml-template.scm
+	  Procedure xml-template->sxml now can take '() or #f as
+	  replacing element and they are handled as empty node.
+
 2007-08-17  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua-httpd.scm, src/kahua/server.scm
