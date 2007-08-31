@@ -96,7 +96,15 @@ Editing commands are similar to those of 'scheme-mode'."
 
 ;; for compatibility with Emacs 21
 (unless (functionp 'read-directory-name)
-  (defalias 'read-directory-name 'read-file-name))
+  (defun read-directory-name (prompt &optional dir default match init)
+    (let ((dir (cond (dir dir)
+		     ((not init) "")
+		     (else default-directory))))
+      (read-file-name  prompt dir
+		       (or default (if (and init (not (string= init "")))
+				       (expand-file-name init dir)
+				     ""))
+		       match init))))
 
 (defun kahua-read-server ()
   (if kahua-ssh-mode
