@@ -1,3 +1,8 @@
+2007-08-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: emacs/kahua.el.in
+	  Fix the problem with default value of site bundle on Emacs 21.
+
 2007-08-30  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/xml-template.scm
