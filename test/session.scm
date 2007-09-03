@@ -45,7 +45,7 @@
          (string? a-cont-id)))
 
 (test* "get1" 'a
-       ((session-cont-get a-cont-id)))
+       ((values-ref (session-cont-get a-cont-id) 0)))
 
 (test* "register2" #f
        (begin
@@ -53,25 +53,25 @@
          (equal? b-cont-id a-cont-id)))
 
 (test* "get2" 'b
-       ((session-cont-get b-cont-id)))
+       ((values-ref (session-cont-get b-cont-id) 0)))
 
 (test* "get3" #f
-       (session-cont-get "nosuchid"))
+       (values-ref (session-cont-get "nosuchid") 0))
 
 (test* "discard" #f
        (begin
          (session-cont-discard a-cont-id)
-         (session-cont-get a-cont-id)))
+         (values-ref (session-cont-get a-cont-id) 0)))
 
 (test* "sweep" 'b
        (begin
          (session-cont-sweep 10000000)
-         ((session-cont-get b-cont-id))))
+         ((values-ref (session-cont-get b-cont-id) 0))))
 
 (test* "sweep" #f
        (begin
          (session-cont-sweep -1)
-         (session-cont-get b-cont-id)))
+         (values-ref (session-cont-get b-cont-id) 0)))
 
 ;;------------------------------------------------------------------
 (test-section "state session (process local)")

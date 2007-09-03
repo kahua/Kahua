@@ -40,8 +40,8 @@ permanent entry を登録する場合 (define-entryによる: [[kahua.server]]�
 
 ** [procedure] session-cont-get ''id''
 
-継続セッションID ''id'' に対応する継続手続きを返します。対応する手続き
-が無い場合は#fを返します。
+継続セッションID ''id'' に対応する継続手続きとそれが有名継続であるかどうか
+の真偽値を返します。対応する手続きが無い場合はともに#fを返します。
 
 ** [procedure] session-cont-discard ''id''
 

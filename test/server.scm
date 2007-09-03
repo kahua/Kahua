@@ -116,7 +116,7 @@
   (syntax-rules ()
     ((call-entry entry context)
      (parameterize ((kahua-current-context context))
-       ((session-cont-get (symbol->string entry)))))))
+       ((values-ref (session-cont-get (symbol->string entry)) 0))))))
 
 (test* "define-entry"
        '(("usr" "var" "www" "xxX" #f "Zzzz")

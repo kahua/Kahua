@@ -1,5 +1,10 @@
 2007-09-03  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: src/kahua/session.scm, doc/Modules/kahua.session.ja,
+	          test/session.scm, src/kahua/server.scm, test/server.scm
+	  Now session-cont-get returns two values (closure and the cont
+	  has permanent URL).
+
 	* Change: src/kahua/server.scm, test/server.scm
 	  Add "X-Robots-Tag: noindex" to response header
 	  when anonymous continuation entry is requested.

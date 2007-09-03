@@ -212,7 +212,7 @@
                        (error-proc kahua-default-error-proc))
 
     ;; (Handler, Context) -> (Stree, Context)
-    (define (run-cont handler context)
+    (define (run-cont handler permanent? context)
       (parameterize ((kahua-current-context context))
 	(guard (e (else
 		   (raise-with-db-error e)
@@ -220,7 +220,7 @@
 		     (render-proc (error-proc e) context))))
 	  (let1 nodes (reset/pc (handler))
 	    (render-proc nodes
-			 (if (assoc "x-kahua-current-entry" (kahua-current-context))
+			 (if permanent?
 			     context
 			     (add-extra-header context "x-robots-tag" "noindex")))))))
 
@@ -273,11 +273,12 @@
 	      (receive (headers result) (run-eval state)
 		(lambda ()
 		  (reply-cont headers result)))
-	      (receive (stree context)
-		  (run-cont (if cont-id
-				(or (session-cont-get cont-id) stale-proc)
-				default-proc)
-			    (make-context state header body))
+	      (let*-values (((proc permanent?) (if cont-id
+						   (or (session-cont-get cont-id)
+						       (values stale-proc #f))
+						   (values default-proc #t)))
+			    ((stree context)
+			     (run-cont proc permanent? (make-context state header body))))
 		(let1 session-domain-uri (kahua-session-domain-uri)
 		  (lambda ()
 		    (reply-cont
@@ -662,9 +663,6 @@
        (let* ((closure expr)
               (x (lambda ()
                    (parameterize ((kahua-current-entry-name (symbol->string 'name)))
-		     (kahua-current-context
-		      (cons `("x-kahua-current-entry" ,(kahua-current-entry-name))
-			    (kahua-current-context)))
 		     (closure)))))
          (add-entry! 'name x)
          x)))
@@ -809,8 +807,6 @@
        (define-method name ()
          (parameterize ((kahua-current-entry-name (symbol->string 'name)))
            (let1 path (kahua-context-ref "x-kahua-path-info" '())
-	     (kahua-current-context (cons `("x-kahua-current-entry" ,(kahua-current-entry-name))
-					  (kahua-current-context)))
              (apply name entry-specializer (path->objects path)))))
        (add-entry! 'name name)))))
 

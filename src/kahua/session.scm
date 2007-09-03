@@ -153,29 +153,30 @@
 ;;   removes old entry).  If CONT is not a procedure, returns #f.
 (define (session-cont-register cont . maybe-id)
   (and (procedure? cont)
-       (let ((entry (cont-closure->session cont))
-             (given-id (get-optional maybe-id #f)))
-         (if entry
-           (if (or (null? maybe-id)
-                   (equal? given-id (ref entry 'key)))
-             (ref entry 'key)
-             (replace-key entry given-id))
-           (ref (apply make <session-cont>
-                       :closure cont
-                       (if given-id
-                         `(:key ,given-id :permanent? #t)
-                         '()))
-                'key)))))
+       (let1 given-id (get-optional maybe-id #f)
+	 (cond ((cont-closure->session cont) =>
+		(lambda (entry)
+		  (cond ((not given-id) (slot-ref entry 'key))
+			((equal? given-id (slot-ref entry 'key))
+			 (slot-ref entry 'key))
+			(else (replace-key entry given-id)))))
+	       (else (slot-ref (apply make <session-cont>
+				      :closure cont
+				      (if given-id `(:key ,given-id :permanent? #t) '()))
+			       'key))))))
 
 ;; SESSION-CONT-GET id
 ;;   Returns the continuation procedure associated with ID.
 ;;   If such a procedure doesn't exist, returns #f.
 (define (session-cont-get id)
-  (and-let* ((entry (cont-key->session id)))
-    ;; update timestamp
-    (slot-set! entry 'timestamp (sys-time))
-    (session-cont-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
-    (ref entry 'closure)))
+  (cond ((cont-key->session id) =>
+	 (lambda (entry)
+	   ;; update timestamp
+	   (slot-set! entry 'timestamp (sys-time))
+	   (session-cont-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
+	   (values (slot-ref entry 'closure)
+		   (slot-ref entry 'permanent?))))
+	(else (values #f #f))))
 
 ;; SESSION-CONT-DISCARD id
 ;;   Discards the session specified by ID.
