@@ -218,7 +218,12 @@
 		   (raise-with-db-error e)
 		   (guard (e2 (else (render-proc (kahua-default-error-proc e) context)))
 		     (render-proc (error-proc e) context))))
-	  (render-proc (reset/pc (handler)) context))))
+	  (let1 nodes (reset/pc (handler))
+	    (render-proc nodes
+			 (if (assoc "x-kahua-current-entry" (kahua-current-context))
+			     context
+			     (add-extra-header context "x-robots-tag"
+					       "noindex,noarchive,nosnippet")))))))
 
     ;; Handles 'eval' protocol
     ;; () -> ([Headers], [Result])
@@ -657,9 +662,11 @@
      (define name
        (let* ((closure expr)
               (x (lambda ()
-                   (parameterize
-                    ((kahua-current-entry-name (symbol->string 'name)))
-                    (closure)))))
+                   (parameterize ((kahua-current-entry-name (symbol->string 'name)))
+		     (kahua-current-context
+		      (cons `("x-kahua-current-entry" ,(kahua-current-entry-name))
+			    (kahua-current-context)))
+		     (closure)))))
          (add-entry! 'name x)
          x)))
     ))
@@ -803,6 +810,8 @@
        (define-method name ()
          (parameterize ((kahua-current-entry-name (symbol->string 'name)))
            (let1 path (kahua-context-ref "x-kahua-path-info" '())
+	     (kahua-current-context (cons `("x-kahua-current-entry" ,(kahua-current-entry-name))
+					  (kahua-current-context)))
              (apply name entry-specializer (path->objects path)))))
        (add-entry! 'name name)))))
 

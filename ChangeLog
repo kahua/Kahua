@@ -1,3 +1,9 @@
+2007-09-03  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/server.scm, test/server.scm
+	  Add "X-Robots-Tag: noindex, noarchive, nosnippet" to response header
+	  when anonymous continuation entry is requested.
+
 2007-08-31  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: emacs/kahua.el.in
