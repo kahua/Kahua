@@ -222,8 +222,7 @@
 	    (render-proc nodes
 			 (if (assoc "x-kahua-current-entry" (kahua-current-context))
 			     context
-			     (add-extra-header context "x-robots-tag"
-					       "noindex,noarchive,nosnippet")))))))
+			     (add-extra-header context "x-robots-tag" "noindex")))))))
 
     ;; Handles 'eval' protocol
     ;; () -> ([Headers], [Result])
