@@ -295,9 +295,9 @@
 (define (kahua-default-stale-proc)
   `((html
      (extra-header (@ (name "Status") (value "404 Not Found")))
-     (head (title "Kahua error"))
-     (body (h1 "Kahua error - stale session key")
-	   (p "The given session key is wrong, or expired.")))))
+     (head (title "404 Not found"))
+     (body (h1 "404 Not found")
+	   (p "The given session key or entry name is wrong, or the session is expired.")))))
 
 ;; default error proc
 (define (kahua-default-error-proc e)
