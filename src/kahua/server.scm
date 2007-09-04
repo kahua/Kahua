@@ -1457,7 +1457,7 @@
   (cont nodes (add-extra-header context "content-type"
 				(make-content-type "text/plain"))))
 
-(add-interp! 'text interp-text)
+(add-interp! 'text/plain interp-text)
 
 ;;===========================================================
 ;; SXML tree interpreter - for RSS
