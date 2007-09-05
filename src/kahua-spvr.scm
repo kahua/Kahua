@@ -156,7 +156,10 @@
   (apply errorf class fmt args))
 
 (define (spvr-error-header err)
-  `(("x-kahua-status" "SPVR-ERROR" ,(class-name (class-of err)))))
+  (let1 err-name (class-name (class-of err))
+    (log-format "SPVR-ERROR: ~a: ~a"
+		err-name (if (slot-exists? err 'message) (slot-ref err 'message) ""))
+    `(("x-kahua-status" "SPVR-ERROR" ,err-name))))
 
 ;; If errors occur before spvr service starts, we should terminate
 ;; spvr with appropriate error message.
