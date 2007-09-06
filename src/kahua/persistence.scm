@@ -42,7 +42,7 @@
 	  <kahua-db-error>
           <with-db-error>
           current-db with-db kahua-db-sync kahua-db-rollback
-	  with-kahua-db-connection with-kahua-db-transaction
+	  with-kahua-db-connection
 	  kahua-db-purge-objs
           <kahua-collection>
           raise-with-db-error
