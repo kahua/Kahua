@@ -25,6 +25,7 @@
 	  kahua-error-string
 	  <kahua-error>
 	  kahua-error?
+	  stack-trace-of
 	  with-sigmask
 	  filter-map1
 	  ref-car
@@ -44,8 +45,13 @@
 	  ))
 (select-module kahua.util)
 
-(define-condition-type <kahua-error> <error> kahua-error?)
-(define-condition-type <kahua-exception> <message-condition> kahua-exception?)
+(define-condition-type <kahua-error> <error> kahua-error?
+  (stack-trace stack-trace-of))
+
+(define-method initialize ((self <kahua-error>) initargs)
+  (next-method)
+  (unless (get-keyword :stack-trace initargs #f)
+    (slot-set! self 'stack-trace (vm-get-stack-trace-lite))))
 
 (define-constant *default-charset*
   (case (gauche-character-encoding)
@@ -70,11 +76,39 @@
 ;;  Returns a string representation of error.  If detail? is given,
 ;;  includes the stack trace.  Otherwise, just an error message.
 
-(define (kahua-error-string e . maybe-detail?)
-  (if (get-optional maybe-detail? #f)
+(define (kahua-stack-trace e)
+  (let ((fmt (format "~~,,,,~d:a\n" (debug-print-width)))
+	(pair-attribute-get (with-module gauche.internal pair-attribute-get))
+	(stack-trace (stack-trace-of e)))
     (call-with-output-string
-      (cut with-error-to-port <> (cut report-error e)))
-    (ref e 'message)))
+      (lambda (out)
+	(with-port-locking out
+	  (lambda ()
+	    (if (and (slot-exists? e 'message) (condition-ref e 'message))
+		(format out "*** ~a: ~a\n" (class-name (class-of e)) (condition-ref e 'message))
+		(format out "*** ~a\n" (class-name (class-of e))))
+	    (display "----------------------------------------\n" out)
+	    (for-each (lambda (cp)
+			(format out fmt (unwrap-syntax cp))
+			(when (pair? cp)
+			  (let1 sinfo (pair-attribute-get cp 'source-info #f)
+			    (if (pair? sinfo)
+				(if (pair? (cdr sinfo))
+				    (format out "        At line ~d of ~s\n"
+					    (cadr sinfo) (car sinfo))
+				    (format out "        In ~s\n" (car sinfo)))
+				(display "        [unknown location]:\n" out)))))
+		      (or (and-let* (((pair? stack-trace))
+				     (top (car stack-trace)))
+			    (and (equal? top '(vm-get-stack-trace-lite))
+				 (cdr stack-trace)))
+			  stack-trace))))))))
+
+(define (kahua-error-string e . maybe-detail?)
+  (cond ((not (get-optional maybe-detail? #f)) (slot-ref e 'message))
+	((kahua-error? e) (kahua-stack-trace e))
+	(else (call-with-output-string
+		(cut with-error-to-port <> (cut report-error e))))))
 
 (define (with-sigmask how mask thunk)
   (let1 old_sigset (sys-sigmask how mask)

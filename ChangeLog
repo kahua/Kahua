@@ -1,5 +1,9 @@
 2007-09-07  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: src/kahua/util.scm
+	  Improve diplaying stack trace.  Condition <kahua-error> holds
+	  stack trace at the point the condition is raised.
+
 	* Fix: src/kahua/server.scm
 	  Drop extra escape on stack dump in the default error handler.
 	  Fix unexpected error when parameter kahua-default-error-handler
