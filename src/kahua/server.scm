@@ -209,7 +209,7 @@
                        (stale-proc kahua-default-stale-proc)
                        (eval-proc  kahua-eval-proc)
                        (eval-environment (find-module 'user))
-                       (error-proc kahua-default-error-proc))
+                       (error-proc #f))
 
     ;; (Handler, Context) -> (Stree, Context)
     (define (run-cont handler permanent? context)
@@ -217,7 +217,7 @@
 	(guard (e (else
 		   (raise-with-db-error e)
 		   (guard (e2 (else (render-proc (kahua-default-error-proc e) context)))
-		     (render-proc (error-proc e) context))))
+		     (render-proc ((or error-proc kahua-default-error-proc) e) context))))
 	  (let1 nodes (reset/pc (handler))
 	    (render-proc nodes
 			 (if permanent?
