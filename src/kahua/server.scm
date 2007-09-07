@@ -304,7 +304,7 @@
   `((html
      (extra-header (@ (name "Status") (value "500 Internal Server Error")))
      (head (title "Kahua error"))
-     (body (pre ,(html-escape-string (kahua-error-string e #t)))))))
+     (body (pre ,(kahua-error-string e #t))))))
 
 ;; default eval proc
 (define (kahua-eval-proc body env)
