@@ -213,7 +213,7 @@
                        (stale-proc kahua-default-stale-proc)
                        (eval-proc  kahua-eval-proc)
                        (eval-environment (find-module 'user))
-                       (error-proc kahua-default-error-proc))
+                       (error-proc #f))
 
     ;; (Handler, Context) -> (Stree, Context)
     (define (run-cont handler context)
@@ -221,7 +221,7 @@
 	(guard (e (else
 		   (raise-with-db-error e)
 		   (guard (e2 (else (render-proc (kahua-default-error-proc e) context)))
-		     (render-proc (error-proc e) context))))
+		     (render-proc ((or error-proc kahua-default-error-proc) e) context))))
 	  (render-proc (reset/pc (handler)) context))))
 
     ;; Handles 'eval' protocol
@@ -313,7 +313,7 @@
   `((html
      (extra-header (@ (name "Status") (value "500 Internal Server Error")))
      (head (title "Kahua error"))
-     (body (pre ,(html-escape-string (kahua-error-string e #t)))))))
+     (body (pre ,(kahua-error-string e #t))))))
 
 ;; default eval proc
 (define (kahua-eval-proc body env)
