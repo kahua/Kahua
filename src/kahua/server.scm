@@ -218,11 +218,10 @@
 		   (raise-with-db-error e)
 		   (guard (e2 (else (render-proc (kahua-default-error-proc e) context)))
 		     (render-proc ((or error-proc kahua-default-error-proc) e) context))))
-	  (let1 nodes (reset/pc (handler))
-	    (render-proc nodes
-			 (if permanent?
-			     context
-			     (add-extra-header context "x-robots-tag" "noindex")))))))
+	  (render-proc (reset/pc (handler))
+		       (if permanent?
+			   context
+			   (add-extra-header context "x-robots-tag" "noindex"))))))
 
     ;; Handles 'eval' protocol
     ;; () -> ([Headers], [Result])
