@@ -51,7 +51,11 @@
 (define-method initialize ((self <kahua-error>) initargs)
   (next-method)
   (unless (get-keyword :stack-trace initargs #f)
-    (slot-set! self 'stack-trace (vm-get-stack-trace-lite))))
+    (let1 st (vm-get-stack-trace-lite)
+      (slot-set! self 'stack-trace
+		 (if (and (pair? st) (equal? (car st) '(vm-get-stack-trace-lite)))
+		     (cdr st)
+		     st)))))
 
 (define-constant *default-charset*
   (case (gauche-character-encoding)
@@ -78,8 +82,7 @@
 
 (define (kahua-stack-trace e)
   (let ((fmt (format "~~,,,,~d:a\n" (debug-print-width)))
-	(pair-attribute-get (with-module gauche.internal pair-attribute-get))
-	(stack-trace (stack-trace-of e)))
+	(pair-attribute-get (with-module gauche.internal pair-attribute-get)))
     (call-with-output-string
       (lambda (out)
 	(with-port-locking out
@@ -98,11 +101,7 @@
 					    (cadr sinfo) (car sinfo))
 				    (format out "        In ~s\n" (car sinfo)))
 				(display "        [unknown location]:\n" out)))))
-		      (or (and-let* (((pair? stack-trace))
-				     (top (car stack-trace)))
-			    (and (equal? top '(vm-get-stack-trace-lite))
-				 (cdr stack-trace)))
-			  stack-trace))))))))
+		      (stack-trace-of e))))))))
 
 (define (kahua-error-string e . maybe-detail?)
   (cond ((not (get-optional maybe-detail? #f)) (slot-ref e 'message))
