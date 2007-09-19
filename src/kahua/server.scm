@@ -244,15 +244,24 @@
 				       result)))))))
 
     (define (make-context state header body)
-      `(("session-state" ,state)
-	,@(map (lambda (hdr)
-		 (receive (k v) (car+cdr hdr)
-		   (cond ((string=? "x-kahua-path-info" k)
-			  (list "x-kahua-path-info" (drop* (car v) 2)))
-			 (else hdr))))
-	       header)
-	("x-kahua-headers" ,(make-hash-table 'string=?))
-	,@body))
+      (receive (context has-path?)
+	  (fold2 (lambda (h r has-path?)
+		   (receive (k v) (car+cdr h)
+		     (cond ((string=? k "x-kahua-path-info")
+			    (values
+			     (list* `("x-kahua-path-info" ,(drop* (car v) 2))
+				    (cons "x-kahua-path-full-info" v)
+				    r)
+			     #t))
+			   (else (values (cons h r) has-path?)))))
+		 (cons `("x-kahua-headers" ,(make-hash-table 'string=?)) body)
+		 #f
+		 header)
+	(cons `("session-state" ,state)
+	      (if has-path?
+		  context
+		  (list* '("x-kahua-path-info" ())
+			 '("x-kahua-path-full-info" ()) context)))))
      
     ;; Main dispatcher body
     (receive (state-id cont-id) (get-gsid-from-header header)
