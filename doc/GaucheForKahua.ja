@@ -2,7 +2,6 @@
 ;;
 ;; Copyright (c) 2007 Kahua Project.
 ;;
-;; $Id: GaucheForKahua.ja,v 1.1.2.2 2007/05/31 03:47:59 bizenn Exp $
 
 * KahuaのためのGaucheインストール入門
 
@@ -29,11 +28,11 @@ Gaucheのビルド手順は、UNIX系オープンソースソフトウェアと�
 的なものであり、ハマりどころはそれほどないと思います。
 
 
-** Gauche 0.8.9のインストール
+** Gauche 0.8.11のインストール
 
-2007年1月18日現在、Gaucheの最新リリースは0.8.9です。Kahua-1.0は、
-Gauche 0.8.8以降で動作しますが、0.8.8には重大なバグがあるので、0.8.9を
-インストールしましょう。
+2007年9月21日現在、Gaucheの最新リリースは0.8.11です。Kahua-1.0は、
+Gauche 0.8.9以降で動作しますが、原則として、Gaucheの最新リリース版を
+使用することをお勧めします。
 
 *** ビルドとインストールに必要なソフトウェア
 
@@ -50,14 +49,14 @@ POSIXスレッドをサポートしていなければなりません。確認の
 
 *** Gaucheのソースコードを入手する
 
-[http://prdownloads.sourceforge.net/gauche/Gauche-0.8.9.tgz Gauche-0.8.9.tgz]
+[http://prdownloads.sourceforge.net/gauche/Gauche-0.8.11.tgz Gauche-0.8.11.tgz]
 をダウンロードします。
 
 *** ビルドしテストする
 
 {{{
-% tar xzf Gauche-0.8.9.tgz
-% cd Gauche-0.8.9
+% tar xzf Gauche-0.8.11.tgz
+% cd Gauche-0.8.11
 % ./configure --enable-threads=pthreads --enable-multibyte=utf-8 \
   && make && make -s check
 configure: WARNING: you should use --build, --host, --target
@@ -96,7 +95,7 @@ Testing vport ...                                                passed.
 
 {{{
 % gosh -V
-Gauche scheme interpreter, version 0.8.9 [utf-8,pthreads]
+Gauche scheme interpreter, version 0.8.11 [utf-8,pthreads]
 }}}
 
 これで、Kahuaを使うためのGaucheの準備が整いました。
