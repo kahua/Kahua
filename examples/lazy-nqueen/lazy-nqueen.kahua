@@ -1,0 +1,207 @@
+;; -*- coding: utf-8 ; mode: scheme-*-
+;; lazy-nqueen.kahua
+;;
+;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: lazy-nqueen.kahua,v 1.5.10.1 2007/06/29 08:03:31 bizenn Exp $
+;;
+;; This example shows how to lazy style works.
+;; 
+
+(use srfi-1)
+(use util.list)
+(use gauche.collection)
+(use gauche.sequence)
+
+;; lazy-queens
+
+(define (lazy-queens board-size)
+  (define (queen-cols k)
+    (delay
+      (let1 ek (whnf k)
+	(if (= ek 0)
+	    (lazy-cons '() '())
+	    (lazy-filter
+	     (lambda (positions) (delay (lazy-safe? ek positions)))
+	     (lazy-flatmap 
+	      (lambda (rest-of-queens) 
+		(delay 
+		  (lazy-map 
+		   (lambda (new-row)
+		     (delay 
+		       (lazy-adjoin-position new-row ek rest-of-queens)))
+		   (lazy-enumerate-interval 1 board-size))))
+	      (queen-cols (- ek 1))))))))
+  (delay (queen-cols board-size)))
+
+(define (lazy-adjoin-position row k qs)
+  (delay (lazy-cons (lazy-cons k row) qs)))
+
+(define (lazy-safe? col positions)
+  (delay
+    (let ((hd (lazy-car positions))
+	  (tl (lazy-cdr positions)))
+      (lazy-all (lambda (pos) (lazy-safe-simple? col (lazy-cdr hd) pos)) tl))))
+
+(define (lazy-all p ls)
+  (delay
+    (let1 els (whnf ls)
+      (if (null? els)
+	  #t
+	  (and (whnf (p (lazy-car ls))) (whnf (lazy-all p (lazy-cdr ls))))))))
+
+(define (lazy-safe-simple? col row pos)
+  (delay
+    (let ((lu (- (whnf (lazy-cdr pos)) (whnf (lazy-car pos))))
+	  (ll (+ (whnf (lazy-cdr pos)) (whnf (lazy-car pos)))))
+      (and (not (= lu (- (whnf row) (whnf col))))
+	   (not (= ll (+ (whnf row) (whnf col))))
+	   (not (= (whnf (lazy-cdr pos)) (whnf row)))))))
+
+(define q6 (lazy-queens 6))
+(define q7 (lazy-queens 7))
+(define q8 (lazy-queens 8))
+(define q9 (lazy-queens 9))
+(define q10 (lazy-queens 10))
+(define q11 (lazy-queens 11))
+(define q12 (lazy-queens 12))
+
+;; page
+
+(define (simple-page-template ttl)
+  (lambda (elems)
+    (html/ (head/ (title/ ttl))
+	   (body/ (@/ (bgcolor "white"))
+		  (h1/ ttl)
+		  elems))))
+
+(define (lister q n s items template)
+  (define (show-ans ans)
+    (define (show-row r)
+      (let1 vec (make-vector q "○")
+	(begin
+	  (vector-set! vec (- (cdr r) 1) "●")
+	  (map/ td/ vec))))
+    (table/ (@/ (border "1")) 
+	    (map/ (lambda (l) (tr/ (show-row l))) ans)))
+  (lambda ()
+    (let* ((curnext (lazy-split-at items n))
+	   (cur (lazy-car curnext))
+	   (next (lazy-cdr curnext)))
+      (template
+       (p/ (x->string (+ s 1)) "個目の解"
+	   (map/ show-ans (nf cur))
+	   (let1 enext (whnf next)
+	     (unless/ (null? enext) 
+	       (a/cont/ (@@/ (cont (lister q n (+ s n) enext template))) "Next")))
+	   " | "
+	   (a/cont/ (@@/ (cont (nqueens-start (simple-page-template "N-Queens"))))
+		    "Restart"))))))
+
+(define (nqueens-start template)
+  (define (make-link n q)
+    (let1 title #`",|n|-Queens"
+      (a/cont/ (@@/ (cont (lister n 1 0 q (simple-page-template title)))) title)))
+  (lambda ()
+    (template 
+     (node-set
+      (intersperse " , " (map (cut make-link <> <>)
+			      '(6 7 8 9 10 11 12)
+			      `(,q6 ,q7 ,q8 ,q9 ,q10 ,q11 ,q12)))))))
+
+(initialize-main-proc (nqueens-start (simple-page-template "N-Queens")))
+
+;; Lazy staffs
+
+(define (whnf obj)
+  (let1 forced (force obj)
+    (if (promise? forced)
+	(whnf forced)
+	forced)))
+
+(define (nf obj)
+  (let1 eobj (whnf obj)
+    (if (pair? eobj) 
+	(cons (nf (car eobj)) (nf (cdr eobj)))
+	eobj)))
+
+(define (lazy-cons hd tl)
+  (delay (cons hd tl)))
+
+(define (lazy-car obj)
+  (delay (car (whnf obj))))
+
+(define (lazy-cdr obj)
+  (delay (cdr (whnf obj))))
+
+
+(define (lazy-map f obj)
+  (delay 
+    (let1 eobj (whnf obj)
+      (if (null? eobj)
+	  '()
+	  (lazy-cons (f (lazy-car eobj)) 
+		     (lazy-map f (lazy-cdr eobj)))))))
+
+(define (lazy-filter p obj)
+  (delay 
+    (let1 eobj (whnf obj)
+      (if (null? eobj)
+	  '()
+	  (let ((hd (lazy-car eobj))
+		(tl (lazy-cdr eobj)))
+	    (if (whnf (p hd))
+		(lazy-cons hd (lazy-filter p tl))
+		(lazy-filter p tl)))))))
+
+(define (lazy-take obj n)
+  (delay
+    (let1 en (whnf n)
+      (if (<= en 0)
+	  '()
+	  (let1 eobj (whnf obj)
+	    (if (null? eobj)
+		'()
+		(lazy-cons (lazy-car eobj) 
+			   (lazy-take (lazy-cdr eobj) (- en 1)))))))))
+
+(define (lazy-split-at obj n)
+  (delay
+    (let1 eobj (whnf obj)
+      (if (null? eobj)
+	  (lazy-cons '() '())
+	  (let1 en (whnf n)
+	    (if (= en 0)
+		(lazy-cons '() eobj)
+		(let1 rc (lazy-split-at (lazy-cdr eobj) (- en 1))
+                  (lazy-cons (lazy-cons (lazy-car eobj) (lazy-car rc))
+			     (lazy-cdr rc)))))))))
+			     
+(define (lazy-append xs ys)
+  (delay
+    (let1 exs (whnf xs)
+      (if (null? exs)
+          ys
+	  (lazy-cons (lazy-car exs) (lazy-append (lazy-cdr exs) ys))))))
+
+(define (lazy-foldr f i xs)
+  (delay
+    (let1 exs (whnf xs)
+      (if (null? exs)
+	  i
+          (f (lazy-car exs) (lazy-foldr f i (lazy-cdr exs)))))))
+
+(define (lazy-enumerate-interval low high)
+  (delay
+    (let ((elow (whnf low))
+	  (ehigh (whnf high)))
+      (if (> elow ehigh)
+          '()
+          (lazy-cons elow (lazy-enumerate-interval (+ elow 1) ehigh))))))
+
+(define (lazy-flatmap proc seq)
+  (delay
+    (lazy-foldr lazy-append '() (lazy-map proc seq))))
+

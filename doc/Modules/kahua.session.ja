@@ -1,0 +1,97 @@
+;; Modules/kahua.session -*- mode: text; coding: utf-8 -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.session.ja,v 1.2.2.1 2007/05/31 03:48:10 bizenn Exp $
+
+
+* [module] kahua.session
+
+アプリケーションサーバー内で、セッションID (gsid) とサーバー内のデータ
+構造との結び付きを管理するモジュールです。
+
+continuation gsidに対しては、それと継続手続きとの関連を管理します。
+
+state gsidに対しては、それと<session-state>オブジェクトとの関連を管理し
+ます。<session-state>オブジェクトは、アプリケーションサーバが立ち上がっ
+ている期間中有効なオブジェクトで、例えばユーザのログイン状態等を保持し
+ます。アプリケーションサーバは独自の情報を追加して保持できます。state
+gsidは通常Webブラウザのクッキーを通じて管理されるため、特定のブラウザに
+結びつけられたオブジェクトと考えて良いでしょう。
+
+** [procedure] session-manager-init ''worker-id'' [''session-server-id'']
+
+アプリケーションサーバーは最初にこれを呼んでセッションマネージャを初期
+化します。''worker-id''には [[kahua.gsid]] モジュールのmake-worker-id
+で作成されたworker-idを渡します。
+
+state gsidをプロセス間で共有する場合は、state gsidを管理する
+[[../Scripts/kahua-keyserv]]のworker idを''session-server-id''に渡しま
+す。これが与えられた場合、state gsid関係のリクエストは全て
+kahua-keyservを通じて処理されます。これが与えられない場合、state gsidは
+プロセスローカルなテーブルで管理されます。
+
+** [procedure] session-cont-register ''cont'' [''id'']
+
+継続手続き''cont'' (procedure)を登録し、その継続セッションIDを返します。
+permanent entry を登録する場合 (define-entryによる: [[kahua.server]]参
+照) は、そのIDを''id''引数で与えます。
+
+''id'' を与えない場合、その継続セッションIDはkahua.conf
+[[kahua.config]]参照)で指定されるタイムアウト時間後に削除されます。
+
+** [procedure] session-cont-get ''id''
+
+継続セッションID ''id'' に対応する継続手続きを返します。対応する手続き
+が無い場合は#fを返します。
+
+** [procedure] session-cont-discard ''id''
+
+;; Discards the continuation procedure associated with ''id'' (if any).
+(もしあれば) ''id'' に結びつけられた継続手続きを破棄します。
+
+** [procedure] session-cont-sweep ''age''
+
+;; Discards sessions that are older than ''age'' (in seconds).
+;; Returns the number of sessions discarded.
+''age'' (秒)より古いセッションを破棄し、破棄したセッション数を返します。
+
+
+** [procedure] session-state-register [''id'']
+
+;; Register a new session state.  Returns a state session ID.
+;; You can specify ID, but otherwise the system generates one for you.
+
+新しいセッション状態を登録し、セッションIDを返します。IDを指定すること
+ができますが、そうしながった場合はシステムがセッションIDを作成します。
+
+** [procedure] session-state-get ''id''
+
+;; Returns a session state object corresponding ID.
+;; If no session is associated with the ID, a new session state
+;; object is created.
+''id'' に結びついたセッション状態オブジェクトを返します。もし、指定され
+たID に結びついたセッションがなければ、新しいセッション状態オブジェクト
+が生成されます。
+
+
+** [procedure] session-state-discard ''id''
+
+;; Discards the session specified by ID.
+''id'' で指定されたセッションを破棄します。
+
+** [procedure] session-state-sweep ''age''
+
+;; Discards sessions that are older than AGE (in seconds)
+;; Returns # of sessions discarded.
+''age'' (秒)より古いセッションを破棄し、破棄したセッション数を返します。
+
+** [procedure] session-state-refresh ''id''
+
+;; Update session timestamp.
+''id''で指定されたセッションのタイムスタンプを更新します。
+
+** [procedure] session-flush-all
+
+;; Discards all sessions (both cont and state).
+すべてのセッションを破棄します(継続セッションと状態セッションの両方とも)。

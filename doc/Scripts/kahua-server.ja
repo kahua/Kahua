@@ -1,0 +1,34 @@
+;; -*- coding: utf-8 -*-
+;; This document is written in WiLiKi format.
+;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
+;;
+;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: kahua-server.ja,v 1.2.2.1 2007/05/31 03:48:10 bizenn Exp $
+
+* kahua-server [-c conf-file] [-k keyserv] app [args ...]
+
+アプリケーションappをワーカプロセスとして起動するスクリプト。
+ロードされるアプリケーション本体は $(working-directory)/checkout/app/app.kahua
+というスクリプトになる。
+
+通常、[[kahua-spvr]] が適切な引数とともに kahua-server を起動、管理するので、
+ユーザが直接起動する必要はない。
+
+kahua-serverは起動されるとサーバソケットを開き、クライアントからのリクエスト
+待ちループに入る。
+
+** 起動オプション
+
+<<<
+ -c conf-file
+    conf-fileには設定ファイルのパスを指定する。通常起動元の[[kahua-spvr]]に
+    指定されたconf-fileが、そのまま引き継がれて指定される。
+
+ -k keyserv
+    keyserv は [[kahua-keyserv]] のワーカID。[[kahua-spvr]] は自らの起動時に
+    まず [[kahua-keyserv]] を起動し、以降 kahua-server を起動する際にこの
+    オプション経由でそのワーカIDを渡す。kahua-server は、セッション情報を
+    保存するために [[kahua-keyserv]] と通信を行う。
+>>>

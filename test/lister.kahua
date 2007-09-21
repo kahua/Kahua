@@ -1,0 +1,27 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
+
+(use srfi-1)
+(use util.list)
+
+(define (simple-page-template ttl)
+  (lambda (elems)
+    (node-set: (html: (head: (title: ttl))
+		      (body: (@: (bgcolor "white"))
+			     (h1: ttl)
+			     (node-list-to-node-set elems))))))
+
+(define all-items
+  (map (lambda (n) (li: (x->string n))) (iota 15)))
+
+(define (lister items template)
+  (lambda ()
+    (receive (cur next)
+	     (split-at* items 10)
+	     (template
+	       (list
+		(ul: (node-list-to-node-set cur) 
+		     (if (null? next) '() 
+			 (li: (a/cont: (@@: (cont (lister next template)))
+				       "Next")))))))))
+
+(initialize-main-proc (lister all-items (simple-page-template "Lister")))

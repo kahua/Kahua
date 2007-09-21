@@ -1,0 +1,157 @@
+;; Site Bundle  -*- coding: utf-8 -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+
+* サイトバンドルとは
+
+[[Servers//Kahuaサーバ群]]の説明にある通り、Kahuaは、ひとつの
+kahua-spvr(スーパバイザ)の下、kahua-keyservが1プロセスと1つ以上のアプリ
+ケーションが動作します。アプリケーションは1つ以上のワーカプロセスで構成
+され、kahua-spvrは、Kahuaクライアントからのリクエストを、アプリケーショ
+ン内のワーカプロセスに割り当てて処理させることになります。この、1つの
+kahua-spvrの下にぶらさがるサーバ群をまとめて「サイト」と呼んでいます。
+ちょうどZopeのインスタンスみたいな感じでしょうか。
+
+このサイトの中では、アプリケーション間でデータベースやセッションを共有
+することができます(というより、デフォルトで共有している)。複数のアプリ
+ケーションが簡単に連携できるわけです。
+
+このサイトが使うデータベースやアプリケーションコード、テンプレートや設
+定ファイル、開発ユーザアカウントなど、全てのものを1つのディレクトリ階層
+にまとめたものが'''サイトバンドル'''です。Macユーザなら、アプリケーショ
+ンをある作法に則ったディレクトリ構造で表現する「アプリケーションバンド
+ル」をご存知でしょう。サイトバンドルは、あの考え方をKahuaのサイトに適用
+したものなのです。
+
+注: サイトバンドルの導入にともない、ユーザ専用モードは廃止しました。
+
+* サイトバンドルを作る
+
+まず、サイトバンドルを作ってみましょう。以降で紹介する例では、Kahuaの
+コマンドが置かれているディレクトリにパスが通っているものとします。
+{{{
+% kahua-package create ~/work/kahua
+}}}
+これで空のサイトバンドルが作成されます。このサイトバンドルに対して
+kahua-spvrを起動するには次のようにします。
+{{{
+% kahua-spvr -S ~/work/kahua --httpd 8080
+}}}
+
+
+* ディレクトリ構造
+
+サイトバンドルはある作法に則ったディレクトリ構造です。各ディレクトリや
+ファイルの役割は以下のようになります。
+
+{{{
+${path_to_site}/                  : サイトバンドルのルート(上記の例では~/work/kahua)
+${path_to_site}/app-servers       : ワーカ設定ファイル
+${path_to_site}/app/              : アプリケーションソースディレクトリ
+${path_to_site}/database/         : fsdbの置き場
+${path_to_site}/database/db       : デフォルトデータベース
+${path_to_site}/etc/              : 設定ファイル置き場ディレクトリ
+${path_to_site}/etc/kahua.conf    : 設定ファイル
+${path_to_site}/logs/             : ログディレクトリ
+${path_to_site}/run/              : PIDディレクトリ
+${path_to_site}/run/kahua-spvr.pid
+${path_to_site}/run/kahua-keyserv.pid
+${path_to_site}/run/kahua-httpd.pid
+${path_to_site}/tmp/              : テンポラリディレクトリ
+${path_to_site}/sock/             : ソケットディレクトリ
+${path_to_site}/sock/kahua        : Kahuaソケット
+${path_to_site}/static/           : 静的コンテンツディレクトリ
+${path_to_site}/user.conf         : 開発者アカウントデータベース
+}}}
+
+
+* サイトバンドルを使う
+
+上でもちょっと触れたように、Kahuaの各コマンドに-S path-to-siteを渡すと、
+指定されたサイトバンドルを使ってコマンドを起動することになります。なお、
+サイトバンドルを使用する場合、デフォルトの設定ファイル(kahua.conf)は全
+く参照されないことにご注意ください。
+
+- kahua-spvrをHTTPdつきで起動する
+{{{
+% kahua-spvr -S ~/work/kahua --httpd 8080
+}}}
+
+- そのkahua-spvrにkahua-adminを接続して開発ユーザを追加する
+{{{
+% kahua-admin -S ~/work/kahua
+spvr> lsuser
+()
+spvr> adduser bizenn password admin developer
+done
+spvr> lsuser
+("bizenn")
+spvr> 
+}}}
+作成直後、作られたサイトバンドルは文字通り空っぽです。
+従って、開発ユーザを追加しておかないと、kahua-shellが使えません。
+
+- アプリケーションを追加してみる
+{{{
+(define (main)
+  (html/ (head/ (title/ "Hello Kahua!!"))
+  (body/ (h1/ "Hello Kahua!!"))))
+(initialize-main-proc main)
+}}}
+こんな中身のファイルを
+{{{
+~/work/kahua/app/hello/hello.kahua
+}}}
+として作成する。次に~/work/kahua/app-serversファイルを以下のように編集します。
+{{{
+;; -*-scheme-*-
+;; Application Service Configuration alist.
+;;
+(;;Each entry follow this format:
+ ;;(<type> :arguments (<arg> ...) :run-by-default <num>
+ ;;        :profile <path-to-profile-base>
+ ;;        :default-database-name <path-to-database>)
+ (hello :arguments () :run-by-default 2)
+ ) 
+}}}
+さっきのkahua-adminの中でreloadすると、helloアプリケーションのワーカプ
+ロセスが起動します。
+{{{
+spvr> ls
+wno   pid type         since        wid
+spvr> reload
+(hello)
+spvr> ls
+wno   pid type         since        wid
+  0  5638 hello        Dec 25 18:29 4cm:2rejo
+  1  5639 hello        Dec 25 18:29 4cn:56aqu
+spvr> 
+}}}
+これで
+{{{
+http://localhost:8080/hello
+}}}
+にアクセスできるようになりました。
+
+- kahua-shellでhelloアプリケーションにつないでみる
+{{{
+% kahua-shell -S ~/work/kahua
+Welcome to Kahua.
+username: bizenn
+password: 
+wno type         since        wid
+  0 hello        Dec 25 18:29 4cm:2rejo
+  1 hello        Dec 25 18:29 4cn:56aqu
+select wno> 0
+
+hello(4cm:2rejo)> 
+}}}
+
+なお、いつも同じサイトバンドルを使用するのであれば、以下のように環境変
+数でデフォルトで使用するサイトバンドルを指定することができます。
+{{{
+% KAHUA_DEFAULT_SITE=$HOME/work/kahua; export KAHUA_DEFAULT_SITE
+}}}
+これで、-Sを指定しなくても、サイトバンドルとして~/work/kahuaが使われま
+す。.profileなどに入れておけば便利でしょう。

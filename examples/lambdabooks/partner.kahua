@@ -1,0 +1,36 @@
+;; -*- coding: utf-8; mode: kahua -*-
+;; Example kahua application (lambdabooks)
+;;
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: partner.kahua,v 1.6.10.1 2007/06/29 08:03:26 bizenn Exp $
+
+(define (partnership-info cont)
+  (cont 
+   (node-set/
+    (h2/ "パートナーシッププログラムについて")
+    (p/ (b/ "lambda-booksのパートナーになりませんか"))
+    (p/ "lambda-booksでは、パートナーになって頂けるサイト管理者の方を"
+	"募集しています。lambda-booksのパートナーになることにより、"
+	"あなたのサイトの訪問者は、あなたのサイトから容易に最先端の"
+	"コンピュータサイエンス、プログラミング言語の情報へと"
+	"アクセスすることができるようになります。")
+    (p/ "lambda-booksのパートナーシップロゴ (λ) により、"
+	"サイトの訪問者は、あなたが「普通のやつらの上を行く」ことを"
+	"知ることができます。カッコつけるのが好きなあなたには"
+	"最適のアイテムです")
+    (p/ "lambda-booksのパートナーになるのは簡単！次に上げる本のいずれかを"
+	"購入し、それをあなたの本棚の目立つところに飾ります。"
+	"そして、あなたのサイトのトップページに「λ」の文字を入れるだけ！")
+    (p/ "パートナーシップ対象書籍")
+    (ul/ (li/ "Abelson & Sussman: Structure and Interpretation of Computer Programs")
+	 (li/ "Queinnec: Lisp In Small Pieces")
+	 (li/ "Kiczales, des Rivieres & Bobrow: The Art of the Metaobject Protocol")
+	 (li/ "Steele (Ed.): Common LISP the Language Second Edition"))
+    (p/ "あなたの参加をお待ちしています。")
+    (p/ (@/ (style "text-align:right"))
+	(a/cont/ "トップページに戻る")))
+   ))
+

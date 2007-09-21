@@ -1,0 +1,195 @@
+package	          = @PACKAGE_NAME@
+package_version   = @PACKAGE_VERSION@
+SHELL             = @SHELL@
+prefix            = @prefix@
+exec_prefix       = @exec_prefix@
+bindir            = @bindir@
+sbindir           = @sbindir@
+libexecdir	  = @libexecdir@
+datarootdir	  = @datarootdir@
+datadir		  = @datadir@/$(package)
+sysconfdir        = @sysconfdir@/$(package)
+sharedstatedir    = @sharedstatedir@/$(package)
+localstatedir     = @localstatedir@/$(package)
+libdir            = @libdir@/$(package)
+includedir        = @includedir@/$(package)
+oldincludedir     = @oldincludedir@/$(package)
+infodir           = @infodir@
+mandir            = @mandir@
+srcdir            = @srcdir@
+VPATH             = $(srcdir)
+top_builddir      = @top_builddir@
+top_srcdir        = @top_srcdir@
+
+KAHUA_USER_OPTION = @KAHUA_USER_OPTION@
+KAHUA_GROUP_OPTION= @KAHUA_GROUP_OPTION@
+
+DESTDIR           =
+
+GOSH                   = @GOSH@
+GAUCHE_CONFIG          = @GAUCHE_CONFIG@
+INSTALL                = @GAUCHE_INSTALL@
+INSTALL_TYPE           = @INSTALL_TYPE@
+SCM_INSTALL_DIR        = $(libdir)
+SCRIPT_INSTALL_DIR     = $(bindir)
+KAHUA_STATICDIR        = @KAHUA_STATICDIR@
+SOCKET_BASE_DIR        = $(prefix)/tmp/$(package)
+TMP_BASE_DIR           = $(localstatedir)/tmp
+
+MAKE_SH_SCRIPT   = $(GOSH) $(top_srcdir)/src/make-script.scm "$(GOSH)" "$(libdir)"
+
+INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) \
+	       $(SCM_SCRIPT_INSTALL_DIR) \
+               $(SCM_INSTALL_DIR) \
+               $(SCM_INSTALL_DIR)/kahua \
+	       $(SCM_INSTALL_DIR)/kahua/test \
+               $(SCM_INSTALL_DIR)/kahua/pdf \
+	       $(SCM_INSTALL_DIR)/kahua/persistence
+
+TESTENV_DIR  = $(top_builddir)/tmp
+
+SH_SCRIPTS  = kahua-spvr    \
+              kahua-admin   \
+              kahua-install \
+              kahua-shell \
+	      kahua-httpd \
+	      kahua-dbutil \
+              kahua-config \
+	      kahua-package \
+              kahua-user
+
+SCM_SCRIPTS  = kahua-spvr.scm    \
+               kahua-admin.scm   \
+               kahua-install.scm \
+               kahua-shell.scm   \
+               kahua-server.scm  \
+               kahua-keyserv.scm \
+	       kahua-httpd.scm   \
+	       kahua-dbutil.scm  \
+               kahua-config.scm  \
+               kahua-package.scm \
+	       kahua-user.scm
+
+SCMFILES = $(SCM_SCRIPTS) \
+           kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
+           kahua/config.scm kahua/session.scm kahua/server.scm \
+           kahua/developer.scm kahua/partcont.scm kahua/elem.scm \
+           kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm \
+           kahua/sandbox.scm kahua/plugin.scm kahua/pdf.scm \
+           kahua/pdf/interp.scm kahua/pdf/main.scm kahua/pdf/monad.scm \
+           kahua/pdf/srfi-48-draft.scm  kahua/pdf/srfi-48.scm \
+           kahua/pdf/state.scm kahua/pdf/typeset.scm kahua/pdf/util.scm \
+           kahua/error-report.scm kahua/thread-pool.scm \
+	   kahua/persistence/fs.scm kahua/persistence/efs.scm kahua/persistence/dbi.scm \
+	   kahua/persistence/mysql.scm kahua/persistence/postgresql.scm \
+	   kahua/protocol/worker.scm kahua/protocol/http.scm \
+	   kahua/xml-template.scm
+
+CONFFILE = $(sysconfdir)/kahua.conf
+USERCONFFILE = $(localstatedir)/user.conf
+
+GENERATED = $(SH_SCRIPTS) kahua.conf test.conf \
+            kahua/config.scm kahua.conf
+
+CONFIG_GENERATED = Makefile 
+.PHONY: all check testenv clean distclean install maintainer-clean
+
+all: $(GENERATED)
+
+$(SH_SCRIPTS) : make-script.scm
+
+kahua-admin :
+	$(MAKE_SH_SCRIPT) kahua-admin
+
+kahua-spvr :
+	$(MAKE_SH_SCRIPT) kahua-spvr
+
+kahua-install :
+	$(MAKE_SH_SCRIPT) kahua-install
+
+kahua-shell :
+	$(MAKE_SH_SCRIPT) kahua-shell
+
+kahua-httpd :
+	$(MAKE_SH_SCRIPT) kahua-httpd
+
+kahua-dbutil :
+	$(MAKE_SH_SCRIPT) kahua-dbutil
+
+kahua-config :
+	$(MAKE_SH_SCRIPT) kahua-config
+
+kahua-package :
+	$(MAKE_SH_SCRIPT) kahua-package
+
+kahua-user :
+	$(MAKE_SH_SCRIPT) kahua-user
+
+kahua/config.scm: kahua/config.scm.in
+	test ! -f $@ || chmod +w $@
+	sed -e "s@##sysconfdir##@$(sysconfdir)@" \
+	    -e "s@##localstatedir##@$(localstatedir)@" \
+	    -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" \
+	    -e "s@##KAHUA_STATICDIR##@$(KAHUA_STATICDIR)@" \
+	    -e "s@##package##@$(package)@" \
+	    -e "s@##KAHUA_VERSION##@$(package_version)@" \
+            $@.in > $@
+	chmod -w $@
+
+kahua.conf: kahua.conf.sample
+	test ! -f $@ || chmod +w $@
+	sed -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" \
+            -e "s@##localstatedir##@$(localstatedir)@" \
+            -e "s@##KAHUA_STATICDIR##@$(KAHUA_STATICDIR)@" \
+            kahua.conf.sample > $@
+	chmod -w $@
+
+test.conf : make-testconf.scm
+	$(GOSH) ./make-testconf.scm $(top_builddir) $(top_srcdir)
+
+check:
+
+# cleanup
+clean:
+	rm -rf core *~ kahua/*~ $(GENERATED)
+	rm -rf $(TESTENV_DIR)
+
+install: all
+	$(INSTALL) -m 0755 -d $(sysconfdir) $(libexecdir)
+	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0775 -d $(localstatedir)
+	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0770 -d $(localstatedir)/checkout $(localstatedir)/logs
+	$(INSTALL) $(KAHUA_USER_OPTION) $(KAHUA_GROUP_OPTION) -m 0770 -d $(SOCKET_BASE_DIR) $(TMP_BASE_DIR)
+	@if test "$(KAHUA_STATICDIR)" != ""; then \
+	  $(INSTALL) $(KAHUA_GROUP_OPTION) -m 0775 -d $(KAHUA_STATICDIR); \
+        fi
+	$(INSTALL) -m 0444 -T $(SCM_INSTALL_DIR) -S $(srcdir) $(SCMFILES)
+	$(INSTALL) -m 0555 -T $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
+	@if test ! -f $(sysconfdir)/kahua.conf; then \
+	  $(INSTALL) -m 0644 kahua.conf $(sysconfdir)/kahua.conf; \
+	fi
+	@if test ! -f $(localstatedir)/user.conf; then \
+	  $(INSTALL) $(KAHUA_GROUP_OPTION) -m 0660 user.conf.sample $(localstatedir)/user.conf; \
+	fi
+	@if test -d $(sysconfdir)/skel; then \
+	  rm -rf $(sysconfdir)/skel.bak; \
+	  mv $(sysconfdir)/skel $(sysconfdir)/skel.bak; \
+	fi
+	@if test ! -d $(sysconfdir)/skel; then \
+	  cp -R ../skel $(sysconfdir)/skel; \
+	  mv $(sysconfdir)/skel/TEMPLATE_DIST $(sysconfdir)/skel/DIST; \
+	  mv $(sysconfdir)/skel/TEMPLATE_DIST_EXCLUDE $(sysconfdir)/skel/DIST_EXCLUDE; \
+	fi
+
+uninstall:
+	$(INSTALL) -U $(SCM_INSTALL_DIR) -S $(srcdir) $(SCMFILES)
+	$(INSTALL) -U $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
+	-rmdir -p $(SCM_INSTALL_DIR)
+	-rmdir -p $(SCRIPT_INSTALL_DIR)
+
+distclean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+

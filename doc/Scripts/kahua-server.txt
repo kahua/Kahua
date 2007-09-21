@@ -1,0 +1,21 @@
+kahua-server
+kahua-server [-c conf-file] [-k keyserv] app [args ...]
+
+This is the script that is to activate application app as worker process.
+The application loaded comes to the script called "$(working-directory)/checkout/app/app.kahua".
+
+Generally, you don't need to activate kahua-server directory because kahua-spvr activate and manage kahua-server with proper arguments.
+
+After kahua-server is activated, server socket is opened and goes into the waiting loop for request from client.
+ 
+Activate options
+
+-c conf-file
+
+Set the path of configuration file into "conf-file".
+Generally, "conf-file" is continued in the "conf-file" specified by its kahua-spvr without any changes.
+
+-k keyserv
+
+"keyserv" is the worker ID of kahua-keyserv.
+When "kahua-spvr" activates itself, activate "kahua-keyserv" at first. On the occasion of activating "kahua-spvr", its worker ID is provided through this option. "kahua-server" talks to "kahua-keyserv" to store session information.

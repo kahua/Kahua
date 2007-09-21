@@ -1,0 +1,87 @@
+;; -*- coding: utf-8 ; mode: kahua -*-
+;; nqueen.kahua
+;;
+;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: nqueen.kahua,v 1.6.10.1 2007/06/29 08:03:32 bizenn Exp $
+;;
+;; This example shows how to capture continuations within Kahua application.
+;; You need to use call/pc instead of call/cc --- that's it.
+
+(use srfi-1)
+
+(define (l2a proc rows rest)
+  (if (null? rest)
+      #f
+      (let* ((cap (car rest))
+	     (rest (cdr rest)))
+	(proc cap (append rows rest))
+	(l2a proc (cons cap rows) rest))))
+
+(define (nqueen size show-answer)
+  (define (valid? cap lst)
+    (define (iter idx rest)
+      (if (null? rest)
+	  #t
+	  (let ((i (car rest)))
+	    (if (or (= i (+ cap idx))
+		    (= i (- cap idx)))
+		#f
+		(iter (+ 1 idx) (cdr rest))))))
+    (iter 1 lst))
+
+  (define (iter rows rest)
+    (if (null? rest)
+	(show-answer rows)
+	(l2a (lambda (cap r)
+	       (if (valid? cap rows)
+		   (iter (cons cap rows) r)))
+	     '() rest)))
+
+  (iter '() (iota size)))
+
+(define (page ttl . elems)
+  (html/ (head/ (title/ ttl))
+	 (apply body/ elems)))
+
+(define-entry (nqueen-page num)
+  (let ((ansnum 0)
+        (anslist '()))
+    
+    (call/cc
+     (lambda (cont)
+
+       (define (ans-page cont/nq)
+         (let1 ret
+             (page "nqueen answer page"
+                   (div/ (h1/ (format "answer list of ~A queens" num))
+                         (h2/ (format "ansnum: ~A" ansnum))
+                         (ul/ (map/ (lambda (ans) (li/ (x->string ans))) anslist))
+                         (hr/)
+                         (p/ (when/ cont/nq
+			       (a/cont/ (@@/ (cont (cut cont/nq #f))) "next items"))
+			     " "
+			     (a/cont/ (@@/ (cont nqueen-start)) "restart"))
+                         ))
+           (set! ansnum 0)
+           (set! anslist '())
+           ret))
+
+       (nqueen (string->number num)
+               (lambda (rows)
+                 (inc! ansnum)
+                 (set! anslist (cons rows anslist))
+                 (if (> ansnum 10)
+		     (call/pc (lambda (cont/nq)
+				(cont (ans-page cont/nq)))))))
+       (ans-page #f)))))
+
+(define-entry (nqueen-start)
+  (page "nqueen start"
+        (div/ (a/cont/ (@@/ (cont nqueen-page 8)) "8 queens")
+              ", "
+              (a/cont/ (@@/ (cont nqueen-page 12)) "12 queens"))))
+
+(initialize-main-proc nqueen-start)

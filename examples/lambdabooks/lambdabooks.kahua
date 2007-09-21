@@ -1,0 +1,116 @@
+;; -*- coding: utf-8; mode: kahua -*-
+;; sample kahua application using kahua.app.elua.alt
+;;
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: lambdabooks.kahua,v 1.8.10.1 2007/06/29 08:03:26 bizenn Exp $
+
+(use srfi-1)
+(use gauche.collection)
+(use gauche.logger)
+(use file.util)
+(use util.list)
+(use srfi-2)
+
+(log-open (kahua-logpath "lambdabooks.log"))
+
+(load "lambdabooks/login.kahua")
+(load "lambdabooks/lister.kahua")
+(load "lambdabooks/book.kahua")
+(load "lambdabooks/review.kahua")
+(load "lambdabooks/partner.kahua")
+(load "lambdabooks/useradmin.kahua")
+
+;;========================================================
+;; Main application
+;;
+
+;; Standard page construction ----------------------------
+(define (imgpath filename)
+  (kahua-static-document-url "lambdabooks" "images" filename))
+
+(define (img-logo)
+  (img/ (@/ (src (imgpath "lambda-books-logo.png")) (alt "[lambda books]")
+	    (border "0") (width 216) (height 47))))
+
+(define (img-separator)
+  (img/ (@/ (src (imgpath "separator.jpg")) (alt "[separator]")
+	    (width 480) (height 4))))
+
+;; standard-frame :: [SXML] -> [SXML]
+(define (standard-frame contents)
+  (html/
+   (head/ (title/ "Lambda books"))
+   (body/ (@/ (style "background-color: #ffffff; width:490px; margin: .5em auto;"))
+	  (standard-header)
+	  contents
+	  (standard-footer))))
+
+;; standard-page :: [SXML] -> [SXML]
+(define (standard-page contents)
+  (standard-frame
+   (table/ (tr/ (td/ (@/ (valign "top"))
+		     (standard-menu))
+		(td/ (@/ (valign "top"))
+		     (if (eq? contents empty)
+			 (default-contents)
+			 contents))))))
+
+(define (standard-header)
+  (node-set/ (a/cont/ (img-logo))
+	     (br/)
+	     (img-separator)))
+
+(define-entry (books pid)
+  (if pid
+      (show-book-detail (x->integer pid) standard-page)
+      (show-book-list standard-page)))
+
+(define-entry (user-admin-page)
+  (user-admin-panel standard-page))
+
+(define-entry (partner-page)
+  (partnership-info standard-page))
+
+(define (standard-menu)
+  (table/
+   (tr/ (td/ (user-box standard-frame standard-page)))
+   (tr/ (td/ (a/cont/ (@@/ (cont books)) "Books")))
+   (tr/ (td/ (a/cont/ (@@/ (cont partner-page)) "Partnership")))
+   ;; admin roleのユーザーにのみ、リンクを見せる
+   (tr/ (@@/ (require-role 'admin))
+	(td/ (a/cont/ (@@/ (cont user-admin-page)) "[ユーザ管理]")))))
+
+(define (standard-footer)
+  (node-set/
+   (img-separator)
+   (div/ (@/ (style "text-align: right"))
+	 "Powered by "
+	 (a/ (@/ (href "http://www.kahua.org/")) "Kahua"))))
+
+(define (default-contents)
+  (define (new-title book)
+    (node-set/
+     (tr/ (td/ (b/ (ref book 'title))))
+     (tr/ (td/ (@/ (style "text-align: right"))
+	       (ref book 'authors) "著"))
+     (tr/ (td/ (@/ (style "text-align: right"))
+	       "キャンペーン価格：" (ref book 'price) "円"))
+     (tr/ (td/ (@/ (style "text-align: right"))
+	       (a/cont/ (@@/ (cont books (slot-ref book 'product-id)))
+			"詳しい情報を見る...")))))
+
+  (node-set/
+   (h2/ "最新ニュース")
+   (p/ "本サイトは、Kahuaフレームワークのデモサイトです。")
+   (h2/ "新刊情報")
+   (p/ "サイト開設記念特別キャンペーン価格にて販売中!")
+   ;; ダミーデータ。最初の2冊を表示
+   (let1 dummy-books (filter-map (cut find-kahua-instance <book> 'product-id <>) '(0 1))
+     (if (pair? dummy-books)
+         (table/ (map/ new-title dummy-books))
+	 (p/ "(書籍データがありません)")))))
+
+(initialize-main-proc (cut standard-page empty))

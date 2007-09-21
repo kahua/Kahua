@@ -1,0 +1,67 @@
+package           = kahua
+SHELL             = @SHELL@
+prefix            = @prefix@
+exec_prefix       = @exec_prefix@
+bindir            = @bindir@
+sbindir           = @sbindir@
+libexecdir        = @libexecdir@
+datarootdir	  = @datarootdir@
+datadir           = @datadir@/$(package)
+sysconfdir        = @sysconfdir@/$(package)
+sharedstatedir    = @sharedstatedir@/$(package)
+localstatedir     = @localstatedir@/$(package)
+libdir            = @libdir@/$(package)
+includedir        = @includedir@/$(package)
+oldincludedir     = @oldincludedir@/$(package)
+infodir           = @infodir@
+mandir            = @mandir@
+
+srcdir      = @srcdir@
+VPATH       = $(srcdir)
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+KAHUA_ELISPDIR = @KAHUA_ELISPDIR@
+
+DESTDIR  =
+
+INSTALL = @INSTALL@
+MKINSTDIR = $(top_srcdir)/mkinstalldirs
+
+ELISPS = kahua.el
+
+CONFIG_GENERATED = Makefile 
+.PHONY: all check clean distclean install maintainer-clean
+
+all: $(ELISPS)
+
+kahua.el : kahua.el.in
+	sed "s@##bindir##@${bindir}@" kahua.el.in > kahua.el.tmp && \
+	mv kahua.el.tmp kahua.el
+
+check:
+
+clean:
+	rm -rf core *~ $(ELISPS)
+
+install: all
+	if test "$(KAHUA_ELISPDIR)" != ""; then \
+	  $(MKINSTDIR) $(KAHUA_ELISPDIR); \
+	  for f in $(ELISPS); do \
+	    $(INSTALL) -m 555 $$f $(KAHUA_ELISPDIR)/$$f; \
+	  done; \
+	fi
+
+uninstall:
+	for f in $(ELISPS); do \
+	  if test -r $(KAHUA_ELISPDIR)/$$f; then \
+	    rm -f $(KAHUA_ELISPDIR)/$$f; \
+	  fi; \
+	done; \
+
+distclean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+

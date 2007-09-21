@@ -1,0 +1,15 @@
+;; -*-scheme-*-
+;; Sample app-servers file.
+;; $Id: app-servers.sample,v 1.6 2004/04/26 09:42:37 nobsun Exp $
+
+(
+;; (<type> :arguments (<arg> ...) :run-by-default <num>)
+;; See http://www.kahua.org/cgi-bin/index.cgi/kahua-spvr
+ (lambdabooks   :arguments () :run-by-default 1)
+ (wiki-iki      :arguments () :run-by-default 1)
+ (login         :arguments () :run-by-default 1)
+ (foldlist      :arguments () :run-by-default 0)
+ (lambdacalcul  :arguments () :run-by-default 0)
+ (nqueen        :arguments () :run-by-default 0)
+ (lazy-nqueen   :arguments () :run-by-default 0)
+)

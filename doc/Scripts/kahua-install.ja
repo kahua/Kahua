@@ -1,0 +1,45 @@
+;; -*- coding: utf-8 -*-
+;; This document is written in WiLiKi format.
+;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
+;;
+;; Copyright (c) 2003-2006 Scheme Arts, L.L.C., All rights reserved.
+;; Copyright (c) 2003-2006 Time Intermedia Corporation, All rights reserved.
+;;
+;; $Id: kahua-install.ja,v 1.2.2.1 2007/05/31 03:48:10 bizenn Exp $
+
+* kahua-install [-c conf-file] [-U] [-t material-type] [-r rename] [--no-overwrite] file [...]
+
+file を現在の設定ファイルの内容に従った箇所にKahuaアプリケーションの
+マテリアルとしてインストールするためのスクリプト。
+
+<<<
+ -c conf-file
+    conf-fileは [[kahua-spvr]] などと共通の設定ファイルのパスを指定する
+    ([[../Modules/kahua.config]]参照)。
+
+ -t material-type
+    material-type には、"static", "script", "base", "plugin" のいずれかを
+    指定する。
+      static
+        file は設定ファイルで指定される static-document-path 以下にイン
+        ストールされる
+      script
+        fileは設定ファイルで指定される $(working-directory)/checkout の
+	下にインストールされる
+      base
+        fileは$(working-directory)直下にインストールされる
+      plugin
+        fileは$(working-directory)/plugins にインストールされる
+
+ -r rename
+    オプションが与えられると、インストールされたファイル名が"'rename''へ
+    と変更される。
+
+ --no-overwrite
+    このオプションが与えられている場合、既に指定のファイルが指定の場所に
+    存在する場合はインストールを行わない。
+
+ -U
+    このオプションが指定された場合、既にインストールされているファイルを
+    取り除く。
+>>>

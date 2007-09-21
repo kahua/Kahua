@@ -1,0 +1,12 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
+
+(define (acont/start)
+  (page-frame (a/cont: (@@: (cont next)) "next")))
+
+(define-entry (next)
+  (page-frame (a/cont: "top")))
+
+(define (page-frame . contents)
+  (node-set: (html: (body: (node-list-to-node-set contents)))))
+
+(initialize-main-proc acont/start)

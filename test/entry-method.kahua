@@ -1,0 +1,106 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
+
+(define-class <folder> (<kahua-persistent-base>)
+  ((obj-id :allocation :persistent
+           :init-keyword :obj-id
+           :accessor key-of)
+   (contents :allocation :persistent
+             :init-keyword :contents
+             :init-value '())))
+
+(define-class <file> (<kahua-persistent-base>)
+  ((obj-id :allocation :persistent
+           :init-keyword :obj-id
+           :accessor key-of)
+   (body :allocation :persistent
+         :init-keyword :body)))
+
+(define-class lin*k (<kahua-persistent-base>)
+  ((obj-id :allocation :persistent
+           :init-keyword :obj-id
+           :accessor key-of)
+   (body :allocation :persistent
+         :init-keyword :body)))
+
+(define-entry (make-objects)
+  (let1 obj (make <folder>
+              :obj-id "Kahua"
+              :contents (list (make <file> :obj-id "VERSION" :body "0.3.4")
+                              (make <file> :obj-id "README" :body "see INSTALL")
+                              (make <folder> :obj-id "Kahua2")
+                              (make lin*k :obj-id "tmp*link" :body "tmp link")))
+    (apply-entry-method show obj)))
+
+
+(define-entry-method show (:keyword k)
+  (html/
+   (body/
+    (h1/ (kahua-current-entry-name))
+    (if k
+        (h2/ k)
+      ""))))
+
+(define-entry-method show (arg1 :rest rargs)
+  (html/
+   (body/
+    (x->string rargs))))
+
+(define-entry-method show (p1)
+  (html/
+   (body/
+    (span/ p1))))
+
+(define-entry-method show (p1 p2)
+  (html/
+   (body/
+    (h1/ p1)
+    (h2/ p2))))
+
+(define-entry-method show ((folder <folder>))
+  (html/
+   (body/
+    (h1/ #`"here is ,(key-of folder)")
+    (ul/
+     (map/ (lambda (c)
+             (li/
+              (a/cont/ (@@/
+                        (cont show c))
+                       (key-of c))))
+           (ref folder 'contents))))))
+
+(define-entry-method show ((file <file>))
+  (html/
+   (body/
+    (h1/ (key-of file))
+    (pre/ (ref file 'body)))))
+
+(define-entry-method show ((file <file>) "size")
+  (html/
+   (body/
+    (h1/ "size of " (key-of file))
+    (pre/ (x->string (string-length (ref file 'body)))))))
+
+(define-entry-method show ((file <file>) "desc")
+  (html/
+   (body/
+    (h1/ "description of " (key-of file))
+    (pre/ (format "class : ~a" (class-name (class-of file)))))))
+
+(define-entry-method show ((file <file>) unknown)
+  (html/
+   (body/
+    (h1/ (format "unknown info for ~a : ~a" (key-of file) unknown)))))
+
+(define-entry-method show ("flat" (folder <folder>))
+  (html/
+   (body/
+    (map/ (compose span/ key-of)
+          (ref folder 'contents)))))
+
+(define-entry-method show ((link lin*k))
+  (html/
+   (body/
+    (h1/ (key-of link))
+    (pre/ (ref link 'body)))))
+
+(initialize-main-proc make-objects)

@@ -1,0 +1,24 @@
+@node kahua, kahua.config, Top, Top
+@chapter kahua
+@c NODE kahua
+
+@c JP
+Kahuaアプリケーションフレームワークのモジュール群をまとめてインポートするためのモジュール。
+以下のモジュールをextendする。
+
+@c COMMON
+@menu
+* kahua.config::
+@c * kahua.util::
+@c * kahua.partcont::
+@c * kahua.gsid::
+@c * kahua.persistence::
+@c * kahua.user::
+@c * kahua.session::
+@c * kahua.server::
+@c * kahua.developer::
+@c * kahua.elem::
+@c * kahua.plugin::
+@c * kahua.sandbox::
+@c * kahua.error-report::
+@end menu

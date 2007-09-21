@@ -1,0 +1,30 @@
+kahua-httpd
+kahua-httpd [-c conf-file] [--runas user:group] [-l logfile] [-t threads] [-p port] host[:port] ...
+
+kahua-httpd is simplified HTTPd of Kahua.
+You can activate from kahua-spvr by -H option.
+Also you can activate by it.
+
+ --runas user:group
+Make user or group to setuid(2) or setgid(2), after open server socket,
+
+In case of using privileged port like standard port of www(80),you need to repeal root authority with this option after activation from root authority.
+
+-l log-file
+
+Set logfile. In case of activating kahua-httpd separately, logs are output to standard error output by skipping this option. In case of starting kahua-httpd from kahua-spvr, logs are output to $(working-directory)/logs/kahua-httpd.log.
+
+-t # of thread
+
+Set the number of thread to start on thread pool, in advance. 10 threads are set by default.
+
+-p port
+
+Set the port number to listen(2). The port 80 is default port number.
+
+host[:port]
+
+Set the address and port to listen(2). 
+If you skip to set the port, the setting of -p option is used. If you skip -p option as well, the port 80 is used.
+
+Set IP address or available host name as host. If you skip to set this, 0.0.0.0 or :: (for IPv6) is used.

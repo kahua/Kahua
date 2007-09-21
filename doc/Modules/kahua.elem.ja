@@ -1,0 +1,213 @@
+;; Modules/kahua.elem -*- mode: text; coding: utf-8 -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.elem.ja,v 1.4.2.1 2007/05/31 03:48:10 bizenn Exp $
+
+
+* [module] kahua.elem
+
+このモジュールはノード記述言語を構成するタグ関数を提供します。
+
+タグ関数は、0個以上のノードをとり、ノードを返す関数です。
+
+タグ関数には、ノードの実装方法の違いによって、次の2種類があります。
+
+- 単純タグ関数: ノードは、SXMLのノード
+- 高階タグ関数: ノードは、関数ノード
+
+単純タグ関数はタグシンボルと組み合わせて使うことができますが、高階タグ
+関数は他のものと混在することはできません。
+
+
+** タグ関数を定義する
+
+一部を除けば、単純タグ関数や高階タグ関数はどれも同じ処理をしており、タ
+グシンボルが異なるだけです。標準で含まれていないタグシンボルを持つタグ
+関数は、以下のマクロで定義できます。
+
+*** [macro] define-basic-element tagname
+
+標準的な単純タグ関数 tagname: と、高階タグ関数 tagname/ とを定義します。
+
+*** [macro] define-elements tagname1 tagname2 ...
+
+複数のタグシンボルに対するタグ関数を一度に定義します。
+
+
+** 単純タグ関数
+
+*** [procedure] HTMLタグ: ''args'' ...
+
+以下のタグ関数は各種HTMLタグに相当する関数群です。0個以上のノード(SXML
+ノード)を引数にとり、ノード(SXMLノード)を返します。
+{{{
+tt: i: b: big: small: em: strong: dfn: code: samp: kbd: var: cite: abbr: 
+acronym: sub: sup: span: bdo: br: body: address: div: a: area: link: img: 
+hr: p: h1: h2: h3: h4: h5: h6: pre: q: blockquote: ins: del: dl: dt: dd: 
+ol: ul: li: form: label: input: select: optgroup: option: textarea: fieldset: 
+legend: button: table: caption: thead: tfoot: tbody: colgroup: col: 
+tr: th: td: head: title: base: meta: style: script: noscript:
+applet: param: object: embed: noembed: html:
+}}}
+
+*** [macro] @: (''name'' ''value'') ...
+
+単純タグ関数とともに使用し、単純タグ関数が構築するノードの属性リストを
+表現するノードを作ります。このマクロの''name''は評価されません。
+''name''はシンボルでなければなりません。
+
+*** [macro] @@: (''name'' ''value'' ...) ...
+
+単純タグ関数とともに使用し、単純タグ関数が構築するノードの補助属性リス
+トを表現するノードを作ります。このマクロの''name''は評価されません。
+''name''はシンボルでなければなりません。
+
+*** [procedure] a/cont: ''args'' ...
+
+HTMLのリンクに継続を結びつけるSXMLノードを返します。
+
+*** [procedure] form/cont: ''args'' ...
+
+HTMLのフォームに継続を結びつけるSXMLノードを返します。
+
+*** [procedure] extra-header: ''args'' ...
+
+HTTPのレスポンスメッセージのヘッダーに加えたい情報を保持するSXMLノード
+を返します。
+
+*** [procedure] node-list->node-set ''ls''
+*** [procedure] node-list-to-node-set ''ls''
+
+SXMLノードのリストを取り、一つのSXMLノードに変換し返します。
+
+*** [procedure] node-set: ''args'' ...
+
+複数のSXMLノードをとり、それらを一つのSXMLノードにまとめて返します。
+
+*** [macro] when: ''expr'' ''. body''
+
+''expr''が真の時は ''body'' を順番に評価し、最後の値を返します。偽の時
+は (node-set:) を評価した値が返ります。''body''の最後でSXMLノードを返す
+ことにより、''expr'' が真の時のみ出現するノードを表現することができま
+す。
+
+*** [macro] unless: ''expr'' ''. body''
+
+''expr''が偽の時は ''body'' を順番に評価し、最後の値を返します。真の時
+は (node-set:) を評価した値が返ります。''body''の最後でSXMLノードを返す
+ことにより、''expr'' が偽の時のみ出現するノードを表現することができま
+す。
+
+
+** 高階タグ関数
+
+*** [procedure] HTMLタグ/ ''args'' ...
+
+以下のタグ関数は各種HTMLタグに相当する関数群です。(関数で表現された)ノードを
+引数にとり、(関数で表現された)ノードを返します。
+{{{
+tt/ i/ b/ big/ small/ em/ strong/ dfn/ code/ samp/ kbd/ var/ cite/ abbr/ 
+acronym/ sub/ sup/ span/ bdo/ br/ body/ address/ div/ a/ area/ link/ img/ 
+hr/ p/ h1/ h2/ h3/ h4/ h5/ h6/ pre/ q/ blockquote/ ins/ del/ dl/ dt/ dd/ 
+ol/ ul/ li/ form/ label/ input/ select/ optgroup/ option/ textarea/ fieldset/
+legend/ button/ table/ caption/ thead/ tfoot/ tbody/ colgroup/ col/ 
+tr/ th/ td/ head/ title/ base/ meta/ style/ script/ noscript/
+applet/ param/ object/ embed/ noembed/ html/
+}}}
+
+*** [macro] @/ (''name'' ''value'') ...
+
+高階タグ関数とともに使用し、高階タグ関数が構築するノードの属性リストを
+表現する関数ノードを作ります。''name''は評価されません。''name''はシン
+ボルでなければなりません。
+
+*** [macro] @@/ (''name'' ''value'' ...) ...
+
+高階タグ関数とともに使用し、高階タグ関数が構築するノードの補助属性リス
+トを表現する関数ノードを作ります。''name''は評価されません。''name''は
+シンボルでなければなりません。
+
+*** [procedure] a/cont/ ''args''
+
+HTMLのリンクに継続を結びつける関数ノードを返します。
+
+*** [procedure] form/cont/ ''args''
+
+HTMLのフォームに継続を結びつける関数ノードを返します。
+
+*** [procedure] extra-header/ ''args''
+
+HTTPレスポンスメッセージのヘッダーに加えたい情報を保持する関数ノードを
+返します。
+
+*** [procedure] node-set ''sts''
+
+関数ノードのリストを一つの関数ノードに変換する手続きです。
+
+*** [constant] empty
+
+空の関数ノードです。
+
+*** [procedure] text/ ''args''
+
+文字列を関数ノードに変換する手続きです。
+
+*** [macro] when/ ''expr'' ''. body''
+
+''expr''が真の時は ''body'' を順番に評価し、最後の値を返します。偽の時
+は empty が返ります。''body''の最後で関数ノードを返すことによ
+り、''expr'' が真の時のみ出現するノードを表現することができます。
+
+*** [macro] unless/ ''expr'' ''. body''
+
+''expr''が偽の時は ''body'' を順番に評価し、最後の値を返します。真の時
+は empty が返ります。''body''の最後で関数ノードを返すことによ
+り、''expr'' が偽の時のみ出現するノードを表現することができます。
+
+
+** 組合せ子
+
+関数ノードの並びを関数ノードとする基本演算。ユーザ定義のノードを作成し
+たいときに使います。
+
+(参考)現行のKahuaでは、関数ノードは、それまでの関数ノードを処理して生成
+したSXMLノードスタックを引数としてとり、現在の関数ノードを処理して生成
+したSXMLノードをそのスタックに積んでそれを返す「関数」として実装されて
+います。関数ノードは、このスタックに積まれているものの内容を見ることは
+なく、自分自身の処理結果を積んで次へわたすだけです。この実装は将来変更
+される可能性があります。
+
+以下の2つは、互換性が保たれるよう、ジェネリック関数として実装される予定
+です。
+
+*** [procedure] >>= ''st'' ''f''
+
+現行の Kahua では使いません。
+
+*** [procedure] >> ''st1'' ''st2''
+
+二つのノード''st1''と''st2''を組合せて一つのノードを作ります。
+
+以下は現行の関数ノードの実装に依存しています。
+
+*** [constant] get
+
+SXMLスタックを取得する関数ノードを表す定数です。
+
+*** [procedure] put ''s''
+
+SXMLスタックを ''s'' に変更する関数ノードを返します。
+
+*** [procedure] update ''f''
+
+SXMLスタックを''f''で変換してそれに変更する関数ノードを返します。
+
+*** [procedure] exec ''s0'' ''st''
+
+SXMLスタック ''s0'' に ''st'' を適用し、処理結果のSXMLスタックを返します。
+
+*** [procedure] rev-nodes ''node-set''
+
+SXMLスタックの内容を処理した順序に並び換る手続き。
+

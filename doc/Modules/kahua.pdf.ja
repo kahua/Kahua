@@ -1,0 +1,281 @@
+kahua.pdf
+
+[module] kahua.pdf
+
+ここに示された関数はkahua.pdf.mainモジュールのなかで定義され、かつkahua.pdfが
+継承して利用できるようにしているものです。
+
+[macro] (with-output-to-string body ...) => "%PDF-1.3 ..."
+
+PDF描画命令を処理してPDF形式の文字列として返します。
+
+[macro] (with-document body ...)
+
+PDF描画命令を処理してdocオブジェクトを生成します。出力はwrite-documentまたは
+write-document-to-portを使います。
+
+[procedure] (write-document file)
+
+これまで作成したdocオブジェクトをfileに出力します。同じファイル名がある場合は
+上書きされます。
+
+[procedure] (write-document-port port)
+
+これまで作成したdocオブジェクトをPDFの形式に直してportに出力します。
+
+[macro] (with-document-to-port port body ...)
+
+PDF描画命令を処理してPDF形式のデータをportに出力します。
+
+[procedure] (font-name obj) => "/CLF###"
+
+フォントオブジェクトからページストリーム中で使われるフォント名を返します。
+
+[procedure] (unit-size) => num
+
+1インチあたりのポイント数（72）を返します。
+
+[procedure] (page-width) => num
+
+[procedure] (page-height) => num
+
+現在作成しているPDFのページ幅・高さを返します。
+
+[procedure] (build-cidsysteminfo) => obj
+
+CID System Infoオブジェクトを生成し、現在作成中のdocオブジェクトに追加します。
+これは和文フォントを利用するときは必須となります。また、build-jfont関数よりも
+先に呼び出されている必要があります。
+
+[procedure] (build-font basename) => font
+
+欧文フォントを生成し、現在作成中のdocオブジェクトに追加します。現在basenameに
+は以下のフォントが指定できます。
+
+"Times-Roman" タイムズ・ローマン "Helvetica" ヘルヴェティカ "Courier" クーリエ
+
+[procedure] (build-jfont basename encoding) => obj
+
+和文フォントを生成し、現在作成中のdocオブジェクトに追加します。現在basenameに
+は以下のフォントが指定できます。
+
+"Ryumin-Light" 明朝 "GothicBBB-Medium" ゴシック
+
+またencodingには以下の形式が指定できます。
+
+"EUC-H" 日本語EUC・横書き "RKSJ-H" シフトJIS・横書き
+
+[module] kahua.pdf.util
+
+ここに示された関数はkahua.pdf.utilモジュールのなかで定義され、かつkahua.pdfが
+継承して利用できるようにしているものです。
+
+これらはすべて、現在生成しているページストリームに対して PDF描画命令を追加する
+もので、with-documentやwith-document-to-portの body部分に指定することができま
+す。
+
+[procedure] (set-page-stream port)
+
+ページストリームの出力先を変更します。
+
+[macro] (with-saved-state body ...)
+
+位置、フォント、ブラシなどの状態を保存してbodyを実行し、以前の状態に戻します。
+
+[macro] (in-text-mode body ...)
+
+テキストモードでbodyを実行します。
+
+[procedure] (set-font f s)
+
+フォントとポイント数を切り替えます。fにはfontobjectではなく、 (name-of
+fontobject)が返す文字列を指定します。
+
+[procedure] (draw-jtext str)
+
+英文・和文が混在する文字列を出力します。行・ページの折り返しは行いません。途中
+でフォントを切り替えないため、和文Type0フォント（明朝、ゴシック）においてのみ
+正しく出力できます。
+
+[procedure] (draw-combo-text str f1 s1 f2 s2)
+
+英文・和文で異なるフォントを指定して文字列を出力します。行・ページの折り返しは
+行いません。 f1 s1に英文のフォント名とポイント数、 f2 s2に和文のフォント名とポ
+イント数を指定します。 f1、f2とも(name-of fontobject)が返す文字列を指定しま
+す。
+
+[procedure] (draw-char f s c)
+
+フォント、サイズ、文字を指定して1文字出力します。
+
+[procedure] (draw-text str)
+
+英文のみの文字列を出力します。行・ページの折り返しは行いません。
+
+[procedure] (move-text dx dy)
+
+次に出力する文字列の位置を指定します。dx dyは直前の文字列開始位置からの相対位
+置（ポイント）となります。
+
+[procedure] (rotate deg)
+
+現在の位置を基準に座標を回転させます。角度で指定します。
+
+[procedure] (translate dx dy)
+
+相対位置を指定して座標を移動させます。
+
+[procedure] (scale sx sy)
+
+座標のスケール（倍率）を変更させます。
+
+[procedure] (set-line-width w)
+
+線の幅をポイント数で指定します。
+
+[procedure] (move-to x y)
+
+パス位置を移動します。絶対位置で指定します。
+
+[procedure] (line-to x y)
+
+現在位置から指定の位置まで線を引きます。
+
+[procedure] (stroke)
+
+[procedure] (close-and-stroke)
+
+[procedure] (fill-path)
+
+[procedure] (close-and-fill)
+
+[procedure] (even-odd-fill)
+
+[procedure] (fill-and-stroke)
+
+[procedure] (even-odd-fill-and-stroke)
+
+[procedure] (close-fill-and-stroke)
+
+[procedure] (close-even-odd-fill-and-stroke)
+
+[procedure] (end-path-no-op)
+
+[procedure] (clip-path)
+
+[procedure] (even-odd-clip-path)
+
+指定したパスについて、線を引いたり（stroke）、中を塗りつぶしたり（fill）しま
+す。
+
+[procedure] (set-gray-stroke gray)
+
+[procedure] (set-gray-fill gray)
+
+[procedure] (set-rgb-stroke r g b)
+
+[procedure] (set-rgb-fill r g b)
+
+[procedure] (set-cymk-stroke c y m k)
+
+[procedure] (set-cymk-fill c y m k)
+
+strokeとfillの操作についてグレイスケール（0.0:黒〜1.0:白）、 RGBカラー（各成分
+0.0〜1.0）、CYMKカラー（各成分0.0〜1.0）を指定します。
+
+[procedure] (circle cx cy r)
+
+[procedure] (arc cx cy r start extent)
+
+[procedure] (pie cx cy r start extent)
+
+[procedure] (ellipse cx cy ra rb)
+
+[procedure] (rectangle x y dx dy r)
+
+指定した位置に図形（円、円弧、扇、楕円、矩形）を描きます。
+
+[module] kahua.pdf.interp
+
+ここに示している関数はkahua.pdf.interpにて定義されており、かつkahua.pdfが継承
+して利用できるようにしているものです。
+
+SXMLで書かれたHTMLを解析し、段落のように逐次的に並べた 「ボックスデータ」とし
+て返します。
+
+[procedure] (make-state numbering indent top-flag tags boxes)
+
+SXML解析中の状態を保持するステートを生成します。解析を始める場合は(make-state
+0 0 #f '() '())として生成した初期値を渡します。
+
+ステートの属性（ナンバリング、インデント、フラグ、タグ）を返します。
+
+[procedure] (boxes-of-state state)
+
+ステート中の処理結果のボックスを返します。
+
+[procedure] (reverse-lines box)
+
+ボックスの中身（行）を逆順に並べ替えたボックスを返します。
+
+[procedure] (interp-html-pdf nodes)
+
+HTMLタグのハンドリングテーブル（html-environment）を元にして、 SXMLの解析を行
+い、結果を返します。
+
+[module] kahua.pdf.state
+
+ここに示している関数はkahua.pdf.stateにて定義されており、かつkahua.pdfが継承し
+て利用できるようにしているものです。
+
+[procedure] (exec/state s0 st)
+
+状態モナドについての演算を定義します。
+
+[module] kahua.pdf.monad
+
+このモジュールは、kahua.pdf.stateにおける状態モナドを定義するものです。
+
+[module] kahua.pdf.typeset
+
+ここに示している関数はkahua.pdf.typesetにて定義されており、かつkahua.pdfが継承
+して利用できるようにしているものです。
+
+ここでは禁則処理を含めたテキストの組版を扱います。 kahua.pdf.typesetモジュール
+はkahua.pdf.interpモジュールが生成されたボックスデータを処理して、最終的にPDF
+出力を行います。
+
+[procedure] (with-docdata-to-file file pdfbox)
+
+interp-html-pdfが返すデータを受け取り、A4ページサイズに合わせて行送り・ページ
+送りを行いPDFを生成した後、ファイルに書き出します。
+
+デフォルトでは組版は次のように行われます。
+
+          ページサイズ ... 842×595ポイント（A4サイズ）
+          マージン ... 上下72ポイント / 左右72ポイント
+          インデント ... 24ポイント
+          行間スペース ... 10ポイント（h1 h2タグの上はさらに10ポイント増える）
+          通常フォント ... Times/明朝 12ポイント
+          h1タグ ... Helvetica/ゴシック 24ポイント
+          h2タグ ... Helvetica/ゴシック 16ポイント
+          bタグ ... Helvetica/ゴシック 12ポイント
+          emタグ ... Helvetica/ゴシック 14ポイント
+          strongタグ ... Helvetica/ゴシック 14ポイント
+          ttタグ ... Courier/ゴシック 12ポイント
+          preタグ ... Courier/ゴシック 12ポイント
+          禁則処理
+            英単語は英文字以外が現れるところまで戻って改行を行う。
+            またASCII文字の閉括弧、JIS X0208文字の句読点・閉括弧・
+            平仮名カタカナの拗音・音引きが行頭に現れるか、
+            ASCII文字の開括弧かJIS X0208文字の開括弧が行末に
+            現れた場合、その条件を満たさない場所まで戻って改行を行う。
+            （※このため、各行は右端揃えにはなりません）
+
+[procedure] (with-docdata-to-port port pdfbox)
+
+interp-html-pdfが返すデータを受け取り、A4ページサイズに合わせて行送り・ページ
+送りを行いPDFを生成した後、ポートに書き出します。
+
+組版の方法はwith-docdata-to-fileと同じです。
+

@@ -1,0 +1,172 @@
+/* style sheet for %%_PROJECT_NAME_%% */
+/* $Id:$ */
+
+/*
+ * Common stuff
+ */
+body {
+  font-family: verdana, arial, helvetica, sans-serif;
+  color: black;
+  background-color: white;
+  padding: 0pt;
+  margin: 0pt;
+}
+
+h1, h2, h3, h4, h5, h6 {
+   text-align: left;
+   color: #29661a;
+   background: transparent;
+}
+h1 { font-size: 150% }
+h2 { font-size: 130% }
+h3 { font-size: 120% }
+h4 { font-size: 110% }
+h5 { font-size: 100% }
+h6 { font-size: 100%; font-style: italic }
+
+hr {
+  padding: 0pt; margin: 0pt;
+  border-width: 1px 0px 0px 0px;
+  border-style: solid;
+  border-color: #729669;
+}
+
+pre {
+  background-color: #ffffee;
+  border-color: #bbccbb;
+  border-width: 1px;
+  border-style: solid;
+  padding: 0.5em;
+}
+
+p.warning {
+  color: #ff0000;
+}
+
+table.user-form th {
+  text-align: right;
+  padding-right: 5pt;
+}
+
+/*
+ * Title pane
+ */
+div#title-pane {
+  text-align: left;
+  font-size: 190%;
+  color: #ffffff;
+  margin: 0pt;
+  padding: 10pt 15pt 5pt 10pt;
+  background: solid;
+  background-color: #49b52f;
+}
+
+div#title-pane p {
+  margin: 0pt; padding: 0pt;
+}
+
+/*
+ * Navigation pane
+ */
+table#navigation-pane {
+  width: 100%;
+}
+
+td#navigation-pane-left {
+  padding-left: 2em;
+  text-align: left;
+  font-size: 90%;
+}
+
+td#navigation-pane-right {
+  text-align: right;
+  font-size: 90%;
+}
+
+/*
+ * Body pane
+ */
+table#body-pane {
+  width: 100%;
+}
+
+td#main-pane {
+  vertical-align:top;
+  padding: 0.5em 1em 0.5em 1em;
+}
+
+div#edit-menu {
+  text-align: right;
+  font-size: 90%;
+  color: #777777;
+}
+
+div#page-footer { 
+  text-align: right;
+  font-size: 80%;
+  color: #777777;
+}
+
+td#side-pane {
+  vertical-align:top;
+  font-size: 90%;
+  width:10em;
+  border-width: 0px 1px 0px 0px; 
+  border-style: solid;
+  border-color: #729669;
+}
+
+td#side-pane ul { 
+  margin: 0pt 5pt 0pt 5pt;
+  padding-left: 10pt;
+}
+
+td#side-pane > h2 {
+  font-size: 100%;
+  margin: 0pt 1pt 0pt 1pt;
+  padding: 0pt;
+  text-align: center;
+  background: solid;
+  background-color: #aaddbb;
+}
+
+td#side-pane p {
+  margin: 0pt 0pt 1pt 0pt;
+  padding: 1pt;
+}
+
+/*
+ * Bottom pane
+ */
+div#bottom-pane {
+  text-align: center;
+  font-size: 70%;
+  color: #999999;
+}
+
+div#bottom-pane p {
+  padding: 0px;
+  margin: 5px;
+}
+
+/*
+ * Error display
+ */
+.macro-error {
+    background-color: #ee5555;
+}
+
+/*
+ * Comment
+ */
+.simplecommentmacro {
+  font-size: 80%;
+}
+
+.commentform {
+  font-size: 80%;
+}
+
+.comments {
+  font-size: 80%;
+}

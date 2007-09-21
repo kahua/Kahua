@@ -1,0 +1,35 @@
+;; Modules/kahua.util -*- mode: text; coding: utf-8 -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.util.ja,v 1.2.2.1 2007/05/31 03:48:10 bizenn Exp $
+
+
+* [module] kahua.util
+
+特定の機能群に属さないけれど便利な手続きを
+定義するモジュール。
+
+** [procedure] kahua-error-string ''error'' [''detail?'']
+
+エラーオブジェクト''error''を受け取り、エラーメッセージを文字列で返しま
+す。''detail?''が#tなら、スタックトレースも合わせて返します。
+
+** [condition] <kahua-error>
+
+Kahuaが返すエラーコンディションの基底クラスです。アプリケーションがエラー
+をraiseするのであれば、このクラスのサブクラスを使用するとよいでしょう。
+
+** [procedure] kahua-error?
+
+<kahua-error>のサブクラスかどうかを返す述語です。
+
+** [procedure] time->rfc1123-string　''time''
+
+<time>のオブジェクト''time''を受け取り、RFC1123形式の文字列を構築して返
+します。
+
+** [procedure] date->rfc1123-string ''date''
+
+<date>のオブジェクト''date''を受け取り、RFC1123形式の文字列を構築して返
+します。

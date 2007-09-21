@@ -1,0 +1,475 @@
+;; This document is written in WiLiKi format.
+;; See: http://practical-scheme.net/wiliki/wiliki.cgi?WiLiKi&l=en
+;;
+;; $Id$
+
+* Setup Kahua
+
+
+##(toc)
+
+** Preparation
+
+*** Installing Gauche
+
+To use Kahua, you need
+[http://practical-scheme.net/gauche/index-en.html Gauche]
+0.8.11 or later that supports pthread.  We strongly recommend
+using Gauche latest release version. We also recommend setting
+Character Encoding as UTF-8.
+
+Try following command to check which version of Gauche installed.
+
+{{{
+$ gosh -V
+Gauche scheme interpreter, version 0.8.11 [utf-8,pthreads]
+}}}
+
+
+If you have not installed proper version of Gauche, please install new
+version.  Do not forget to set "--enable-threads=pthreads" to
+configure option.
+
+From Kahua 1.0.3, the configure script check whether Gauche is
+installed properly or not.
+
+If you are trying to install on Linux, the script also checks that
+NPTL (Native POSIX Thread Library) is available or not.
+
+*** Other requisites
+
+Following things are required to install Kahua.
+
+- sh (bash,ksh or BSD sh) which can use configure script
+- make (GNU,BSD,Apple is OK)
+
+In some Linux distributions or install settings, "make" is not
+installed.  Please take proper steps.
+
+Additionally, if you want to develop Kahua application, you have to
+install autoconf 2.59 or later.
+
+----
+** Let's try Kahua
+
+You need to think several elements such as installed directory or
+authority, to run Kahua as practical operational environment.  Before
+run Kahua as practical operational environment, you'd better install
+Kahua and related files to one spot.
+
+*** Install under the $HOME/kahua
+
+If you just want to try Kahua, a recommended way is to install under
+your home directory.  By this way you don't need to care about
+permissions and user/group settings.
+
+{{{
+% tar xvzf Kahua-1.0.7.tgz
+% cd Kahua-1.0.7
+% ./configure --prefix=${HOME}/kahua
+% make
+% make check
+% make install
+% make install-examples
+}}}
+
+This will build the system from the source code and install it under
+the ${HOME}/kahua directory.  It will help you to add
+${HOME}/kahua/bin directory to your PATH.  If you use
+HTTPd(kahua-httpd) inside Kahua, you don't need to prepare Web server
+like appache.
+
+*** Install under the /usr/local/kahua
+
+If you want to install to system domain, you should install under the
+/usr/local/kahua.  By this way you also don't need to care about
+permissions and user/group settings by the site-bundle function.
+
+Following example shows that install to the site-bundle called
+$Home/site.
+
+{{{
+% tar xvzf Kahua-1.0.7.tgz
+% cd Kahua-1.0.7
+% ./configure --prefix=/usr/local/kahua --with-site-bundle=$HOME/site
+% make
+% make check
+% sudo make install
+% /usr/local/kahua/bin/kahua-package create ~/site
+% rm ~/site/app-servers
+% make install-examples
+}}}
+
+It will help you to add /usr/local/kahua/bin directory to your PATH.
+
+*** Starting Kahua
+
+Execute following command to start kahua.
+{{{
+% kahua-spvr -H localhost:8888
+}}}
+
+Use “-H” or “--httpd” option to start kahua-httpd, HTTPd inside
+Kahua.  The arguments of -H is '''[Host:]Ports number'''. Ports number
+is must.  Host is able to skip. If you appoint only port number, you
+can bind server socket to 0.0.0.0(or[::]).  Be aware that it can be
+accessed from external area freely, if you don't set filtering
+properly.
+
+
+In case that you install sample application to the $HOME/site, execute
+following command to start kahua.
+
+{{{
+% kahua-spvr -H localhost:8888 -S ~/site
+}}}
+
+"-S" sets the site-bundle to activate command. Its argument is the
+path(full-path or relative path from current directory) of
+site-bundle.
+
+Then, start a browser and visit http://localhost:8888/. You will see
+and can use one of sample applications, "lambdabooks".
+
+The source code of sample application is in the directory of which
+name is same as application name under
+"~$HOME/kahua/var/kahua/checkout" or "$HOME/site/app".
+
+
+*** Starts Kahua as background
+
+kahua-spvr can't demonize itself.  Execute following command to start
+as background, simply.
+
+{{{
+% (kahua-spvr -H localhost:8888 -S ~/site >>~/site/logs/kahua.log 2>&1 &)
+}}}
+
+Shutting off controlling terminal by binding up with "()".
+
+The normal output and normal error output of kahua-spvr should not
+redirect to /dev/null because the error message of abnormal exit
+appears in normal error output.
+
+On practical operational environment, you can prepare the script that
+calls above command line from rc or under the
+[http://cr.yp.to/daemontools.html daemontools].  The "multilog" is
+available to collect the messages of normal error output.
+
+Additionally, on developing environment, you can execute following
+command with [http://www.gnu.org/software/screen/ GNU screen].
+
+{{{
+% screen -d -m kahua-spvr -H localhost:8888 ~S ~/site
+}}}
+
+You can attach by your choice.
+
+----
+
+** Create development user.
+
+The kahua-shell is a front end script that is for connecting to active
+worker process and change internal condition, interactively.  You need
+to create development user to connect to worker.
+
+The development user of Kahua sets up for itself, so that you need to
+create each Kahua's working directory and site-bundle.
+
+At first, starts kahua-admin which is managing Kahua-servers.  From
+now on, this instruction assumes that you set the path to the
+directory that kahua-admin command is installed.
+
+{{{
+% kahua-admin
+spvr>
+}}}
+
+In case of using site-bundle, you need to use kahua-admin with "-S" or
+set environmental variable,KAHUA_DEFAULT_SITE to the path of
+site-bundle.
+
+Input following command to this prompt.
+
+{{{
+spvr> adduser usrname password
+done
+spvr>
+}}}
+
+For example, if you want to add the user which name is taro and
+password is secret, input following command to this prompt.
+
+{{{
+spvr> adduser taro secret
+done
+spvr> lsuser
+("steel" "sussman" "taro")
+spvr>
+}}}
+
+The user "steel" and "sussman" is sample user add by default.  You can
+delete them.
+
+In case of site-bundle, there is no default user, so the user "steel"
+and "sussman" don't exist.
+
+{{{
+spvr> deluser steel
+done
+spvr> deluser sussman
+done
+spvr>
+}}}
+
+Type EOF(Ctrl-D) to exit kahua-admin.
+
+Now you can use kahua-shell.  In case of using site-bundle, you need
+to use with "-S" or set environmental variable,KAHUA_DEFAULT_SITE to
+the path of site-bundle.
+
+{{{
+% kahua-shell
+Welcome to Kahua.
+username: taro
+password: 
+wno type         since        wid
+  0 lambdabooks  Sep 27 16:19 gje:2ft3z
+  1 wiki-iki     Sep 27 16:19 dej:inai
+  2 login        Sep 27 16:19 90j:5hwlk
+select wno> 0
+
+lambdabooks(gje:2ft3z)> (map (cut ref <> 'login-name) (make-kahua-collection <kahua-user>))
+("admin" "guest")
+lambdabooks(gje:2ft3z)>
+}}}
+
+The instruction above shows that it connected to the one of sample
+application,lambabooks and evaluated expression.
+
+----
+
+** Proper Installation procedure(Obsolete)
+
+If you'd like to install Kahua as root into the system area, you
+should know about Kahua a little more, and need to follow several
+steps.
+
+*** Users and Processes in Kahua
+
+In Kahua system, there are 3 categories processes. They run under
+different user privileges and communicate with each other.
+
+# Kahua Servers(Process: kahua-spvr, kahua-server, kahua-keyserv)
+# Kahua Bridges(Process: kahua.cgi, kahua.fcg, kahua-httpd)
+# Kahua Administrator and Application Developer (Real users use kahua-admin and kahua-user)
+
+All of them must be able to read and write the same UNIX domain
+socket.  And Kahua Servers and Kahua Bridges must be able to read and
+write temporary files under the same directory.
+
+*** Create group "kahua"
+
+You should create a new group, and add all above users to it, so that
+all Kahua processes communicate with each other via the same UNIX
+domain socket.
+
+{{{
+# groupadd kahua
+}}}
+
+Some operating system has some different commands to do the same
+task. Please see your system manuals.
+
+*** Create group "kahua"
+
+You should run Kahua Servers(kahua-spvr and scripts invoked by it)
+under a UNIX user privilege only for them. Now we assume the user is
+"kahua".
+
+{{{
+# useradd -g kahua kahua
+}}}
+
+*** Add other users to group "kahua"
+
+Now you should add the user under which Kahua Bridges run and Kahua
+administrators and application developers (they are real users) to
+group "kahua" created above.  Kahua Bridge CGI scripts
+(kahua.cgi/kahua.fcg) are generally invoked by Web server(like Apache
+httpd or lighttpd).  We assume that the Web server runs as user "www"
+(and you don't use suEXEC).
+
+{{{
+# usermod -G kahua www
+}}}
+
+You may need to restart the Web server to reflect this change.
+Additionally, you don't need to this setting when you use kahua-httpd.
+
+Next to this, you should consider Kahua manager/developer.  Assume
+that you are login user and your name is taro, for example.
+
+Execute following command to add taro to kahua group.
+
+{{{
+# usermod -G kahua taro
+}}}
+
+'''Attention:''' The behavior of "usermod" command is different among
+OS.  Please checks the behavior of "usermod" command before execute.
+
+*** Configuration and building
+
+Kahua is made up of almost pure Scheme(Gauche) scripts and a few shell
+scripts, but its configuration requires a careful attention.
+
+This is configuration and building process on a real site. 
+
+{{{
+% tar xzvf Kahua-1.0.7.tgz
+% cd Kahua-1.0.7
+% ./configure \
+    --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
+    --prefix=/usr/local/kahua \
+    --sysconfdir=/usr/local/etc \
+    --localstatedir=/var/local \
+    --with-cgidir=/var/local/www/cgi-bin \
+    --with-cgilogdir=/var/log/kahua/cgi \
+    --with-staticdir=/var/local/www/htdocs/kahua-data \
+    --with-fastcgi=yes
+% make
+}}}
+
+You can use GNU make or BSD make. If you fail with BSD make, Please
+try GNU make and report us what is wrong with BSD make.
+
+**** configure options
+
+Please see message of
+{{{
+% ./configure --help
+}}}
+but we describe some important options.
+
+{{{
+--with-kahua-user
+
+     User name under which Kahua Servers run.  Default: not specified.
+
+ --with-kahua-group
+
+     Group name that all users related to Kahua System must belong to.
+     Default: not specified.
+
+ --with-cgi-user
+
+     User name under which Kahua Bridge CGI scripts(kahua.cgi/kahua.fcg)
+     run. Generally it is the same user under which the Web server runs.
+     Default: not specified.
+
+ --with-cgidir
+
+     Directory path where Kahua Bridge CGI scripts are installed.
+     It depends on your Web server configuration.
+     Default: ${libexecdir}/kahua
+
+ --with-cgilogdir
+
+     Directory path where Kahua Bridge CGI scripts write out log
+     files.  Default: ${localstatedir}/kahua/cgilog
+
+ --prefix, --exec-prefix, ...
+
+     Standard configure options.  Generally you'd like to set --prefix,
+     --localstatedir, --sysconfdir and so on.  Kahua applications,
+     Kahua databases, log directories are normally deployed under
+     ${localstatedir}/kahua, and the configuration file is
+     ${sysconfdir}/etc/kahua.conf.
+
+ --with-staticdir
+
+     Kahua Servers and kahua-httpd search static contents(image files,
+     CSS files, etc...) under this directory.
+     Default: ${localstatedir}/kahua/static
+
+ --with-fastcgi
+
+     Install kahua.fcg, a Kahua Bridge FastCGI script.  You must
+     install Gauche-fastcgi extension in advance.  Default: no
+}}}
+
+*** Self check
+
+Just do this: 
+{{{
+% make check
+}}}
+
+*** Installing
+
+Execute these commands as root.
+{{{
+% su
+# make install
+}}}
+
+If you'd like to install sample applications, you should execute this
+command as a Kahua developer(not root).
+
+{{{
+% make install-examples
+}}}
+
+And you must fix owner/group of the sample database like this:
+{{{
+% su
+# chown -R kahua:kahua /usr/local/kahua/var/kahua/db*
+}}}
+You need * tail of above command line. Don't forget it.
+
+*** Starting Kahua Servers
+
+Congratulations! Now you can start Kahua Servers. Kahua Servers should
+be invoked under "kahua" user privilege.
+
+{{{
+# su kahua -c ${prefix}/bin/kahua-spvr
+}}}
+
+This command invokes kahua-spvr, Kahua Supervisor command, and it
+invokes kahua workers(kahua-server) and a key server(kahua-keyserv).
+If you want to use it with Kahua Web Server(kahua-httpd), you just do
+this:
+
+{{{
+# su kahua -c ${prefix}/bin/kahua-spvr --httpd localhost:8888
+}}}
+
+If you want that Kahua Servers run as background processes, you just
+do like this:
+
+{{{
+# su kahua -c "(${prefix}/bin/kahua-spvr >>${localstatedir}/kahua/logs/kahua-error.log 2>&1 &)"
+}}}
+
+Kahua System doesn't yet have any mechanism that registers its startup
+scripts to the operating system.  You must create them by hand, or you
+can use "daemontools" to manage Kahua Servers processes.
+
+----
+
+** Build from CVS
+
+To build and install the source from CVS Repository, you need autoconf
+2.54 or later.  Also if you try CVS-HEAD of Kahua, you should usr
+CVS-HEAD of Gauche.
+
+Execute following command to create configure script to build the
+source checked out from CVS.
+
+{{{
+% ./DIST gen
+}}}
+
+The procedure of build and install is same as released one.

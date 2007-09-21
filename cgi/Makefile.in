@@ -1,0 +1,93 @@
+#
+# Installing Kahua-related cgi scripts.
+# The destination should be specified by --with-cgidir argument of configure
+# script.
+#
+# $Id: Makefile.in,v 1.14.2.1 2007/07/03 07:15:14 bizenn Exp $
+#
+
+package	          = kahua
+SHELL             = @SHELL@
+prefix            = @prefix@
+exec_prefix       = @exec_prefix@
+bindir            = @bindir@
+sbindir           = @sbindir@
+libexecdir	  = @libexecdir@
+datarootdir	  = @datarootdir@
+datadir		  = @datadir@/$(package)
+sysconfdir        = @sysconfdir@/$(package)
+sharedstatedir    = @sharedstatedir@/$(package)
+localstatedir     = @localstatedir@/$(package)
+libdir            = @libdir@/$(package)
+includedir        = @includedir@/$(package)
+oldincludedir     = @oldincludedir@/$(package)
+infodir           = @infodir@
+mandir            = @mandir@
+srcdir            = @srcdir@
+VPATH             = $(srcdir)
+top_builddir      = @top_builddir@
+top_srcdir        = @top_srcdir@
+
+CGI_USER_OPTION   = @CGI_USER_OPTION@
+KAHUA_USER_OPTION = @KAHUA_USER_OPTION@
+KAHUA_GROUP_OPTION= @KAHUA_GROUP_OPTION@
+
+DESTDIR           =
+
+KAHUA_CGI_DIR = @KAHUA_CGIDIR@
+KAHUA_CGILOG_DIR = @KAHUA_CGILOGDIR@
+
+SOCKET_BASE_DIR = $(prefix)/tmp/$(package)
+
+GOSH                   = @GOSH@
+GAUCHE_CONFIG          = @GAUCHE_CONFIG@
+INSTALL                = @GAUCHE_INSTALL@
+
+FASTCGI_EXT    = @FASTCGI_EXT@
+FASTCGI_SCRIPT = @FASTCGI_SCRIPT@
+SCRIPTS = kahua.cgi $(FASTCGI_SCRIPT)
+
+CONFIG_GENERATED = Makefile
+.PHONY: all check clean distclean install maintainer-clean
+
+.SUFFIXES: .in
+
+all: $(SCRIPTS)
+
+kahua.cgi: kahua.cgi.in
+	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(localstatedir)" \
+		"$(SOCKET_BASE_DIR)" "$(KAHUA_CGILOG_DIR)" no kahua.cgi.in kahua.cgi
+	chmod -w $@
+
+$(FASTCGI_SCRIPT): kahua.cgi.in
+	$(top_srcdir)/cgi/fix-shebang.sh "$(GOSH)" "$(libdir)" "$(localstatedir)" \
+		"$(SOCKET_BASE_DIR)" "$(KAHUA_CGILOG_DIR)" yes kahua.cgi.in $(FASTCGI_SCRIPT)
+	chmod -w $@
+
+check:
+
+clean:
+	rm -rf core $(SCRIPTS) *~
+
+install:
+	if test "$(KAHUA_CGI_DIR)" != ""; then \
+	  $(INSTALL) -m 0755 -d $(KAHUA_CGI_DIR); \
+	  for f in $(SCRIPTS); do \
+	    $(INSTALL) -m 0555 $$f $(KAHUA_CGI_DIR)/$$f; \
+	  done; \
+	fi; \
+	if test "$(KAHUA_CGILOG_DIR)" != ""; then \
+	  $(INSTALL) $(CGI_USER_OPTION) $(KAHUA_GROUP_OPTION) -m 0750 -d $(KAHUA_CGILOG_DIR); \
+	fi; \
+
+uninstall:
+	cd $(KAHUA_CGI_DIR) && rm -f $(SCRIPTS)
+	-rmdir -p $(KAHUA_CGI_DIR)
+
+distclean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+

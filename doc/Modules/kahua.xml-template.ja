@@ -1,0 +1,45 @@
+;; Modules/kahua.xml-template -*- mode: text; coding: utf-8 -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.xml-template.ja,v 1.1.2.1 2007/05/31 03:48:10 bizenn Exp $
+
+
+* [module] kahua.xml-template
+
+非常にシンプルなページテンプレート機能を提供するモジュールです。
+
+** [procedure] kahua:make-xml-template ''path'' [''ns-alist'']
+
+''path''で与えられたXMLファイルからテンプレートオブジェクトを生成します。
+''path''はフルパスで与えるのが安全です。kahua.configのtemplate-directory
+に置かれているXMLファイルを指定したければ
+{{{
+(kahua:make-xml-template (kahua-template-path "foo.xml"))
+}}}
+とすればよいでしょう。
+
+使用するXMLは、文字エンコーディングがUTF-8でなければなりません(これは現
+在の実装上の制限です)。
+
+''ns-alist''は省略可能な引数で、#f か、名前空間を表すプレフィックスと
+URIのalistを指定します。省略時は
+{{{
+((#f . "http://www.w3.org/1999/xhtml"))
+}}}
+
+を渡したのと同じです。#fを渡すと、「部分テンプレート」を作成します。こ
+の時、''path''で指定するXMLファイルには'''XML宣言を含めてはいけません'''
+(これも現在の実装上の制約です)。
+
+** [procedure] kahua:xml-template->sxml ''template'' . ''kargs''
+
+テンプレート''template''に''kargs''を適用して、SXMLノードを構築しま
+す。''kargs''はキーワード引数で、次のような書式になります。
+{{{
+:id1 node1 :id2 node2 ...
+}}}
+:idは、テンプレート生成時に指定したXMLファイルの、要素に与えられたID属性値
+と同じ名前のキーワードです。nodeには、高階タグ関数で作られる関数ノード、単
+純タグ関数で作られるSXMLノード、SXMLリテラルのいずれも渡すことができますし、
+混在させることもできます。

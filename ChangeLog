@@ -1,0 +1,3386 @@
+2007-09-21  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.7 released.
+
+2007-09-07  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm
+	  Drop extra escape on stack dump in the default error handler.
+	  Fix unexpected error when parameter kahua-default-error-handler
+	  is not set explicitly.
+
+2007-08-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: emacs/kahua.el.in
+	  Fix the problem with default value of site bundle on Emacs 21.
+
+2007-08-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/xml-template.scm
+	  Procedure xml-template->sxml now can take '() or #f as
+	  replacing element and they are handled as empty node.
+
+2007-08-17  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-httpd.scm, src/kahua/server.scm
+	  Content-type of .xml document, rss node and xml node
+	  is now application/xml instead of text/xml.
+
+2007-08-15  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/protocol/worker.scm, src/kahua/protocol/http.scm,
+	          src/kahua/server.scm, test/server.scm, cgi/kahua.cgi.in
+	  Now cookie handling fit RFC2965 more.
+
+	* Change: src/kahua/config.scm.in
+	  Configurable item "session-domain" added.  It can have :site,
+	  :bridge, :worker or session range URI or path(string). Default
+	  value is :site.
+
+2007-08-13  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/protocol/http.scm, src/kahua/protocol/worker.scm,
+	          src/kahua/server.scm
+	  Procedures path->path-info, path-info->abs-path, normalize-path,
+	  rel-path-info are moved from kahua.protocol.http to
+	  kahua.protocol.worker module,  and simplify-path-info is out
+	  of path->path-info and exported.  So kahua-self-uri is use
+	  simplify-path-info instead of simplify-path(of file.util).
+
+	* Fix: examples/login/login.kahua
+	  Build URI of redirect location using kahua-self-uri-full
+	  intead of ad-hoc path building.
+
+	* Fix: src/kahua/server.scm
+	  Build path of return-cont or remote-cont using kahua-self-uri
+	  instead of ad-hoc path building.
+
+2007-08-06  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm
+	  kahua-stale-proc(kahua-default-stale-proc now) return with 404
+	  HTTP status,  and default error handler (kahua-default-error-proc
+	  now) return with 500 HTTP status.
+
+2007-08-01  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.6 released.
+
+2007-07-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: doc/Mudoles/kahua.user.ja, doc/Modules/kahua.server.ja
+	  Add description of kahua-user?(kahua.user), with-kahua-user and
+	  with-kahua-local-user(kahua.server).
+
+2007-07-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: DIST
+	  Add .svn directory to be excluded when ./DIST tgz, because
+	  source repository moved from CVS to Subversion.
+
+2007-07-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/server.scm
+	  Now kahua-self-uri and kahua-self-uri-full always return a URI(path)
+	  string which ends by #\/ if they have no arguments, and they
+	  always return a URI(path) which doesn't end by #\/ if they have
+	  one or more arguments.
+
+2007-07-18  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: configure.ac, src/Makefile.in
+	  Fix the problem that BSD make couldn't substitute version string
+	  properly.
+
+2007-07-05  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/server.scm
+	  Add with-kahua-user/with-kahua-local-user.
+
+	* Change: src/kahua/user.scm, test/user.scm
+	  Add kahua-user? that check obj is a instance (kahua-current-user-class).
+
+	* Change: src/kahua/server.scm
+	  Now run-eval is invoked with context that has only session-state.
+	  So we can easily simulate login session in kahua-shell.
+
+2007-07-03  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: configurea.ac, cgi/Makefile.in
+	  Add configure option --with-fastcgi-ext to specify extension of
+	  FastCGI script.  Its default value is fcg yet.
+
+2007-07-01  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.5 released.
+
+2007-06-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: examples/lambdabooks.init, examples/foldlist/foldlist.kahua,
+	          examples/lambdabooks/book.kahua, examples/lambdabooks/lambdabooks.kahua,
+	          examples/lambdabooks/lister.kahua, examples/lambdabooks/login.kahua,
+	          examples/lambdabooks/partner.kahua, examples/lambdabooks/review.kahua,
+	          examples/lambdabooks/useradmin.kahua,
+	          examples/lambdacalcul/lambdacalcul.kahua,
+	          examples/lazy-nqueen/lazy-nqueen.kahua,
+	          examples/login/login.kahua, examples/nqueen/nqueen.kahua,
+	          examples/wiki-iki/wiki-iki.kahua, test/lambdabooks.scm,
+	          test/wiki-iki.scm
+	  Modernized.  Use index slot, higher-order tag functions, and change
+	  character encoding of sources to UTF-8, and so on.
+
+2007-06-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/persistence/dbi.scm, src/kahua/persistence/efs.scm,
+	          src/kahua/persistence.scm
+	  Improve more to keep consistency between index-caches and id-cache.
+
+2007-06-20  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-user.scm
+	  Add -p(preserve) option to del sub-command.  It only deactivate user
+	  instead of deletion.
+
+2007-06-19  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix&Change: src/kahua/persistence.scm, src/kahua/persistence/efs.scm,
+	              src/kahua-server.scm, test/index-slots.scm,
+	              test/persistence.scm
+	  Improve keeping consistency between index-caches and id-cache.
+
+2007-06-13  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/config.scm.in, src/kahua-keyserv.scm,
+	          src/kahua-spvr.scm, src/kahua-httpd.scm
+	  Now kahua-keyserv, kahua-spvr, kahua-httpd support -t(--threads)
+	  option that has a argument as size of thread pool, and
+	  add :keyserv-concurrency and :httpd-concurrency to config file
+	  as well as :spvr-concurrency.
+
+2007-06-07  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/persistence.scm
+	  Fix a problem that cannot check or fix efs database.
+	  It's embugged at 2007-05-24.
+
+2007-06-02  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-user.scm
+	  Replace function names kahua-web-{adduser,deluser,lsuser}
+	  with kahua-{adduser,deluser,lsuser}.
+	  Command ls's output is now alphabetically sorted.
+
+	* Change: src/kahua/server.scm
+	  If a user is deactivated during login, he/she is immediately
+	  logout.
+
+2007-05-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.4 released.
+
+	* New: src/kahua-user.scm
+	  New command-line user(<kahua-user> instances) management
+	  tool.  This is imported from kahua-web CVS HEAD(0.3_pre10).
+
+	* Change: src/kahua/user.scm
+	  Export kahua-current-user-class.
+
+	* Change: doc/*.ja doc/*/*.ja
+	  Convert their character encoding from euc-jp to utf-8.
+	  Rewrote almost half of doc/Setup.ja.
+
+2007-05-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: emacs/kahua.el.in
+	  Compatibility with Emacs 21 (that doesn't have read-directory-name).
+
+2007-05-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm
+	  Context didn't have "x-kahua-remote-addr".
+
+2007-05-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/test/worker.scm
+	  Lack of flush after send request to worker.
+
+2007-05-24  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-dbutil.scm
+	  Add support for -S and -c command line options.
+	  It make kahua-dbutil can run in source tree (w/o install).
+
+	* Fix: src/kahua/persistence.scm, src/kahua/persistence/dbi.scm,
+	       src/kahua/persistence/mysql.scm, src/kahua/persistence/postgresql.scm
+	  kahua-dbutil was broken against Kahua 0.7 or prior version
+	  database on MySQL or PostgreSQL.
+
+2007-05-18  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-server.scm
+	  Unsafe implementation of kahua-write-static-file.
+
+2007-04-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.3 released.
+
+2007-04-26  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/elem.scm, src/kahua/server.scm
+	  Fix wrong format of entity reference node(&, &:, &/).
+
+2007-04-24  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: check.scm
+	  Change: configure.ac
+	  Check Gauche version and its threading type, and
+	  system thread type on Linux.
+
+2007-04-23  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Merge: from HEAD.
+	  ChangeLog entries from 2007-03-07 to 2007-04-20 are
+	  merged from HEAD.
+
+2007-04-20  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: src/persistent.scm
+	  bug fix for make-kahua-collection with :index :any.
+	  When make-kahua-collection with :index :any, then,
+	  index cache was destroyed.
+	
+2007-04-19  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: emacs/kahua.el.in
+	  Now default "kahua-site-bundle" value is nil.
+	  If it's nil, it means that kahua command is
+	  invoked without -S option.
+
+2007-04-13  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-httpd.scm, cgi/kahua.cgi.in
+	  Support X-Forwarded-For HTTP header.
+	  If X-Forwarded-For header in HTTP request, it
+	  adds to x-kahua-metavariables as "HTTP_X_FORWARDED_FOR"
+	  record, and its first (leftmost) address is set
+	  to x-kahua-remote-addr.  Note that REMOATE_ADDR
+	  in x-kahua-metavariables is not changed.
+	  NB: this feature is not tested yet.
+
+2007-04-12  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: src/kahua/server.scm
+	  bug fix for kahua-cookie-ref at the case that
+	  return #f from (kahua-meta-ref "HTTP_COOKIE").
+
+2007-04-11  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm
+	  Now if "return-cont" keyword parameter is passed to entry,
+	  the entry can pass it as "remote-cont" value.
+
+2007-04-11  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Add "HTTP_COOKIE" into *metavariables* at cgi/kahua.cgi.in.
+	* Add kahua-cookie-ref procedure.
+	* Add document of kahua-cookie-ref.
+	
+2007-03-17  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: src/kahua-package.scm
+	  Modify help message.
+	
+2007-03-16  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: emacs/kahua.el.in
+	  Add more keywords.
+
+2007-03-07  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: emacs/kahua.el.in
+	  Add font lock face customization and indentation.
+
+2007-02-21  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/persistence/dbi.scm
+	  Fix misused pass-through symbol instead of :pass-through keyword.
+
+2007-02-15  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.2 released.
+
+2007-02-14  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Drop: doc/hello-kahua.ja
+	  Because it's obsolete.
+
+2007-02-05  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-server.scm
+	  After reload kahua application module, invoke kahua-db-purge-objs.
+
+2007-02-04  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: skel/INSTALL, skel/Makefile.in, skel/configure.ac,
+	          skel/proj/version.kahua.in, skel/test/test.scm.in,
+	          src/kahua-package.scm
+	* Drop: skel/proj-start.in, skel/proj-stop.in, skel/proj.conf.in
+	  Arrange code and simplify them.  Now drop start/stop scripts
+	  and in-place execution.
+
+2007-02-03  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/Makefile.in
+	  Now clean up properly, and fix some other bugs.
+
+2007-02-02  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-spvr.scm, src/kahua/developer.scm,
+	       src/kahua/persistence.scm, src/kahua/persistence/efs.scm,
+	       src/kahua/persistence/dbi.scm
+	  Avoid "Unknown keyword WARNING" when work with recent Gauche
+	  CVS HEAD version.  But this fix is very transitional, and
+	  fix again after next Gauche release.
+
+	* Change: emacs/kahua.el
+	  Now run-kahua also work with ssh for remote Kahua.
+	  It works very similarly to run-kahua-shell.
+
+	* Change: emacs/kahua.el
+	  Now run-kahua-shell prompt your site bundle, and work
+	  directory completion.
+	  If you specify host, user(for ssh access), or site bundle,
+	  The value is used as default value at next time.
+
+2007-02-01  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: skel/configure.ac, skel/INSTALL, skel/Makefile.in,
+	          skel/proj/proj.css, skel/proj/proj.kahua,
+	          skel/proj/version.kahua.in, skel/proj.conf.in,
+	          skel/test/test.conf.in, skel/test/test.scm.in
+	  Don't do "keyword substitution" when check in.
+
+	* Fix: skel/INSTALL
+	  Update description.
+
+2007-01-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-httpd.scm
+	  If HTTP client sends request and close connection immediately,
+	  kahua-httpd couldn't recover the error properly.
+	  Reported by Petter Egesund.
+
+2007-01-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/persistence/efs.scm
+	  Fix a wrong keyword.
+
+	* Change: src/kahua/developer.scm, src/kahua/error-report.scm
+	  Replace with-error-handler with guard macro.
+
+2007-01-22  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/persistence/dbi.scm
+	  Lack of connection-of argument.
+	  Arrange with-dbi-transaction to more simple.
+
+	* Fix: src/kahua/persistence/postgresql.scm
+	  Passed a wrong keyword.
+
+2007-01-18  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.1 released.
+
+	* New: doc/GaucheForKahua.ja
+
+	* Update: INSTALL, doc/Setup.ja, skel/INSTALL, skel/configure.ac
+
+	* Fix: src/kahua/persistence.scm
+	  Now any value that can be serialized, can
+	  also be used as index value.
+
+2007-01-15  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: skel/proj.conf.in, skel/proj/proj.kahua,
+	          skel/proj/version.kahua, skel/test/test.conf.in
+	          skel/test/test.scm.in
+	  Change file encoding from euc-jp to utf-8.
+
+	* Fix: skel/MESSAGES
+	  Change :run-by-default 0 -> 1.
+
+	* Change: skel/templates/page.xml
+	  Make it well-formed XML(XHTML 1.0 Strict).
+
+2007-01-12  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/protocol/worker.scm
+	  Wrap any error occurred during communication with worker.
+
+2007-01-11  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: examples/lambdabools.init
+	  It created database in wrong place when installed to site bundle.
+
+	* Change: src/kahua/persistence.scm
+	  Change <kahua-proxy> key from "key-of" value to
+	  kahua-persistent-id value.
+	  Change <kahua-proxy> slot name "key" to "ident".
+
+	* Fix: src/kahua/persistence.scm
+	  Arrange serialize format.
+
+2007-01-10  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/xml-template.scm
+	  New method kahua:xml-template->node/, which return
+	  high-level tag function from XML template.
+
+2007-01-09  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/Makefile.in
+	  New target install-scripts and uninstall-scripts.
+
+	* Fix: skel/MESSAGES
+	  Drop extra description.
+
+2007-01-08  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/INSTALL
+	  Catch up.
+
+2006-12-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/elem.scm
+	  text/ reversed arguments.
+
+2006-12-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0 released.
+
+	* Fix: src/kahua/config.scm.in
+	  If -c conf-file or -S /path/to/site is specified, it's prior
+	  to KAHUA_DEFAULT_SITE environment variable.
+
+	* Fix: src/kahua-package
+	  "generate" sub command now handle --creator=... and --mail=...
+	  option properly.
+
+2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: kahua.el.in
+	  Add "kahua-site-bundle" custom variable for kahua-shell mode
+	  and kahua-admin mode.
+
+	* Remove: kahua-shell.el.in
+	  Integrated to kahua.el.in.
+
+2006-12-27  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Remove: skel/proj/auto-update-base.kahua,
+	          skel/proj/debug-support.kahua
+	          skel/proj/default.kahua
+	          skel/proj/page.kahua
+	          skel/proj/parts-collection.kahua
+	          skel/proj/pcont-page.kahua
+	          skel/proj/session.kahua
+	          skel/proj/slot-acl-base.kahua
+	          skel/proj/utility.kahua
+	          skel/proj/validator.kahua
+	* Change: skel/proj/proj.kahua
+	  rewrite hello level simple code.
+	* Change: src/kahua-package.scm
+	  catch up skel's change.
+	* Change: skel/test/test.scm.in
+	          skel/templates/page.xml
+	  modify sample code using page template file.
+	* New: skel/MESSAGES
+	  English Messages after install skelton project.
+	* Change: at install Kahua mv old skel directory to skel.bak.
+	* Fix: skel/INSTALL, skel/MESSAGES
+	  modify typo :argument => :arguments.
+	* Change: skel/proj/proj.kahua
+	  modify message.
+	
+2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* New: doc/Scripts/*.txt
+	  English documents.
+
+2006-12-27  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: skel/configure.ac
+	  remove nobsun@kahua.org literal email address.
+
+2006-12-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Update: doc/Modules/kahua.test.worker.ja,
+	  doc/Modules/kahua.test.xml.ja
+
+	* New: doc/Modules/kahua.xml-template.ja
+
+	* Change: skel/configure.ac, skel/Makefile.in
+	  Now skelton have --with-site-bundle configure option.
+	  Fix some old style installation target.
+
+	* New: examples/configure.ac
+	  Separate configure script of examples. It's to support
+	  installation into a site bundle.
+
+2006-12-26  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/persistence.scm
+	  kahua-indexable-object? is predicate that return #t
+	  if a argument is able to use as index value, or #f.
+
+	* Change: src/kahua/elem.scm
+	  Export define-basic-element and define-elements.
+	  Drop pdf/ and pdf:.
+	  Add node-list->node-set
+
+	* Update: doc/Modules/*
+	  kahua.config.ja, kahua.server.ja, kahua.persistence.ja,
+	  kahua.ja, kahua.partcont.ja, kahua.elem.ja, kahua.user.ja,
+	  kahua.plugin.ja, kahua.util.ja, kahua.developer.ja,
+	  kahua.gsid.ja, kahua.sandbox.ja, kahua.session.ja
+
+2006-12-25  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: src/kahua-install.scm
+	  Add New material-type as "template",which is
+	  for install XML kahua template files.
+	* Fix: skel/Makefile.in
+	  fix bug at kahua-package generate project's test.
+	  and fix proj-start,proj-stop install directory.
+	* Change: skel/proj/default.kahua
+	  change db path and delete kahua-check-transaction!.
+	* Change: skel/proj/page.kahua
+	  modify http-equiv's value.
+	* Fix: skel/test/test.scm.in
+	  catch up current Kahua and pass skelton project's test.
+	* Add: skel/test/test.conf.in
+	  catch up current Kahua and pass skelton project's test.
+	* Change: src/kahua-package.scm
+	  catch up current Kahua's skelton.
+	
+2006-12-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* New: doc/SiteBundle.ja
+	  New document.
+
+	* New: doc/AboutKahua.ja
+	  New document.
+
+	* New: doc/Concepts/Servers
+	  New document.
+
+2006-12-22  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: INSTALL
+	  Description of "Site-Bundle".
+
+	* Add: src/kahua/user.scm
+	  New function kahua-user-add-role! and kahua-user-drop-role!,
+	  and <kahua-user> has name-of(login-name), roles-of(role-alist)
+	  accessor.
+
+	* Add: src/kahua/server.scm
+	  New function kahua-login and kahua-logout for convenience.
+	  Usage: (kahua-login user-name password)
+	         (kahua-logout)
+
+2006-12-21  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/server.scm
+	  New function kahua-authorized? for convenience.
+	  Usage: (kahua-authorized?) or (kahua-authorized? role1 role2 ...)
+
+2006-12-19  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/xml-template.scm
+	  Now can handle partial XML template. Its character encoding
+	  must be UTF-8 and must not have XML declaration.
+
+	* Fix: src/kahua/xml-template.scm
+	  Use sxml:attr to get id attribute, and drop id-table slot
+	  in <kahua:xml-template>.
+
+2006-12-18  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-httpd.scm
+	  Fix that applied uri-decode-string to query string twice.
+
+2006-12-17  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: configure.ac
+	  Change default value of KAHUA_STATICDIR(--with-staticdir) from
+	  /var/www/kahua to ${localstatedir}/var/kahua/static.
+
+2006-12-17  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* Change: src/kahua/server.scm
+	  Add support :rest keyword to define-entry-method.
+
+2006-12-15  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm
+	  Use sxml:string->xml-bis instead of sxml:string->xml(again).
+
+2006-12-14  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm
+	  Handle properly content of script/style element.
+
+	* 0.9.1 released.
+
+	* Fix: src/kahua/server.scm
+	  Use &#39; intead of &apos; as entity reference of ', because
+	  Internet Explorer(IE) cannot recognize &apos; in XHTML (I
+	  checked it on IE6SP2 on Windows XP SP2).
+
+2006-12-13  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 0.9 released.
+
+	* Add: src/kahua/elem.scm
+	  New virtual node: when/ unless/ and when: unless:
+
+	* Change: src/kahua/elem.scm
+	  #f is simply ignored in content of node(element).
+	  ex. ((div/ #f (p/ "hoge")) '()) => ((div (p "hoge")))
+	      (div: #f (p: "hoge"))       => (div (p "hoge"))
+
+	* Change: src/kahua/elem.scm
+	  Drop obj->string and html:element?.  If you'd like to change a object
+	  appearance in SXML, just use x->string.
+	  
+
+	* Fix: doc/Modules/kahua.elem.ja
+	  Tagged empty and get as [constant] instead of [procedure] or [variable].
+
+2006-12-13  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* Add explanation of !contain for doc/Module/kahua.test.xml.ja.
+
+2006-12-12  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: (src/kahua/server.scm):
+	  Escape characters #\< #\> #\' #\" #\& in attribute value.
+
+	* Add XML page template engine.
+
+	  (define tmpl (kahua:make-xml-template path-to-tmplfile)
+	  (kahua:xml-template->sxml tmpl :id1 (p/ "fugafuga") :id2 (p/ "hogehoge"))
+
+2006-12-02  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Now we deprecate kahua.persistece.fs.  It was taken away from test
+	  suites.  You should convert your fs data into kahua.persistence.efs
+	  like this:
+
+	  % kahua-dbutil upgrade <path-to-fsdb>
+
+	  Note that this is in-place conversion.  Please keep its backup data
+	  before this.
+
+	  % cp -pR <path-to-fsdb> /tmp/backup-db
+
+	* Before find-kahua-instance/make-kahua-collection with index value
+	  Kahua invoke ensure-metainfo to sync index slot structure on-memory
+	  and on-storage.
+
+	* Fix cache handling strategy.
+
+2006-11-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* find-kahua-instance now can take index slot name(it must be
+	  "unique" index) and its value like this:
+	  (find-kahua-instance <a-class> unique-index-slot-nae value)
+
+	* Now database name that has no prefix(like "efs:" or "mysql")
+	  handled as efsdb path.
+
+	* Fix that test/admin.scm and test/shell.scm depended
+	  on cvs command.
+
+	* Now PostgreSQL driver support index slot feature.
+
+2006-11-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Now MySQL driver support index slot feature.
+
+2006-11-21  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 0.8 released.
+
+	* Fix: restrict index value to string, number, symbol, boolean, keyword,
+	  vector and list whose all elements are these types.
+
+2006-11-20  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: HTTP status
+	  Server(worker) not found => 404
+	  Server(worker) not respond => 503
+	  Unknown error => 500
+
+	* Fix: when kahua-dbutil upgrade fs to efs, it didn't create lock
+	  directory in each class directory.
+
+	* Change: now database name specified by :default-database-name is prior
+	  to primary-database-name parameter in application source file.
+
+	* Fix src/kahua/persistence/efs.scm: update index link before execution
+	  of write-kahua-instance.
+
+	* Update documents: INSTALL and doc/Setup.ja
+
+	* Change plugins/fileio.scm
+	  Now get-original-name return basename of Content-Disposition value.
+	  Internet Explorer give full path of uploaded file as Content-Dispotion,
+	  so we should strip it.
+
+	* Fix lack of magic comment to specify character coding system
+	  of source code.
+
+	* Drop (use kahua.pdf) from kahua module.
+
+	* Now kahua.persistence.fs is obsolete.
+	  You should use kahua.persistence.efs instead of it.
+	  kahua.persistence.fs is available still, but it'll have gone soon.
+
+	* Add index slot feature to kahua.persistence.efs
+	  You define persistent class like:
+	  (define-class <index-test> (<kahua-persistent-base>)
+	    ((a :init-keyword :a :init-value "a" :allocation :persistent :index :unique)
+	     (b :init-keyword :b :init-value "b" :allocation :persistent :index :any)
+	     (c :init-keyword :c :init-value "c" :allocation :persistent)))
+	  and query like:
+	  (make-kahua-collection <index-test> :index '(a . "a1"))
+	  or
+	  (make-kahua-collection <index-test> :index '(b . "b1"))
+	  Now only kahua.persistence.efs has this feature, but
+	  kahua.persistence.dbi(so and mysql and postgresql) will have
+	  it soon, but kahua.persistence.fs will not.
+
+2006-10-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add kahua-dbutil upgrade facility.
+	  If you'd like to upgrade from old fsdb to efs db:
+	  kahua-dbutil upgrade path-to-db
+
+	* Add kahua-dbutil fix facility.
+
+	* Change MySQL/PostgreSQL table structure.
+	  Now kahua_\d+ table have "id" column, and it is primary key of
+	  the table.  The column named "keyval" is now nullable column,
+	  have unique index, and if the record is "removed", the column
+	  is set NULL.
+
+	* Add kahua-instance method.
+	  (kahua-instance <a-class> oid)
+	  and oid is object ID as integer.
+	
+2006-10-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix a bug: Now catch kahua-db-sync/kahua-db-rollback error properly,
+	  and send error message back to client.
+
+2006-10-24  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change plugins/fileio.scm:
+	  Now open-uploaded-file can take keyword arguments like
+	  open-input-file.
+
+	* Add kahua.persistent.efs (Extended File System database).
+	  Use "efs:path-to-db".
+
+2006-10-20  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix a bug: class redefinition did not work on some
+	  situations.
+
+	* Add support to kahua-dbutil that check and fix fsdb.
+	  You must do:
+	  % kahua-dbutil fix path-to-db
+	  in order to use current version of Kahua.
+
+	* Add %%alive directory under each class directory.
+	  It holds symlinks to alive(not removed) instance files.
+	  So now fsdb is not compatible with a past one.
+
+2006-10-08  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Drop cvs command support from kahua-admin command.
+
+	* Drop user mode support.
+	  You should use site bundle support instead of it.
+
+	* Site bundle supported.
+	  Site bundle is a directory structure including working directory,
+	  application directory, plugin directory, and sockbase and etc and
+	  tmp directory. Now a kahua-spvr process run on a site bundle.
+
+	  Site Bundle default directory structure:
+	    <site-bundle-root>/
+	    <site-bundle-root>/app/
+	    <site-bundle-root>/app-servers
+	    <site-bundle-root>/database/
+	    <site-bundle-root>/etc/
+	    <site-bundle-root>/etc/kahua.conf
+	    <site-bundle-root>/etc/user.conf
+	    <site-bundle-root>/logs/
+	    <site-bundle-root>/plugins/
+	    <site-bundle-root>/socket/
+	    <site-bundle-root>/static/
+	    <site-bundle-root>/tmp/
+
+	  All command scripts recognize -S <path-to-site> command line option,
+	  and if -S option not specified and environment variable
+	  "KAHUA_DEFAULT_SITE" exists, the command use value of "KAHUA_DEFAULT_SITE"
+	  as site bundle path.
+
+2006-09-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 0.7 released.
+
+	* doc/Scripts/*: Update
+	  Fit them to recently changes.
+
+2006-09-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* configure.ac,src/Makefile.in,cgi/Makefile.in,plugins/Makefile.in:
+	  Now configure script takes --with-kahua-user/--with-kahua-group/
+	  --with-cgi-user option, and set up owner/group/permission of
+	  directories and files properly.
+
+2006-09-27  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/persistence/fs.scm: Fix
+	  Fix a bug that overwrite a existing instance silently
+	  with new object if its key is already used by a existing instance.
+
+2006-09-26  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/user.scm, src/kahua/server.scm: **SECURITY FIX**
+	  Now kahua-current-user store cons of login-name and dbpath
+	  to keyserver.  So user realm are separated per each database.
+
+	  Now for non-privilege login (like kahua-web with non-member-edit
+	  option), you must do
+	    (parameterize ((current-db #f))
+	      (set! (kahua-current-user-name) nick-name))
+	  instead of just
+	    (set! (kahua-current-user-name) nick-name)
+	  And you must not use (kahua-current-user-name) to check the user
+	  now login as registed user.  You should use (kahua-current-user)
+	  for the purpose.
+
+2006-09-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/persistence.scm, src/kahua/persistence/*.scm,
+	  src/kahua-server.scm: Change
+	  Now worker check database connection is alive before process client request.
+	  If the connection is dead, it tries to reopen connection.
+
+	* test/persistence.scm: Add
+	  tests for removing object.
+
+	* src/kahua/persistence.scm, src/kahua/persistence/*.scm: Add
+	  Removed flag and remove-kahua-instance added.
+	  Now make-kahua-collection excludes object that have #t as
+	  removed flag, and find-kahua-instance return #f if it find
+	  removed object.
+
+2006-09-21  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/persistence.scm: Change
+	  Now kahua-check-transaction! deprecated.
+
+	* src/kahua-server.scm, src/kahua/persistence.scm,
+	  src/kahua/persistence/*.scm: Change
+	  Split with-db into with-kahua-db-connection and
+	  with-kahua-db-transaction.  Now worker process connects to
+	  database at its start up time, and does a transaction per
+	  request.
+
+2006-09-09  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* replace skel/proj/base.kahua
+	  to skel/proj/auto-update-base.kahua and skel/proj/slot-acl-base.kahua.
+	* <auto-update-base> and <slot-acl-base> is prototype
+	  of MOP base class collection.
+	
+2006-09-08  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 0.6 released.
+
+	* README: Added
+
+2006-09-07  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* INSTALL: Merge "Let's just try Kahua".
+
+	* cgi/kahua.cgi.in: Fix a bug.
+	  If SERVER_NAME has port number, Location header value was
+	  irregular URI: http://hostname:port:port/path/path/path...
+	  Apache http server doesn't give port number to SERVER_NAME,
+	  but lighttpd does.
+
+	* src/kahua/persistence.scm, src/kahua/persistence/*.scm:
+	  Now lock tables in kahua-db-sync, not in each write-kahua-instance.
+
+2006-09-01  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/protocol/worker.scm, src/kahua/protocol/http.scm,
+	  src/kahua-httpd.scm, src/kahua-spvr.scm, cgi/kahua.cgi.in: Arrange
+
+2006-08-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* cgi/kahua.cgi.in: Now its configuration follow kahua.config.
+
+	* src/kahua/config.scm.in: Add kaha-tmpbase for temporary file base.
+
+	* test/worker.scm, test/redirectcont.scm: Fix for change of kahua.server
+
+	* src/kahua-spvr.scm: Fix
+	  - Use define-condition-type instead of define-class for definition
+	    of exceptions.
+
+	* src/kahua/server.scm: Fix bugs.
+	  - Fit 302 status message to RFC2616.
+	  - Use "content-type" instead of "Content-Type" for avoid error
+	    of FastCGI.
+
+	* src/kahua/persistence/fs.scm: Fix lack of (use gauche.logger).
+
+	* src/kahua/protocol/worker, src/kahua/protocol/http: Add
+	  Splitted from src/kahua-httpd.scm, and now kahua.cgi use
+	  them.
+
+	* cgi/kahua.cgi.in, src/kahua-httpd.scm: Arranged
+
+2006-08-21  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* add remove-keyword/keyrem into skel/proj/utility.kahua.
+
+2006-08-17  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* test/httpd.scm
+	  Retry if connection refused for the first time request.  This
+	  is for avoiding test failure on a poor system.
+
+2006-08-16  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* add money-box/ tag for skel/parts-collection.kahua.
+
+2006-08-16  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/elem.scm:
+	  Define "define-basic-element" macro, and define most of tags
+	  with it.  If (define-basic-element foo) define both foo/
+	  and foo:.
+
+	* src/kahua/persistence.scm:
+	  Remove a unnecessary generic function.
+
+	* src/kahua/persistence/fs.scm:
+	  Print warning message if database character encoding is not
+	  compatible with gauche internal character encoding.
+
+2006-08-14  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/persistence.scm, src/kahua/persistence/fs.scm:
+	- Now fsdb has its own character encoding in "%%character-encoding"
+	  file.  If it is different with (gauche-character-encoding), do
+	  conversion.
+	- Now fsdb has lock file outside of database directory, and lock it
+	  before open/create database.
+	- Lock input/output port explicitly.
+	- Clean up code.
+
+	* src/kahua/util.scm, src/kahua-httpd.scm:
+	  Moved <kahua-error> base condition from kahua-httpd.scm.
+
+2006-08-14  Katsutoshi Itoh <cut-sea@kahua.org>
+
+        * modify skel/proj/proj.kahua.
+        * delete tests from skel/test/test.scm.in.
+        * bug fix for skel/proj project template program.
+
+2006-08-13  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* add skel/proj/parts-collection.kahua and modify kahua-package.scm.
+
+2006-08-07  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua-spvr.scm:
+	  If no worker type passed or "" worker type passed, dispatch to
+	  the first worker has 1 or greater value as :run-by-default.
+
+2006-08-06  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* add utility function into skel/utility.kahua.
+	
+2006-08-05  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 0.5.1 released.
+
+2006-08-04  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua-httpd.scm:
+	- Clean up all kind of error handling.
+	- Clean up dead code.
+	- Request line, method, URI, HTTP version are as parameters now.
+	- Index file supported.  Now only index.html.
+	- Add Content-Length when document is static one.
+
+2006-08-03  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua-httpd.scm:
+	- Fix unexpected error when "/" is requested URI.
+	- Some error output entry added.
+	- Return status 500 when catch unknow error.
+
+2006-08-02  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: now make-kahua-collection collects also new instance
+	  before kahua-db-sync.
+
+2006-08-01  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: the problem that install process fail when you install
+	  for the first time and make uninstall don't work properly.
+
+2006-07-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 0.5 released.
+
+2006-07-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* doc/Scripts/kahua-httpd, doc/Scripts/kahua-dbutil: Add
+
+	* doc/Setup.ja: Catch up to current version.
+
+	* configure.ac: Bump version number up to 0.5.
+
+2006-07-30  Katsutoshi Itoh <cut-sea@kahua.org>
+
+        * modify and add functions into debug-support.kahua.
+
+2006-07-29  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* sanitize node in node->html (skel/debug-support.kahua).
+	
+2006-07-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* skel/*, src/kahua-package.scm, src/kahua-config.scm: Added.
+	  Package manager, configuration utility.
+
+	* Fix many bugs.
+
+	* src/kahua-httpd.scm: Added
+	- Simple HTTPd server.
+	- It invoked from kahua-spvr, but you can start kahua-httpd
+	  separatedly.
+	- Now test/spvr-httpd.scm renamed into test/httpd.scm.
+	- It can set UID and GID to specified user:group with --runas
+	  option when started with root privilege.
+	- It print log into $logdir/kahua-httpd.log when it is invoked
+	  form kahua-spvr.
+	
+	* src/kahua/persistence.scm: Reconstructed.
+	- It was splitted into:
+		kahua/persistence.scm
+		kahua/persistence/fs.scm
+		kahua/persistence/dbi.scm
+		kahua/persistence/mysql.scm
+		kahua/persistence/postgresql.scm
+	- Now it work properly with multi-process worker(eh, it should be so).
+	- Fix database connection leak.
+	- Now database encoding handled properly.
+	- Now more robust, efficient(eh, I hope so).  It handle lock and
+	  transaction properly.
+	- :final slot option added to <kahua-persistet-base> class(and any
+	  classes whose metaclass is <kahua-persistent-meta>).  If it has
+	  #t, the slot cannot be override in its subclass.
+	- Now the database structure is changed in MySQL or PostgreSQL.
+	  So add kahua-dbutil script to check and to fix database structure.
+	- Now the slots of <kahua-db> have its accessor.  You should use them
+	  instead of referring slot directly.
+	- Rename id and db slot in <kahua-persistent-base> are renamed to
+	  %kahua-persistent-base::id and %kahua-persistent-base::db.
+	  You cannot override them, and should not refer them directly.
+	- Add kahua-persistent-id as getter to get value of
+	  %kahua-persistent-base::id.
+	- Fix suppress extra INSERT/UPDATE to database.
+	- Now make-kahua-collection can take :predicate or :keys keyword
+	  argument for filtering instances.
+
+	* src/kahua/server.scm
+	  Now interp-json handle multi-byte character encoding properly,
+	  and it return "application/x-javascript" instead of "text/javascript"
+	  as Content-Type.
+
+	* src/kahua-server.scm:
+	  Now response send to spvr or client after database is committed or
+	  rollbacked.
+
+	* src/kahua-spvr.scm, src/kahua-server.scm:
+	- Now we can specify default database name with :default-database-name
+	  in the "app-servers" file.
+	- Now we run any workers with profiler.  You specify :profiler path-base
+	  of output file in the "app-servers" file.
+	- Drop pinger to workers.  But a worker is restarted automatically when
+	  it is terminated unexpectedly if you specify so in kahua.conf.
+	
+	* src/kahua-spvr.scm: Reconstructed.
+	- Split HTTPd function into kahua-httpd.
+	- If a worker is in multi-process, kahua-spvr distributes requests to
+	  each process in round-robin.
+	- Now it has no default worker.  If no worker specified, spvr return
+	  error.
+	- Now it handle worker processes or its thread properly.
+
+	* src/kahua-spvr.scm, src/kahua-keyserv:
+	  Now they use kahua.thread-pool module.
+
+	* src/kahua/thread-pool.scm: Added
+
+	* Merged from "dev_ha" experimental branch.
+
+2006-07-05  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* src/kahua/persistence.scm (<kahua-persistent-base>): add getter kahua-persistent-id.
+	(kahua.persistence): add export kahua-persistent-id.
+
+2006-06-06  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* src/kahua-server.scm (kahua-write-static-file): call make-director* before with-output-to-file.
+
+2006-06-01  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* bug fix for realize of kahua-proxy.
+	  support dot pair.
+
+2006-05-24  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* src/kahua/server.scm
+	a bit touch for define-session-object macro.
+	delete a hole of anaphoric reference.
+
+2006-05-23  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* src/kahua/session.scm, src/kahua/server.scm
+	* define new utility macro define-session-object.
+	* add predicate kahua-sendable-object?, it used at
+	  we can send that object to keyserver.
+	
+2006-05-22  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* rewrite kahua-local-session-ref used by getter-with-setter.
+	
+2006-05-21  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* src/kahua/session.scm, src/kahua/server.scm
+	  hold app local session variable and the value.
+	  At a result, add two new low level API named as
+	  kahua-local-session-ref/kahua-local-session-set!.
+	  This aim is that we hold non persistent object
+	  and access it not only continuation link but also
+	  permanent link.
+	
+2006-05-21  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* doc/Modules
+	start writing texinfo document.
+	
+2006-05-15  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* */Makefile.in:
+	  bindir, sbindir, libexecdir, infodir, mandir now don't make
+	  the deepest level "kahua" directory.
+	  ex. bindir is now @bindir@ instead of @bindir@/kahua.
+
+2006-05-13  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* 0.4.1 released.
+
+2006-05-13  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* doc/Setup.ja:
+	  Catch up recent changes.
+
+	* emacs/kahua.el, emacs/kahua-shell.el:
+	  Make customizable kahua-admin/kahua-shell command path
+	  and process coding system for communication with them.
+
+2006-05-12  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* test/query.scm:
+	  Avoid influence of other plugins.  Follow the fashion of test/plugin.scm.
+
+	* test/persistence.scm, test/plugin.scm:
+	  Use global-variable-bound? instead of symbol-bound?
+
+2006-05-11  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua/persistence.scm:
+	  Close lock file port explicitly in unlock-db for <kahua-db-fs>,
+	  in order to avoid lack of file descriptor.
+
+2006-05-09  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua-spvr.scm, src/kahua-keyserv.scm:
+	  Set backlog of server-socket to the maximum value.
+
+2006-04-08  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua-server.scm, src/kahua-spvr.scm, src/kahua/server.scm, test/server.scm:
+	Supported :worker-uri keyword for `app-servers' file.
+	Changed kahua-bridge-name defalut value to "/kahua.cgi".
+	(SCRIPT_PATH must absolute path)
+
+2006-04-07  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* cgi/kahua.cgi.in (cgi-error-proc): add status "503 Service Temporary Unavailable" to cgi-header. 
+
+2006-04-03  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* cgi/Makefile.in, cgi/fix-shebang.sh,
+	  cgi/kahua.cgi.in, src/kahua/config.scm.in:
+	  Fix some mistake of substitution rules.
+	  Especially use ##KAHUA_STATICDIR## instead of ##KAHUA_WWW_DIR##.
+
+2006-04-02  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* src/kahua-spvr.scm:
+	  Fixed some bugs and cleaned some code up.
+
+	* src/kahua-spvr.scm:
+	  Now the signal mask of "root" thread is restored periodically,
+	  in order to avoid that the sigmask is changed unexpectedly on
+	  Mac OS X 10.4.  This is a temporary step.
+
+	* src/kahua-server.scm:
+	  Set :backlog at SOMAXCONN.  Sorry that this change depends on
+	  Gauche 0.8.7.
+
+	* src/Makefile.in: Fix a lack of KAHUA_STATICDIR substitution.
+
+2006-04-01  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm: Added kahua-call-with-current-context.
+
+2006-03-18  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/test/xml.scm: Added `!exclude' pattern directive.
+
+2006-03-16  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/elem.scm: Added node-set/ tag.
+
+2006-03-13  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm: Fixed regist-entry-method side-effect bug.
+
+2006-03-11  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* ChangeLog, src/kahua/user.scm:
+	Changed kahua-add-user to get optional args.
+
+2006-03-11  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/user.scm: Changed kahua-add-user to get optional args.
+
+2006-03-04  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* 0.4 released
+	
+2006-03-02  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* 0.4_pre3
+	
+2006-03-02  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* src/kahua/elem.scm
+	use gauche.collection in order to be able to apply map/ for collection.
+	
+2006-03-01  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* src/kahua/persistent.scm
+	Fixed kahua-serializable-object? bug.
+	It was failed at dot pair,which has only serializable members.
+	
+2006-02-21  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* 0.4_pre2
+	Fixed mistakes in branch merging.
+	
+2006-02-21  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* 0.4_pre1 
+	Kahua-spvr multi-threaded.
+
+2006-02-20  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Fixed '\\' in key-of value bug? (FSDB)
+
+2006-02-18  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm, test/entry-method.scm:
+	Changed *class&id-delim* to "\t".
+
+2006-02-17  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* ChangeLog, src/kahua/test/worker.scm:
+	Chnaged `set-gsid' to test session setting.
+
+2006-02-18  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/test/worker.scm: Improved path-info picking.
+	"hoge//huga/" -> '("hoge" "" "huga" "")
+	to
+	"hoge//huga/" -> '("hoge" "huga")
+
+2006-02-17  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/test/worker.scm:
+	Chnaged `set-gsid' to test session setting.
+
+
+2006-02-15  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/elem.scm, src/kahua/server.scm, test/server.scm:
+	Added `with-ie' element.
+	Supported `Conditional Comments for Internet Explorer'.
+
+2006-02-04  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Changed to use dbi-do instead of dbi-execute-query.
+
+2006-02-01  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added kahua-header-set!.
+	Added "x-kahua-headers" to kahua context.
+
+	* src/kahua/sandbox.scm:
+	Changed disable-bindings syntax to use `define' instead of `define-macro'.
+
+2006-01-28  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Added dataval-type method to <kahua-db-dbi>.
+	dataval-type return type of dataval field.
+
+2006-01-27  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* src/kahua/persistence.scm:
+	modify with-db macro.
+	We can use with-db macro whiout knowledge for
+	current-db's path name.
+
+2006-01-22  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Changed id-counter writer to use sys-mkstemp.
+	(Patch from Tatsuya BIZENN)
+
+	* src/kahua-server.scm:
+	Changed to block SIGINT, SIGHUP SIGTERM signal on accept-handler.
+	(Patch from Tatsuya BIZENN)
+	
+2006-01-14  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm: Added interp-json, <json-base>, x->json.
+
+2006-01-10  TAHARA Yusei  <yusei@domen.cx>
+
+	* src/kahua/serialize.scm, test/serialize.scm:
+	Added keyword support.
+
+2006-01-09  TAHARA Yusei  <yusei@domen.cx>
+
+	* src/kahua/serialize.scm:
+	Bug fixed.
+	* test/serialize.scm, test/Makefile.in:
+	Added test code.
+
+2006-01-09  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added kahua-render proc.
+	Added interp-css.
+
+	* src/kahua-server.scm:
+	Added kahua-write-static-file.
+	Added kahua-hook-initial.
+	Improved kahua-delete-hook!.
+
+2006-01-09  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/many-as.kahua, test/dead-lock.scm, test/Makefile.in
+	Added.  This test reproduced dead-lock in the moment.
+
+2006-01-08  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Changed kahua-current-user to use kahua-find-user.
+
+	* src/kahua/user.scm:
+	Removed add-user check-user find-user user-password-change \
+	        user-password-change-force user-has-role?.
+	Added <kahua-user-meta>.
+	Changed <kahua-user> to use <kahua-user-meta> meta class.
+
+2006-01-08  TAHARA Yusei  <yusei@domen.cx>
+
+	* src/kahua/serialize.scm:
+	Added kahua.serialize module.
+
+2006-01-08  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added and Exported apply-entry-method.
+	Added define-method-rule.
+	Changed define-entry-method to use define-method-rule instead of define-method.
+	Changed serialized object's delimiter to "\0".
+
+2006-01-07  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* Release 0.3.5
+
+2006-01-06  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* test/persistence.scm:
+	Added multi mixin-metaclass test.
+
+	* src/kahua/persistence.scm:
+	Changed to call next-method in compute-get-n-set of <kahua-persistent-meta>.
+	Added kahua-wrapper? proc.
+
+
+2005-12-30  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/test/worker.scm, test/entry-method.scm.in:
+	Added set-gsid proc which restore worker's global session by matching id.
+
+	* test/Makefile.in
+	Renamed *.scm.in file to *.scm
+	
+2005-12-29  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* doc/Modules/kahua.persistence.ja:
+	Added persistent-initialize method document.
+
+	* src/kahua/persistence.scm:
+	Added persistent-initialize method to <kahua-persistent-base>.
+
+	* test/persistence.scm.in:
+	Added initialize and persistent-initialize method test.
+
+2005-12-26  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/test/worker.scm:
+	added header->sxml and test/send&pick.
+	Changed make-match&pick to save query.
+
+	* src/kahua/server.scm:
+	Added redirect/cont.
+	Fixed remote-cont fragment.
+
+	* test/Makefile.in, test/redirectcont.kahua, test/redirectcont.scm.in:
+	Added redirect/cont test.
+
+2005-12-25  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added <entry-method> and entry-specializer.
+
+	* src/kahua/server.scm:
+	changed define-entry-method macro to syntax.
+	made define-entry-method kahua-current-entry-name safe.
+
+2005-12-24  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added define-entry-method.
+
+	* test/Makefile.in, test/entry-method.kahua, test/entry-method.scm.in:
+	Added entry-method test.
+
+	* src/kahua/persistence.scm:
+	Fixed error loop.
+
+2005-12-23  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm, src/kahua/server.scm:
+	Supported transaction rollback.
+	Added <with-db-error> and raise-with-db-error.
+	Changed persistent class read-syncer to :auto
+	Added kahua-db-write-id-counter method.
+
+	* test/Makefile.in, test/rollback.kahua, test/rollback.scm.in:
+	Added rollback test(need rewrite).
+
+2005-12-22  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* emacs/kahua-shell.el.in:
+	Added kahua-mode.
+	Changed kahua-shell buffer name to *kahua-shell*. (Patch from KOGURO, Naoki)
+
+	* src/kahua-shell.scm: fixed newline bug. (Patch from Osamu TOGAWA)
+
+	* INSTALL, configure.ac, src/Makefile.in, src/kahua.conf.sample:
+	Added --kahua-staticdir option to configure.
+
+2005-12-21  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistent.scm
+	Fixed unbound persistent slot bug.
+	Added unbound persistent slot test.
+
+	* src/kahua/elem.scm
+	fixed node-list-to-node-set and node-set: bug.
+
+	* src/server.scm
+	* test/server.scm.in
+	improved kahua-current-entry-name.
+	added kahua-current-entry-name test.
+
+2005-12-19  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/server.scm:
+	Added x-kahua-path-full-info to worker context.
+	Now, worker can get worker name and entry name by
+	(kahua-context-ref "x-kahua-path-full-info").
+	Added kahua-current-entry-name.
+
+2005-12-18  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* emacs/kahua-shell.el.in (run-kahua-shell): add -t option with ssh.
+
+2005-12-18  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* add keywords :multi-value-keyword and :mvkeyword.
+	  These are used for keyword which get many values from context.
+
+2005-12-18  Katsutoshi Itoh  <cut-sea@kahua.org>
+
+	* entry-lambda's keyword can get multiple values from context.
+	  So, we can remove kahua-context-ref* from *.kahua.
+	  kahua framework bind keyword single value or list of values.
+	  When multiple values posted, keyword is binded by values of list.
+	  and another case, single value posted, keyword is binded by a value.
+
+2005-11-26  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	Changed kahua-serializable-object? to return #t for null list.
+
+2005-11-12  ENDO Yasuyuki
+
+	* src/kahua/persistence.scm:
+	  check Gauche-dbi 0.2 and later in read-kahua-instance and write-kahua-instance.
+
+2005-11-03  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* src/kahua/persistence.scm:
+	supported class redefine.
+	changed to use slot-*-using-class in primitive procedure.
+	added change-class method to <kahua-persistnet-base>.
+	* test/persistence.scm.in:
+	fixed key duplicate.
+
+2005-10-16  Kenji Hisazumi  <nel@soraneko.com>
+
+	* plugins/sendmail.scm:
+	fixed for the case if the default encoding is not "eucjp".
+
+2005-10-12  ENDO Yasuyuki <yasuyuki@javaopen.org>
+
+	* Release 0.3.4
+	- Known Bugs: kahua-spvr will dead-locks some situation.
+
+2005-10-06  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-spvr.scm:
+	added a signal handler which catches SIGPIPE and ignores it.
+
+2005-10-04  SHIBATA Tomohisa  <shibata@kahua.org>
+
+	* cgi/kahua.cgi.in:
+	pass CGI metavariables to the server via "x-kahua-metavariables"
+	header fields.
+	* src/kahua/server.scm:
+	Added API(kahua-meta-ref) for CGI metavariables.
+
+2005-09-30  ENDO Yasuyuki <yasuyuki@javaopen.org>
+
+	* src/kahua/persistence.scm :
+	add primary key in create table of kahua_db_classes and kahua_*
+
+2005-09-23  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* plugins/allow-module.scm:
+	added srfi-19
+
+2005-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/session.scm: 
+	(use gauche.validator) -> (use gauche.mop.validator)  The former name
+	is obsoleted.
+
+2005-08-30  ENDO Yasuyuki <yasuyuki@javaopen.org>
+
+        * src/kahua/persistence.scm : use dbi-escape-sql.
+
+2005-08-24  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-keyserv.scm, src/kahua/config.scm.in:
+	Enabled to record kahua-keyserv's process id in 
+	work-directory/kahua-keyserv.pid
+	
+
+2005-08-22 ENDO Yasuyuki <yasuyuki@javaopen.org>
+
+	* src/kahua/user.scm
+	Add and export kahua-user-password-change-force.
+	
+	* test/user.scm.in
+	Add test "kahua-user-password-change" and
+	"kahua-user-password-change-force".
+
+2005-08-19 Katsutoshi Itoh <cut-sea@timedia.co.jp>
+
+	* src/kauha/config.scm.in
+	Add new slot into kahua-custom.
+	The new slot name is secure-sandbox,
+	which can take value #f or the other.
+
+	* src/kahua/sandbox.scm
+	A value #f means we can make insecure sandbox.
+
+2005-08-17 Katsutoshi Itoh <cut-sea@timedia.co.jp>
+
+	* src/kahua/plugin.scm
+	take care of a module which include export-all like as sxml.ssax.
+
+2005-08-17  ENDO Yasuyuki <yasuyuki@javaopen.org>
+	
+	* Release 0.3.3
+	Supported FastCGI.
+
+2005-08-13  SHIBATA Tomohisa  <shibata@timedia.co.jp>
+
+	* src/kahua/server.scm:
+	Fixed quasiquote miss(RSS).
+	Improved encoding check(RSS).
+
+2005-08-06  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/Makefile.in:
+	modified in order to install src/kahua/error-report.scm.
+
+2005-08-06  Kenji Hisazumi  <nel@soraneko.com>
+
+	* src/kahua/error-report.scm, src/kahua.scm, src/kahua/sandbox.scm:
+	added error report system which handles exception occured in kahua
+	applicatoin and logs these exceptions to kahua-spvr.log.
+	we can use it with (kahua-error-proc kahua-error-report-proc).
+
+	* cgi/fix-shebang.sh: 
+	modified to generate a fastcgi script.
+	* configure.ac, cgi/Makefile.in:
+	added a configure option '--with-fastcgi'.
+
+	* src/kahua-server.scm (kahua-add-hook!, kahua-delete-hook!): 
+	added hook function, which is called whenever before and/or after
+	processing a request to kahua applications.
+
+2005-07-20  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in (cgi-error-page):
+	modified to take only message argument.
+
+	* cgi/kahua.cgi.in (cgi-error-proc):
+	modified to log error detail.
+
+	* cgi/kahua.cgi.in (main):
+	modified to error handling to avoid anoying error output was 
+	taken by Apache.
+
+2005-07-14  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-spvr.scm, src/kahua/config.scm.in:
+	Enabled to record kahua-spvr's process id in 
+	work-directory/kahua-spvr.pid 
+	
+
+2005-07-14  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in:
+	added SIGPIPE handling.
+	
+2005-07-12  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in:
+	guraded IO
+
+	* src/kahua-server.scm:
+	- guarded read operation in accept-handler.
+	- remove SIGPIPE handler.
+	- log when errors without caught by signal handlers occur.
+	
+2005-07-11  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua-cgi.in: 
+	log when SPVR-ERROR occured.
+
+	* src/kahua-server.scm (run-srver):
+	added guard in replying function for closing connection by client.
+	
+	* src/kahua/test/xml.scm:
+	added coding directive.
+
+2005-07-04  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* examples/Makefile.in, src/Makefile.in, test/Makefile.in:
+	  removed ces conversion process in building.
+
+	* examples/lambdabooks.init.in, examples/*/*.kahua.in,
+	  src/kahua/pdf/typeset.scm.in, test/*.kahua.in:
+	  added coding ditective at top of file, and removing .in
+	  extension from file name.
+
+	* test/*.scm.in:
+	  added coding ditective at top of file.
+
+2005-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (sxml:attr->xml-bis attr): omit attributes
+	  that have #f in their value.  This simplifies SXML constuction
+	  a lot.
+
+2005-06-26  TAHARA Yusei  <yusei@domen.cx>
+
+	* src/kahua/plugin.scm, test/plugin.scm:
+	  fixed a bug that loads object that is same name as given one
+	  in another module.
+
+2005-06-04  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* plugins/allow-module.scm:
+	Added text.tree module.
+
+2005-06-01  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.3.2
+	- Fixed bug which disabled using with new Gauche-0.8.4.
+
+2005-04-20  Kenji Hisazumi  <nel@soraneko.com>
+
+	* src/kahua/elem.scm (b/, i/): fixed typo arg -> args
+
+2005-04-12  Kenji Hisazumi  <nel@soraneko.com>
+
+	* src/kahua/session.scm (make-state-key, make-cont-key): 
+	- fixed a bug of the case where a duplicated key are generated.
+
+2005-03-23  Kenji Hisazumi  <nel@soraneko.com>
+
+	* src/kahua/persistence.scm:
+	- refactored a mecanism to provide in-db in-memory consistency.
+	Now, all in-memory objects obtained from db are managed over
+	transactions. However, the write-syncer mechanism dose not 
+	support yet.
+	
+
+2005-02-09  Kenji Hisazumi  <nel@soraneko.com>
+
+	* src/kahua/persistence.scm: 
+	added a mechanism to provide cache consistency.
+	see [kahua-dev: 00870, 00871, 00874, 00885-00888] for detail.
+	
+2005-02-09 Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.3.1:
+	- Gauche 0.8.3 or later required.
+	- (kahua-spvr): Fixed for the case if the platform has both ipv4 
+	and ipv6 interface.
+	- (kahua-spvr): Added version command to show kahua version.
+	- (kahua-server): Made to log when startup and exit on signals.
+	- (kahua-admin): Enabled batch execution---just give an admin 
+	command in the command line and it is executed immediately.
+	- (kahua.cgi): Introduced <response> class to represent http response
+	instead of response dispatcher
+	- (kahua.server): Duplicate default-element-handler: one is for 
+	non-terminated HTML tags (e.g.img, br, etc) and emits empty
+	XHTML tag (e.g. <img />) instead of <img></img>. The other is
+	for rss feeding by <link> elements, which is recognized non-terminated
+	tag in HTML.
+	- Modified log prefix from "~T ~P[~$]: " to "~Y ~T ~P[~$]: ".
+	
+2005-02-01 Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-server.scm (kahua-server-main):
+	Made to log when startup and exit on signal into kahua-spvr.log.
+	
+2005-01-25  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/server.scm (default-element-handler):
+	Revived old default-element-handler as default-element-handler-bis
+	to use for issuing rss.
+
+	* doc/Setup.ja:
+	Modified required Gauche version (-> 0.8.3)
+
+	* src/kahua-spvr.scm (handle-spvr-command):
+	added version command to show kahua version.
+
+2005-01-18  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-spvr.scm, src/kahua-keyserv.scm, cgi/kahua.cgi.in:
+	Modified log prefix from "~T ~P[~$]: " to "~Y ~T ~P[~$]: ".
+
+2005-01-05  Kenji Hisazumi  <nel@soraneko.com>
+
+	* cgi/kahua.cgi.in: 
+	introduced <response> class to represent http response
+	instead of response dispatcher
+
+	See [kahua-dev:00848-00850] for detail.
+
+2004-11-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (default-element-handler): recognize
+	  non-terminated HTML tags (e.g. img, br, etc) and emits empty
+	  XHTML tag (e.g. <img />) instead of <img></img>.
+
+2004-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-admin.scm: Enabled batch execution---just give an
+	  admin command in the command line and it is executed immediately.
+	  E.g. "kahua-admin restart kahua-web" etc.
+
+	* src/kahua-spvr.scm (handle-http):
+	  Added support of enctype multipart/form-data.  This enables file
+	  uploading.  (NB: this requires Gauche 0.8.2 to work).
+	* cgi/kahua.cgi.in : ditto.
+
+2004-11-16  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* doc/Setup.ja: added some description for setting about unix group
+	  and directory permissions.
+
+2004-11-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr.scm (run-server): fixed for the case if the platform
+	  has both ipv4 and ipv6 interface.  httpd mode now opens and
+	  listens for both interfaces.
+
+2004-11-04  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.3:
+	- Added in-place mode for kahua-spvr (enable run in-place).
+	- Added httpd mode for kahua-spvr (enable own httpd function).
+	- Added API(kahua-context-ref*) for name having multiple values
+	in a form.
+	- Added interp-rss for issuing RSS
+	- Added simple Query Language plugin for kahua.persistence
+	
+
+2004-11-04  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* doc/Scripts/kahua-spvr.ja : added description for --test option and
+	for -H option of kahua-spvr
+
+2004-10-31  Shiro Kawai  <shiro@acm.org>
+
+	* test/spvr-httpd.scm.in : added for testing stand-alone httpd mode
+	  of kahua-spvr.
+
+2004-10-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (kahua-context-ref*): added kahua-context-ref*
+	  to deal with multiple form values.
+
+2004-10-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr.scm :
+	- static document can be handled in httpd mode.
+	- handle worker-specified header (e.g. '302 Moved') properly.
+	- handle some class of errors properly in httpd mode (it should be
+	  done for cgi-bridge mode as well, but not done yet).
+	* src/Makefile.in, src/make-testconf.scm : allow 'in-place' test
+	  running.  It is done by creating required symlinks under
+	  $(top_builddir)/tmp, and generating a test.conf that points to
+	  the directory as working directory.
+
+2004-10-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/config.scm.in : added kahua-version
+	* src/Makefile.in : ditto
+	* src/kahua-spvr.scm : added httpd support.  enabled by --httpd or -H
+	  option.  static document uri handling and certain header handling
+	  aren't working yet.
+
+2004-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/make-testconf.scm : a script to generate conf file for
+	  'in-place' testing.
+
+	* branching shiro_reorg1 to experiment reorganization.
+	* src/kahua-*.in : renamed to kahua-*.scm, and will be installed to 
+	  the kahua library directory.
+	* src/maka-script.scm : generates shell scripts for kahua commands.
+	* test/*.scm.in : fixed accodringly.
+	* Makefiles : fixed accordingly.
+
+2004-10-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/config.scm.in (kahua-init):
+	- fix error message.
+
+2004-10-12 Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/server.scm
+	- Added interp-rss
+
+2004-09-14 Kenji Hisazumi <nel@soraneko.com>
+
+	* src/kahua/query.scm, plugins/query.scm, test/query.scm:
+	- Rewrite query.scm as a plugin 
+	and move src/kahua/query.scm to plugins/query.scm.
+
+2004-09-07 Kenji Hisazumi <nel@soraneko.com>
+
+	* src/kahua/query.scm, test/query.scm:
+	- Added kahua.query module which is a query language for 
+	kahua.persistence.
+
+2004-09-02 Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.2.8:
+	Fixed.
+	- Build process cleanuped
+	- Avoid some tests to stack with Gauche 0.8.1
+	Ad hoc patch
+	- Enable to include apostrophies in (S)XML attribute value string.
+	
+2004-08-12 Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/shell.scm.in, test/usermode.scm:
+	Patched to avoid stacking with Gauche 0.8.1. by making port's 
+	buffering mode none on input port bound with proccess output.
+	
+2004-08-11 Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/server.scm:
+	Newly defined sxml:attr->xml-bis and replaced sxml:attr->xml with it.
+	This enabled to include apostrophies in attribute value string.
+	
+	
+2004-06-28  Kimura Fuyuki  <fuyuki@hadaly.org>
+
+	* Makefile.in, src/Makefile.in, cgi/fix-shebang.sh: Yet more
+	cleanups; now the whole build-(clean)-edit-rebuild process is
+	believed to have been sanitized.
+
+2004-06-26  Kimura Fuyuki  <fuyuki@hadaly.org>
+
+	* examples/Makefile.in, src/Makefile.in, test/Makefile.in: More
+	dependencies and clean targets.
+
+2004-06-25  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* plugins/allow-module.scm: added rfc.uri entry.
+
+2004-06-23  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.2.7:
+	Bugfix release. 
+	- Change unixdomain socket permission from o777 to o770.
+	- Added --with-cgilogdir option to configure script.
+	- Change log file directory for kahua.cgi from /tmp/t.log 
+	to $(KAHUA_CGILOG_PATH)/kahua-cgi.log.
+
+2004-06-16  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/Makefile.in: fixed a bug inserting 'exec ' repeatedly.
+
+2004-06-09  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/Makefile.in: modified permission of $KAHUA_SOCKBASE
+	from o777 to o770.
+
+	* cgi/Makefile.in: modified permission of $KAHUA_CGILOGDIR
+	from o777 to o770.
+	
+2004-06-09  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-keyserv, src/kahua-server, src/kahua-spvr: 
+	modified unix-domain socket's permission from o777 to o770
+
+	* configure.ac: added --with-cgilogdir option
+
+	* cgi/Makefile.in, cgi/kahua.cgi.in, cgi/fix-shebang: 
+	modified kahua cgi log path from /tmp/t.log 
+	to $(KAHUA_CGILOG_PATH)/kahua-cgi.log.
+
+	* INSTALL, doc/Setup.jp: 
+	added description about permisson of kahua cgi log directory.
+
+2004-06-02  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/Makefile.in: modified to make kahua-server and kahua-keyserv
+	scripts use exec for invoking gosh.  It seems to fix the bug 
+	that kahua-server process cannot be killed by SIGTERM when
+	kahua-spvr is invoked as daemon or background job.
+
+2004-05-25  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Release 0.2.6 released.
+
+	- Added session-state-ref, session-state-all-keys, and ref-object.
+	- Modified make-kahua-collection to collect subclass instances.
+	- Fixed test code made error in the case of using Gauche 0.8. 
+	
+2004-05-22  Shiro Kawai  <shiro@acm.org>
+
+	* test/server.scm.in: fixed test code that has macros which expand
+	into internal define inadvertently; although such macros are not
+	supported by Gauche yet, pre-0.8 Gauche accepted it and interpreted
+	in wrong way.  As of 0.8 Gauche reports an error for such usage,
+	so I forced them evaluated at top level by wrapping them by eval.
+
+2004-05-18  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* plugin/allow-module.scm:
+	added srfi-11
+
+	* src/kahua/session.scm, test/session.scm.in:
+	added session-state-ref and session-state-all-keys.
+
+	* src/kahua-keyserv.in:
+	added ref-object.
+
+	These hacks are by Hisazumi san. 
+	See [kahua-dev:00653],[kahua-dev:00656],and [kahua-dev:00663] for
+	detail.
+	
+2004-05-17  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/persistence.scm, test/persistence.scm.in:
+	Hacked by Hisazumi san to enable make-kahua-collection to collect
+	subclass instances.
+
+	See [kahua-dev:00652],[kahua-dev:00655],[kahua-dev:00657]
+	,[kahua-dev:00660],[kahua-dev:00661],and [kahua-dev:00662]
+	for detail
+	
+2004-05-17  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in:
+	Hacked by Hisazumi san to enable to use as fastcgi.
+
+	See [kahua-dev:00658] for detail
+	
+2004-05-07  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Version 0.2.5 released.
+
+	- Added mechanism to pass :arguments value in app-servers to the
+	corresponding kahua application, by kahua-app-args parameter.
+	
+	- Added kahua-current-user-name for get only current user name
+	(not <kahua-user> object). This is useful, for example, to support
+	non-registered users' login.
+	
+2004-05-07  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/server.scm:
+	Added kahua-current-user-name for get only current user name
+	(not <kahua-user> object).  This is useful for supporting
+	non-registered users' login.
+
+	* src/kahua-server.in:
+	Added and exported kahua-app-args parameter in order to pass
+	:argument in app-servers to kahua applications.
+	
+2004-04-27  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Version 0.2.4 released.
+	Added elements for frame.  
+	Added more entries in examples/app-servers.samples.
+	
+	
+2004-04-26  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/server.scm (a/cont, form/cont):
+	modified for @ and @@
+
+	* src/kahua/server.scm:
+	added frame/cont (source code by Kenji Hisazumi)
+	
+	* src/kahua/elem.scm:
+	added frameset:, frame:, frame/cont:, frameset/, frame/, and
+	frame/cont/
+
+2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Version 0.2.3.1 released
+	Fix bug in test/Makefile.in
+
+2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Version 0.2.3 released
+	Several modifications in testing part.
+
+2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/admin.scm.in, shell.scm.in,
+	  test/spvr.scm.in, test/usermode.scm.in:
+	modified socket check rootine (because there are systems
+	return 'fifo (instead of 'socket) for unix domain socket).
+	
+2004-04-19  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/shell.scm.in, test/usermode.scm.in:
+	use 'env -i' instead of 'env -u' (because BSD's env does not support
+	-u option).
+	
+2004-04-09  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Version 0.2.2 released.
+	
+2004-04-09  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in: change content-type charset value to euc-jp
+	with Gauche made by --enable-multibyte=no.
+	
+2004-04-07  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* cgi/kahua.cgi.in: adjusted content-type header's charset value to
+	(gauche-character-encoding).
+
+	* configure.ac: added test/Makefile to AC_OUTPUT
+	
+	* examples/Makefile.in: modified to make souce code encoding of
+	kahua applications same as the one of gauche internal ces.
+	* examples/lambdabooks.init: removed
+	* examples/lambdabooks.init.in: added
+	* examples/*/*.kahua: removed
+	* examples/*/*.kahua.in: added
+
+	* src/Makefile.in:  modified to make souce code encoding of
+	src/kahua/typeset.scm same as the one of gauche internal ces.
+	* src/kahua/typeset.scm: removed
+	* src/kahua/typeset.scm.in: added
+
+	* test/Makefile.in: Added to make souce code encoding of
+	test/*.scm, test/*.kahua and test/*.sxml same as the one of 
+	gauche internal ces.
+	* test/Makefile: removed
+	* test/*.scm, test/*.kahua and test/*.sxml: removed
+	* test/*.scm.in, test/*.kahua.in and test/*.sxml.in: added
+	
+2004-04-02  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* examples/Makefile.in: added load-path for kahua.scm in calling lambdabooks.init. 
+	
+2004-03-26  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* configure.ac: 
+	version 0.2.1
+	KAHUA_CGIDIR modified
+	
+	* doc/ : added documents. Not yet prepaired English documents.
+	
+2004-03-26  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* Install directory rearranged:
+	By default all install files located in /usr/local/*/kahua/.
+
+	* kahua-* commands: become shell scripts calling scheme scripts
+	
+	* configure.ac:
+	Default Kahua_CGIDIR modified
+
+	* cgi/fix-shebang.sh: added for embedding load-path into kahua.cgi.
+	* cgi/kahua.cgi.in: default socket_base_dir modified.
+	* cgi/Makefile.in: modified to embed load-path into kahua.cgi.
+	 
+	* examples/Makefile.in: modified KAHUACONFIG flag.
+
+	* src/Makefile.in: rearraged install directories.
+	Make shell script for kahua-* command
+	* src/fix-shebang.sh: Modified to make shell script for kahua-* commands.
+	* src/kahua.conf.sample: modified
+
+	* src/kahua/config.scm.in: added
+	  src/kahua/config.scm: removed 
+
+	* plugin/Makefile.in: modified INSTALL_DIR.
+
+2004-03-22  Shiro Kawai  <shiro@acm.org>
+
+	* examples/lambdabooks/login.kahua (user-box): check user name validity
+	  in user-registration.
+
+2004-03-16  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua-spvr.in (terminate): issues SIGTERM instead of SIGINT
+	
+2004-03-06  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in (dispatch-to-worker): modified error handling
+
+2004-03-05  Shiro Kawai  <shiro@acm.org>
+
+	* examples/lambdacalcul/lambdacalcul.kahua : added.
+
+2004-03-05  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* version 0.2 :
+
+2004-03-03  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* test/developer.scm, test/plugin.scm, test/sandbox.scm:
+	load module just before running test-module.
+
+2004-03-03  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-keyserv.in (handle-request): added socket-close when the
+	communication with a worker is over.
+
+2004-03-03  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* test/developer.scm, test/plugin.scm, test/sandbox.scm:
+	added japanese comment and test-module check.
+	* test/config.scm: added japanese comment.
+	* src/kahua/pdf/main.scm, src/kahua/pdf/state.scm, src/kahua/typeset.scm:
+	remove non-defined symbols from export list.
+	(with-document, with-document-to-port, with-document-to-file,
+	 with-page, with-docdata-to-file, with-docdata-to-port):
+	in gauche, with-* get thunk instead of body. now these are procedures,
+	not macros.
+	(with-output-to-string): removed.
+	* test/pdf.scm: added test-module check and change with-* argument.
+
+2004-03-03  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in: added more log output.
+
+2004-03-02  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/elem.scm: added pdf: and pdf/ for publishing pdf document.
+	* src/kahua/sandbox.scm (make-sandbox-module):
+	fixed a module dependency. now use kahua.plugin.
+	disabled exit, sys-exit, sys-abort bindings in sandbox module.
+	renamed wrong name export-module-except to enable-module-except.
+
+2004-03-01  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/pdf/interp.scm (html-environment): added kahua specific
+	tags, form/cont, a/cont and so on.
+	* src/kahua/pdf.scm, src/kahua/pdf/*: added pdf library.
+	* src/kahua/server.scm:
+	(add-interp!, get-interp, kahua-render-proc): separete interp-html-rec.
+	(interp-pdf): added. it generates PDF.
+	* src/kahua.scm: added kahua.pdf.
+	* src/Makefile.in (INSTALL_DIRS, SCMFILES): install kahua/pdf/*.scm.
+
+2004-03-01  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in : fixed to stop restarting worker which doesn't
+	run over 60 sec.
+
+2004-03-01  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* examples/foldlist/foldlist.kahua : added foldlist sample program.
+	* examples/Makefile : added foldlist.kahua entry
+	* test/Makefile, test/foldlist.scm : added test for foldlist.kahua
+	
+2004-03-01  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+        * src/kahua-spvr.in : support restarting the unexpected terminated
+        worker.
+        * src/kahua/config.scm : added "auto-restart" slot to <kahua-config>
+        to enable above support.
+        * cgi/kahua.cgi (compose-reply): changed default content-type as
+        "text/html; charset=euc-jp".	
+
+2004-02-29  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/elem.scm: added functional tags extra-header: and
+	extra-header/
+	* examples/login/login.kahua: use extra-header: instead of symbol.
+
+2004-02-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm (kahua-db-open-dbi): handles
+	<dbi-exception> correctly.
+	* test/persistence-dbi.scm : handles <dbi-exception> correctly.
+
+2004-02-29  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua-admin.in : add moduser command that changes password.
+	* src/kahua/developer.scm :
+	(developer-password-set!): bug fixed.
+	(developer-roles-set!): added.
+	(find-developer): user does not found, raise error.
+	(kahua-change-developer-password): removed old-password argument
+	and added validation for new-password.
+
+2004-02-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm :
+	(kahua-persistent-classes-in-db):
+	(kahua-persistent-class-generation):
+	(kahua-persistent-class-definition): added metalevel API.
+	(translate-up, translate-down): fixed a bug that caused an error
+	when upgrading databases created by older kahua.persistence.
+	(autoloads): make the test pass without dbi.
+
+2004-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm (kahua-object reader): check if the
+	generation of instance is newer than currently recorded in-db class
+	generation, and if so, re-read metainfo.
+	(compute-translation-directive): fixed a bug that the translation
+	directive might have been assigned incorrectly.
+
+	* src/kahua/persistence.scm:
+	(<kahua-db-dbi> etc): added support of DBI back-end.  Tested with
+	mysql.  The back-end database can be specified by "mysql:" or
+	"pg:" prefix in the database pathname.  If these paths
+	are specified, dbi module is autoloaded, so the caller doesn't
+	need to load dbi explicitly.  (And kahua.persistence still works
+	without dbi, as far as such pathnames aren't specified).
+	The current implementation is a prototype, inefficient and
+	not robust.
+	* test/persistence.scm : changed a bit so that it can test both
+	standard filesystem db and DBI-backed db.
+	* test/persistence-dbi.scm : added.  This isn't run by make check,
+	for it requires setup on RDBMS side.
+
+2004-02-27  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/sandbox.scm: requires gauche.redefutil module before
+	class redefinition.
+
+2004-02-27  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in : fixed bug fixed about ping(error handling).
+
+2004-02-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm : implemented schema generation control;
+	the module compares it's in-memory persistent class generation and
+	in-db persistent class generation, and upgrades/downgrades the
+	instance automatically when reading the data into memory.  At the
+	commitment time, the in-db persistent instance is upgraded iff
+	in-memory generation is newer than in-db generation.
+	* test/persistence.scm : added tests for the above change.
+	Also a detailed description of tests are written (currently in
+	Japanese euc-jp).
+
+2004-02-26  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* cgi/kahua.cgi.in: fixed PATH_INFO bugs.
+	fixed some error representation.
+
+2004-02-25  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/plugin.scm: added use-plugin to export.
+	* src/kahua/sandbox.scm (make-sandbox-module):
+	disable bindings import and require.
+	* test/shell.scm, test/testuser.conf: added kahua-shell test.
+	* test/usermode.scm: added user exclusive mode test.
+	* test/sandbox.scm: added sandbox test.
+	* test/plugin.scm: added plugin test.
+	* test/Makefile: added 'shell', 'usermode', 'plugin',
+	'sandbox' make target.
+
+2004-02-23  Koichi Sasada <sasada@namikilab.taut.ac.jp>
+
+	* src/kahua-spvr.in : bug fixed about ping.
+	* src/kahua-server.in (update-server): 
+	renamed 'reload-server to update-server. supported updating specified
+	file.
+	* src/kahua-admin.in : supported 'update' command.
+	supported redo command as ":".
+	* test/admin.in : add 'update' test.
+
+2004-02-23  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in (unexpected-end): 
+	added dummy procedure to hook unexpected end of a worker.
+	
+2004-02-23  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* emacs/kahua.el.in, emacs/kahua-shell.el:
+	added kahua-user-mode variable for connecting user-mode spvr.
+	* src/kahua-shell.in (login-processor): when run with -user option,
+	omit username prompt.
+	* src/kahua/developer.scm
+	(developer-roles): added developer role.
+	(kahua-add-developer): added roles argument.
+	* src/kahua-admin.in, src/user.conf.sample: added developer role.
+	* test/developer.scm: changed kahua-add-developer argument.
+
+2004-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-server.in (handle-request): opens the default database
+	($working-directory/db) if primary-database-name isn't specified.
+	Since several application servers need to share the database if they
+	pass control around, now it is strongly recommended for app servers
+	to use the default database instead of specifying its own database
+	by primary-database-name; in future, there will be different
+	mechanism to allow app servers to use multiple databases.
+
+	* src/examples/login/login.kahua : added. An example that handles
+	user login.
+	* src/examples/wiki-iki/wiki-iki.kahua : added link to login.
+	* src/examples/app-servers.sample : added login.kahua.
+	* src/examples/Makefile.in : added login.kahua.
+
+	* src/examples/lambdabooks/lambdabooks.kahua : removed
+	primary-database-name to use the default db.
+	* src/examples/lambdabooks.init : use the default db.
+
+	* src/kahua/persistence.scm (lock-db): sleep before retrying locking
+	the DB.
+
+2004-02-23  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in : supported restarting a server which has no
+	response.
+	modified some log format.
+	added 'worker-zombee slot to recognize that worker is zombee or not.
+
+	* src/kahua-server.in : modify to achieve above. if header has
+	"x-kahua-ping", reply to client (values #t #t).
+
+	* src/kahua/config.scm : add slot 'ping-timeout-sec and 
+	'ping-interval-sec.
+	
+2004-02-22  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua-shell.in (make-worker-command-processor):
+	sending expression evaluate in sandbox instead of kahua-server.
+	* src/kahua-admin.in, src/kahua/plugin.scm:
+	added plugin command. this command provides listing and reloading.
+
+2004-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (a/cont) : supports remote-cont clause, which
+	allows the application server to pass the control to another
+	application server.
+
+2004-02-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-keyserv.in : added - session-key server.
+	* src/kahua-server.in : added -k option to receiver session-key server
+	identifier.
+	* src/kahua-spvr.in : fork session-key server at startup, and passes
+	its identifier to kahua-servers.  Also refactored run-piped-cmd.
+	* src/kahua/server.scm (kahua-init-server) : takes an optional
+	argument session-server-id, in case if session-key server is used.
+	* src/kahua/session.scm :
+	(session-manager-init): takes an optional argument session-server-id,
+	in case if session-key server is used.
+	(<session-state>, session-state-register, session-state-get,
+	session-state-discard, session-state-sweep, session-state-refresh):
+	If session-key server is used, query the state session id to it.
+	* src/Makefile.in : added kahua-keyserv
+	* test/session.scm : added tests that works with session-key server.
+	* test/sharedstate.kahua : added to test shared state-session key
+	via session-key server.
+	* test/spvr.scm : added tests for sharedstate.kahua.
+	
+	* plugins/allow-module.scm : allow gauche.vm.debugger - it is
+	implicitly used by '#?=' debug-print feature.
+	* test/allow-module.scm : removed, for it is redundant with
+	plugins/allow-module.scm
+	* test/admin.scm, test/lambdabooks.scm, test/nqueen.scm,
+	test/worker.scm : changed to get allow-module.scm from ../plugins.
+
+2004-02-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/util.scm (kahua-error-string): the implementation of
+	detail? optional argument didn't meet the comment.  Fixed
+	implementation to match the comment.
+
+2004-02-20  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua-install.in: added new -t type plugin.
+	* src/kahua-server.in:
+	(kahua-application-environment): added. make anonymous sandbox module.
+	(kahua-app-server): now this is a sandbox module object, not a module.
+	(load-kahua-module): changed load environment. use sandbox module.
+	this procedue is defined as "load" in sandbox module.
+	(kahua-server-main): initialize plugins before loading *.kahua.
+	* src/kahua/plugin.scm: added plugin manager.
+	* src/kahua/sandbox.scm: added safe environment module.
+	* src/Makefile.in: install kahua/sandbox.scm kahua/plugin.scm.
+	added /var/lib/kahua/user /var/lib/kahua/plugins in CREATE_DIRS.
+	* src/kahua.scm: added kahua.plugin and kahua.sandbox.
+	* test/admin.scm, test/lambdabooks.scm, test/nqueen.scm,
+	  test/spvr.scm, test/wiki-iki.scm, test/worker.scm:
+	make plugins directory in working directory and copy
+	allow-module.scm to it.
+	* plugins/Makefile.in, plugins/allow-module.scm, plugins/sendmail.scm:
+	added sample plugins.
+
+2004-02-20  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-spvr.in : modified to run servers such as different
+	to app-servers description when 'reload' command is executed.
+	and changed a return value of 'reload' command to available types.
+
+	* test/spvr.scm, test/admin.scm : modified to support above. 
+
+2004-02-19  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/elem.scm : added higher-order tag functions
+	
+	* src/kahua/server.scm (kahua-render-proc) : A little modified
+	for handling higher-order nodes.
+
+	* test/*-st.kahua: Sample for higher-order tag functions
+	
+	* test/worker.scm: added test for *-st.kahua
+	
+2004-02-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/developer.scm (save-conf): made it more robust to save
+	user.conf.
+
+	* src/kahua/gsid.scm (make-worker-id): do not include worker type
+	in the worker id.   It is redundant.
+	* src/kahua/persistence.scm (kahua-serializable-object?): added.
+	* src/kahua/session.scm:
+	(slot-missing class (obj <session-state>) slot val): check if
+	the value is serializable.
+	* src/kahua-admin.in (make-worker-command-processor): changed prompt
+	to use worker type explicitly (since worker id doesn't include
+	worker type anymore).
+	* src/kahua-shell.in (make-worker-command-processor): ditto.
+
+2004-02-17  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* cgi/kahua.cgi.in:
+	(response): added. provide control over output headers.
+	(publisher): added. publish html and provide ~user authentication.
+	(compose-reply): changed. compose-reply use response dispatcher
+	for setting headers and cookies.
+
+2004-02-17  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/elem.scm: added node-set: and node-list-to-node-set.
+	All tag functions flatten their args by checking node-set tag.
+
+	* src/kahua/server.scm (kahua-render-proc) : A little modified
+	for handling top level node-set.
+	
+2004-02-17  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/config.scm (kahua-init): bug fix. do sanity-check after
+	loading user custom.conf.
+	* cgi/kahua.cgi.in (load-user-config): change specification.
+	when PATH_INFO has ~user component, load the custom.conf and
+	connect user's spvr. don't tie to unix account.
+
+2004-02-16  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/custom.conf.sample: added configuration file for user mode.
+	* src/kahua/config.scm
+	(<kahua-custom>): added. and added new internal slot, "user-mode" for
+	running user mode. when running under user mode, "user-mode" value
+	is a user name.
+	(<kahua-config>): change inheritance. now <kahua-config> inherit
+	two classes, <kahua-custom> and <singleton-mixin>.
+	(kahua-init): change arguments. now "cfile" must need.
+	"user" and "skip-check?" are optional keyword arguments.
+	when apply "user" argument, load the user's "custom.conf"
+	after "kahua.conf".
+	* src/kahua-server.in (kahua-server-main):added optional argument
+	"-user" for running user mode.
+	* src/kahua-spvr.in
+	(worker-script): when running under user mode, run kahua-server process
+	with "-user" argument.
+	(main): added optinal argument "-user" for running user mode.
+	* src/kahua-shell.in (main): added optional argument "-user"
+	for running user mode.
+	* src/kahua-admin.in (spvr-command-processor): added help command list.
+	adduser, deluser, lsuser.
+	(main): added optional argument "-user" for running user mode.
+
+2004-02-15  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* emacs/kahua.el.in: added the custom group 'kahua' and variables.
+	* emacs/kahua-shell.el.in: use custom variables for ssh username
+	and hostname. added select worker prompt hook.
+
+2004-02-15  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/*.kahua: changed tags from symbol to function.
+	
+2004-02-14  Nobuo Yamashita  <nobsun@sampou.org>
+	
+	* src/kahua/elem.scm: newly added. It provides html tags implemented
+	as functions.
+	* src/kahua.scm: added kahua.elem.
+	
+2004-02-14  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* emacs/kahua-shell.el.in: added remote emacs interface. can use 'run-kahua-shell' like 'run-scheme'.
+	* emacs/Makefile.in: added 'kahua-shell.el' make target.
+	* src/kahua-shell.in (login-processor): if stdin is not a terminal,
+	password prompt is echoed.
+
+2004-02-11  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* examples/lazy-nqueen/lazy-nqueen.kahua : improved laziness.
+	Function applications are delayed instead args of cons.
+
+	* test/nqueen.scm : modified a little.
+	
+2004-02-10  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* examples/lazy-nqueen/lazy-nqueen.kahua : added.
+
+	* test/nqueen.scm : added test part for examples/lazy-nqueen.
+	
+2004-02-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm : records persistent class information
+	as <kahua-persistent-metainfo> persistent object.
+	* test/persistence.scm : updated accordingly.
+
+	* src/kahua/test/worker.scm (call-worker/gsid->sxml): added.
+	(make-match&pick) : dropped the support of extra sxpath spec.
+	it is easier to apply sxpath in call-worker/gsid->sxml instead
+	of here; it will produce comprehensive error log.
+	Also decode uri encoding.
+
+	* test/nqueen.scm : added to test examples/nqueen.
+
+2004-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/partcont.scm, test/partcont.scm :
+	(reset/pc, call/pc, let/pc) : implemented partial continuation
+	according to Gasbichler&Sperber ICFP02 paper.
+	* src/kahua/kahua.scm : extends kahua.partcont
+	* src/kahua/server.scm : wrap handler invocation by reset/pc,
+	so that the partial continuation captured in the application-server
+	returns correctly.
+
+	* examples/nqueen/nqueen.kahua : added an example that uses
+	partial continuation (nqueen code by Koichi Sasada).
+
+	* examples/lambdabooks/login.kahua : slightly revised using
+	entry-lambda
+
+2004-02-03  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* src/kahua/server.scm : replaced sxml:string->xml with 
+	sxml:string->html
+	
+2004-02-02  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua-admin, test/admin.scm : added "adduser", "deluser", "lsuser" commands for the developer account management.
+
+	* src/kahua-admin, src/kahua-spvr : fixed "help" command. now it shows all the commands on both scripts.
+
+2004-01-29  Yusei Tahara  <tahara@timedia.co.jp>
+
+	* src/kahua/developer.scm, src/user.conf.sample : added the developer account.
+	* src/kahua/test/developer.scm : added.
+	
+	* src/kahua-shell.in : added the REPL interface for kahua developers.
+
+	* src/kahua.conf.sample (userconf-file), src/kahua/config.scm :
+	added userconf-file slot
+
+2004-01-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/session.scm :
+	(<session-cont>): added permanent? slot
+	(session-cont-register): set permanent? #t for permanent entries
+	(session-cont-sweep): avoid sweeping permanent entries.
+
+2004-01-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/user.scm (kahua-user-password-change): added.
+
+2004-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr.in (main): fixed a bug that kahua-spvr removes
+	the socket on exit when it detects another kahua-spvr is running.
+
+	* src/kahua/server.scm (a/cont): allow 'fragment' parameter to aux
+	list, to specify fragment id of generated uri.
+
+2004-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (kahua-default-handler): process error-proc's
+	result by render-proc, so that error-proc can return [SXML].
+
+	* src/kahua-server.in (kahua-error-proc): new parameter to customize
+	error-handling routine.
+	
+	* src/kahua/persistence.scm (initialize): fixed a problem when
+	class definition is changed to remove an existing slot.
+
+	* src/kahua/server.scm (form/cont): allow to pass extra parameters
+	to the continuation closure, much like a/cont.
+
+	* src/kahua/util.scm: added.
+	* src/kahua.scm: added kahua.util
+
+2004-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* cgi/kahua.cgi.in (compose-reply): pass through the extra
+	headers given in the reply.
+	(get-path-info): fixed a problem when PATH_INFO is "/".
+	(server-uri): pass the server's absolute uri to the application
+	server via "x-kahua-server-uri" header.
+	
+	* src/kahua/server.scm :
+	(kahua-default-handler): let render-proc return (Stree, Context)
+	instead of just Stree, so that it can inject information into
+	Context.   Specifically, a context "extra-headers" is used
+	as an additional header fields of reply message.
+	(extra-header): a new SXML element, which doesn't produce any
+	visual node but just inject a reply header.
+	(define-entry): added support of :rest argument.
+	(kahua-server-uri): provided the means to extract server's absolute
+	uri, which is passed from kahua.cgi.
+	(kahua-self-uri, kahua-self-uri-full): added.  utilities to build
+	self-referencing uri.
+	
+	* test/server.scm : updated accordingly.
+
+	* src/Makefile.in (SCMFILES): install kahua/test/*.scm as well.
+
+2004-01-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm : removed bogus reference to kahua.app module.
+
+2004-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/html.scm : merged into kahua/server.scm
+	* src/kahua/server.scm :
+	(kahua-current-context) : context is kept in this global parameter.
+	(kahua-default-handler) : changed calling convention of content
+	handlers.  Now the handler is () -> [SXML], and completely decoupled
+	from the rendering routine, whose default is interp-html.  Also,
+	the extra path info is passed in context.
+	(kahua-context-ref) : dropped 'context' argument, for it is now
+	obtained from kahua-current-context.
+	(kahua-context-add) : dropped, for it is not used at all.
+	(kahua-current-user) : dropped 'context' argument, for it is now
+	obtained from kahua-current-context.
+	(define-entry) : allow the handler to take positional and/or
+	query arguments.
+	(entry-lambda) : new macro that is the core part of parsing
+	positional and query arguments for entry procedures.
+	(a/cont) : allow to specify positional and query arguments for
+	continuation, which will be rendered in a link url.
+	
+	* src/kahua/test/worker.scm (make-match&pick) : added handling of
+	extra path-info.
+	
+	* examples/*, test/* : reflected above changes.
+
+2004-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (kahua-default-handler): passes path-info
+	  to the handling procedure using the context ("x-kahua-path-info").
+
+2004-01-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/dbm.scm, test/kahua-dbm.scm : added a module that
+	  provides dbm interface on top of kahua.persistence.
+
+2004-01-12  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.in, cgi/Makefile.in, examples/Makefile.in,
+	  src/Makefile.in : added 'uninstall' and 'uninstall-examples'
+	  make target.
+
+	* src/kahua-install.in : added -U (uninstall) option.
+
+	* src/kahua-spvr.in : added (use srfi-1) to adapt the change of
+	  util.list in post-0.7.3 Gauche.
+
+2004-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* test/admin.scm : set up enviornment variables correctly so that
+	  test can run without Kahua being installed.
+
+2004-01-05 Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* test/admin.scm : add keyword ":wait" as #t to each run-process.
+
+2004-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/config.scm (<kahua-config>):
+	  typo fix :init-base -> :init-value
+
+2004-01-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in (INSTALL_DIRS): added directory to install
+	  kahua.* modules.
+
+2004-01-02 Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* test/admin.scm : change to use cvs import, checkout.
+
+2004-01-02 Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua-admin.in : support cvs update. "cvs update [type]"
+
+	* src/kahua/config.scm : add "repository" slot.
+
+        * test/kahua-server.in (reload-server) : reload specifyed file.
+
+	* test/admin.scm : add kahua-admin test program.
+
+2003-12-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/test/xml.scm : The last fix about *test-error* is wrong.
+	  If the test procedure gets *test-error* as input, it should return
+	  #f---it never matches any pattern anyway.
+
+2003-12-28  Shiro Kawai  <shiro@acm.org>
+
+	* cgi/kahua.cgi.in (send-reply) : pass PATH_INFO information (after
+	  removing ~user) to the server via "x-kahua-path-info" header
+	  field.
+
+2003-12-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/gsid.scm (make-worker-id), 
+	  src/kahua/session.scm (make-cont-key): changed to use base-36
+	  numbers instead of base-10, to shorten the key.
+
+	* src/kahua/test/worker.scm : refactored out common procedures for
+	  testing worker scripts.
+
+	* src/kahua/test/xml.scm : test-* procedures (i.e. the ones to be
+	  used in the last arg of test and test*) now returns *test-error*
+	  when it receives *test-error*; attempting to parse *test-error*
+	  results hard-to-track error messages.
+
+	* test/worker.scm, test/lambdabooks.scm, test/wiki-iki.scm :
+	  revised to use kahua.test.worker.
+
+2003-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* examples/wiki-iki/* : added another example: simple wiki
+
+2003-12-27  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua/config.scm(kahua-init): add "skip-check?" optional argument
+	  to solve this problem:
+	  http://www.kahua.org/mlarchive/kahua-dev/msg00142.html
+
+2003-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-server.in : Let *.kahua be loaded in a separate module
+	  kahua-app-server, which imports kahua and kahua-server by default.
+	  This separation prevents accidental interference between kahua-server
+	  code and *.kahua, and also avoid issues about module "use" ordering
+	  (i.e. there was a case that the order of "use" of *.kahua wasn't
+	  really the order of imports, since some modules were already loaded
+	  in kahua-server code.  With this change, *.kahua has full control
+	  over the order of imports).
+
+	* src/kahua/html.scm (form/cont) : same change as a/cont, i.e.
+	  using PATH_INFO to pass session key instead of x-kahua-cgsid.
+
+	* test/lambdabooks.scm, test/worker.scm : adapted to form/cont change.
+
+	* test/worker.scm : added back the code to clean up the test
+	  worker process after each test section.
+
+2003-12-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr.in : added "restart" spvr command to restart
+	  specified worker, for the convenience of development.
+
+	* src/kahua-admin.in : fixed "ls" output format.
+
+	* cgi/kahua.cgi.in: refactored PATH_INFO processing, allowing
+	  generated cgsid to be passed via kahua.cgi/$worker-type/$cgsid
+	  format.
+
+	* src/kahua/session.scm: changed cont-session table, so that
+	  the same cont-id will be returned when "known closure" is passed
+	  to session-cont-register.  This change allows global entry
+	  (defined via define-entry) to be treated in the same way as
+	  local closures.
+
+	* src/kahua/html.scm (a/cont): due to the above changes, a/cont
+	  is much simplified.
+	  (define-entry): does not only add-entry!, but also defines
+	  global named procedure.
+
+	* examples/lambdabooks/*.kahua, test/acont.kahua: adapted to
+	  above changes.
+
+2003-12-26  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* cgi/kahua.cgi.in: fix regexp miss.
+
+	* src/kahua-spvr.in: change app-servers format,
+	  and a directory rule of checkout directory.
+	  remove ":script" keyword, add ":arguments" keyword,
+	  location of type.kahua to work/checkout/type/type.kahua
+
+2003-12-25  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* cgi/kahua.cgi.in:
+	  support connecting user independent kahua-spvr with
+	  path-info. If "~user" is given, read ~user/.kahua/kahua.conf
+	  and perform with this configuration.
+
+2003-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* examples/lambdabooks.kahua
+	(standard-page-cont, standard-frame-cont):
+	fixed a couple of leftovers of type inconsistencies.
+
+2003-12-23  Nobuo Yamashita <nobsun@sampou.org>
+
+	* examples/lambdabooks.kahua:
+	fixed type inconsistencies.
+
+	* src/kahua/html.scm (interp-html, interp-html-rec):
+	old interp-html renamed to interp-html-rec.
+	interp-html redefined without cont arg.
+
+	* test/*.kahua:
+	modified corresponding change of interp-html.
+
+2003-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm (kahua-db-open, kahua-db-close) :
+	added lock mechanism using fcntl(2).  NB: this might cause a
+	problem on platforms that don't support fcntl(2) record lock.
+
+2003-12-22  Nobuo Yamashita <nobsun@sampou.org>
+
+	* examples/lambdabooks.kahua (standard-frame, standard-page):
+
+	position of 'context' arg rearraged to be at last but 'cont' arg.
+	(fixed bug: the previous commit did not changed them).
+
+2003-12-21  Nobuo Yamashita <nobsun@sampou.org>
+
+	* examples/lambdabooks.kahua (standard-frame, standard-page):
+	* examples/lambdabooks/book.kahua (show-book-detail):
+	* examples/lambdabooks/login.kahua (login-dialog, new-user): 
+	local functions
+	* examples/lambdabooks/review.kahua (show-reviews, write-review):
+	* examples/lambdabooks/useradmin.kahua (user-edit-panel)
+	local function
+	
+	position of 'context' arg rearraged to be at last but 'cont' arg.
+
+	* examples/lambdabooks/lister.kahua (lister)
+
+	modified args order and curried.
+
+2003-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/test/xml.scm (match-pattern): added !contain
+	directive.
+
+	* test/test-xml.scm : added tests fo the above change.
+
+2003-12-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/test/xml.scm
+	(match-pattern) : treat attribute node (@ ...) specially; in it,
+	patterns match any permutations of the input.
+	(test-sxml-select-matcher, test-xml-select-matcher) : added
+	higher-order test function parameterized by sxpath selection rule.
+
+	* test/test-xml.scm : added tests for the above change.
+
+2003-12-19  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/lambdabooks.scm:
+	
+	- Modified call-server/gsid and match&pick to keep sgsid.
+	- Improved page checking pattern generation.
+	- All pages are NOT YET covered. 
+
+2003-12-15  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/lambdabooks.scm:
+	Added code testing page transition for anonymous user.
+	Still no code for loginuser.
+	
+2003-12-15  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/lambdabooks.scm:
+	Added for testing examples/lambdabooks.kahua 
+	The test script is work but not yet completed.
+
+	* test/Makefile: 
+	Added a entry for lambdabooks.scm.
+
+	* examples/lambdabooks.init: 
+	Changed specifyings for loading book.kahua and review.kahua
+	to relative paths.
+
+	* examples/Makefile.in:
+	Modified command for excuting lambdabooks.init.
+	
+
+2003-12-15  Shiro Kawai  <shiro@acm.org>
+
+	* cgi/kahua.cgi.in (compose-reply): sets Path parameter of the state
+	session id cookie by the dirname of SCRIPT_NAME, to prevent clients
+	from being confused by extra pathname components added after
+	kahua.cgi.
+
+2003-12-16  Koichi Sasada <sasada@namikilab.tuat.ac.jp>
+
+	* src/kahua/gsid.scm : modified decompose-gsid to through
+	invalid gsid. if called with invalid gsid, return (values #f gsid).
+
+	* src/kahua/server.scm : added kahua-worker-type.
+
+	* src/kahua/html.scm : syntax define-entry is added.
+	 and modified a/cont to support named continuation.
+
+	* test/worker.scm, test/gsid.scm, acont.kahua  : added tests to
+	test above. worker.scm is added the test of named continuation with
+	acont.kahua.
+
+	* examples/lambdabooks.kahua, lambdabooks/books.kahua, 
+	lambdabooks/partner.kahua, lambdabooks/useradmin.kahua :
+	modified to use named continuation. 
+	For example, to access partner ship page, you can access by
+	"kahua.cgi/lambdabooks/partner-page".
+
+2003-12-11  Nobuo Yamashita  <nobsun@sampou.org>
+
+	* test/spvr.scm, test/worker.scm : revised.
+
+	* test/hello-world.kahua, test/greeting.kahua, test/lister.kahua :
+	Added for testing.
+
+2003-12-11  Nobuo Yamashita  <nobsun@sampou.org>
+	
+	* version 0.1.1 :
+	Made refactoring, most of kahua-elua integrated in kahua-server.
+
+	Most of kahua/app/elua.scm code was included into kahua-server.
+	kahua/app/elua/alt.scm --> kahua/html.scm
+	Removed kahua/app/
+
+	* configure.ac : modified version number from 0.1 to 0.2_pre0
+
+	* cgi/ : removed kahua-dummy.cgi kahua-ekahi.cgi
+
+	* cgi/Makefile.in : modified SCRITPTS from kahua-elua.cgi to kahua.cgi
+
+	* examples/lambdabooks.kahua: removed (use kahua.app.elua.alt)
+
+	* test/app/ : removed
+
+	* test/Makefile : removed line for app subdirectory
+
+	* test/gsid.scm : modified line for testing worker-id->sockaddr
+
+	* test/spvr.scm, test/worker.scm : almost all test lines commented out.
+	We *MUST* implement new testing
+
+	* src/Makefile.in : adjusted for new version
+
+	* src/kahua-dummy.in : removed
+
+	* src/kahua-server.in :
+	
+	Added following definitions from src/kahua/app/elua.scm
+	  primary-database-name
+	  main-proc
+	  initial-main-proc
+	  handle-request
+	  default-handler
+
+	Modified part for initializing local work-id variable in main
+
+	Modified load-kahua-module; use (load module) instead of (use module)
+	
+	* src/kahua-spvr.in :
+	modified worker-types to '()
+
+	* src/kahua.conf.sample :
+	removed '-elua' from path names.
+
+	* src/kahua.scm :
+	added kahua.html in extend list
+
+	* src/kahua/html.scm : added (almost same as old src/kahua/app/elua/alt.scm)
+
+	* src/kahua/config.scm, src/kahua/gsid.scm : remove '-elua' from path names.
+
+	* src/kahua/app/ : removed
+	
+2003-12-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/user.scm : added inactive flag to <kahua-user>.
+	kahua-check-user returns #f if the matched user is inactive.
+
+	* examples/lambdabooks/useradmin.kahua : enable display and
+	edit of inactive slot of user instances.
+
+2003-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.1: preliminary release.
+
+2003-11-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/persistence.scm (kahua-db-sync): made the db argument
+	optional; when omitted, assumes current-db.
+
+	* src/kahua/app/elua.scm (primary-database-name, handle-request):
+	application server can set a primary database name so that it is
+	always opened while the handler is called.
+	examples/lambadbooks is also changed to adapt to this feature.
+
+	* src/kahua/user.scm (kahua-user-has-role?): added.
+	* src/kahua/app/elua/alt.scm (not-accessible?): changed to check
+	require-role aux node info against current user's roles.
+
+	* examples/lambdabooks/useradmin.kahua : added user administration
+	module.
+	* examples/lambdabooks.init : make default users 'admin' and 'guest'.
+
+2003-11-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/user.scm (kahua-add-user, kahua-check-user,
+	kahua-find-user), test/register.kahua, test/user.scm,
+	examples/lambdabooks/login.kahua :
+	Renamed add-user and check-user for the names with kahua- prefix,
+	and added kahua-find-user.  Fixed users of those APIs respectively.
+
+	* src/kahua-admin.in, src/kahua/server.scm (kahua-default-handler):
+	capture current-output and error-output during calling eval-proc,
+	and send them to kahua-admin, so that external REPL interface
+	can see those output.
+
+	* examples/Makefile.in, examples/lambdabooks.init : allow to give
+	alternative Kahua config file at install-examples time, via the
+	KAHUACONFIG make varaible.  (Patch from K.Sasada).
+
+	* src/Makefile.in : installs /etc/kahua.conf if it doesn't exist.
+	
+	* examples/app-servers.sample, examples/Makefile.in : installs
+	sample app-servers file by "make install-examples" iff there's no
+	app-servers file.
+	
+	* src/kahua-install.in: added -r (rename) and --no-overwrite option.
+
+	* src/kahua/server.scm (kahua-context-add, kahua-context-ref,
+	kahua-current-user) : moved these from kahua.app.elua.alt and
+	lambdabooks.kahua, making them as standard API.
+
+	* examples/lambdabooks.kahua, examples/lambdabooks/* :
+	refactored individual modules.
+
+	* src/kahua/persistence.scm (kahua-object): fixed a problem that
+	instance-by-key table of database wasn't initialized properly
+	when a persistent instance was read from the disk.
+
+2003-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.in's, INSTALL : preparing packaging and installation.
+	
+	* src/kahua-install.in : added.
+
+	* all files : added copyright notice.
+
+	* src/Makefile.in, src/*.in, src/fix-shebang.sh : substitute the
+	first shebang line of executable scripts at make time.
+
+	* src/kahua/config.scm : added static-document-path and
+	static-document-url in configuration parameters.
+
+	* examples/lambadbooks.kahua, examples/lambdabooks/* :
+	moved from test/lambdabooks.kahua, and splitted to several files.
+
+	* test/lambdabooks.kahua, images/* : moved under examples.
+
+2003-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* emacs/Makefile.in, emacs/kahua.el.in : added emacs interface
+	(very simple one; just for starting point).
+
+	* src/kahua/app/elua/alt.scm : added.  a trial implementation of
+	  continuation-passing style interp-html.
+	* test/lambdabooks.kahua : added.  a sample site to test
+	  kahua.app.elua.alt.
+
+	* images/* : added.  general image directory.  currently contains
+	  some images used by lambdabooks.kahua.
+
+	* src/kahua/persistence.scm : fixed a problem that <kahua-proxy>
+	wasn't realized if the slot contains a list of persistent objects,
+	and a problem that instances that are read from disk are inadvertently
+	marked dirty.
+
+2003-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* cgi/kahua-elua.cgi : now it can dispatch session-initiating
+	request to different types of app-servers by looking at PATH_INFO,
+	e.g. http://foo/bar/kahua-elua.cgi/register to connect to register app.
+
+2003-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* test/spvr.scm : fixed path problem for loading *.kahua from
+	child processes.
+
+	* test/worker.scm : added some tests for evaluate handler.
+
+	* src/kahua/server.scm (kahua-default-handler) :
+	Added evaluate handler for emacs interface.
+
+	* src/kahua/app/elua.scm : adapted to kahua.server change.  fixed
+	a bug in init-server that returns wrong worker name.
+
+	* src/kahua/persistence.scm (make-kahua-collection):
+	* src/test/user.scm :
+	Fixed a bug that caused an error when there's no instance in the
+	specified class.
+
+	* src/kahua-admin :
+	Handles 'shutdown' command specially to avoid stale error message.
+	Added code to connect and interact with workers, using evaluate
+	handler of kahua.server.
+	
+	* src/kahua-spvr :
+	Loads application server specification from the
+	$(working-directory)/app-server file.  It can be reloaded by
+	'reload' spvr command, without restarting kahua-spvr.
+	Also added 'register' service.  Run check-workers for every second
+	using timeout.
+
+2003-11-20  Nobuo Yamashita <nobsun@sampou.org>
+
+	* src/kahua/app/elua/html.scm :
+	Modified form/cont to indicate input args' name as continuation.
+
+	* test/greeting.kahua :
+	Added for testing new form/cont
+
+	* test/worker.scm :
+	Added match&pick-form for testing form/cont, but i wonder if 
+	it's correct. 
+
+2003-11-17  Nobuo Yamashita <nobsun@sampou.org>
+
+	* src/kahua/app/elua/html.scm :
+	* test/lister.kahua : 
+	change to use context instead of main-proc-args, because
+	main-proc-args is global for service.
+
+	* src/kahua-spvr : hard-coded for lister service
+	
+	* test/worker.scm : add test for lister.kahua continuation
+
+2003-11-17  Nobuo Yamashita <nobsun@sampou.org>
+	
+	* src/kahua/app/elua/control.scm : remove items in export list
+	
+	* src/kahua/app/elua/html.scm : fixed bug in a/cont and form/cont
+
+2003-11-14  Nobuo Yamashita <nobsun@sampou.org>
+
+	* test/app/work.scm :
+	test for interp-html in src/kahua/app/elua/*
+
+	* test/app/hello-world.kahua :
+	* test/app/lister.kahua :
+	sample applications for testing src/kahua/app/elua/*
+		
+2003-11-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/app/elua/*, test/app/* : start integrating domain
+	  specific language code.
+
+	* src/kahua/persistence.scm : make it work with both Gauche 0.7.2
+	  and 0.7.3_pre1.
+
+	* src/kahua/config.scm : adds $(working-directory)/checkout to
+	  load-path.
+
+	* src/kahua-spvr : added 'test' worker type that uses test.kahua.
+
+2003-11-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm, test/server.scm, src/kahua/app/ekahi.scm :
+	  refactored common stuff from ekahi.scm into kahua.server module.
+
+	* src/kahua/user.scm, test/user.scm : let add-user return #f
+	  if a user with the same login name exists, instead of raising
+	  an error.
+
+	* src/kahua/session.scm, test/session.scm : added kahua.session
+	  module.
+
+2003-11-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr, src/kahua-admin : added supervisor command
+	  processing feature for kahua-spvr, and a script kahua-admin
+	  to control the suppervisor process.
+	
+	* src/kahua/config.scm : new module to handle configuration file
+	* src/kahua-spvr, test/test.conf, test/spvr.scm, src/Makefile.in :
+	  adapted to kahua.config.
+
+2003-11-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/app/ekahi.scm, cgi/kahua-ekahi.cgi : working snapshot
+	  of kahua.app.ekahi
+
+	* src/kahua/test/xml.scm : packaged kahua-ekahi's kahua-test
+	  as a module.
+
+2003-11-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-server, src/kahua/app/dummy.scm : added loadable
+	  application server framework.
+
+2003-11-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr, src/kahua-dummy : changed the invocation protocol
+	  of application server; now sockbase is passed via -s option.
+
+2003-10-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua-spvr, src/kahua-dummy : added the basic framework of
+	  servers.
+
+2003-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/gsid.scm, test/gsid.scm : added provisional session ID
+	  stuff.
+
+2003-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* Checked in the stuff about persistent storage
+	  (src/kahua/persistence.scm, test/persistence.scm).  They are just
+	  a placeholder and will be replaced by the "real" database later.
+

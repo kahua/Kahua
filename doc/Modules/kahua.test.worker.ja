@@ -1,0 +1,111 @@
+;; Modules/kahua.test.worker -*- mode: text; coding: utf-8 -*-
+;;
+;; Copyright (c) 2006 Kahua Project
+;;
+;; $Id: kahua.test.worker.ja,v 1.3.2.1 2007/05/31 03:48:10 bizenn Exp $
+
+
+* [module] kahua.test.worker
+
+アプリケーションサーバーのテストに使われる手続きを提供します。
+
+アプリケーションをサブプロセスとして起動し、ソケット経由でリクエストを
+送り、リプライのヘッダやHTMLを期待したパターンと比較することができます。
+また、アプリケーションの出力に含まれるセッションキーを抽出し、次のテス
+トに用いることができます。
+
+リプライのHTMLの解析には[[kahua.test.xml]]モジュールのパターンマッチャ
+を用いるので、パターンに関してはそちらも参照して下さい。
+
+** [procedure] run-worker ''command''
+
+''command''で指定されるコマンドを起動します。''command''はコマンド名と
+引数のリストです。例:
+
+ ("gosh" "-I" "../src" "-c" "test.conf" "kahua-server" "test/test.kahua")
+
+コマンドが起動されると、その標準出力からの出力が1行読み込まれます。
+([[kahua-server]]の仕様では、サーバーは起動後、そのworker idを標準出力
+に書き出します)。
+
+起動されたサブプロセスやそのworker idをパッケージ化した、
+<worker-subprocess> オブジェクトが返されます。
+
+以降、''worker''という引数は、run-workerで返される<worker-subprocess>の
+インスタンスとします。
+
+** [procedure] worker-running? ''worker''
+
+''worker''が正常に起動され、動作中であれば#tを、そうでなければ#fを返し
+ます。通常、最初にworkerを起動した後に、この手続きを用いてworkerが正常
+に起動されたかどうかをテストします。
+
+** [procedure] shutdown-worker ''worker''
+
+''worker''のサブプロセスを終了します。具体的には、SIGINTを送り、終了ス
+テータスを回収します。
+
+既に''worker''が終了している場合は何もしません。
+
+** [macro] with-worker (''var'' ''command'') ''body'' ...
+
+テストに便利なマクロです。まず、''command''をrun-workerに渡してサブプロ
+セスを起動し、返された<worker-subprocess>を変数''var''に束縛します。そ
+して''body''を順に評価します。
+
+''body''が全て正常終了しても、途中で捕捉されないエラーを投げても、作成
+されたサブプロセスはshutdown-workerで終了されます。
+
+** [procedure] call-worker ''worker'' ''header'' ''body'' ''proc''
+
+''worker''サブプロセスに、''header''と''body''からなるメッセージを送信
+します。''header''はヘッダのリスト、''body''はS式です。
+(詳しくは[[プロトコル]]参照)。
+
+''proc''は2つの引数を取る手続きです。''worker''からのリプライはパーズさ
+れ、ヘッダとボディに分けられて''proc''に渡されます。
+
+''proc''の戻り値がcall-workerの戻り値となります。
+
+** [procedure] call-worker/gsid ''worker'' ''header'' ''body'' ''proc''
+
+call-workerと似ていますが、''worker''に前回のリプライから抽出されたセッ
+ションID(gsid)が保存されている場合、それを''header''に追加して送信しま
+す。(''header''に既にgsidが含まれていても、オーバライドされます)。
+
+また、''proc''が呼ばれる前に、リプライヘッダに含まれているgsidが
+抽出され、''worker''の内部状態にセットされます。
+
+** [procedure] call-worker/gsid->sxml ''worker'' ''header'' ''body'' [''sxpath'']
+
+call-worker/gsidを行って結果を得た後、リプライのボディ部分をXMLとみなし
+てパーズを行い、得られたSXML式を返します。オプショナルな
+SXPath式''sxpath''が与えられた場合には、SXML式にsxpathを適用した結果を
+返します。
+
+(註：sxpathの結果は通常SXMLノードのリストですが、make-match&pick で作ら
+れるパターンマッチルーチンは単一のSXMLノードを取るため、
+call-worker/gsidはsxpathを適用した場合に、その結果を *TOP* というノード
+に入れて返します。具体例は、Kahuaソース中のtest/nqueen.scm 等を参照して
+下さい)。
+
+** [procedure] reset-gsid ''worker''
+
+''worker''に保存されているgsidを消去します。
+
+** [procedure] make-match&pick ''worker''
+
+サブプロセスからのリプライを解析するための手続きを作成する手続きです。
+
+ふたつの引数、patternとinputを取る手続きを返します。これをtest手続きの
+最後の引数(比較手続き)に渡すことによって、パターンマッチによるHTML出力
+の比較を行うことができます。(パターンマッチに関しては
+[[kahua.test.xml]]参照)。作られる手続きは、inputにSXMLノード、XMLの文字
+列表現、XMLのStree 表現(tree->stringを適用するとXMLの文字列表現となるも
+の)のいずれかをとります。
+
+パターン中で、継続セッションIDが含まれることが期待される部分(anchor要素
+のhref属性の値、form要素のaction属性の値、input要素のvalueの値な
+ど)に、?& というパターン変数を使うことができます。生成された手続き
+は、?&にマッチした文字列から継続セッションIDを抽出し、それを''worker''
+に保存します。

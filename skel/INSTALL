@@ -1,0 +1,37 @@
+$Id:$
+
+%%_PROJECT_NAME_%% : A simple skelton of application for Kahua.
+
+[Requirements]
+
+Gauche-0.8.9 or later
+Kahua-1.0.1 or later
+
+[Installation]
+
+  % ./DIST gen
+  % ./configure [any options if you need]
+
+You have to give some options to specify the same install directories 
+as Kahua installed. For example if you gave --prefix=/usr/local/kahua
+to configure script of Kahua when you installed it, you have to give
+the same option to kahua-web's configure script.
+
+  % ./configure --prefix=/usr/local/kahua
+
+And if you want to install it into a site bundle, you should give
+a option like:
+
+  % ./configure --prefix=/usr/local/kahua --with-site-bundle=$HOME/work/site
+
+Now go ahead:
+
+  % make
+  % make check
+  % make install
+
+and edit app-servers in the Kahua working directory or the site bundle
+to add "%%_PROJECT_NAME_%%" entry.
+
+  (%%_PROJECT_NAME_%% :arguments () :run-by-default 1)
+

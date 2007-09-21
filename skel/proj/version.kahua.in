@@ -1,0 +1,9 @@
+;;-*- coding: utf-8; mode: kahua -*-
+;; %%_PROJECT_NAME_%% version
+;;
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id:$
+
+;;---------------------------------------------------------
+(define *%%_PROJECT_NAME_%%-version* "##PROJECT_VERSION##")

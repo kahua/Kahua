@@ -1,0 +1,28 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
+;; Test kahua application that shares <session-state> between processes.
+;; $Id: sharedstate.kahua,v 1.3 2005/07/04 05:21:44 nobsun Exp $
+
+(use srfi-1)
+(use srfi-13)
+
+(define-entry (show)
+  (let ((session (kahua-context-ref "session-state")))
+    `((html
+       (head (title))
+       (body
+        (ul ,@(map (lambda (p) `(li ,(x->string (car p))
+                                    "="
+                                    ,(x->string (cdr p))))
+                   (filter (lambda (p)
+                             (not (string-prefix? "%" (x->string (car p)))))
+                           (ref session '%properties)))))))))
+
+(define-entry (set name value)
+  (let ((session (kahua-context-ref "session-state")))
+    (set! (ref session (string->symbol name)) value))
+  (show))
+
+(initialize-main-proc show)
+
+        
+      

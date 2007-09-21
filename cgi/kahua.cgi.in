@@ -1,0 +1,234 @@
+#!/usr/bin/env gosh
+;; Communicate to kahua application server
+;; $Id: kahua.cgi.in,v 1.44.2.1 2007/04/23 03:24:02 bizenn Exp $
+
+;; This cgi script is kicked by httpd and pass through the request
+;; to one of kahua servers.
+
+;; The server to connect is determined as follows:
+;;
+;;  1. If PATH_INFO is given, its first component is regarded as a
+;;     app-server type, and the rest is used as a cgsid.  Query
+;;     parameters are ignored.   If more than one app-servers of
+;;     that type are running, the client can't specify which
+;;     server it will connect.
+;;  2. If "x-kahua-cgsid" query parameter is given, the cgsid is
+;;     taken from it and the app-server worker id is extracted.
+;;  3. Otherwise, just connect to the supervisor and let it decide
+;;     which app-server to handle the request.
+
+(add-load-path "##libdir##")
+
+(use gauche.net)
+(use gauche.charconv)
+(use gauche.logger)
+(use gauche.parameter)
+(use srfi-1)
+(use srfi-2)
+(use srfi-13)
+(use srfi-19)
+(use www.cgi)
+(use util.list)
+(use rfc.cookie)
+(use text.tree)
+(use text.html-lite)
+(use kahua.util)
+(use kahua.gsid)
+(use kahua.config)
+(use kahua.developer)
+(use kahua.protocol.http)
+(use kahua.protocol.worker)
+(use file.util)
+##ADDITIONAL_LIBS##
+
+;; Change this if you're using non-default log path
+(define-constant *LOG-PATH* "##KAHUA_CGI_LOGPATH##/kahua-cgi.log")
+(define-constant *LOG-PREFIX* "~Y ~T ~P[~$]: ")
+
+(define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP SIGPIPE))
+
+;; send standard metavariables to worker.
+(define *metavariables*
+  '("AUTH_TYPE"
+    "CONTENT_LENGTH"
+    "CONTENT_TYPE"
+    "GATEWAY_INTERFACE"
+    "HTTP_ACCEPT"
+    "HTTP_ACCEPT_CHARSET"
+    "HTTP_ACCEPT_ENCODING"
+    "HTTP_ACCEPT_LANGUAGE"
+    "HTTP_COOKIE"
+    "HTTP_HOST"
+    "HTTP_KEEP_ALIVE"
+    "HTTP_USER_AGENT"
+    "HTTP_X_FORWARDED_FOR"
+    "PATH_INFO"
+    "PATH_TRANSLATED"
+    "REMOTE_ADDR"
+    "REMOTE_HOST"
+    "REMOTE_IDENT"
+    "REMOTE_USER"
+    "REQUEST_METHOD"
+    "SCRIPT_NAME"
+    "SERVER_NAME"
+    "SERVER_PORT"
+    "SERVER_PROTOCOL"
+    "SERVER_SOFTWARE"
+    ))
+
+(define (metavariable-list)
+  (filter-map (lambda (meta)
+                (and-let* ((meta-var (cgi-get-metavariable meta)))
+                  (list meta meta-var)))
+              *metavariables*))
+
+(define (compose-reply header body)
+  (let1 header (kahua-header->http-header header)
+    (list (if (assoc-ref-car header "content-type")
+	      header
+	      (assoc-set! header "content-type" *default-content-type*))
+	  body)))
+
+;; retrieve PATH_INFO, with processing ~user component.
+;; returns #f if there's no PATH_INFO.
+(define (get-path-info)
+  (and-let* ((p (cgi-get-metavariable "PATH_INFO"))
+             (l (cdr (string-split p #\/)))
+	     ((pair? l))
+	     (string-not-null? (compose not string-null?))
+	     ((string-not-null? (car l))))
+    (filter string-not-null? l)))
+
+;; determine dispatch destination.
+;; returns: (worker-type cont-gsid path-info)
+(define (dispatch-destination params)
+  (let* ((path-info   (get-path-info))
+         (cont-gsid   (or (cgi-get-parameter "x-kahua-cgsid" params)
+                          (if (and path-info (pair? (cdr path-info)))
+                            (cadr path-info)
+                            #f)))
+         (worker-type (and path-info (car path-info))))
+    (values worker-type cont-gsid path-info)))
+
+;; construct absolute uri for the server root.
+;; note that we can only guess the protocol scheme.
+(define (server-uri)
+  (let ((scheme (if (cgi-get-metavariable "HTTPS") "https" "http"))
+        (name   (or (and-let* ((v (cgi-get-metavariable "SERVER_NAME"))
+			       (m (#/^(.+?)(?:\:\d+)?$/ v)))
+		      (m 1))
+		    "localhost"))
+        (port   (cond ((cgi-get-metavariable "SERVER_PORT") => x->integer)
+		      (else 80))))
+    (format "~a://~a~a"
+            scheme name
+            (if (or (and (string=? scheme "http")  (= port 80))
+                    (and (string=? scheme "https") (= port 443)))
+                 ""
+                 #`":,port"))))
+
+;; prepare headers and dispatch the request to the appropriate server,
+;; then receives the reply and forward it to the client.
+(define (send-reply param)
+  (receive (worker-type cont-gsid path-info)
+      (dispatch-destination param)
+    (let* ((state-gsid (cgi-get-parameter "x-kahua-sgsid" param))
+           (remote-addr (or (and-let* ((xff (cgi-get-metavariable "HTTP_X_FORWARDED_FOR"))
+				       (hops (string-split xff #/\, */)))
+			      (and (pair? hops) (car hops)))
+			    (cgi-get-metavariable "REMOTE_ADDR")))
+           (header (kahua-worker-header worker-type path-info
+					:server-uri (server-uri)
+					:worker-uri (*worker-uri*)
+					:metavariables (metavariable-list)
+					:sgsid state-gsid
+					:cgsid cont-gsid
+					:remote-addr remote-addr
+					:bridge (cgi-get-metavariable "SCRIPT_NAME"))))
+      (for-each (lambda (f)
+		  (if (file-exists? f)
+		      (sys-chmod f #o660)))
+		(cgi-temporary-files))
+      (receive (header body) (talk-to-worker cont-gsid header param)
+	(compose-reply header body)))))
+
+(define *worker-uri* (make-parameter #f))
+
+(define (analize-virtual-hosting)
+  (let1 path-info (cgi-get-metavariable "PATH_INFO")
+    (if (not path-info)
+        (cgi-metavariables)
+
+      (let loop ((paths (cdr (string-split path-info #\/)))
+                 (path-info '())
+                 (metavariables (cgi-metavariables)))
+        (cond
+         ;; finish
+         ((null? paths) (cons (list "PATH_INFO"
+                                    (string-join (reverse path-info) "/" 'prefix))
+                              metavariables))
+
+         ;; set virtual hosting
+         ((#/--vh--(https?):([^:]*):(\d+)/ (car paths))
+          => (lambda (m)
+               (let1 idx (list-index (pa$ equal? "--") (cdr paths))
+                 (*worker-uri*
+                  (format "~a/"
+                          (string-join (take (cdr paths) idx) "/" 'prefix)))
+                 (loop (drop (cdr paths) (+ idx 1))
+                       path-info
+                       `(("HTTPS" ,(if (equal? "https" (m 1))
+                                       "on" #f))
+                         ("SERVER_NAME" ,(m 2))
+                         ("SERVER_PORT" ,(m 3))
+                         ,@metavariables)))))
+
+         (else (loop (cdr paths)
+                     (cons (car paths) path-info)
+                     metavariables)))))))
+
+;; publish html. provide ~user authentication.
+(define (publisher params)
+  (parameterize ((cgi-metavariables (analize-virtual-hosting)))
+    (send-reply params)))
+
+(define (main args)
+  (define (output-handler sexp)
+    (let1 out (current-output-port)
+      (send-http-header out (car sexp))
+      (display "\r\n" out)
+      (send-http-body out (cgi-output-character-encoding) (cadr sexp))))
+  (kahua-common-init #f #f)
+  (log-open *LOG-PATH* :prefix *LOG-PREFIX*)
+  (call/cc
+   (lambda (bye)
+     (define (cleanup) (for-each sys-unlink (cgi-temporary-files)))
+     (define (finish-server sig)
+       (log-format (sys-signal-name sig))
+       (cleanup) (bye 0))
+     ##CGIBEGIN##
+     (guard (e (else (log-format "error(ignored): ~a" (slot-ref e 'message))))
+       (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
+       (cgi-main publisher
+		 :merge-cookies #t
+		 :on-error cgi-error-proc
+		 :output-proc output-handler
+		 :part-handlers `((#t file+name ,(kahua-tmpbase)))
+		 ))
+     ##CGIEND##
+     (cleanup)
+     (bye 0))))
+
+(define (cgi-error-proc e)
+  (let ((errmsg (slot-ref e 'message))
+	(status (cond ((<kahua-worker-not-found> e)   404)
+		      ((<kahua-worker-not-respond> e) 503)
+		      (else                           500))))
+    (log-format "CGI error caught: ~a" errmsg)
+    `((("status" ,(http-status-string status #f))
+       ("content-type" "text/html"))
+      ,(default-error-page status errmsg))))
+
+;; local variables:
+;; mode: scheme
+;; end:

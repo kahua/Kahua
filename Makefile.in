@@ -1,0 +1,63 @@
+CONFIG_GENERATED = Makefile config.cache config.log config.status configure.lineno autom4te*.cache
+.PHONY: all check clean distclean install maintainer-clean install-examples
+
+
+all :
+	cd src; $(MAKE) all
+	cd cgi; $(MAKE) all
+	cd emacs; $(MAKE) all
+	cd plugins; $(MAKE) all
+	cd examples; $(MAKE) all
+	cd test; $(MAKE) all
+	cd doc/Modules; $(MAKE) all
+
+check : all
+	cd test; $(MAKE) check
+
+clean :
+	rm -rf core *~
+	cd src; $(MAKE) clean
+	cd cgi; $(MAKE) clean
+	cd emacs; $(MAKE) clean
+	cd examples; $(MAKE) clean
+	cd plugins; $(MAKE) clean
+	cd test; $(MAKE) clean
+	cd doc/Modules; $(MAKE) clean
+
+distclean : clean
+	cd src; $(MAKE) distclean
+	cd cgi; $(MAKE) distclean
+	cd emacs; $(MAKE) distclean
+	cd examples; $(MAKE) distclean
+	cd plugins; $(MAKE) distclean
+	cd test; $(MAKE) distclean
+	cd doc/Modules; $(MAKE) distclean
+	rm -rf $(CONFIG_GENERATED)
+
+install :
+	cd src; $(MAKE) install
+	cd cgi; $(MAKE) install
+	cd plugins; $(MAKE) install
+
+# Run "make install-examples" AFTER "make install" and editing kahua.conf.
+install-examples :
+	cd examples; $(MAKE) install-examples
+
+uninstall :
+	cd plugins; $(MAKE) uninstall
+	cd src; $(MAKE) uninstall
+	cd cgi; $(MAKE) uninstall
+
+uninstall-examples :
+	cd examples; $(MAKE) uninstall-examples
+
+maintainer-clean : clean
+	cd src; $(MAKE) maintainer-clean
+	cd cgi; $(MAKE) maintainer-clean
+	cd emacs; $(MAKE) maintainer-clean
+	cd examples; $(MAKE) maintainer-clean
+	cd plugins; $(MAKE) maintainer-clean
+	cd test; $(MAKE) maintainer-clean
+	cd doc/Modules; $(MAKE) maintainer-clean
+	rm -rf configure VERSION $(CONFIG_GENERATED)
+	rm -f DIST_EXCLUDE_X

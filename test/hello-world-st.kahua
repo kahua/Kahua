@@ -1,0 +1,24 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
+#|
+(define (simple-page ttl . elems)
+  (html/ (head/ (title/ ttl))
+	 (body/ (@/ (bgcolor "white"))
+		(h1/ ttl)
+		(node-set elems))))
+
+(define (hello-world)
+  (simple-page "Hello, world!"))
+|#
+
+(define (simple-page ttl . elems)
+  (html/ (head/ (title/ ttl))
+	 (body/ (@/ (bgcolor "black"))
+		(h1/ ttl)
+		(map/ identity elems))))
+
+(define (hello-world)
+  (simple-page "Hello, world!"
+	       (h2/ "Hello")
+	       (p/ "hello, world")))
+
+(initialize-main-proc hello-world)

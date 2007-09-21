@@ -1,0 +1,60 @@
+VPATH       = $(srcdir)
+
+EXTRACTED = kahua-refe.texi kahua-refj.texi
+
+GENERATED = Makefile
+GOSH = @GOSH@
+MAKEINFO = @MAKEINFO@
+GZIP_PROGRAM = @GZIP_PROGRAM@
+
+TEXIS = kahua-ref.texi      \
+	kahua.texi
+
+# Manual page destination.  Default @mandir@ doesn't include 'share'
+# in the path, so I redefine it---a user can still override it by
+# make mandir=wherever
+prefix		  = @prefix@
+datarootdir	  = @datarootdir@
+datadir		  = @datadir@
+mandir		  = @mandir@
+infodir		  = @infodir@
+
+DESTDIR =
+
+all: info
+
+texi : kahua-refe.texi kahua-refj.texi
+
+info : kahua-refe.info.gz kahua-refj.info.gz
+
+kahua-refe.texi : $(TEXIS) extract
+	$(GOSH) ./extract -en -o kahua-refe.texi kahua-ref.texi
+
+kahua-refe.info.gz : kahua-refe.texi
+	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
+	  $(MAKEINFO) --no-warn kahua-refe.texi; \
+	  rm -rf kahua-refe.info*.gz; \
+	  $(GZIP_PROGRAM) kahua-refe.info; \
+	fi
+
+kahua-refj.texi : $(TEXIS) extract
+	$(GOSH) ./extract -jp -o kahua-refj.texi kahua-ref.texi
+
+kahua-refj.info.gz : kahua-refj.texi
+	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
+	  $(MAKEINFO) --no-warn kahua-refj.texi; \
+	  rm -rf kahua-refj.info*.gz; \
+	  $(GZIP_PROGRAM) kahua-refj.info; \
+	fi
+
+
+clean:
+	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.md *.mds \
+	       *.pg *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi *.info* \
+	       $(EXTRACTED)
+
+distclean : clean
+	rm -rf $(GENERATED)
+
+maintainer-clean : clean
+	rm -f Makefile $(GENERATED)

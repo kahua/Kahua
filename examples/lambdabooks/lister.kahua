@@ -1,0 +1,54 @@
+;; -*- coding: utf-8; mode: kahua -*-
+;; Example kahua application (lambdabooks)
+;;
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: lister.kahua,v 1.6.10.1 2007/06/29 08:03:26 bizenn Exp $
+
+;; Lister -------------------------------------------------------
+;;
+;;   elts :: [elt]
+;;      表示すべきアイテムのリスト。 
+;;   elt-formatter :: ([elt], Integer) -> [SXML]
+;;      各アイテムが表形式で表示される際に呼ばれる関数。全体が(table ...)中に
+;;      挿入されるので、通常はいくつかのtrエレメントのリストを返す。
+;;      第2引数は表内でのアイテムの番号。
+;;   cont :: [SXML] -> [SXML]
+;;      リスト内で移動した画面を表示する際の継続手続き。
+;;
+;;  他に、次のキーワード引数を取る。
+;;
+;;   table-attrs :: [SXML-attr]
+;;      一番外側のtableに与えるSXML属性ノードを指定。デフォルトは無し。
+;;   header-formatter :: () -> [SXML]
+;;      与えられれば、テーブルの先頭で呼ばれる。callerはテーブルのヘッダエレメントを
+;;      追加することができる。デフォルトは無し。
+;;   items-per-page :: Integer
+;;      ページあたりの項目数。デフォルトは5。
+
+(define (lister elts elt-formatter . opts)
+  (lambda (cont)
+    (let-keywords* opts ((table-attrs #f)
+			 (header-formatter #f)
+			 (items-per-page 5))
+
+      (define (show-list prev-show lis)
+	(receive (cur-items next-items) (split-at* lis items-per-page)
+	  (cont (node-set/
+		 (table/ table-attrs
+			 (when/ header-formatter (header-formatter))
+			 (map/ elt-formatter cur-items (iota items-per-page)))
+		 (p/ (when/ prev-show (a/cont/ (@@/ (cont prev-show))
+					      #`"[前の,|items-per-page|項目]"))
+		     (when/ (pair? next-items)
+		       (a/cont/ (@@/ (cont (lambda ()
+					     (show-list 
+					      (lambda ()
+						(show-list prev-show lis))
+					      next-items))))
+				#`"[次の,|items-per-page|項目]")))))))
+
+      (show-list #f elts))))
+

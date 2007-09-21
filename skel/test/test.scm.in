@@ -1,0 +1,61 @@
+;; -*- coding: utf-8; mode: scheme -*-
+;; test %%_PROJECT_NAME_%% script.
+;; $Id:$
+
+(use gauche.test)
+(use file.util)
+(use text.tree)
+(use sxml.ssax)
+(use sxml.sxpath)
+(use kahua)
+(use kahua.test.xml)
+(use kahua.test.worker)
+
+(test-start "%%_PROJECT_NAME_%%")
+
+(define GOSH "##GOSH##")
+(define *PLUGINS* '(##PLUGINS##))
+(define *config* "test.conf")
+
+(sys-system "rm -rf _tmp _work %%_PROJECT_NAME_%%")
+(sys-mkdir "%%_PROJECT_NAME_%%" #o755)
+(sys-mkdir "_tmp" #o755)
+(sys-mkdir "_work" #o755)
+(sys-mkdir "_work/plugins" #o755)
+(sys-mkdir "_work/templates" #o755)
+(sys-mkdir "_work/templates/%%_PROJECT_NAME_%%" #o755)
+
+(copy-file "../plugins/%%_PROJECT_NAME_%%.scm"  "_work/plugins/%%_PROJECT_NAME_%%.scm")
+(copy-file "../templates/page.xml"  "_work/templates/%%_PROJECT_NAME_%%/page.xml")
+
+(kahua-init *config*)
+
+;;------------------------------------------------------------
+;; Run %%_PROJECT_NAME_%%
+(test-section "kahua-server %%_PROJECT_NAME_%%.kahua")
+
+(with-worker
+ (w `(,GOSH "-I.." "-I##KAHUA_LIB##" "kahua-server.scm" "-c" ,*config*
+            "../%%_PROJECT_NAME_%%/%%_PROJECT_NAME_%%.kahua"))
+
+ (test* "run %%_PROJECT_NAME_%%.kahua" #t (worker-running? w))
+
+
+;  (test* "%%_PROJECT_NAME_%%"
+;         '(html (head (title "Hello, world!"))
+;                (body (h1 "Hello, world!")
+;                      (a (@ (href ?&)) "version")))
+;         (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
+;         (make-match&pick w))
+
+;  (test* "version"
+;        '(html (head (title "%%_PROJECT_NAME_%%: version ##PROJECT_VERSION##"))
+;               (body (h1 "%%_PROJECT_NAME_%%: version ##PROJECT_VERSION##")
+;                     (a ?@ ?*)))
+;        (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
+;        (make-match&pick w))
+
+ )
+
+(test-end)
+

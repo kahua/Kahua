@@ -1,0 +1,14 @@
+;; -*- coding: euc-jp ; mode: scheme -*-
+
+(define-entry (redirectcont/start :keyword arg)
+  (redirect/cont (cont next `(arg ,arg))))
+
+(define-entry (next :keyword arg)
+  (page-frame
+   (or arg '())
+   (a/cont: "top")))
+
+(define (page-frame . contents)
+  (node-set: (html: (body: (node-list-to-node-set contents)))))
+
+(initialize-main-proc redirectcont/start)

@@ -1,0 +1,187 @@
+package	          = kahua
+SHELL             = @SHELL@
+prefix            = @prefix@
+exec_prefix       = @exec_prefix@
+bindir            = @bindir@
+sbindir           = @sbindir@
+libexecdir	  = @libexecdir@
+datarootdir	  = @datarootdir@
+datadir		  = @datadir@/$(package)
+sysconfdir        = @sysconfdir@/$(package)
+sharedstatedir    = @sharedstatedir@/$(package)
+localstatedir     = @localstatedir@/$(package)
+libdir            = @libdir@/$(package)
+includedir        = @includedir@/$(package)
+oldincludedir     = @oldincludedir@/$(package)
+infodir           = @infodir@
+mandir            = @mandir@
+srcdir            = @srcdir@
+VPATH             = $(srcdir)
+top_builddir      = @top_builddir@
+top_srcdir        = @top_srcdir@
+
+DESTDIR           =
+
+GOSH              = @GOSH@
+
+SCMFILES = admin.scm config.scm developer.scm foldlist.scm gsid.scm \
+	kahua-dbm.scm lambdabooks.scm nqueen.scm partcont.scm \
+	persistence.scm persistence-fs.scm persistence-efs.scm \
+	persistence-dbi-mysql.scm persistence-dbi-pg.scm persistence-dbi.scm \
+	plugin.scm sandbox.scm server.scm session.scm \
+	spvr.scm httpd.scm test-xml.scm user.scm wiki-iki.scm \
+	worker.scm query.scm rollback.scm entry-method.scm redirectcont.scm \
+	index-slots.scm index-slots-efs.scm index-slots-mysql.scm index-slots-pg.scm
+
+SCMFILES2 = shell.scm
+
+KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
+	hello-world-st.kahua hello-world.kahua lister-st.kahua lister.kahua \
+	sharedstate.kahua
+
+
+# 'make check' runs almost all tests.
+# 'make <testname>' runs a specific test.
+# 
+#  Test persistence-dbi isn't run by make check, since it assumes
+#  certain database settings.  See persistence-dbi.scm for the details.
+
+
+TESTS = test-xml persistence rollback entry-method user config \
+	gsid session partcont server kahua-dbm worker redirectcont \
+	define-method-rule kahua-call-with-current-context \
+	lambdabooks wiki-iki nqueen foldlist spvr httpd admin \
+	developer shell sandbox plugin query
+
+CONFIG_GENERATED = Makefile
+
+.PHONY: all check clean distclean maintainer-clean $(TESTS)
+
+all: $(SCMFILES) $(SCMFILES2) $(KAHUAFILES)
+
+check: all
+	rm -f test.log
+	$(MAKE) $(TESTS)
+
+test-xml :
+	@gosh -I../src ./test-xml.scm >> test.log
+
+config :
+	@gosh -I../src ./config.scm >> test.log
+
+gsid :
+	@gosh -I../src ./gsid.scm >> test.log
+
+session :
+	@gosh -I../src ./session.scm >> test.log
+
+partcont :
+	@gosh -I../src ./partcont.scm >> test.log
+
+persistence : persistence-efs index-slots
+
+# Obsolete
+persistence-fs :
+	@gosh -I../src ./persistence-fs.scm >> test.log
+
+persistence-efs :
+	@gosh -I../src ./persistence-efs.scm >> test.log
+
+persistence-dbi : persistence-dbi-mysql persistence-dbi-pg \
+		  index-slots-mysql index-slots-pg
+
+persistence-dbi-mysql :
+	@gosh -I../src ./persistence-dbi-mysql.scm >> test.log
+
+persistence-dbi-pg :
+	@gosh -I../src ./persistence-dbi-pg.scm >> test.log
+
+index-slots : index-slots-efs
+
+index-slots-efs :
+	@gosh -I../src ./index-slots-efs.scm >>test.log
+
+index-slots-mysql :
+	@gosh -I../src ./index-slots-mysql.scm >>test.log
+
+index-slots-pg :
+	@gosh -I../src ./index-slots-pg.scm >>test.log
+
+rollback :
+	@gosh -I../src ./rollback.scm >> test.log
+
+entry-method :
+	@gosh -I../src ./entry-method.scm >> test.log
+
+define-method-rule  :
+	@gosh -I../src ./define-method-rule.scm >> test.log
+
+kahua-call-with-current-context  :
+	@gosh -I../src ./kahua-call-with-current-context.scm >> test.log
+
+user :
+	@gosh -I../src ./user.scm >> test.log
+
+server :
+	@gosh -I../src ./server.scm >> test.log
+
+worker :
+	@gosh -I../src ./worker.scm >> test.log
+
+redirectcont :
+	@gosh -I../src ./redirectcont.scm >> test.log
+
+lambdabooks :
+	@gosh -I../src -I../examples ./lambdabooks.scm >> test.log
+
+wiki-iki :
+	@gosh -I../src -I../examples ./wiki-iki.scm >> test.log
+
+nqueen :
+	@gosh -I../src -I../examples ./nqueen.scm >> test.log
+
+foldlist :
+	@gosh -I../src -I../examples ./foldlist.scm >> test.log
+
+spvr :
+	@gosh -I../src ./spvr.scm >> test.log
+
+httpd :
+	@gosh -I../src ./httpd.scm >> test.log
+
+admin:
+	@gosh -I../src ./admin.scm >> test.log
+
+kahua-dbm :
+	@gosh -I../src ./kahua-dbm.scm >> test.log
+
+developer:
+	@gosh -I../src ./developer.scm >> test.log
+
+shell:
+	@gosh -I../src ./shell.scm >> test.log
+
+sandbox:
+	@gosh -I../src ./sandbox.scm >> test.log
+
+plugin:
+	@gosh -I../src ./plugin.scm >> test.log
+
+query:
+	@gosh -I../src ./query.scm >> test.log
+
+dead-lock:
+	@gosh -I../src ./dead-lock.scm >> test.log
+
+serialize:
+	@gosh -I../src ./serialize.scm >> test.log
+
+clean:
+	rm -rf test.log app/test.log *~ _* user.conf *.sxml
+
+distclean: clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	rm -rf $(CONFIG_GENERATED)
+

@@ -1,0 +1,128 @@
+;; -*- coding: utf-8 ; mode: scheme -*-
+;; Initializes lambdabooks example database
+;;
+;;  Copyright (c) 2003-2007 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
+;;  See COPYING for terms and conditions of using this software
+;;
+;; $Id: lambdabooks.init,v 1.6.2.2 2007/06/29 08:03:25 bizenn Exp $
+
+(use kahua)
+(use file.util)
+(use gauche.parseopt)
+
+(load "lambdabooks/book.kahua")
+(load "lambdabooks/review.kahua")
+
+(define (main args)
+  (let-args (cdr args) ((conf-file "c=s") (site-bundle "S=s"))
+    (kahua-common-init site-bundle conf-file)
+    (let1 dbname (kahua-dbpath (kahua-default-database-name))
+      (with-db (db dbname)
+        (init-books)
+        (init-users)))
+    0))
+
+(define (init-users)
+  (for-each (lambda (entry)
+	      (let1 uname (car entry)
+		(unless (kahua-find-user uname)
+		  (let1 u (apply kahua-add-user entry)
+		    (when (and u (equal? uname "admin"))
+		      (slot-set! u 'role-alist '(admin)))))))
+            '(("admin" "admin")
+              ("guest" "guest"))))
+
+(define (init-books)
+  (define make-book
+    (cut make <book>
+	 :product-id <>
+	 :authors    <>
+	 :title      <>
+	 :publisher  <>
+	 :price      <>
+	 :comment    <>))
+  (for-each (lambda (entry)
+              (unless (find-kahua-instance <book> 'product-id (car entry))
+		(apply make-book entry)))
+            '((0
+               "Hans Abelson, Gerald Jay Sussman"
+               "Structure and Interpretation of Computer Programs"
+               "MIT Press"
+               "5,600"
+               "λ教経典の始にして終。凡そλの道を究める者、本書より括弧の密林に足を踏み入れ、その奥に本書を再び見出す。再帰の迷宮に於いて学徒にとっての本書は、ミノアの迷宮に於けるテセウスにとってのアリアドネの糸となりぬ。")
+              (1
+               "Daniel P Friedman, Mattias Felleisen"
+               "The Little Schemer"
+               "MIT Press"
+               "2,000"
+               "らんらん楽しくSchemeを学ぼう。")
+              (2
+               "Daniel P Friedman, Mattias Felleisen"
+               "The Seasoned Schemer"
+               "MIT Press"
+               "2,000"
+               "The Little Schemerを卒業した貴方に。")
+              (3
+               "Mattias Felleisen, Robert B. Findler, Matthew Flatt, Shriram Krishnamurthi"
+               "How to Design Programs: An Introduction to Programming and Computing"
+               "MIT Press"
+               "4,200"
+               "ぷろぐらむっちゅうもんは、こうやって組むもんじゃあ！ 米国の名門、米大学の親方4人衆が、計算機科学の基礎の基礎から徹底的に貴方を鍛える。伝説の48時間耐久ハックの果てに見えて来るものは何か！ 体育会系プログラマのバイブル。")
+              (4
+               "Guy L. Steele (Ed)"
+               "Common Lisp: The Language Second Edition"
+               "Digital Press"
+               "6,800"
+               "ハックの基本は体力、それも握力と上腕の筋肉である。本書を手に取る読者は、その事実をいやと言う程思い知るであろう。本書を一冊づつ両手に持ち、上腕の屈伸運動を怠らずにいれば、trrで伝説の600点台もマーク可能と言われる。なお、本書を読もうとしてはいけない。真中から割けることうけあいである")
+              (5
+               "Brian Harvey, Matthew Wright"
+               "Simply Scheme - 2nd Edition: Introducing Computer Science"
+               "MIT Press"
+               "7,800"
+               "シンプルイズビューティフル。難しいことは言わない。ただあるがままに、そのλを受け取るのだ。Schemeの優しさに触れられる良品。それにしてもSchemerにはMatthewって名前が多いな。")
+              (6
+               "Paul Graham"
+               "ANSI Common Lisp"
+               "Prentice Hall"
+               "5,000"
+               "グレアム叔父さんがANSI Common Lispの隅から隅まで解説。Lisperはこの書を常に携行すると良い。CLtL2と違って、読み込んでも真中から割けることが無い。")
+              (7
+               "Paul Graham"
+               "On Lisp"
+               "Prentice Hall"
+               "5,000"
+               "グレアム叔父さんがLispウィザードのプログラミングテクニックを全公開。きみもこれを読んで、マクロを使いこなそう！")
+              (8
+               "Peter Norvig"
+               "Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp"
+               "Morgan Kaufmann"
+               "7,800"
+               "いまやLispを捨てPythonistとなってしまったPeter Norvigだが、彼がまだLisperだった頃に著した本書は未だ名著と名高い。")
+              (9
+               "Gregor Kiczales, Jim des Rivieres, Daniel G. Bobrow"
+               "The Art of the Metaobject Protocol"
+               "MIT Press"
+               "5,600"
+               "Kiczalesはテクニシャンである。彼がある種の天才であることは間違いない。しかし、Steeleのひらめきが驚く程シンプルな構造に帰着するのに比して、彼の創作物は多数の部品が極めて精緻に組み合わされた、職人芸を思わせる。それを目にする者は誰もが、その構造の妙に驚くものの、なぜそれが動くのかまで知るものは少ない。自らそれを分解し、再び組み立てた者のみが、真の理解に到達する。")
+              (10
+               "James D Foley, Andries van Dam, Steven K Feiner, John F Hughes"
+               "Computer Graphics: Principles and Practice"
+               "Addison-Wesley"
+               "8,000"
+               "コンピュータグラフィクスの入門から応用までを広くカバーする、定番の学習書。業界内では\"Foley van dam\"で通る。一冊手元に置いといて損はない。")
+              (11
+               "Alan Watt, Mark Watt"
+               "Advanced Animation and Rendering Techniques: Theory and Practice"
+               "ACM Press"
+               "7,000"
+               "Foley van damよりも進んだテクニックを扱う。カバーするトピックは広いが、式やプログラムリストに誤りが多いので、その間違いを自分で探すことが学習の早道である")
+              (12
+               "David S Ebert, F Kenton Musgrave, Darwyn Peachey, Ken Perlin, Steven Worley"
+               "Texturing & Modeling: A Procedural Approach"
+               "Morgan Kaufmann"
+               "8,000"
+               "この分野で著明な業績を残している著者らによる、procedural modelingとprocedural texturingの解説書の決定版。三版を数え、最新のトピックもふんだんに盛りこんでいる")
+              ))
+  )
+
