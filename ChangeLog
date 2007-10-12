@@ -1,3 +1,11 @@
+2007-10-12  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: cgi/kahua.cgi.in
+	  Fix the bug that the parameter "cgi-metavariables" is useless
+	  to get alist of metavariables in pure CGI script.  This fix
+	  depends on "sys-environ->alist", so now Kahua requires Gauche
+	  2007-09-28 revision or later.
+
 2007-09-07  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/util.scm

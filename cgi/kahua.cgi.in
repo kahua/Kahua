@@ -95,9 +95,11 @@
 	(compose-reply header body)))))
 
 (define (publisher params)
+  (define pair->list (compose list car+cdr))
   (define (override-metavariables mv-list)
     (let loop ((accum '())
-	       (cmv (cgi-metavariables))
+	       (cmv (or (cgi-metavariables)
+			(map! pair->list (sys-environ->alist))))
 	       (mv-list mv-list))
       (if (null? cmv)
 	  (append mv-list accum)
@@ -115,6 +117,7 @@
 			  ,@(if port `(("SERVER_PORT" ,port)) '())
 			  ("PATH_INFO"
 			   ,(if (pair? path-info) (path-info->abs-path path-info) "/")))))
+      (kahua:log-format "override-mv: ~s" override-mv)
       (parameterize ((cgi-metavariables (override-metavariables override-mv)))
 	(send-reply params path-info worker-uri)))))
 
