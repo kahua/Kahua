@@ -77,10 +77,13 @@ check:  all
 clean:
 	rm -rf core *~ $(package)/*~ test/*~ test/test.log $(TEST_GENERATED) $(MAKE_GENERATED)
 
-install: 
-	$(KAHUA_INSTALL) $(KAHUACONFIG) -t script $(SCRIPTFILES)
-	$(KAHUA_INSTALL) $(KAHUACONFIG) -t script --no-overwrite $(LOCALSCRIPTFILES)
-	$(KAHUA_INSTALL) $(KAHUACONFIG) -t static --no-overwrite $(STATICFILES)
+install:
+	for f in $(SCRIPTFILES); do \
+	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t script $$f;\
+	done
+	for f in $(STATICFILES); do \
+	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t static --no-overwrite $$f;\
+	done
 	for f in $(PLUGINFILES); do \
 	  $(KAHUA_INSTALL) $(KAHUACONFIG) -t plugin -r $$f $(PLUGINDIR)/$$f;\
 	done

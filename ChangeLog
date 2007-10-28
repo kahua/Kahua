@@ -1,3 +1,9 @@
+2007-10-29  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: skel/Makefile.in
+	  Fix a bug that generated application installation
+	  was fail.
+
 2007-09-21  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 1.0.7 released.
