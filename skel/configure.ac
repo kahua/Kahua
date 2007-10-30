@@ -24,10 +24,10 @@ dnl Check for other program
 AC_PROG_INSTALL
 
 if test X$GOSH = X; then 
-  AC_MSG_ERROR([Cannot find Gauche installed.  Please install Gauche-0.8.9 or later, and make sure to set PATH properly.])
+  AC_MSG_ERROR([Cannot find Gauche installed.  Please install Gauche-0.8.11 or later, and make sure to set PATH properly.])
 fi
 if test X$KAHUA_INSTALL = X; then 
-  AC_MSG_ERROR([Cannot find Kahua installed.  Please install Kahua-1.0.1 or later, and make sure to set PATH properly.])
+  AC_MSG_ERROR([Cannot find Kahua installed.  Please install Kahua-1.0.7.1 or later, and make sure to set PATH properly.])
 fi
 
 KAHUACONFIG_OPTION=' -c $(sysconfdir)/kahua.conf'

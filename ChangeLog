@@ -1,3 +1,10 @@
+2007-10-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.7.1 released.
+
+	* Change: skel/configure.ac
+	  Update messages about Gauche and Kahua version.
+
 2007-10-29  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: skel/Makefile.in
