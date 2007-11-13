@@ -1,3 +1,8 @@
+2007-11-13  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/elem.scm
+	  Lack of sup/, sup:, big/ and big:(exported but not exist).
+
 2007-10-30  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 1.0.7.1 released.
