@@ -188,7 +188,7 @@
   `(begin ,@(map (lambda (n) (list 'define-basic-element n)) names)))
 
 (define-elements
-  font tt b i small em strong dfn code samp kbd var cite abbr acronym sub span bdo
+  font tt b big i small em strong dfn code samp kbd var cite abbr acronym sub sup span bdo
   br body address div a area link img hr p h1 h2 h3 h4 h5 h6 pre q blockquote ins del
   dl dt dd ol ul li form label input select optgroup option textarea fieldset legend
   button table caption thead tbody tfoot colgroup col tr th td head title base meta
