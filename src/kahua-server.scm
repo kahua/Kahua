@@ -146,7 +146,7 @@
     (when (is-a? sockaddr <sockaddr-un>)
       (sys-chmod (sockaddr-name sockaddr) #o770))
     (run-kahua-hook-initial)
-    (format #t "~a\n" worker-id)
+    (format #t "~a\n" worker-id) (flush)
     (selector-add! selector (socket-fd sock) accept-handler '(r))
     (with-kahua-db-connection (database-name)
       (lambda (db)

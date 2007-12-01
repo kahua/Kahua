@@ -97,7 +97,7 @@
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
       (sys-chmod (sockaddr-name sockaddr) #o770))
-    (format #t "~a\n" worker-id) ;; tell spvr about myself
+    (format #t "~a\n" worker-id) (flush) ;; tell spvr about myself
     (selector-add! selector (socket-fd sock) accept-handler '(r))
 
     (let1 t (make-thread (lambda ()

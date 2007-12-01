@@ -1,3 +1,10 @@
+2007-12-01  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua-keyserv.scm, src/kahua-server.scm
+	  Flush explicitly stdout when they tell their worker-id to
+	  kahua-spvr, because of change in Gauche CVS HEAD
+	  (src/port.c r1.147).
+
 2007-11-13  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/elem.scm
