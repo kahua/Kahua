@@ -74,7 +74,7 @@ app-serversの書式は次の通り。
 
 <<<
  ((<server-type> :arguments <args> :run-by-default <count>
-   [:profiler <base-path>] [:default-database-name <dbname>])
+   [:profile <base-path>] [:default-database-name <dbname>])
   ...)
 
  <server-type>
@@ -89,7 +89,7 @@ app-serversの書式は次の通り。
     kahua-spvrは、クライアントから受け取ったリクエストを、このプロセス群
     に対して順番にディスパッチしていく。
 
- :profiler <base-path>
+ :profile <base-path>
     Gaucheのプロファイラ機能を使用する際、出力先となるファイルのベース名
     を指定する。例えば /usr/local/kahua/logs/profile と指定した場合、
     実際のファイル名は /usr/local/kahua/logs/profile.<worker-id> となり、
