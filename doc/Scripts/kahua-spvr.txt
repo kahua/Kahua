@@ -48,7 +48,7 @@ This file is usually loaded on start-up. Also, you can reload with reload comman
 Followings are forms of app-servers.
 
  ((<server-type> :arguments <args> :run-by-default <count>
-   [:profiler <base-path>] [:default-database-name <dbname>])
+   [:profile <base-path>] [:default-database-name <dbname>])
   ...)
 
  <server-type>
@@ -64,7 +64,7 @@ Followings are forms of app-servers.
 Set the number of process on kahua-spvr start-up.
 kahua-spvr dispatches the requests from clients to these processes by rotation.
 
- :profiler <base-path>
+ :profile <base-path>
 
 Set the base name of output file, in case of using gauche profiler.
 For example, in case of setting as '/usr/local/kahua/logs/profile', the file name will be '/usr/local/kahua/logs/profile.<worker-id>' and result of profile will be output every time certain worker processes 100 requests.
