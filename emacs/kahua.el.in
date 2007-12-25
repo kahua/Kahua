@@ -64,6 +64,11 @@
   :group 'kahua)
 (defun get-kahua-shell-coding-system (p) nil kahua-shell-coding-system)
 
+(defcustom kahua-shell-display-result-to-minibuffer-flag t
+  "*Kahua-shell displays eval result to minibuffere."
+  :type 'boolean
+  :group 'kahua)
+
 (setq process-coding-system-alist
       (append '(("kahua-admin" . get-kahua-admin-coding-system)
 		("kahua-shell" . get-kahua-shell-coding-system))
@@ -143,6 +148,24 @@ Editing commands are similar to those of 'scheme-mode'."
   (make-local-variable 'scheme-buffer)
   (setq scheme-buffer bufname))
 
+
+(defvar kahua-worker-prompt-regex "^select wno> "
+  "Regexp to recognise select woker prompt")
+
+(defun kahua-watch-for-eval-result (string)
+  (let ((lines 
+	 (split-string string "[\r\n]")))
+    (when (< 1 (length lines))
+      (let ((result-string
+	     (mapconcat (function (lambda (x) x))
+			(reverse
+			 (cdr
+			  (reverse
+			   lines)))
+			"\n")))
+	(when (not (get-buffer-window-list "*kahua-shell*" t t))
+	  (message "%s" result-string))))))
+
 (defun run-kahua-shell (host user site)
   (interactive
    (let* ((host (kahua-read-server))
@@ -159,7 +182,10 @@ Editing commands are similar to those of 'scheme-mode'."
                 'kahua-select-worker-prompt nil t)
       (when add-password-hook?
         (add-hook 'comint-output-filter-functions
-                  'comint-watch-for-password-prompt nil t))))
+                  'comint-watch-for-password-prompt nil t))
+      (when kahua-shell-display-result-to-minibuffer-flag
+	(add-hook 'comint-output-filter-functions
+		  'kahua-watch-for-eval-result t t))))
   (kahua-command-buffer-setup "*kahua-shell*" "kahua-shell"
 			      kahua-shell-command host user site))
 
