@@ -1,3 +1,10 @@
+2007-12-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: emacs/kahua.el.in
+	  Display result evaluated by sending from kahua-mode buffer
+	  in mini-buffer when *kahua-shell* buffer isn't displayed
+	  in any window.  This patch from Kiyoka Nishiyama. Tnx a lot.
+
 2007-12-01  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua-keyserv.scm, src/kahua-server.scm
