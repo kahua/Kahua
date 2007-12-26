@@ -104,7 +104,7 @@ Editing commands are similar to those of 'scheme-mode'."
   (defun read-directory-name (prompt &optional dir default match init)
     (let ((dir (cond (dir dir)
 		     ((not init) "")
-		     (else default-directory))))
+		     (t default-directory))))
       (read-file-name  prompt dir
 		       (or default (if (and init (not (string= init "")))
 				       (expand-file-name init dir)
