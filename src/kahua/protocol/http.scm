@@ -18,6 +18,7 @@
   (use gauche.charconv)
   (use gauche.sequence)
   (use kahua.util)
+  (use kahua.config)
   (use kahua.protocol.worker)
   (export *default-content-type*
 	  http-date
@@ -27,7 +28,8 @@
 	  kahua-header->http-header
 	  send-http-header
 	  send-http-body
-	  default-error-page
+	  ;;default-error-page
+	  current-error-page
 	  output-error-page
 	  default-redirect-page
 	  output-redirect-page
@@ -105,8 +107,17 @@
        (html:h1 status-msg)
        (html:p (html-escape-string msg)))))))
 
+(define (current-error-page status message)
+  (or
+   (and-let* ((path (kahua-error-document status))
+	      (tree (guard
+		     (e (else (default-error-page status message)))
+		     (call-with-input-file path read))))
+     tree)
+   (default-error-page status message)))
+
 (define (output-error-page out status msg)
-  (write-tree (default-error-page status msg) out))
+  (write-tree (current-error-page status msg) out))
 
 (define (default-redirect-page dest)
   `(,(html-doctype)
