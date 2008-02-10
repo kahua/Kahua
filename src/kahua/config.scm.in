@@ -18,6 +18,7 @@
 (define-module kahua.config
   (use gauche.mop.singleton)
   (use file.util)
+  (use util.list)
   (use util.match)
   (export kahua-init
 	  kahua-common-init
@@ -40,6 +41,7 @@
 	  kahua-run-directory
 	  kahua-etc-directory
 	  kahua-default-database-name
+	  kahua-error-document-alist
 
 	  ;; Global Getter
           kahua-timeout-mins
@@ -65,6 +67,7 @@
           kahua-static-document-path
           kahua-static-document-url
 	  kahua-template-path
+	  kahua-error-document
           kahua-version
 
 	  ;; Site Bundle
@@ -155,6 +158,10 @@
    (keyserv-concurrency :init-keyword :keyserv-concurrency :init-value 10)
 
    (session-domain :init-keyword :session-domain :init-value :site)
+
+   ;; error-document-alist - like Apache's ErrorDocument directive.
+   ;;  alist of (integer . string)
+   (error-document-alist :init-keyword :error-document-alist :init-value '())
 
    ;; internal
    (user-mode :init-value #f)
@@ -270,7 +277,8 @@
 	      run-directory
 	      etc-directory
 	      default-database-name
-	      auto-restart)
+	      auto-restart
+	      error-document-alist)
 
 ;; Define global getter
 (define-macro (define-kahua-config-getter name)
@@ -339,6 +347,9 @@
 
 (define (kahua-template-path . path-components)
   (apply build-path (kahua-template-directory) path-components))
+
+(define (kahua-error-document status)
+  (assoc-ref (kahua-error-document-alist) status #f))
 
 (define (kahua-version) "##KAHUA_VERSION##")
 
