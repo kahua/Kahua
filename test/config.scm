@@ -36,18 +36,18 @@
        (kahua-logpath "foo.log"))
 
 (test* "config file" "./test.conf"
-       (kahua-config-file))
+       (kahua-config-file))xs
 
-(test* "error-document-alist" '((404 . "_work/404.html") (500 . "_work/500.html"))
+(test* "error-document-alist" '((404 . "_work/404.html") (503 . "_work/503.html"))
        (kahua-error-document-alist))
 
 (test* "error-document 404" "_work/404.html"
        (kahua-error-document 404))
 
-(test* "error-document 500" "_work/500.html"
+(test* "error-document 500" #f
        (kahua-error-document 500))
 
-(test* "error-document 503" #f
+(test* "error-document 503" "_work/503.html"
        (kahua-error-document 503))
 
 (test-section "Initialize with Site Bundle")
