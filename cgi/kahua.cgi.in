@@ -156,4 +156,4 @@
     (kahua:log-format "CGI error caught: ~a" errmsg)
     `((("status" ,(http-status-string status #f))
        ("content-type" "text/html"))
-      ,(default-error-page status errmsg))))
+      ,(current-error-page status errmsg))))
