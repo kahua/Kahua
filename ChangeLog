@@ -1,5 +1,9 @@
 2008-02-10  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
+	* src/kahua/protocol/http.scm (current-error-page): add.
+	(kahua.protocol.http): use kahua.config.
+	(kahua.protocol.http): export current-error-apge instead of default-error.page.
+
 	* test/config.scm ("error-document-alist"): use ".page" instead of ".html".
 
 	* test/test.conf (<kahua-config>): use ".page" for error document's extention, because it is text tree, it is not html.
