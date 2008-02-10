@@ -1,5 +1,9 @@
 2008-02-10  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
+	* test/config.scm ("error-document-alist"): use ".page" instead of ".html".
+
+	* test/test.conf (<kahua-config>): use ".page" for error document's extention, because it is text tree, it is not html.
+
 	* test/config.scm ("error-document-alist"): add.
 	("error-document 404"): add.
 	("error-document 500"): add.
