@@ -36,7 +36,7 @@
        (kahua-logpath "foo.log"))
 
 (test* "config file" "./test.conf"
-       (kahua-config-file))xs
+       (kahua-config-file))
 
 (test* "error-document-alist" '((404 . "_work/404.html") (503 . "_work/503.html"))
        (kahua-error-document-alist))
