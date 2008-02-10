@@ -1,3 +1,18 @@
+2008-02-10  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* test/config.scm ("error-document-alist"): add.
+	("error-document 404"): add.
+	("error-document 500"): add.
+	("error-document 503"): add.
+
+	* test/test.conf (<kahua-config>): add :error-document-ailst
+
+	* src/kahua/config.scm.in (kahua.config): use util.list (assoc-ref)
+	(kahua.config): export kahua-error-document-alist, kahua-error-document
+	(<kahua-custom>): add slot 'error-document-alist
+	(define-kahua-config-accessor): add error-document-alist
+	(kahua-error-document): add.
+
 2007-12-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: emacs/kahua.el.in
