@@ -113,7 +113,7 @@
 	      (tree (guard
 		     (e (else (default-error-page status message)))
 		     (call-with-input-file path read))))
-     tree)
+     (eval tree (current-module)))
    (default-error-page status message)))
 
 (define (output-error-page out status msg)
