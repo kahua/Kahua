@@ -1,0 +1,7 @@
+`(,(html-doctype)
+  ,(html:html
+    (html:head
+     (html:title "503 service unavailable."))
+    (html:body
+     (html:h1 "404 service unavailable.")
+     (html:p "message from error-document."))))
