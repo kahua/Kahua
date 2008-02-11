@@ -1,0 +1,7 @@
+`(,(html-doctype)
+  ,(html:html
+    (html:head
+     (html:title "404 not found."))
+    (html:body
+     (html:h1 "404 not found.")
+     (html:p "message from error-document."))))
