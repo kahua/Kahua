@@ -49,7 +49,7 @@ KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
 
 TESTS = test-xml persistence rollback entry-method user config \
 	gsid session partcont server css kahua-dbm worker redirectcont \
-	define-method-rule kahua-call-with-current-context \
+	define-method-rule kahua-call-with-current-context multi-paging \
 	lambdabooks wiki-iki nqueen foldlist spvr httpd admin \
 	developer shell sandbox plugin query
 
@@ -118,6 +118,9 @@ define-method-rule  :
 
 kahua-call-with-current-context  :
 	@gosh -I../src ./kahua-call-with-current-context.scm >> test.log
+
+multi-paging  :
+	@gosh -I../src ./multi-paging.scm >> test.log
 
 user :
 	@gosh -I../src ./user.scm >> test.log
