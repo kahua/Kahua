@@ -1127,7 +1127,32 @@
 ;;  the generated URL.  <id> isn't passed to the continuation closure;
 ;;  it is used by the client browser to jump to the specified fragment.
 ;;
-;;  A variation of 'cont' can be used to pass the control to other
+;;
+;;  Second variation of 'cont' can be used to partialy in current page:
+;;
+;; `(a/cont (@@ (parts-cont ,closure [arg ...])
+;;              (target ,targetid) (fragment ,id))
+;;          contents)
+;;
+;;  This is nearly like as 'cont'.
+;;  The difference is that the (closure [arg ...]) is expected to return
+;;  partial node of current page.
+;;  And a node having as <targetid> is the target to be replaced.
+;;  Then the 'target' clause is required when you use 'parts-cont'.
+;;
+;;  Example: (define (my-part n)
+;;              (div (@ (id "me"))
+;;                (a/cont (@@ (parts-cont my-part (+ n 1))
+;;                            (target "me")))))
+;;
+;;  This my-part has anchor link which update my-part at self.
+;;  The parts-cont's continuation generated a node by (my-part (+ n 1)).
+;;  If click this anchor link, next page is as like as current page,
+;;  but just only my-part.
+;;  So, this abstract partial update.
+;;
+;;
+;;  Last variation of 'cont' can be used to pass the control to other
 ;;  application server:
 ;;
 ;; `(a/cont (@@ (remote-cont <server-type> <cont-id> [arg ...]) 
@@ -1286,6 +1311,16 @@
 ;;  Where arg ... is like a/cont, except you can omit the value of
 ;;  keyword arguments.  If so, the value of the form's QUERY_STRING
 ;;  is taken.
+;;
+;;
+;;  A variation of 'parts-cont' like as 'cont'.
+;;
+;; `(form/cont (@@ (cont ,closure [arg ...])
+;;                 (target ,targetid)) contents)
+;;
+;; This relation between 'cont' and 'parts-cont' is as same as
+;; relation at a/cont's.
+;;
 
 (define (%form/cont-handler name attrs auxs contents context cont)
   (define (kargs->hiddens kargs)
