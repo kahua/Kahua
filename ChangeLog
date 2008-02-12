@@ -1,3 +1,8 @@
+2008-02-13  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: add explain for @@:,@@/,
+	  which is translated from server.kahua .
+	
 2008-02-12  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Change: src/kahua/server.scm
@@ -7,7 +12,7 @@
 	* Add: test/multi-paging.kahua
 	       test/multi-paging.scm
 	  add test code for a/cont,form/cont's new attribute('parts-cont').
-	* Add: add explain comment for this modify.
+	* Change: add explain comment for this modify.
 
 2008-02-11  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 

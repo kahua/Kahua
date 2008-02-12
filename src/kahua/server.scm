@@ -1128,7 +1128,7 @@
 ;;  it is used by the client browser to jump to the specified fragment.
 ;;
 ;;
-;;  Second variation of 'cont' can be used to partialy in current page:
+;;  A variation of 'cont' can be used to update partialy in current page:
 ;;
 ;; `(a/cont (@@ (parts-cont ,closure [arg ...])
 ;;              (target ,targetid) (fragment ,id))
@@ -1136,8 +1136,9 @@
 ;;
 ;;  This is nearly like as 'cont'.
 ;;  The difference is that the (closure [arg ...]) is expected to return
-;;  partial node of current page.
-;;  And a node having as <targetid> is the target to be replaced.
+;;  partial node of page.
+;;  And a node having as <targetid> is the target to be replaced by
+;;  the returned node.
 ;;  Then the 'target' clause is required when you use 'parts-cont'.
 ;;
 ;;  Example: (define (my-part n)
@@ -1146,13 +1147,13 @@
 ;;                            (target "me")))))
 ;;
 ;;  This my-part has anchor link which update my-part at self.
-;;  The parts-cont's continuation generated a node by (my-part (+ n 1)).
+;;  The parts-cont's continuation generate a new node by (my-part (+ n 1)).
 ;;  If click this anchor link, next page is as like as current page,
 ;;  but just only my-part.
 ;;  So, this abstract partial update.
 ;;
 ;;
-;;  Last variation of 'cont' can be used to pass the control to other
+;;  Next variation of 'cont' can be used to pass the control to other
 ;;  application server:
 ;;
 ;; `(a/cont (@@ (remote-cont <server-type> <cont-id> [arg ...]) 

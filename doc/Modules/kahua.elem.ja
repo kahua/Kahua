@@ -61,6 +61,63 @@ applet: param: object: embed: noembed: html:
 トを表現するノードを作ります。このマクロの''name''は評価されません。
 ''name''はシンボルでなければなりません。
 
+`(a/cont: (@@: (cont ,closure [arg ...]) (fragment ,id)) contents)
+
+arg ...で継続にパスパラメータを渡せます。
+各argは以下でなくてはなりません。
+
+ <value> : PATH_INFOを通じて必須引数として渡される
+ (<symbol> <value>) : QUERY_STRINGを通してキーワード引数として渡される
+
+ここで <value> はstring,symbol,numberのいずれかでなくてはなりません。
+(<value>にx->stringが適用できる必要がある)
+
+Example: (a/cont: (@@: (cont ,closure sohw time (id 40))) contents)
+    => <a href='kahua.cgi/app-type/closure/show/time?id=40'>contents</a>
+
+(fragment <id>)を与えると,<id>がURLのfragment IDとして使われます。
+<id>は継続クロージャには渡せません。
+これでクライアントブラウザによりfragment IDで特定されるfragmentにjumpされます。
+
+
+'cont'の亜種を使うと現在のページを部分的に更新することが出来ます。
+
+`(a/cont: (@@: (parts-cont ,closure [arg ...])
+               (target ,targetid) (fragment ,id))
+          contents)
+
+これは'cont'とほとんど同じです。
+ただし、(closure [arg ...])はページの一部を返すことが期待されています。
+そして<targetid>のノードがそのノードで置き換えられます。
+'parts-cont'を使用する場合には'target'節は必須です。
+
+Example: (define (my-part n)
+            (div: (@: (id "me"))
+              (a/cont: (@@: (parts-cont my-part (+ n 1))
+                            (target "me")))))
+
+このmy-partはmy-part自身を更新するアンカーリンクを持っています。
+parts-contの継続は(my-part (+ n 1))式により新たなノードを生成します。
+このアンカーリンクがクリックされると遷移後のページはmy-part部分だけを
+除いて現在のページと同じです。
+つまり、部分的更新を抽象化しています。
+
+
+次の'cont'の亜種は他のアプリケーションワーカーの制御に渡ります。
+
+`(a/cont: (@@: (remote-cont <server-type> <cont-id> [arg ...]) 
+             (fragment ,id)
+             (return-cont ,closure [arg ...]))
+         contents)
+
+これは URL kahua.cgi/<server-type>/<cont-id>...へのリンクになります。
+つまり、<server-type>と<cont-id>で指示される他のアプリケーション
+サーバーへ転送します。
+
+併せて'return-cont'節が与えられるとリモート呼び出しのために、
+キーワード引数'return-cont'を生成するのに使われます。
+つまりリモートサーバーは現在のサーバーへ制御を戻すことが出来ます。
+
 *** [procedure] a/cont: ''args'' ...
 
 HTMLのリンクに継続を結びつけるSXMLノードを返します。
@@ -125,6 +182,10 @@ applet/ param/ object/ embed/ noembed/ html/
 高階タグ関数とともに使用し、高階タグ関数が構築するノードの補助属性リス
 トを表現する関数ノードを作ります。''name''は評価されません。''name''は
 シンボルでなければなりません。
+
+引数にあたる各節の詳細については,@@:の説明を参照してください。
+各単純タグ関数を対応する高階タグ関数に適宜読み換えてください。
+
 
 *** [procedure] a/cont/ ''args''
 
