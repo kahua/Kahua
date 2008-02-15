@@ -86,7 +86,7 @@
 		      (let1 w (car path-info)
 			(values #f #f #f w (list w) (cdr path-info))))))
     (match path-info
-      ((worker (= vhosting vhost) . args) (=> next)
+      ((worker (= vhosting (? identity vhost)) . args) (=> next)
        (receive (scheme host port) (parse-vhost vhost next)
 	 (apply values scheme host port worker (split-by args (pa$ equal? "--")))))
       ((worker . args) (values #f #f #f worker #f args))
