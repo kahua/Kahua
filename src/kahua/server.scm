@@ -46,9 +46,11 @@
           kahua-default-handler
           kahua-current-context
           kahua-context-ref
+	  kahua-client-context-ref
           kahua-meta-ref
 	  kahua-cookie-ref
           kahua-context-ref*
+	  kahua-client-context-ref*
 	  kahua-local-session-ref
 	  kahua-local-session-set!
 	  define-session-object
@@ -327,11 +329,12 @@
 ;; TODO: should apply interp-html-rec to all nodes!
 (define (kahua-render-proc nodes context)
   (let* ((expanded (cond 
-                    ((procedure? nodes) (car (rev-nodes (exec '() nodes)))) 
+                    ((procedure? nodes) (car (rev-nodes (exec '() nodes))))
                     ((eq? (car nodes) 'node-set) (cadr nodes))
                     (else (car nodes))))
          (interp (get-interp expanded)))
-    (interp expanded (cons `("x-kahua-expanded-node" . (,expanded)) context) values)))
+    (interp expanded (cons `("x-kahua-keep-client-context" . #f)
+			   (cons `("x-kahua-expanded-node" . (,expanded)) context)) values)))
 
 (define-values (add-interp! get-interp)
   (let ((table (make-hash-table))
@@ -356,6 +359,34 @@
 (define (kahua-context-ref key . maybe-default)
   (apply assoc-ref-car (kahua-current-context) key maybe-default))
 
+
+;; KAHUA-CLIENT-CONTEXT-REF key [default]
+;;
+;; Client Context is a special pattern of kahua-context-ref.
+;; This can get values of client side data.
+;;
+(define (%client-context->alist)
+  (define (incorrect-alist->correct-alist alst)
+    (hash-table->alist
+     (fold (lambda (e h)
+	     (hash-table-update! h (car e) (cut cons (cadr e) <>) '()) h)
+	   (make-hash-table 'equal?) alst)))
+  (define (str->alist str)
+    (define (cadr-decode kv)
+      (list (car kv) (uri-decode-string (cadr kv))))
+    (let* ((s (uri-decode-string str))
+	   (es&us (map (cut string-split <> "&") (string-split s ";")))
+	   (es (map (cut string-split <> "=") (delete "" (car es&us))))
+	   (us (map (cut string-split <> "=") (delete "" (cadr es&us)))))
+      (incorrect-alist->correct-alist
+       (append (map cadr-decode es) (map cadr-decode us)))))
+  (let1 xkahua (kahua-context-ref "x-kahua-client-context" '())
+    (if (null? xkahua) '() (str->alist xkahua))))
+
+(define (kahua-client-context-ref key . maybe-default)
+  (apply assoc-ref-car (%client-context->alist) key maybe-default))
+
+
 ;; KAHUA-META-REF key [default]
 ;;
 ;;  Gets CGI metavaliable.
@@ -364,7 +395,6 @@
 (define (kahua-meta-ref key . maybe-default)
   (apply assoc-ref-car
          (kahua-context-ref "x-kahua-metavariables" '()) key maybe-default))
-
 
 (define (kahua-header-set! key val)
   (hash-table-put! (kahua-context-ref "x-kahua-headers")
@@ -391,6 +421,14 @@
 
 (define (kahua-context-ref* key . maybe-default)
   (assoc-ref (kahua-current-context) key (get-optional maybe-default '())))
+
+;; KAHUA-CLIENT-CONTEXT-REF* key [default]
+;;
+;; Client Context is a special pattern of kahua-context-ref*.
+;; This can get values of client side data.
+;;
+(define (kahua-client-context-ref* key . maybe-default)
+  (assoc-ref (%client-context->alist) key (get-optional maybe-default '())))
 
 ;; KAHUA-LOCAL-SESSION-REF var
 ;;
@@ -927,17 +965,174 @@
    '((#\< . "&lt;") (#\> . "&gt;") (#\& . "&amp;") 
      (#\" . "&quot;") (#\' . "&#39;"))))
 
+
+;; Illegal Style? Kahua test failed. but work on client.
+;; Maybe sxml parser is too strict??
+;;
+(define %%x-kahua-keep-client-context-js%%
+  `("<" script " type='text/javascript'>"
+    "
+function __x_kahua_generate_q(id){
+  function containName(e,n){
+    if(e==null){return false;}
+    if(e.name==n){
+      return true;
+    }else{
+      for(var i=0;i<e.length;i++)
+      {
+        if(containName(e[i],n)){return true;}
+      }
+      return false;
+    }
+  }
+
+  var r=[];var s=[];var v=[];
+
+  // TEXTAREA
+  var l=document.getElementsByTagName('textarea');
+  var t=document.getElementById(id);
+  for(var i=0;i<l.length;i++){
+    if(!containName(t,l[i].name)){
+      r.push([l[i].name,encodeURIComponent(l[i].value)]);
+    }else{
+      s.push([l[i].name,encodeURIComponent(l[i].value)]);
+    }
+  }
+
+  // INPUT : TEXT/PASSWORD/CHECKBOX/RADIO
+  l=document.getElementsByTagName('input');
+  for(var i=0;i<l.length;i++){
+    if(l[i].type=='hidden' || l[i].type=='button' || l[i].type=='submit' || l[i].name==''){
+      // NONE!!
+    }else if(l[i].type=='checkbox' || l[i].type=='radio'){
+      if(l[i].checked){
+        if(!containName(t,l[i].name)){
+          r.push([l[i].name,l[i].value]);
+        }else{
+          s.push([l[i].name,l[i].value]);
+        }
+      }
+    }else if(l[i].type='text' || l[i].type=='password'){
+      if(!containName(t,l[i].name)){
+        r.push([l[i].name,encodeURIComponent(l[i].value)]);
+      }else{
+        s.push([l[i].name,encodeURIComponent(l[i].value)]);
+      }
+    }
+  }
+
+  // SELECT(OPTION)
+  l=document.getElementsByTagName('select');
+  for(var i=0;i<l.length;i++){
+    if(!containName(t,l[i].name)){
+      var c=l[i].childNodes;
+      for(var j=0;j<c.length;j++){
+        if(c[j].selected){
+          r.push([l[i].name,encodeURIComponent(c[j].value)]);
+        }
+      }
+    }else{
+      var c=l[i].childNodes;
+      for(var j=0;j<c.length;j++){
+        if(c[j].selected){
+          s.push([l[i].name,encodeURIComponent(c[j].value)]);
+        }
+      }
+    }
+  }
+
+  // CREATE X-KAHUA-CLIENT-CONTEXT QUERY STRING
+  var q=[];
+  for(var i=0;i<r.length;i++){q.push(r[i][0]+'='+r[i][1]);}
+  var xkahua=q.join('&')+';';
+  q=[];
+  for(var i=0;i<s.length;i++){q.push(s[i][0]+'='+s[i][1]);}
+  xkahua+=q.join('&');
+  return encodeURIComponent(xkahua);
+}
+
+function x_kahua_keep_client_context_without(me,id){
+  xkahua='x-kahua-client-context='+__x_kahua_generate_q(id);
+  var u=me.href.match(/([^?#]+)(\\?[^#]+)?(#.+)?/);
+  me.href=u[1];
+  if(typeof u[2]=='undefined'){
+    if(xkahua!=''){me.href+='?'+xkahua;}
+  }else{
+    me.href+=u[2]+'&'+xkahua;
+  }
+  if(typeof u[3]!='undefined'){
+   me.href+=u[3];
+  }
+}
+
+function x_kahua_collect_client_context_without(me,id){
+  var inp=document.createElement('input');
+  inp.type='hidden';
+  inp.name='x-kahua-client-context';
+  inp.value=__x_kahua_generate_q(id);
+  me.appendChild(inp);
+}
+" "</" script "\n>"))
+
+(define (%%x-kahua-keep-client-onload%% code)
+  (sxml:attr->xml-bis
+   `(onload ,(string-append "
+var x_kahua_client_context=document.URL.match(/x-kahua-client-context=([^#]*)/);
+if(x_kahua_client_context==null){return;}
+var q='';
+if(typeof x_kahua_client_context[1]!='undefined'){q=decodeURIComponent(x_kahua_client_context[1])};
+var v=q.split(';')[0];
+v=v.split('&');
+for(var i=0;i<v.length;i++){
+  var x=v[i].match(/([^=]+)=(.*)/);
+  if(x==null){return;}
+  var nm=x[1]; var val=decodeURIComponent(x[2]);
+  var elm=document.getElementsByName(nm);
+
+  if(elm[0].type=='text' || elm[0].type=='password' || elm[0].type=='textarea'){
+    elm[0].value=val;
+  }else if(elm[0].type=='checkbox'){
+    elm[0].checked=true;
+  }else if(elm[0].type=='radio'){
+    for(var j=0;j<elm.length;j++){
+      if(elm[j].type=='radio' && elm[j].value==val){
+        elm[j].checked=true;
+      }
+    }
+  }else if(elm[0].type=='select' || elm[0].type=='select-one' || elm[0].type=='select-multiple'){
+    var c=elm[0].childNodes;
+    for(var j=0;j<c.length;j++){
+      if(c[j].value==val){
+        c[j].selected=true;
+      }
+    }
+  }
+}
+" (if code #`";,code" "")))))
+
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents
    content context
    (lambda (stree context)
-     (if (memq tag '(area base basefont br col frame hr img
-                          input isindex link meta param))
-	 (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) " />") context)
-	 (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
-		 ,@stree
-		 "</" ,tag "\n>")
-	       context)))))
+     (cond ((memq tag '(area base basefont br col frame hr img
+			     input isindex link meta param))
+	    (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) " />") context))
+	   ((and (eq? tag 'head) (cdr (assoc "x-kahua-keep-client-context" context)))
+	    (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
+		    ,@stree
+		    ,%%x-kahua-keep-client-context-js%%
+		    "</" ,tag "\n>")
+		  context))
+	   ((and (eq? tag 'body) (cdr (assoc "x-kahua-keep-client-context" context)))
+	    (cont `("<" ,tag ,(map sxml:attr->xml-bis (remove-attrs attrs 'onload))
+		    ,(%%x-kahua-keep-client-onload%% (assq-ref-car attrs 'onload)) ">"
+		    ,@stree
+		    "</" ,tag "\n>")
+		  context))
+	   (else (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
+			 ,@stree
+			 "</" ,tag "\n>")
+		       context))))))
 
 (define (default-element-handler-bis tag attrs content context cont)
   (handle-element-contents-bis
@@ -1247,12 +1442,12 @@
     (receive (pargs kargs) (extract-cont-args (cdr clause) 'a/cont)
       (let* ((params-proc (get-optional maybe-params-proc #f))
 	     (argstr (build-argstr pargs (if params-proc '() kargs)))
-	     (tid (car (assq-ref auxs 'target)))
+	     (tid (assq-ref-car auxs 'target))
 	     (external-node (assoc-ref context "x-kahua-expanded-node"))
 	     (id (session-cont-register
 		  (lambda ()
 		    (let* ((nodes (apply (car clause) (cdr clause)))
-			   (expanded (cond 
+			   (expanded (cond
 				      ((procedure? nodes) (car (rev-nodes (exec '() nodes)))) 
 				      ((eq? (car nodes) 'node-set) (cadr nodes))
 				      (else (car nodes)))))
@@ -1294,12 +1489,26 @@
 	  ((assq-ref auxs 'remote-cont) => (remote-cont auxs))
 	  (else                            (kahua-self-uri (fragment auxs)))))
 
-  (define (nodes href)
+  (define (auxs&attrs->js auxs attrs)
+    (let* ((keep? (assq-ref auxs 'keep))
+	   (tid (or (assq-ref-car auxs 'target) "x-kahua-dummy"))
+	   (onclick (assq-ref-car attrs 'onclick))
+	   (code #`"x_kahua_keep_client_context_without(this,,',tid')"))
+      (cond (keep? => (lambda (claus)
+			(set-cdr! (assoc "x-kahua-keep-client-context" context) #t)
+			(if onclick
+			    `((onclick ,#`",code ; ,onclick"))
+			    `((onclick ,code)))))
+	    (onclick `((onclick ,onclick)))
+	    (else '()))))
+
+  (define (nodes href onclick)
     (cont `((a (@@ (expand-finished))
-	       (@ ,href ,@(remove-attrs attrs 'href))
+	       (@ ,href ,@onclick ,@(remove-attrs attrs 'href 'onclick))
                ,@contents)) context))
 
-  (nodes (or (assq 'href attrs) `(href ,(auxs->uri auxs)))))
+  (nodes (or (assq 'href attrs) `(href ,(auxs->uri auxs)))
+	 (auxs&attrs->js auxs attrs)))
 
 (define-element a/cont %a/cont-handler)
 (define-element a      %a/cont-handler)
@@ -1343,11 +1552,26 @@
 		(assq-ref auxs 'parts-cont))  => (local-parts auxs context kargs->hiddens))
 	  ((assq-ref auxs 'remote-cont)       => (remote-cont auxs kargs->hiddens))
 	  (else                               (values (kahua-self-uri (fragment auxs)) '()))))
-  (define (nodes uri method hiddens)
+
+  (define (auxs&attrs->js auxs attrs)
+    (let* ((keep? (assq-ref auxs 'keep))
+	   (tid (or (assq-ref-car auxs 'target) "x-kahua-dummy"))
+	   (onsubmit (assq-ref-car attrs 'onsubmit))
+	   (code #`"x_kahua_collect_client_context_without(this,,',tid')"))
+      (cond (keep? => (lambda (claus)
+			(set-cdr! (assoc "x-kahua-keep-client-context" context) #t)
+			(if onsubmit
+			    `((onsubmit ,#`",code ; ,onsubmit"))
+			    `((onsubmit ,code)))))
+	    (onsubmit `((onsubmit ,onsubmit)))
+	    (else '()))))
+
+  (define (nodes uri method hiddens onsubmit)
     (cont `((form (@@ (expand-finished))
-		  (@ ,@(list* `(method ,method)
+		  (@ ,@onsubmit
+		     ,@(list* `(method ,method)
 			      `(action ,uri)
-			      (remove-attrs attrs 'method 'action)))
+			      (remove-attrs attrs 'method 'action 'onsubmit)))
 		  ,@hiddens
 		  ,@contents))
 	  context))
@@ -1355,7 +1579,7 @@
   (receive (uri hiddens) (cond ((assq-ref-car attrs 'action)
 				=> (cut values <> '()))
 			       (else (auxs->uri&hiddens auxs)))
-    (nodes uri (or (assq-ref-car attrs 'method) "POST") hiddens)))
+    (nodes uri (or (assq-ref-car attrs 'method) "POST") hiddens (auxs&attrs->js auxs attrs))))
 
 (define-element form/cont %form/cont-handler)
 (define-element form %form/cont-handler)

@@ -1,3 +1,12 @@
+2008-02-28  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: add kahua-client-context-ref,kahua-client-context-ref*.
+	* Change: add 'keep' clause for @@ auxs.
+	          which is for auto keep client context data.
+	* Proposal: require 'x-kahua-*' prefix words and 'x_kahua_' prefix words
+	            and '__x_kahua_' prefix words are reserved word on Kahua.
+	            Now, using javascript function name and hidden tag name.
+	
 2008-02-15  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/protocol/http.scm
