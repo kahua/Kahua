@@ -1030,7 +1030,7 @@ function __x_kahua_generate_q(id){
     }
   }
 
-  // SELECT(OPTION)
+  // SELECT(OPTION) //TODO: handle for OPTGROUP case
   l=document.getElementsByTagName('select');
   for(var i=0;i<l.length;i++){
     if(!containName(t,l[i].name)){
@@ -1083,42 +1083,6 @@ function x_kahua_collect_client_context_without(me,id){
 }
 " "</" script "\n>"))
 
-(define (%%x-kahua-keep-client-onload%% code)
-  (sxml:attr->xml-bis
-   `(onload ,(string-append "
-var x_kahua_client_context=document.URL.match(/x-kahua-client-context=([^#]*)/);
-if(x_kahua_client_context==null){return;}
-var q='';
-if(typeof x_kahua_client_context[1]!='undefined'){q=decodeURIComponent(x_kahua_client_context[1])};
-var v=q.split(';')[0];
-v=v.split('&');
-for(var i=0;i<v.length;i++){
-  var x=v[i].match(/([^=]+)=(.*)/);
-  if(x==null){return;}
-  var nm=x[1]; var val=decodeURIComponent(x[2]);
-  var elm=document.getElementsByName(nm);
-
-  if(elm[0].type=='text' || elm[0].type=='password' || elm[0].type=='textarea'){
-    elm[0].value=val;
-  }else if(elm[0].type=='checkbox'){
-    elm[0].checked=true;
-  }else if(elm[0].type=='radio'){
-    for(var j=0;j<elm.length;j++){
-      if(elm[j].type=='radio' && elm[j].value==val){
-        elm[j].checked=true;
-      }
-    }
-  }else if(elm[0].type=='select' || elm[0].type=='select-one' || elm[0].type=='select-multiple'){
-    var c=elm[0].childNodes;
-    for(var j=0;j<c.length;j++){
-      if(c[j].value==val){
-        c[j].selected=true;
-      }
-    }
-  }
-}
-" (if code #`";,code" "")))))
-
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents
    content context
@@ -1130,12 +1094,6 @@ for(var i=0;i<v.length;i++){
 	    (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
 		    ,@stree
 		    ,%%x-kahua-keep-client-context-js%%
-		    "</" ,tag "\n>")
-		  context))
-	   ((and (eq? tag 'body) (cdr (assoc "x-kahua-keep-client-context" context)))
-	    (cont `("<" ,tag ,(map sxml:attr->xml-bis (remove-attrs attrs 'onload))
-		    ,(%%x-kahua-keep-client-onload%% (assq-ref-car attrs 'onload)) ">"
-		    ,@stree
 		    "</" ,tag "\n>")
 		  context))
 	   (else (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
@@ -1430,6 +1388,7 @@ for(var i=0;i<v.length;i++){
 	    uri)))))
 
 (define (local-parts auxs context . maybe-params-proc)
+  ;; TODO: rewrite for performance up.
   (define (replace-node node id parts)
     (define (has-id? node-set)
       (cond ((null? node-set) #f)
@@ -1437,12 +1396,77 @@ for(var i=0;i<v.length;i++){
 				     => (cut member `(id ,id) <>))
 				    (else #f)))
 	    (else #f)))
+    (define (has-name? node-set)
+      (cond ((null? node-set) #f)
+	    ((list? node-set) (cond ((assq-ref node-set '@)
+				     => (cut assq-ref-car <> 'name))
+				    (else #f)))
+	    (else #f)))
+    (define (drop-attr attr key)
+      (cons '@ (remove (lambda (a) (eq? (car a) key)) (cdr attr))))
+    ;; TODO: coding...
+    (define (replace-kept-value node-set node-type name)
+      (define (set-value-input ns vs)
+	(cond ((assq '@ ns)
+	       => (lambda (attr)
+		    (cond ((assq-ref-car attr 'type)
+			   => (lambda (typ)
+				(cond ((string-ci=? "text" typ)
+				       (if (null? vs)
+					   `(,(drop-attr attr 'value))
+					   `(,(append (drop-attr attr 'value) `((value ,@vs))))))
+				      ((string-ci=? "password" typ)
+				       (if (null? vs)
+					   `(,(drop-attr attr 'value))
+					   `(,(append (drop-attr attr 'value) `((value ,@vs))))))
+				      ((string-ci=? "checkbox" typ)
+				       (if (null? vs)
+					   `(,(drop-attr attr 'checked))
+					   `(,(append (drop-attr attr 'checked) '((checked #t))))))
+				      ((string-ci=? "radio" typ)
+				       (cond ((assq-ref-car attr 'value)
+					      => (lambda (v)
+						   (if (member v vs)
+						       `(,(append (drop-attr attr 'checked) '((checked #t))))
+						       `(,(drop-attr attr 'checked)))))))
+				      (else ns))))
+			  (else ns))))
+	      (else ns)))
+      (define (set-value-textarea ns vs) `(,(assoc '@ ns) ,@vs))
+      (define (set-value-select ns vs)
+	(define (set-value-option op vs)
+	  (cond ((null? op) op)
+		((list? op)
+		 (cond ((and (eq? (car op) '@) (assq-ref-car op 'value))
+			=> (lambda (v)
+			     (if (member v vs)
+				 (append (drop-attr op 'selected) '((selected #t)))
+				 (drop-attr op 'selected))))
+		       (else (cons (set-value-option (car op) vs)
+				   (set-value-option (cdr op) vs)))))
+		(else op)))
+	(cond ((null? ns) ns)
+	      ((list? ns) (cond ((eq? (car ns) 'option)
+				 (set-value-option ns vs))
+				(else (cons (set-value-select (car ns) vs)
+					    (set-value-select (cdr ns) vs)))))
+	      (else ns)))
+      (case node-type
+	((input) (set-value-input node-set (kahua-client-context-ref* name '())))
+	((textarea) (set-value-textarea node-set (kahua-client-context-ref* name '())))
+	((select) (set-value-select node-set (kahua-client-context-ref* name '())))
+	(else node-set)))
     (cond ((null? node) node)
 	  ((list? node)
 	   (cond ((symbol? (car node))
-		  (if (has-id? (cdr node))
-		      parts
-		      (cons (car node) (replace-node (cdr node) id parts))))
+		  (cond ((has-id? (cdr node)) parts)
+			((and (memq (car node) '(input textarea select))
+			      (has-name? (cdr node)))
+			 => (lambda (name)
+			      (cons (car node)
+				    (replace-node
+				     (replace-kept-value (cdr node) (car node) name) id parts))))
+			(else (cons (car node) (replace-node (cdr node) id parts)))))
 		 (else (cons (replace-node (car node) id parts)
 			     (replace-node (cdr node) id parts)))))
 	  (else node)))
