@@ -378,10 +378,15 @@
 	   (es&us (map (cut string-split <> "&") (string-split s ";")))
 	   (es (map (cut string-split <> "=") (delete "" (car es&us))))
 	   (us (map (cut string-split <> "=") (delete "" (cadr es&us)))))
-      (incorrect-alist->correct-alist
-       (append (map cadr-decode es) (map cadr-decode us)))))
+      (let1 alist (incorrect-alist->correct-alist
+		   (append (map cadr-decode es) (map cadr-decode us)))
+	;; string->alist transform is perform at just firts time.
+	(assoc-set! (kahua-current-context) "x-kahua-client-context" (list alist))
+	alist)))
   (let1 xkahua (kahua-context-ref "x-kahua-client-context" '())
-    (if (null? xkahua) '() (str->alist xkahua))))
+    (cond ((null? xkahua) '())
+	  ((list? xkahua) xkahua)
+	  ((string? xkahua) (str->alist xkahua)))))
 
 (define (kahua-client-context-ref key . maybe-default)
   (apply assoc-ref-car (%client-context->alist) key maybe-default))
@@ -992,10 +997,12 @@ function __x_kahua_generate_q(id){
   var l=document.getElementsByTagName('textarea');
   var t=document.getElementById(id);
   for(var i=0;i<l.length;i++){
-    if(!containName(t,l[i].name)){
-      r.push([l[i].name,encodeURIComponent(l[i].value)]);
-    }else{
-      s.push([l[i].name,encodeURIComponent(l[i].value)]);
+    if(l[i].value!=null && l[i].value!=''){
+      if(!containName(t,l[i].name)){
+        r.push([l[i].name,encodeURIComponent(l[i].value)]);
+      }else{
+        s.push([l[i].name,encodeURIComponent(l[i].value)]);
+      }
     }
   }
 
@@ -1013,10 +1020,12 @@ function __x_kahua_generate_q(id){
         }
       }
     }else if(l[i].type='text' || l[i].type=='password'){
-      if(!containName(t,l[i].name)){
-        r.push([l[i].name,encodeURIComponent(l[i].value)]);
-      }else{
-        s.push([l[i].name,encodeURIComponent(l[i].value)]);
+      if(l[i].value!=null&&l[i].value!=''){
+        if(!containName(t,l[i].name)){
+          r.push([l[i].name,encodeURIComponent(l[i].value)]);
+        }else{
+          s.push([l[i].name,encodeURIComponent(l[i].value)]);
+        }
       }
     }
   }

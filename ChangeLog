@@ -1,3 +1,12 @@
+2008-02-29  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: str->alist ,which is internal defined function of
+	          %client-context-alist perform at just first time
+	          aim to performance.
+	* Change: optimize javascript a little.
+	          remove useless values from query-string.
+	
+	
 2008-02-28  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Change: add kahua-client-context-ref,kahua-client-context-ref*.
