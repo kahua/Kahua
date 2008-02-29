@@ -162,6 +162,23 @@ contextから、CGIメタ変数を取り出します。maybe-defaultが省略さ
 contextから、COOKIEの値を取り出します。maybe-defaultが省略された時は
 #fが渡されたのと同じです。
 
+*** [procedure] kahua-client-context-ref ''key'' . ''maybe-default''
+
+kahua-context-refとよく似ていますが、取得可能な情報はクライアントサイドで
+入力中のテキストや選択されているチェックボックスなどです。
+これらは必ずしもPOSTされたデータに含まれている必要はありません。
+
+このAPIがうまく機能するためにはa/contやform/contの補助属性中に
+keep節に#fでない値を与えた場合で、さらにクライアントサイドで
+javascriptが有効になっている必要があります。
+
+
+*** [procedure] kahua-client-context-ref* ''key'' . ''maybe-default''
+
+kahua-client-context-refとよく似ていますが、該当するコンテキスト情報が
+リストとして返されること、maybe-defaultを省略したときのデフォルト値が
+()であることが違います。
+
 
 ** 継続エントリポイントの設定
 

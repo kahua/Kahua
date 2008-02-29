@@ -102,6 +102,22 @@ parts-contの継続は(my-part (+ n 1))式により新たなノードを生成�
 除いて現在のページと同じです。
 つまり、部分的更新を抽象化しています。
 
+Example: (define (my-part n)
+            (div: (@: (id "me"))
+              (a/cont: (@@: (parts-cont my-part (+ n 1))
+                            (target "me")
+			    (keep #t)))))
+
+さらに'keep'節を使うとHTMLのscriptタグにjavascriptを挿し込みます。
+このスクリプトはクライアント側でのinput/textarea/selectのそれぞれの
+入力状態や選択状態を保持するために働きます。
+保持したデータはparts-contで挿し換えられるノードを除いて、
+サーバサイドで全て自動バインドされます。
+また、(keep #t)節をHTML中に含めた時、Kahuaプログラマは
+kahua-client-context-refとkahua-client-context-ref*の2つのAPIが意味を持ちます。
+これらのAPIを使うとクライアントサイドでの入力中のテキストデータや
+選択されているデータを取得することができます。
+
 
 次の'cont'の亜種は他のアプリケーションワーカーの制御に渡ります。
 
