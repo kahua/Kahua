@@ -389,7 +389,7 @@
 	  ((string? xkahua) (str->alist xkahua)))))
 
 (define (kahua-client-context-ref key . maybe-default)
-  (apply assoc-ref-car (%client-context->alist) key maybe-default))
+  (apply assoc-ref-car (%client-context->alist) (x->string key) maybe-default))
 
 
 ;; KAHUA-META-REF key [default]
@@ -433,7 +433,7 @@
 ;; This can get values of client side data.
 ;;
 (define (kahua-client-context-ref* key . maybe-default)
-  (assoc-ref (%client-context->alist) key (get-optional maybe-default '())))
+  (assoc-ref (%client-context->alist) (x->string key) (get-optional maybe-default '())))
 
 ;; KAHUA-LOCAL-SESSION-REF var
 ;;
