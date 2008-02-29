@@ -977,7 +977,7 @@
 (define %%x-kahua-keep-client-context-js%%
   `("<" script " type='text/javascript'>"
     "
-function __x_kahua_generate_q(id){
+function __x_kahua_generate_q(id,types){
   function containName(e,n){
     if(e==null){return false;}
     if(e.name==n){
@@ -993,15 +993,42 @@ function __x_kahua_generate_q(id){
 
   var r=[];var s=[];var v=[];
 
-  // TEXTAREA
-  var l=document.getElementsByTagName('textarea');
+  var textON = false;
+  var textareaON = false;
+  var passwordON = false;
+  var checkboxON = false;
+  var radioON = false;
+  var selectON = false;
+
+  for(var i=0;i<types.length;i++){
+    if(types[i]=='text'){
+      textON = true;
+    }else if(types[i]=='textarea'){
+      textareaON = true;
+    }else if(types[i]=='password'){
+      passwordON = true;
+    }else if(types[i]=='checkbox'){
+      checkboxON = true;
+    }else if(types[i]=='radio'){
+      radioON = true;
+    }else if(types[i]=='select'){
+      selectON = true;
+    }
+  }
+
+
   var t=document.getElementById(id);
-  for(var i=0;i<l.length;i++){
-    if(l[i].value!=null && l[i].value!=''){
-      if(!containName(t,l[i].name)){
-        r.push([l[i].name,encodeURIComponent(l[i].value)]);
-      }else{
-        s.push([l[i].name,encodeURIComponent(l[i].value)]);
+
+  // TEXTAREA
+  if (textareaON) {
+    var l=document.getElementsByTagName('textarea');
+    for(var i=0;i<l.length;i++){
+      if(l[i].value!=null && l[i].value!=''){
+        if(!containName(t,l[i].name)){
+          r.push([l[i].name,encodeURIComponent(l[i].value)]);
+        }else{
+          s.push([l[i].name,encodeURIComponent(l[i].value)]);
+        }
       }
     }
   }
@@ -1011,7 +1038,7 @@ function __x_kahua_generate_q(id){
   for(var i=0;i<l.length;i++){
     if(l[i].type=='hidden' || l[i].type=='button' || l[i].type=='submit' || l[i].name==''){
       // NONE!!
-    }else if(l[i].type=='checkbox' || l[i].type=='radio'){
+    }else if(checkboxON && l[i].type=='checkbox'){
       if(l[i].checked){
         if(!containName(t,l[i].name)){
           r.push([l[i].name,l[i].value]);
@@ -1019,7 +1046,23 @@ function __x_kahua_generate_q(id){
           s.push([l[i].name,l[i].value]);
         }
       }
-    }else if(l[i].type='text' || l[i].type=='password'){
+    }else if(radioON && l[i].type=='radio'){
+      if(l[i].checked){
+        if(!containName(t,l[i].name)){
+          r.push([l[i].name,l[i].value]);
+        }else{
+          s.push([l[i].name,l[i].value]);
+        }
+      }
+    }else if(textON && l[i].type=='text'){
+      if(l[i].value!=null&&l[i].value!=''){
+        if(!containName(t,l[i].name)){
+          r.push([l[i].name,encodeURIComponent(l[i].value)]);
+        }else{
+          s.push([l[i].name,encodeURIComponent(l[i].value)]);
+        }
+      }
+    }else if(passwordON && l[i].type=='password'){
       if(l[i].value!=null&&l[i].value!=''){
         if(!containName(t,l[i].name)){
           r.push([l[i].name,encodeURIComponent(l[i].value)]);
@@ -1031,40 +1074,42 @@ function __x_kahua_generate_q(id){
   }
 
   // SELECT(OPTION)
-  l=document.getElementsByTagName('select');
-  for(var i=0;i<l.length;i++){
-    if(!containName(t,l[i].name)){
-      var c=l[i].childNodes;
-      for(var j=0;j<c.length;j++){
-        if(c[j].selected){
-          r.push([l[i].name,encodeURIComponent(c[j].value)]);
+  if (selectON) {
+    l=document.getElementsByTagName('select');
+    for(var i=0;i<l.length;i++){
+      if(!containName(t,l[i].name)){
+        var c=l[i].childNodes;
+        for(var j=0;j<c.length;j++){
+          if(c[j].selected){
+            r.push([l[i].name,encodeURIComponent(c[j].value)]);
+          }
         }
-      }
-    }else{
-      var c=l[i].childNodes;
-      for(var j=0;j<c.length;j++){
-        if(c[j].selected){
-          s.push([l[i].name,encodeURIComponent(c[j].value)]);
+      }else{
+        var c=l[i].childNodes;
+        for(var j=0;j<c.length;j++){
+          if(c[j].selected){
+            s.push([l[i].name,encodeURIComponent(c[j].value)]);
+          }
         }
       }
     }
-  }
-
-  // OPTGROUP(OPTION)
-  l=document.getElementsByTagName('optgroup');
-  for(var i=0;i<l.length;i++){
-    if(!containName(t,l[i].name)){
-      var c=l[i].childNodes;
-      for(var j=0;j<c.length;j++){
-        if(c[j].selected){
-          r.push([l[i].name,encodeURIComponent(c[j].value)]);
+  
+    // OPTGROUP(OPTION)
+    l=document.getElementsByTagName('optgroup');
+    for(var i=0;i<l.length;i++){
+      if(!containName(t,l[i].name)){
+        var c=l[i].childNodes;
+        for(var j=0;j<c.length;j++){
+          if(c[j].selected){
+            r.push([l[i].name,encodeURIComponent(c[j].value)]);
+          }
         }
-      }
-    }else{
-      var c=l[i].childNodes;
-      for(var j=0;j<c.length;j++){
-        if(c[j].selected){
-          s.push([l[i].name,encodeURIComponent(c[j].value)]);
+      }else{
+        var c=l[i].childNodes;
+        for(var j=0;j<c.length;j++){
+          if(c[j].selected){
+            s.push([l[i].name,encodeURIComponent(c[j].value)]);
+          }
         }
       }
     }
@@ -1080,8 +1125,8 @@ function __x_kahua_generate_q(id){
   return encodeURIComponent(xkahua);
 }
 
-function x_kahua_keep_client_context_without(me,id){
-  xkahua='x-kahua-client-context='+__x_kahua_generate_q(id);
+function x_kahua_keep_client_context_without(me,id,types){
+  xkahua='x-kahua-client-context='+__x_kahua_generate_q(id,types);
   var u=me.href.match(/([^?#]+)(\\?[^#]+)?(#.+)?/);
   me.href=u[1];
   if(typeof u[2]=='undefined'){
@@ -1094,11 +1139,11 @@ function x_kahua_keep_client_context_without(me,id){
   }
 }
 
-function x_kahua_collect_client_context_without(me,id){
+function x_kahua_collect_client_context_without(me,id,types){
   var inp=document.createElement('input');
   inp.type='hidden';
   inp.name='x-kahua-client-context';
-  inp.value=__x_kahua_generate_q(id);
+  inp.value=__x_kahua_generate_q(id,types);
   me.appendChild(inp);
 }
 " "</" script "\n>"))
@@ -1556,10 +1601,19 @@ function x_kahua_collect_client_context_without(me,id){
 	  (else                            (kahua-self-uri (fragment auxs)))))
 
   (define (auxs&attrs->js auxs attrs)
+    (define (types->js-array lst)
+      (if (memq #t lst)
+	  "['textarea','checkbox','radio','text','password','select']"
+	  (string-append "[" (string-join
+			      (map (lambda (typ)
+				     #`"',(string-downcase (x->string typ))'")
+				   lst) ",")
+			 "]")))
     (let* ((keep? (assq-ref auxs 'keep))
 	   (tid (or (assq-ref-car auxs 'target) "x-kahua-dummy"))
 	   (onclick (assq-ref-car attrs 'onclick))
-	   (code #`"x_kahua_keep_client_context_without(this,,',tid')"))
+	   (types (if keep? (types->js-array keep?) "[]"))
+	   (code #`"x_kahua_keep_client_context_without(this,, ',tid',, ,types)"))
       (cond (keep? => (lambda (claus)
 			(set-cdr! (assoc "x-kahua-keep-client-context" context) #t)
 			(if onclick
@@ -1620,10 +1674,19 @@ function x_kahua_collect_client_context_without(me,id){
 	  (else                               (values (kahua-self-uri (fragment auxs)) '()))))
 
   (define (auxs&attrs->js auxs attrs)
+    (define (types->js-array lst)
+      (if (memq #t lst)
+	  "['textarea','checkbox','radio','text','password','select']"
+	  (string-append "[" (string-join
+			      (map (lambda (typ)
+				     #`"',(string-downcase (x->string typ))'")
+				   lst) ",")
+			 "]")))
     (let* ((keep? (assq-ref auxs 'keep))
 	   (tid (or (assq-ref-car auxs 'target) "x-kahua-dummy"))
 	   (onsubmit (assq-ref-car attrs 'onsubmit))
-	   (code #`"x_kahua_collect_client_context_without(this,,',tid')"))
+	   (types (if keep? (types->js-array keep?) "[]"))
+	   (code #`"x_kahua_collect_client_context_without(this,,',tid',, ,types)"))
       (cond (keep? => (lambda (claus)
 			(set-cdr! (assoc "x-kahua-keep-client-context" context) #t)
 			(if onsubmit

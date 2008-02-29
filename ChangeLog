@@ -1,3 +1,11 @@
+2008-03-01  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: keep clause can get symbol or string data.
+	          example (keep 'text "textarea" "checkbox" ...)
+	          This collect/keep client context selectable by type.
+	          The types are text/textarea/password/checkbox/radio/select.
+	          Or #t means all types collect/keep.
+	
 2008-02-29  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Change: support symbol key for kahua-client-context-ref
