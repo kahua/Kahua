@@ -1,5 +1,9 @@
 2008-02-29  Katsutoshi Itoh <cut-sea@kahua.org>
 
+	* Change: doc/Modules/kahua.elem.jp
+	          doc/Modules/kahua.server.jp
+	          add explainment for keep clause at @@ auxs and
+	          kahua-client-context-ref/kahua-client-context-ref*
 	* Change: add optgroup handling on javascript.
 	* Change: modify client side data binding methodology.
 	          new kahua server side binding.

@@ -1334,6 +1334,19 @@ function x_kahua_collect_client_context_without(me,id){
 ;;  but just only my-part.
 ;;  So, this abstract partial update.
 ;;
+;;  Example: (define (my-part n)
+;;              (div (@ (id "me"))
+;;                (a/cont (@@ (parts-cont my-part (+ n 1))
+;;                            (target "me")
+;;                            (keep #t)))))
+;;
+;;  'keep' clause generate javascript and into HTML script tag.
+;;  The script code keep client side input/textarea/select's state.
+;;  And auto binding these values without parts-cont's replaced node.
+;;  And when html include (keep #t) clause, Kahua programmer can call
+;;  kahua-client-context-ref and kahua-client-context-ref*  at server side.
+;;  these API can return client side input or selected values.
+;;
 ;;
 ;;  Next variation of 'cont' can be used to pass the control to other
 ;;  application server:
