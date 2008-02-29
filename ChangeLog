@@ -1,6 +1,6 @@
 2008-03-01  Katsutoshi Itoh <cut-sea@kahua.org>
 
-	* Change: doc/Modules/kahua.server.ja
+	* Change: doc/Modules/kahua.elem.ja
 	          modify document at keep clause section.
 	* Change: keep clause can get symbol or string data.
 	          example (keep 'text "textarea" "checkbox" ...)
