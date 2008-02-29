@@ -113,6 +113,7 @@ Example: (define (my-part n)
 入力状態や選択状態を保持するために働きます。
 保持したデータはparts-contで挿し換えられるノードを除いて、
 サーバサイドで全て自動バインドされます。
+もちろんname属性を持たないノードもコンテキストを保持できません。
 また、(keep #t)節をHTML中に含めた時、Kahuaプログラマは
 kahua-client-context-refとkahua-client-context-ref*の2つのAPIが意味を持ちます。
 これらのAPIを使うとクライアントサイドでの入力中のテキストデータや
@@ -122,6 +123,8 @@ kahua-client-context-refとkahua-client-context-ref*の2つのAPIが意味を持
 #tとした場合にはこれら6種類全てが指定されたものとみなします。
 複数のタイプを対象にしたい場合には(keep 'text "textarea" 'checkbox)
 のように指定してください。
+keep節を指定しない場合には(keep #f)された場合と同じ意味に扱われます。
+すなわちどのタイプのコンテキストも保持しません。
 
 
 次の'cont'の亜種は他のアプリケーションワーカーの制御に渡ります。

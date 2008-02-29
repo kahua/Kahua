@@ -1,5 +1,6 @@
 2008-03-01  Katsutoshi Itoh <cut-sea@kahua.org>
 
+	* Change: keep clause can get #f which mean as no keep/collect.
 	* Change: doc/Modules/kahua.elem.ja
 	          modify document at keep clause section.
 	* Change: keep clause can get symbol or string data.

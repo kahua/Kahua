@@ -1388,6 +1388,7 @@ function x_kahua_collect_client_context_without(me,id,types){
 ;;  'keep' clause generate javascript and into HTML script tag.
 ;;  The script code keep client side input/textarea/select's state.
 ;;  And auto binding these values without parts-cont's replaced node.
+;;  Of course, no name node couldn't keep the context.
 ;;  And when html include (keep #t) clause, Kahua programmer can call
 ;;  kahua-client-context-ref and kahua-client-context-ref*  at server side.
 ;;  these API can return client side input or selected values.
@@ -1397,6 +1398,8 @@ function x_kahua_collect_client_context_without(me,id,types){
 ;;  It's specified by symbol or string as value of keep clause.
 ;;  For instance, (keep 'text "textarea" 'checkbox ...).
 ;;  When #t is incldued, this means specify all 6 types.
+;;  If you set keep clause, which mean (keep #f) , so no types are
+;;  kept/collected anywhere.
 ;;
 ;;  Next variation of 'cont' can be used to pass the control to other
 ;;  application server:
@@ -1607,13 +1610,15 @@ function x_kahua_collect_client_context_without(me,id,types){
 
   (define (auxs&attrs->js auxs attrs)
     (define (types->js-array lst)
-      (if (memq #t lst)
-	  "['textarea','checkbox','radio','text','password','select']"
-	  (string-append "[" (string-join
-			      (map (lambda (typ)
-				     #`"',(string-downcase (x->string typ))'")
-				   lst) ",")
-			 "]")))
+      (cond ((memq #t lst)
+	     "['textarea','checkbox','radio','text','password','select']")
+	    ((memq #f lst) "[]")
+	    (else
+	     (string-append "[" (string-join
+				 (map (lambda (typ)
+					#`"',(string-downcase (x->string typ))'")
+				      lst) ",")
+			    "]"))))
     (let* ((keep? (assq-ref auxs 'keep))
 	   (tid (or (assq-ref-car auxs 'target) "x-kahua-dummy"))
 	   (onclick (assq-ref-car attrs 'onclick))
@@ -1680,13 +1685,15 @@ function x_kahua_collect_client_context_without(me,id,types){
 
   (define (auxs&attrs->js auxs attrs)
     (define (types->js-array lst)
-      (if (memq #t lst)
-	  "['textarea','checkbox','radio','text','password','select']"
-	  (string-append "[" (string-join
-			      (map (lambda (typ)
-				     #`"',(string-downcase (x->string typ))'")
-				   lst) ",")
-			 "]")))
+      (cond ((memq #t lst)
+	     "['textarea','checkbox','radio','text','password','select']")
+	    ((memq #f lst) "[]")
+	    (else
+	     (string-append "[" (string-join
+				 (map (lambda (typ)
+					#`"',(string-downcase (x->string typ))'")
+				      lst) ",")
+			    "]"))))
     (let* ((keep? (assq-ref auxs 'keep))
 	   (tid (or (assq-ref-car auxs 'target) "x-kahua-dummy"))
 	   (onsubmit (assq-ref-car attrs 'onsubmit))
