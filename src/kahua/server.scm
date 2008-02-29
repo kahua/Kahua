@@ -1391,7 +1391,12 @@ function x_kahua_collect_client_context_without(me,id,types){
 ;;  And when html include (keep #t) clause, Kahua programmer can call
 ;;  kahua-client-context-ref and kahua-client-context-ref*  at server side.
 ;;  these API can return client side input or selected values.
-;;
+;;  And Kahua programmer can specify types to keep/collect at
+;;   client side context.
+;;  The 'types' are textarea/text/password/checkbox/radio/select as 6 types.
+;;  It's specified by symbol or string as value of keep clause.
+;;  For instance, (keep 'text "textarea" 'checkbox ...).
+;;  When #t is incldued, this means specify all 6 types.
 ;;
 ;;  Next variation of 'cont' can be used to pass the control to other
 ;;  application server:

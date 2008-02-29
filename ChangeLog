@@ -1,5 +1,7 @@
 2008-03-01  Katsutoshi Itoh <cut-sea@kahua.org>
 
+	* Change: doc/Modules/kahua.server.ja
+	          modify document at keep clause section.
 	* Change: keep clause can get symbol or string data.
 	          example (keep 'text "textarea" "checkbox" ...)
 	          This collect/keep client context selectable by type.
@@ -10,8 +12,8 @@
 
 	* Change: support symbol key for kahua-client-context-ref
 	          and kahua-client-context-ref*.
-	* Change: doc/Modules/kahua.elem.jp
-	          doc/Modules/kahua.server.jp
+	* Change: doc/Modules/kahua.elem.ja
+	          doc/Modules/kahua.server.ja
 	          add explainment for keep clause at @@ auxs and
 	          kahua-client-context-ref/kahua-client-context-ref*
 	* Change: add optgroup handling on javascript.

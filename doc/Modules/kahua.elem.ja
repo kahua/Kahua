@@ -117,6 +117,11 @@ Example: (define (my-part n)
 kahua-client-context-refとkahua-client-context-ref*の2つのAPIが意味を持ちます。
 これらのAPIを使うとクライアントサイドでの入力中のテキストデータや
 選択されているデータを取得することができます。
+なお、keep節はシンボルまたは文字列で保持するコンテキストのタイプを指定できます。
+指定可能なタイプは、textarea/text/password/checkbox/radio/selectの6種類です。
+#tとした場合にはこれら6種類全てが指定されたものとみなします。
+複数のタイプを対象にしたい場合には(keep 'text "textarea" 'checkbox)
+のように指定してください。
 
 
 次の'cont'の亜種は他のアプリケーションワーカーの制御に渡ります。
