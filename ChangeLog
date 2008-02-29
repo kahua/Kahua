@@ -1,5 +1,6 @@
 2008-02-29  Katsutoshi Itoh <cut-sea@kahua.org>
 
+	* Change: add optgroup handling on javascript.
 	* Change: modify client side data binding methodology.
 	          new kahua server side binding.
 	* Change: str->alist ,which is internal defined function of

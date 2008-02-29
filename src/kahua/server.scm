@@ -1030,8 +1030,28 @@ function __x_kahua_generate_q(id){
     }
   }
 
-  // SELECT(OPTION) //TODO: handle for OPTGROUP case
+  // SELECT(OPTION)
   l=document.getElementsByTagName('select');
+  for(var i=0;i<l.length;i++){
+    if(!containName(t,l[i].name)){
+      var c=l[i].childNodes;
+      for(var j=0;j<c.length;j++){
+        if(c[j].selected){
+          r.push([l[i].name,encodeURIComponent(c[j].value)]);
+        }
+      }
+    }else{
+      var c=l[i].childNodes;
+      for(var j=0;j<c.length;j++){
+        if(c[j].selected){
+          s.push([l[i].name,encodeURIComponent(c[j].value)]);
+        }
+      }
+    }
+  }
+
+  // OPTGROUP(OPTION)
+  l=document.getElementsByTagName('optgroup');
   for(var i=0;i<l.length;i++){
     if(!containName(t,l[i].name)){
       var c=l[i].childNodes;
