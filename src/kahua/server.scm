@@ -1537,7 +1537,7 @@ function x_kahua_collect_client_context(me,id,types){
 	    (else #f)))
     (define (drop-attr attr key)
       (cons '@ (remove (lambda (a) (eq? (car a) key)) (cdr attr))))
-    ;; TODO: coding...
+    ;; Auto Bind client side data
     (define (replace-kept-value node-set node-type name)
       (define (set-value-input ns vs)
 	(cond ((assq '@ ns)
@@ -1563,7 +1563,10 @@ function x_kahua_collect_client_context(me,id,types){
 						       `(,(append (drop-attr attr 'checked) '((checked #t))))
 						       `(,(drop-attr attr 'checked)))))))
 				      (else ns))))
-			  (else ns))))
+			  (else ;; type attr not found means default type "text"
+			   (if (null? vs)
+			       `(,(drop-attr attr 'value))
+			       `(,(append (drop-attr attr 'value) `((value ,@vs)))))))))
 	      (else ns)))
       (define (set-value-textarea ns vs) `(,(assoc '@ ns) ,@vs))
       (define (set-value-select ns vs)

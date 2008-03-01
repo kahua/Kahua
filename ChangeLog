@@ -1,5 +1,8 @@
 2008-03-02  Katsutoshi Itoh <cut-sea@kahua.org>
 
+	* Fix: Bug for Auto Bind client side data.
+	       When input tag has no type attr,
+	       then lost value.
 	* Fix: bug fix reported by Koguro.
 	
 2008-03-01  Katsutoshi Itoh <cut-sea@kahua.org>
