@@ -332,9 +332,14 @@
                     ((procedure? nodes) (car (rev-nodes (exec '() nodes))))
                     ((eq? (car nodes) 'node-set) (cadr nodes))
                     (else (car nodes))))
-         (interp (get-interp expanded)))
-    (interp expanded (cons `("x-kahua-keep-client-context" . #f)
-			   (cons `("x-kahua-expanded-node" . (,expanded)) context)) values)))
+         (interp (get-interp expanded))
+	 (prepare (get-prepare expanded)))
+    (receive (expanded context)
+	(prepare expanded
+		 (cons `("x-kahua-keep-client-context" . #f)
+		       (cons `("x-kahua-expanded-node" . (,expanded)) context))
+		 values)
+      (interp expanded context values))))
 
 (define-values (add-interp! get-interp)
   (let ((table (make-hash-table))
@@ -347,6 +352,18 @@
            (set! default-interp proc))))
      (lambda (nodes)
        (hash-table-get table (car nodes) default-interp)))))
+
+(define-values (add-prepare! get-prepare)
+  (let ((table (make-hash-table))
+        (default-prepare #f))
+    (values
+     (lambda (type proc . default)
+       (let ((option (get-optional default #f)))
+         (hash-table-put! table type proc)
+         (if (or (not default-prepare) option)
+           (set! default-prepare proc))))
+     (lambda (nodes)
+       (hash-table-get table (car nodes) default-prepare)))))
 
 (define (kahua-render nodes context)
   (tree->string (kahua-render-proc nodes context)))
@@ -1201,8 +1218,38 @@ function x_kahua_collect_client_context_without(me,id,types){
 (define interp-html-rec (interp-html-rec-gen default-element-handler))
 (define interp-html-rec-bis  (interp-html-rec-gen default-element-handler-bis))
 
+;; PREPARE-HTML-REC
+;;
+;; Now, return node.
+;; this procedure's aim are check 'keep' clause
+;; and set "x-kahua-keep-client-context" #t.
+;;
+(define (prepare-html-rec node context cont)
+  (define (html-rec node)
+    (call/cc
+     (lambda (c)
+       (cond ((null? node) node)
+	     ((list? node)
+	      (cond ((memq (car node) '(a/cont form/cont))
+		     (cond ((assq-ref (cdr node) '@@)
+			    => (lambda (clauses)
+				 (cond ((assq-ref clauses 'keep)
+					;; KEEP CLAUSE FOUND
+					(set-cdr! (assoc "x-kahua-keep-client-context" context) #t)
+					(c node))
+				       (else node))))
+			   (else (cons (html-rec (car node))
+				       (html-rec (cdr node))))))
+		    (else (cons (html-rec (car node))
+				(html-rec (cdr node))))))
+	     (else node))))
+    ;; return original node
+    node)
+  (cont (html-rec node) context))
+
 ;; set interp-html-rec as default interp
 (add-interp! 'html interp-html-rec #t)
+(add-prepare! 'html prepare-html-rec #t)
 
 ;;
 ;; interp-xhtml - This is very transitional code.
@@ -1625,7 +1672,6 @@ function x_kahua_collect_client_context_without(me,id,types){
 	   (types (if keep? (types->js-array keep?) "[]"))
 	   (code #`"x_kahua_keep_client_context_without(this,, ',tid',, ,types)"))
       (cond (keep? => (lambda (claus)
-			(set-cdr! (assoc "x-kahua-keep-client-context" context) #t)
 			(if onclick
 			    `((onclick ,#`",code ; ,onclick"))
 			    `((onclick ,code)))))
@@ -1700,7 +1746,6 @@ function x_kahua_collect_client_context_without(me,id,types){
 	   (types (if keep? (types->js-array keep?) "[]"))
 	   (code #`"x_kahua_collect_client_context_without(this,,',tid',, ,types)"))
       (cond (keep? => (lambda (claus)
-			(set-cdr! (assoc "x-kahua-keep-client-context" context) #t)
 			(if onsubmit
 			    `((onsubmit ,#`",code ; ,onsubmit"))
 			    `((onsubmit ,code)))))

@@ -1,5 +1,8 @@
 2008-03-01  Katsutoshi Itoh <cut-sea@kahua.org>
 
+	* Fix: When first access, then x-kahua-client-context can't set #t.
+	       So, at the time, javascript couldn't insert head tag.
+	       For fix the bug, introduce prepare procedure before interp.
 	* Change: keep clause can get #f which mean as no keep/collect.
 	* Change: doc/Modules/kahua.elem.ja
 	          modify document at keep clause section.
