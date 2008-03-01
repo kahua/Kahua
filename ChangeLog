@@ -1,5 +1,7 @@
 2008-03-01  Katsutoshi Itoh <cut-sea@kahua.org>
 
+	* Fix: Some bugs typo and so on.
+	       These are all reported by Koguro.
 	* Fix: When first access, then x-kahua-client-context can't set #t.
 	       So, at the time, javascript couldn't insert head tag.
 	       For fix the bug, introduce prepare procedure before interp.

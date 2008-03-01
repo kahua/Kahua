@@ -307,7 +307,7 @@
 						  (string-append type "/" type ".kahua"))
 						args)))))))))
         (else
-	 (lot-format "Worker not found")
+	 (log-format "Worker not found")
 	 (spvr-errorf <kahua-worker-not-found>
 		      "unknown worker type: ~a" worker-type))))
 
@@ -409,7 +409,7 @@
 (define-method %list-workers ((self <kahua-worker-type>))
   (let1 wcl (workers-of self)
     (if wcl
-	(sort! (circular-list->list )
+	(sort! (circular-list->list wcl)
 	       (lambda (w1 w2)
 		 (< (slot-ref w1 'wno) (slot-ref w2 'wno))))
 	'())))

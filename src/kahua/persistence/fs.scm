@@ -91,7 +91,7 @@
 (define-constant *unlock-db-fs* (make <sys-flock> :type F_UNLCK))
 (define-method lock-db ((db <kahua-db-fs>))
   (let1 lock-file (lock-path-of db)
-    (let1 lock-port (open-output-file lock-file :if-exists? :append)
+    (let1 lock-port (open-output-file lock-file :if-exists :append)
       (define (try-lock retry)
         (cond ((zero? retry) #f)
               ((sys-fcntl lock-port F_SETLK *lock-db-fs*)

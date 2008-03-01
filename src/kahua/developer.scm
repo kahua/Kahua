@@ -65,7 +65,7 @@
         (define (try-lock retry)
           (cond ((zero? retry) #f)
                 ((sys-fcntl lock-port F_SETLK record) lock-port)
-                (else (try-lock (- record 1)))))
+                (else (try-lock (- retry 1)))))
         (unless (file-exists? lock-file)
           (with-output-to-file lock-file (lambda () (newline))))
         (set! lock-port (open-output-file lock-file :if-exists :append))
