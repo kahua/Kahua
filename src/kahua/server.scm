@@ -1142,7 +1142,7 @@ function __x_kahua_generate_q(id,types){
   return encodeURIComponent(xkahua);
 }
 
-function x_kahua_keep_client_context_without(me,id,types){
+function x_kahua_keep_client_context(me,id,types){
   xkahua='x-kahua-client-context='+__x_kahua_generate_q(id,types);
   var u=me.href.match(/([^?#]+)(\\?[^#]+)?(#.+)?/);
   me.href=u[1];
@@ -1156,7 +1156,7 @@ function x_kahua_keep_client_context_without(me,id,types){
   }
 }
 
-function x_kahua_collect_client_context_without(me,id,types){
+function x_kahua_collect_client_context(me,id,types){
   var inp=document.createElement('input');
   inp.type='hidden';
   inp.name='x-kahua-client-context';
@@ -1670,7 +1670,7 @@ function x_kahua_collect_client_context_without(me,id,types){
 	   (tid (or (assq-ref-car auxs 'target) "x-kahua-dummy"))
 	   (onclick (assq-ref-car attrs 'onclick))
 	   (types (if keep? (types->js-array keep?) "[]"))
-	   (code #`"x_kahua_keep_client_context_without(this,, ',tid',, ,types)"))
+	   (code #`"x_kahua_keep_client_context(this,, ',tid',, ,types)"))
       (cond (keep? => (lambda (claus)
 			(if onclick
 			    `((onclick ,#`",code ; ,onclick"))
@@ -1744,7 +1744,7 @@ function x_kahua_collect_client_context_without(me,id,types){
 	   (tid (or (assq-ref-car auxs 'target) "x-kahua-dummy"))
 	   (onsubmit (assq-ref-car attrs 'onsubmit))
 	   (types (if keep? (types->js-array keep?) "[]"))
-	   (code #`"x_kahua_collect_client_context_without(this,,',tid',, ,types)"))
+	   (code #`"x_kahua_collect_client_context(this,,',tid',, ,types)"))
       (cond (keep? => (lambda (claus)
 			(if onsubmit
 			    `((onsubmit ,#`",code ; ,onsubmit"))
