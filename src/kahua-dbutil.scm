@@ -14,10 +14,11 @@
 
 (define (usage)
   (with-output-to-port (current-error-port)
-    (display "Usage: kahua-dbutil {check|fix} <dbname>\n")
-    (display "       kahua-dbutil upgrade <path-to-fsdb>\n")
-    (display "  *sorry but this command is very transitional.\n")
-    (exit 1)))
+    (lambda ()
+      (display "Usage: kahua-dbutil {check|fix} <dbname>\n")
+      (display "       kahua-dbutil upgrade <path-to-fsdb>\n")
+      (display "  *sorry but this command is very transitional.\n")
+      (exit 1))))
 
 (define (upgrade-fsdb path)
   (dbutil:kahua-db-fs->efs path)
