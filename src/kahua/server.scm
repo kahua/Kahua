@@ -992,8 +992,7 @@
 ;; Maybe sxml parser is too strict??
 ;;
 (define %%x-kahua-keep-client-context-js%%
-  `("<" script " type='text/javascript'>"
-    "
+"
 function __x_kahua_generate_q(id,types){
   function containName(e,n){
     if(e==null){return false;}
@@ -1163,7 +1162,7 @@ function x_kahua_collect_client_context(me,id,types){
   inp.value=__x_kahua_generate_q(id,types);
   me.appendChild(inp);
 }
-" "</" script "\n>"))
+")
 
 (define (default-element-handler tag attrs content context cont)
   (handle-element-contents
@@ -1172,12 +1171,6 @@ function x_kahua_collect_client_context(me,id,types){
      (cond ((memq tag '(area base basefont br col frame hr img
 			     input isindex link meta param))
 	    (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) " />") context))
-	   ((and (eq? tag 'head) (cdr (assoc "x-kahua-keep-client-context" context)))
-	    (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
-		    ,@stree
-		    ,%%x-kahua-keep-client-context-js%%
-		    "</" ,tag "\n>")
-		  context))
 	   (else (cont `("<" ,tag ,(map sxml:attr->xml-bis attrs) ">"
 			 ,@stree
 			 "</" ,tag "\n>")
@@ -1228,23 +1221,41 @@ function x_kahua_collect_client_context(me,id,types){
   (define (html-rec node)
     (call/cc
      (lambda (c)
-       (cond ((null? node) node)
-	     ((list? node)
-	      (cond ((memq (car node) '(a/cont form/cont))
-		     (cond ((assq-ref (cdr node) '@@)
-			    => (lambda (clauses)
-				 (cond ((assq-ref clauses 'keep)
-					;; KEEP CLAUSE FOUND
-					(set-cdr! (assoc "x-kahua-keep-client-context" context) #t)
-					(c node))
-				       (else node))))
-			   (else (cons (html-rec (car node))
-				       (html-rec (cdr node))))))
-		    (else (cons (html-rec (car node))
-				(html-rec (cdr node))))))
-	     (else node))))
-    ;; return original node
-    node)
+       (define (trav nd)
+	 (cond ((null? nd) nd)
+	       ((list? nd)
+		(cond ((memq (car nd) '(a/cont form/cont))
+		       (cond ((assq-ref (cdr nd) '@@)
+			      => (lambda (clauses)
+				   (cond ((assq-ref clauses 'keep)
+					  ;; KEEP CLAUSE FOUND
+					  (set-cdr! (assoc "x-kahua-keep-client-context" context) #t)
+					  (c nd))
+					 (else nd))))
+			     (else (cons (trav (car nd))
+					 (trav (cdr nd))))))
+		      (else (cons (trav (car nd))
+				  (trav (cdr nd))))))
+	       (else nd)))
+       (trav node)))
+    (cond ((cdr (assoc "x-kahua-keep-client-context" context))
+	   (match node
+	     (('html ('head . hs) ('body . bs))
+	      `(html (head ,@hs
+			   (script ,%%x-kahua-keep-client-context-js%%))
+		     (body ,@bs)))
+	     (('html ('body . bs) ('head . hs))
+	      `(html (head ,@hs
+			   (script ,%%x-kahua-keep-client-context-js%%))
+		     (body ,@bs)))
+	     (('html ('body . bs))
+	      `(html (head (script ,%%x-kahua-keep-client-context-js%%))
+		     (body ,@bs)))
+	     (('html ('head . hs))
+	      `(html (head ,@hs
+			   (script ,%%x-kahua-keep-client-context-js%%))))
+	     (else node)))
+	  (else node)))
   (cont (html-rec node) context))
 
 ;; set interp-html-rec as default interp

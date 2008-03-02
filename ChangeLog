@@ -1,5 +1,8 @@
 2008-03-02  Katsutoshi Itoh <cut-sea@kahua.org>
 
+	* Change: Refactoring code at prepare.
+	          If keep clause exists and head tag not found,
+	          insert head tag and javascirpt.
 	* Fix: Bug for Auto Bind client side data.
 	       When input tag has no type attr,
 	       then lost value.
