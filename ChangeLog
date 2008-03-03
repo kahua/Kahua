@@ -1,3 +1,23 @@
+2008-03-02  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: bug fix reported by Koguro.
+	
+2008-03-01  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: Some bugs typo and so on.
+	       These are all reported by Koguro.
+	* Fix: When first access, then x-kahua-client-context can't set #t.
+	       So, at the time, javascript couldn't insert head tag.
+	       For fix the bug, introduce prepare procedure before interp.
+	* Change: keep clause can get #f which mean as no keep/collect.
+	* Change: doc/Modules/kahua.elem.ja
+	          modify document at keep clause section.
+	* Change: keep clause can get symbol or string data.
+	          example (keep 'text "textarea" "checkbox" ...)
+	          This collect/keep client context selectable by type.
+	          The types are text/textarea/password/checkbox/radio/select.
+	          Or #t means all types collect/keep.
+	
 2007-12-25  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: emacs/kahua.el.in
