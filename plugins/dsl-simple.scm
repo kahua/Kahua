@@ -18,9 +18,16 @@
 	  selfish
 
 	  readln/
+	  readpass/
+	  fileref/
+	  check/
+	  check-set/
+	  radio-set/
 	  readtext/
 	  submit/
 	  reset/
+	  dropdown/
+	  multisel/
 	  )
   (depend #f))
 
@@ -57,17 +64,64 @@
 
 (define-macro (readln/ name)
   (let1 n (x->string name)
-    `(input/ (@/ (name ,n)))))
+    `(label/ ,#`",n :" (input/ (@/ (name ,n))))))
+
+(define-macro (readpass/ pass)
+  (let1 p (x->string pass)
+    `(label/ ,#`",p :" (input/ (@/ (type "password") (name ,p))))))
+
+(define-macro (fileref/ file)
+  (let1 f (x->string file)
+    `(label/ ,#`",f :" (input/ (@/ (type "file") (name ,f))))))
+
+(define-macro (check/ cbox)
+  (let1 c (x->string cbox)
+    `(label/ (input/ (@/ (type "checkbox") (name ,c))) ,c)))
+
+(define-macro (check-set/ name lst)
+  `(let ((n ,(x->string name))
+	 (ls (map x->string ,lst)))
+     (label/ #`",n :"
+	     (map/ (lambda (v)
+		     (label/ (input/ (@/ (type "checkbox") (name v))) v))
+		   ls))))
+
+(define-macro (radio-set/ name lst)
+  `(let* ((nm ,(x->string name))
+	  (ls (map x->string ,lst)))
+     (label/ #`",nm :"
+	     (map/ (lambda (v)
+		     (label/ (input/ (@/ (type "radio") (name nm) (value v))) v))
+		   ls))))
 
 (define-macro (readtext/ name)
   (let1 n (x->string name)
-    `(textarea/ (@/ (name ,n)))))
+    `(label/ ,#`",n :" (textarea/ (@/ (name ,n))))))
 
 (define (submit/)
   (input/ (@/ (type "submit"))))
 
 (define (reset/)
   (input/ (@/ (type "reset"))))
+
+(define-macro (dropdown/ name lst)
+  `(let* ((nm ,(x->string name))
+	  (ls (map x->string ,lst)))
+     (label/ #`",nm :"
+	     (select/
+	      (@/ (name nm))
+	      (map/ (lambda (v) (option/ (@/ (value v)) v)) ls)))))
+
+(define-macro (multisel/ name lst)
+  `(let* ((nm ,(x->string name))
+	  (l (min 5 (length ,lst)))
+	  (ls (map x->string ,lst)))
+     (label/ #`",nm :"
+	     (select/
+	      (@/ (name nm) (multiple #t) (size l))
+	      (map/ (lambda (v) (option/ (@/ (value v)) v)) ls)))))
+
+
 
 ;;; Local Variables:
 ;;; mode: scheme

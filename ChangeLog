@@ -1,3 +1,11 @@
+2008-03-04  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: plugin/dsl-simple.scm
+	          add components below.
+	          readpass/,fileref/,check/,check-set/,radio-set/,
+	          dropdown/ and multisel/.
+	          And included these each component by label.
+	
 2008-03-03  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Change: src/kahua/server.scm
