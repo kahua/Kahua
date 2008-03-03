@@ -48,6 +48,11 @@
         (call-worker/gsid->sxml w '() '() '(// (or@ a li)))
 	(make-match&pick w))
 
+ (test* "header->sxml page 1"
+        '(*TOP* (!contain (Status "302 Found") (Location ?&)))
+        (call-worker/gsid w '() '() header->sxml)
+	(make-match&pick w))
+
  (test* "p2 at list-1 & p1 at list-2"
         '(*TOP* (a ?@ "<<")
 		(a (@ (href ?&)) ">>")
@@ -55,6 +60,11 @@
 		(a ?@ ">>")
 		(li "4") (li "5") (li "6") (li "1") (li "2") (li "3"))
         (call-worker/gsid->sxml w '() '() '(// (or@ a li)))
+	(make-match&pick w))
+
+ (test* "header->sxml page 2"
+        '(*TOP* (!contain (Status "302 Found") (Location ?&)))
+        (call-worker/gsid w '() '() header->sxml)
 	(make-match&pick w))
 
  (test* "p3 at list-1 & p1 at list-2"
@@ -66,6 +76,11 @@
         (call-worker/gsid->sxml w '() '() '(// (or@ a li)))
 	(make-match&pick w))
 
+ (test* "header->sxml page 3"
+        '(*TOP* (!contain (Status "302 Found") (Location ?&)))
+        (call-worker/gsid w '() '() header->sxml)
+	(make-match&pick w))
+
  (test* "p3 at list-1 & p2 at list-2"
         '(*TOP* (a (@ (href ?&)) "<<")
 		(a ?@ ">>")
@@ -73,6 +88,11 @@
 		(a ?@ ">>")
 		(li "7") (li "8") (li "9") (li "4") (li "5") (li "6"))
         (call-worker/gsid->sxml w '() '() '(// (or@ a li)))
+	(make-match&pick w))
+
+ (test* "header->sxml page 4"
+        '(*TOP* (!contain (Status "302 Found") (Location ?&)))
+        (call-worker/gsid w '() '() header->sxml)
 	(make-match&pick w))
 
  (test* "p2 at list-1 & p2 at list-2"
@@ -84,7 +104,26 @@
         (call-worker/gsid->sxml w '() '() '(// (or@ a li)))
 	(make-match&pick w))
 
+ (test* "header->sxml page 5"
+        '(*TOP* (!contain (Status "302 Found") (Location ?&)))
+        (call-worker/gsid w '() '() header->sxml)
+	(make-match&pick w))
+
+ (test* "p2 at list-1 & p2 at list-2"
+        '(*TOP* (a ?@ "<<")
+		(a ?@ ">>")
+		(a ?@ "<<")
+		(a (@ (href ?&)) ">>")
+		(li "4") (li "5") (li "6") (li "7") (li "8") (li "9"))
+        (call-worker/gsid->sxml w '() '() '(// (or@ a li)))
+	(make-match&pick w))
+
  (set-gsid w 'save1)
+
+ (test* "header->sxml page 6"
+        '(*TOP* (!contain (Status "302 Found") (Location ?&)))
+        (call-worker/gsid w '() '() header->sxml)
+	(make-match&pick w))
 
  (test* "brawser's back button attack - p4 at list-1 & p1 at list-2"
         '(*TOP* (a ?@ "<<")
@@ -93,6 +132,11 @@
 		(a (@ (href ?&)) ">>")
 		(li "10") (li "11") (li "12") (li "1") (li "2") (li "3"))
         (call-worker/gsid->sxml w '() '() '(// (or@ a li)))
+	(make-match&pick w))
+
+ (test* "header->sxml page 7"
+        '(*TOP* (!contain (Status "302 Found") (Location ?&)))
+        (call-worker/gsid w '() '() header->sxml)
 	(make-match&pick w))
 
  (test* "p4 at list-1 & p2 at list-2"
@@ -108,6 +152,11 @@
         (call-worker/gsid->sxml w '() '() '(// (or@ li form)))
 	(make-match&pick w))
 
+ (test* "header->sxml page 8"
+        '(*TOP* (!contain (Status "302 Found") (Location ?&)))
+        (call-worker/gsid w '() '(("name" "cut-sea") ("age" "37")) header->sxml)
+	(make-match&pick w))
+
  (test* "data insert1 & keep paging list-1&2"
         '(*TOP*
 	  (form (@ (method "POST")
@@ -118,10 +167,12 @@
 		(input (@ (value "Add") (type "submit")))
 		(dl (dt "cut-sea" (dd "37"))))
 	  (li "10") (li "11") (li "12") (li "4") (li "5") (li "6"))
-        (call-worker/gsid->sxml w
-				'()
-				'(("name" "cut-sea") ("age" "37"))
-				'(// (or@ li form)))
+        (call-worker/gsid->sxml w '() '() '(// (or@ li form)))
+	(make-match&pick w))
+
+ (test* "header->sxml page 8"
+        '(*TOP* (!contain (Status "302 Found") (Location ?&)))
+        (call-worker/gsid w '() '(("name" "shiro") ("age" "38")) header->sxml)
 	(make-match&pick w))
 
  (test* "data insert2 & keep paging list-1&2"
@@ -140,32 +191,7 @@
 		(input (@ (value "Add") (type "submit")))
 		(dl (dt "shiro" (dd "38"))
 		    (dt "cut-sea" (dd "37")))))
-        (call-worker/gsid->sxml w
-				'()
-				'(("name" "shiro") ("age" "38"))
-				'(// (or@ div form)))
-	(make-match&pick w))
-
- (test* "p3 at list-1 & p2 at list-2 & keep inserted data"
-        '(*TOP*
-	  (div (@ (id "pg1"))
-	       (a (@ (href ?&)) "<<")
-	       (a ?@ ">>")
-	       (ul (li "7") (li "8") (li "9")))
-	  (div (@ (id "pg2"))
-	       (a ?@ "<<")
-	       (a ?@ ">>")
-	       (ul (li "4") (li "5") (li "6")))
-	  (form ?@
-		(input (@ (type "text") (name "name")))
-		(input (@ (type "text") (name "age")))
-		(input (@ (value "Add") (type "submit")))
-		(dl (dt "shiro" (dd "38"))
-		    (dt "cut-sea" (dd "37")))))
-        (call-worker/gsid->sxml w
-				'()
-				'()
-				'(// (or@ div form)))
+        (call-worker/gsid->sxml w '() '() '(// (or@ div form)))
 	(make-match&pick w))
 
  )

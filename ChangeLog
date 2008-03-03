@@ -1,5 +1,11 @@
 2008-03-03  Katsutoshi Itoh <cut-sea@kahua.org>
 
+	* Change: src/kahua/server.scm
+	          when parts-cont is called, redirect to the page.
+	          The aim is to remove x-kahua-client-context query string
+	          from url(when a/cont is clicked with keep clause,
+	          javascript append x-kahua-client-context query string
+	          to raw continuation url).
 	* Add: plugins/dsl-simple.scm
 	       This plugin is experimental implementation for DSL on Web App.
 	       The aim is just 80% cover to quick build web site.

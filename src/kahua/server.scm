@@ -1624,15 +1624,19 @@ function x_kahua_collect_client_context(me,id,types){
 	     (argstr (build-argstr pargs (if params-proc '() kargs)))
 	     (tid (assq-ref-car auxs 'target))
 	     (external-node (assoc-ref context "x-kahua-expanded-node"))
+	     (proc (lambda (ctx)
+		     (parameterize ((kahua-current-context ctx))
+		       (let* ((nodes (apply (car clause) (cdr clause)))
+			      (expanded (cond
+					 ((procedure? nodes) (car (rev-nodes (exec '() nodes)))) 
+					 ((eq? (car nodes) 'node-set) (cadr nodes))
+					 (else (car nodes)))))
+			 (or (and external-node (replace-node external-node tid expanded))
+			     (list (list 'html expanded))))))) 
 	     (id (session-cont-register
 		  (lambda ()
-		    (let* ((nodes (apply (car clause) (cdr clause)))
-			   (expanded (cond
-				      ((procedure? nodes) (car (rev-nodes (exec '() nodes)))) 
-				      ((eq? (car nodes) 'node-set) (cadr nodes))
-				      (else (car nodes)))))
-		      (or (and external-node (replace-node external-node tid expanded))
-			  (list (list 'html expanded)))))))
+		    (let1 ctx (kahua-current-context)
+		      (%redirect/cont% (list (list 'cont (lambda () (proc ctx)))))))))
 	     (uri (kahua-self-uri #`",|id|,|argstr|,(fragment auxs)")))
 	(if params-proc
 	    (values uri (params-proc kargs))
