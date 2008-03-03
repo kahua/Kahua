@@ -32,7 +32,8 @@ MKINSTDIR	  = $(INSTALL) -d
 
 INSTALL_DIR = $(localstatedir)/plugins
 
-PLUGINS = allow-module.scm sendmail.scm query.scm fileio.scm
+PLUGINS = allow-module.scm sendmail.scm query.scm fileio.scm \
+          dsl-simple.scm
 
 CONFIG_GENERATED = Makefile 
 .PHONY: all check clean distclean install maintainer-clean

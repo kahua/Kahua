@@ -1,3 +1,9 @@
+2008-03-03  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Add: plugins/dsl-simple.scm
+	       This plugin is experimental implementation for DSL on Web App.
+	       The aim is just 80% cover to quick build web site.
+	
 2008-03-02  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Change: Refactoring code at prepare.
