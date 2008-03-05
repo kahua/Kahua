@@ -28,9 +28,9 @@ Gaucheのビルド手順は、UNIX系オープンソースソフトウェアと�
 的なものであり、ハマりどころはそれほどないと思います。
 
 
-** Gauche 0.8.11のインストール
+** Gauche 0.8.13のインストール
 
-2007年9月21日現在、Gaucheの最新リリースは0.8.11です。Kahua-1.0は、
+2008年2月29日現在、Gaucheの最新リリースは0.8.13です。Kahua-1.0は、
 Gauche 0.8.9以降で動作しますが、原則として、Gaucheの最新リリース版を
 使用することをお勧めします。
 
@@ -49,14 +49,14 @@ POSIXスレッドをサポートしていなければなりません。確認の
 
 *** Gaucheのソースコードを入手する
 
-[http://prdownloads.sourceforge.net/gauche/Gauche-0.8.11.tgz Gauche-0.8.11.tgz]
+[http://prdownloads.sourceforge.net/gauche/Gauche-0.8.13.tgz Gauche-0.8.13.tgz]
 をダウンロードします。
 
 *** ビルドしテストする
 
 {{{
-% tar xzf Gauche-0.8.11.tgz
-% cd Gauche-0.8.11
+% tar xzf Gauche-0.8.13.tgz
+% cd Gauche-0.8.13
 % ./configure --enable-threads=pthreads --enable-multibyte=utf-8 \
   && make && make -s check
 configure: WARNING: you should use --build, --host, --target
@@ -95,7 +95,7 @@ Testing vport ...                                                passed.
 
 {{{
 % gosh -V
-Gauche scheme interpreter, version 0.8.11 [utf-8,pthreads]
+Gauche scheme interpreter, version 0.8.13 [utf-8,pthreads]
 }}}
 
 これで、Kahuaを使うためのGaucheの準備が整いました。
@@ -103,8 +103,8 @@ Gauche scheme interpreter, version 0.8.11 [utf-8,pthreads]
 ** OSごとの個別事情
 
 最初に断っておきますが、本稿の著者が実機で確認しているのは、「Mac OS X
-10.4.8(intel)」「NetBSD 3.1_STABLE」だけです。他は全て、Mac OS X上で動
-作する Parallels Desktop のVM上で確認しています。
+10.4.11(intel)」「NetBSD 3.1_STABLE/i386」「FreeBSD 7.0R/amd64」だけです。
+他は全て、Mac OS X上で動作する Parallels Desktop のVM上で確認しています。
 
 *** Linux共通
 
@@ -155,12 +155,18 @@ pkgsrcからソフトウェアを追加する必要はありません。また�
 で含まれていますので、configureオプションに--with-iconv=/usrを指定すれ
 ば、iconvサポートを追加することができます。
 
-*** [http://www.apple.com/ Mac OS X 10.4.8(intel)]
+*** [http://www.apple.com/ Mac OS X 10.4.11(Intel/PPC)]
 
 あらかじめBSDパッケージと開発環境をBSD SDKつきでインストールしておく必
 要があります。また、iconvがOSに標準で含まれていますので、configureオプ
 ションに--with-iconv=/usrを指定すれば、iconvサポートを追加することがで
 きます。
+
+*** [http://www.apple.com/ Mac OS X 10.5.x(Intel/PPC)]
+
+Mac OS Xの最新版である、10.5.x(Leopard)では、Kahuaが正常に動作しないことが
+確認されています。この問題は開発チーム内でも重要課題として認識していますので、
+早晩修正できると思います。
 
 *** その他のOSについて
 

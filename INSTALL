@@ -14,7 +14,7 @@
 
 To use Kahua, you need
 [http://practical-scheme.net/gauche/index-en.html Gauche]
-0.8.11 or later that supports pthread.  We strongly recommend
+0.8.13 or later that supports pthread.  We strongly recommend
 using Gauche latest release version. We also recommend setting
 Character Encoding as UTF-8.
 
@@ -22,7 +22,7 @@ Try following command to check which version of Gauche installed.
 
 {{{
 $ gosh -V
-Gauche scheme interpreter, version 0.8.11 [utf-8,pthreads]
+Gauche scheme interpreter, version 0.8.13 [utf-8,pthreads]
 }}}
 
 
@@ -64,8 +64,8 @@ your home directory.  By this way you don't need to care about
 permissions and user/group settings.
 
 {{{
-% tar xvzf Kahua-1.0.7.tgz
-% cd Kahua-1.0.7
+% tar xvzf Kahua-1.0.7.2.tgz
+% cd Kahua-1.0.7.2
 % ./configure --prefix=${HOME}/kahua
 % make
 % make check
@@ -89,8 +89,8 @@ Following example shows that install to the site-bundle called
 $Home/site.
 
 {{{
-% tar xvzf Kahua-1.0.7.tgz
-% cd Kahua-1.0.7
+% tar xvzf Kahua-1.0.7.2.tgz
+% cd Kahua-1.0.7.2
 % ./configure --prefix=/usr/local/kahua --with-site-bundle=$HOME/site
 % make
 % make check
@@ -327,8 +327,8 @@ scripts, but its configuration requires a careful attention.
 This is configuration and building process on a real site. 
 
 {{{
-% tar xzvf Kahua-1.0.7.tgz
-% cd Kahua-1.0.7
+% tar xzvf Kahua-1.0.7.2.tgz
+% cd Kahua-1.0.7.2
 % ./configure \
     --with-kahua-user=kahua --with-kahua-group=kahua --with-cgi-user=www \
     --prefix=/usr/local/kahua \
