@@ -143,9 +143,9 @@
 	   (or (and-let* ((domain (assoc-ref-car kheader "x-kahua-session-domain")))
 		 (receive (scheme _ host port path _ _) (uri-parse domain)
 		   `(("x-kahua-sgsid" ,(cadr e)
-		      ,@(make-karg :domain (and (not (equal? host "localhost")) host))
+		      ,@(make-karg :domain host)
 		      ,@(make-karg :path path)
-		      ,@(make-karg :port (or port 80))
+		      ,@(make-karg :port port)
 		      ,@(make-karg :secure (equal? "https" scheme))
 		      :discard #t
 		      :version 1
