@@ -152,27 +152,22 @@
   (string-append (kahua-server-uri) (apply kahua-self-uri paths)))
 
 (define (kahua-session-domain-uri)
-  (define (drop-worker-name paths)
-    (cond ((null? paths) (string-append (kahua-server-uri) "/"))
-	  (else (string-append (kahua-server-uri)
-			       (path-info->abs-path
-				(let1 paths (reverse! paths)
-				  (if (string=? (car paths) (kahua-worker-type))
-				      (reverse! (cdr paths))
-				      (reverse! paths))))))))
+  (define (drop-worker-name worker-paths)
+    (if (null? worker-paths)
+	"/"
+	(path-info->abs-path (let1 reverse-paths (reverse worker-paths)
+			       (if (equal? (car reverse-paths) (kahua-worker-type))
+				   (reverse! (cdr reverse-paths))
+				   worker-paths)))))
   (define (site-domain-uri)
     (cond ((path->path-info (kahua-worker-uri)) => drop-worker-name)
-	  (else
-	   (string-append (kahua-server-uri)
-			  (path-info->abs-path
-			   (simplify-path-info
-			    (append! (string-split (kahua-bridge-name) #\/)
-				     '(".."))))))))
+	  (else (path-info->abs-path (simplify-path-info
+				      (append! (string-split (kahua-bridge-name) #\/)
+					       '("..")))))))
   (define (bridge-domain-uri)
     (cond ((path->path-info (kahua-worker-uri)) => drop-worker-name)
-	  ((kahua-bridge-name) (compose not string-null?)
-	   => (cut string-append (kahua-server-uri) <>))
-	  (else (string-append (kahua-server-uri) "/"))))
+	  ((kahua-bridge-name) (compose not string-null?) => identity)
+	  (else "/")))
   (case (kahua-session-domain)
     ((:site) (site-domain-uri))
     ((:bridge) (bridge-domain-uri))

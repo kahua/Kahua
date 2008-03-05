@@ -135,7 +135,7 @@
 		   `(("x-kahua-sgsid" ,(cadr e)
 		      ,@(make-karg :domain host)
 		      ,@(make-karg :path path)
-		      ,@(make-karg :port (or port 80))
+		      ,@(make-karg :port port)
 		      ,@(make-karg :secure (equal? "https" scheme))
 		      :discard #t))))
 	       `(("x-kahua-sgsid" ,(cadr e) :discard #t))))))
