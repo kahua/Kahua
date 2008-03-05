@@ -1,3 +1,12 @@
+2008-03-05  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/server.scm, src/kahua/protocol/http.scm
+	  Fix that domain cookie attribute was specified unnecessarily.
+	  It causes that web browser reject the cookie when request
+	  host name contain no ".".  This cookie problem was reported by
+	  Kristof Bastiaensen at first,  and was pointed out by
+	  Shiro Kawai more clearly.
+
 2008-03-04  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Change: plugin/dsl-simple.scm
