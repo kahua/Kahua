@@ -1,3 +1,7 @@
+2008-03-06  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* 1.0.7.2 released.
+
 2008-03-05  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/server.scm, src/kahua/protocol/http.scm
