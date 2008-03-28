@@ -1,3 +1,12 @@
+2008-03-28  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Fix: src/kahua/server.scm
+	       When parts-cont reutrn node-set, then unsplicing into
+	       parent of target node.
+	* Change: plugins/dsl-simple.scm
+	          Add parts of comment/ experimental implementation.
+	          Add parts post/ for button which has value.
+	
 2008-03-05  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/server.scm, src/kahua/protocol/http.scm

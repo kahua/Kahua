@@ -1528,7 +1528,7 @@ function x_kahua_collect_client_context(me,id,types){
 
 (define (local-parts auxs context . maybe-params-proc)
   ;; TODO: rewrite for performance up.
-  (define (replace-node node id parts)
+  (define (replace-node node id parts parts-is-node-set?)
     (define (has-id? node-set)
       (cond ((null? node-set) #f)
 	    ((list? node-set) (cond ((assq-ref node-set '@)
@@ -1598,6 +1598,7 @@ function x_kahua_collect_client_context(me,id,types){
 	((textarea) (set-value-textarea node-set (kahua-client-context-ref* name '())))
 	((select) (set-value-select node-set (kahua-client-context-ref* name '())))
 	(else node-set)))
+
     (cond ((null? node) node)
 	  ((list? node)
 	   (cond ((symbol? (car node))
@@ -1607,10 +1608,15 @@ function x_kahua_collect_client_context(me,id,types){
 			 => (lambda (name)
 			      (cons (car node)
 				    (replace-node
-				     (replace-kept-value (cdr node) (car node) name) id parts))))
-			(else (cons (car node) (replace-node (cdr node) id parts)))))
-		 (else (cons (replace-node (car node) id parts)
-			     (replace-node (cdr node) id parts)))))
+				     (replace-kept-value (cdr node) (car node) name) id parts parts-is-node-set?))))
+			(else (cons (car node) (replace-node (cdr node) id parts parts-is-node-set?)))))
+		 (else (let ((a (replace-node (car node) id parts parts-is-node-set?))
+			     (d (replace-node (cdr node) id parts parts-is-node-set?)))
+			 (if parts-is-node-set?
+			     ;; FIX ME!
+			     ;; when parts is node-set, then unsplicing parts like as ,@.
+			     (if (eq? a parts) (append a d) (cons a d))
+			     (cons a d))))))
 	  (else node)))
 
   (lambda (clause)
@@ -1623,10 +1629,13 @@ function x_kahua_collect_client_context(me,id,types){
 		     (parameterize ((kahua-current-context ctx))
 		       (let* ((nodes (apply (car clause) (cdr clause)))
 			      (expanded (cond
-					 ((procedure? nodes) (car (rev-nodes (exec '() nodes)))) 
+					 ((procedure? nodes)
+					  (let1 e (rev-nodes (exec '() nodes))
+					    ;; expanded is node-set?
+					    (if (null? (cdr e)) (car e) e)))
 					 ((eq? (car nodes) 'node-set) (cadr nodes))
 					 (else (car nodes)))))
-			 (or (and external-node (replace-node external-node tid expanded))
+			 (or (and external-node (replace-node external-node tid expanded (every list? expanded)))
 			     (list (list 'html expanded))))))) 
 	     (id (session-cont-register
 		  (lambda ()
