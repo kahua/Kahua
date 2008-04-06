@@ -1,3 +1,8 @@
+2008-04-06  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: plugins/dsl-simple.scm
+	          change APIs, and add usefull widgets like as calendar date selector.
+	
 2008-03-28  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Fix: src/kahua/server.scm
