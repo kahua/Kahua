@@ -1,3 +1,8 @@
+2008-04-09  Katsutoshi Itoh <cut-sea@kahua.org>
+
+	* Change: plugins/dsl-simple.scm
+	          remove fragment part from calendar/.
+	
 2008-04-06  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Change: plugins/dsl-simple.scm

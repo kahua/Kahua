@@ -268,7 +268,7 @@
       (tr/ (td/ (a/cont/
 		    (@@/ (target #`",|@id|-tbl")
 			 (keep #t)
-			 (fragment #`",|@id|-tbl") ;; for test
+;;			 (fragment #`",|@id|-tbl") ;; for test
 			 (parts-cont
 			  (cut calendar/ @id ttl (prev-month date) selected-date)))
 		  "←"))
@@ -277,7 +277,7 @@
 	   (td/ (a/cont/
 		    (@@/ (target #`",|@id|-tbl")
 			 (keep #t)
-			 (fragment #`",|@id|-tbl") ;; for test
+;;			 (fragment #`",|@id|-tbl") ;; for test
 			 (parts-cont
 			  (cut calendar/ @id ttl (next-month date) selected-date)))
 		  "→"))))
