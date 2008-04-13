@@ -1639,6 +1639,9 @@ function x_kahua_collect_client_context(me,id,types){
 			     (list (list 'html expanded))))))) 
 	     (id (session-cont-register
 		  (lambda ()
+		    ;; FIX ME!
+		    ;; This redirect is NOT work for POST request.
+		    ;; Maybe The redirect timming is bad or not???
 		    (let1 ctx (kahua-current-context)
 		      (%redirect/cont% (list (list 'cont (lambda () (proc ctx)))))))))
 	     (uri (kahua-self-uri #`",|id|,|argstr|,(fragment auxs)")))
