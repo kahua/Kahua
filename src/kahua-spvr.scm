@@ -619,7 +619,7 @@
 			 (cont (spvr-error-header e)
 			       (list (ref e 'message) (kahua-error-string e #t)))))
 		(receive (header body) (receive-message in)
-		  (with-ignoring-exception (cut socket-shutdown sock 2)) ; SHUT_WR
+		  (with-ignoring-exception (cut socket-shutdown sock 1)) ; SHUT_WR
 		  (cont header body))))))
 	(spvr-errorf <kahua-worker-not-respond>
 		     "Worker ~s (~s) is not running currently" (name-of (type-of self)) (wno-of self)))))
