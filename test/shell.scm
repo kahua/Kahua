@@ -181,7 +181,6 @@
 (test* "shutdown shell" #t
        (begin
 	 (process-send-signal *shell* SIGTERM)
-         (sys-sleep 1) ;; give the spvr time to shutdown ...
 	 (process-wait *shell*)))
 
 (test-end)

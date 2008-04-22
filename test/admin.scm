@@ -229,6 +229,7 @@
 (test* "shutdown spvr" '()
        (begin
 	 (send&recv 'shutdown)
+	 (sys-sleep 20)
 	 (call/cc (lambda (exit)
 		    (dotimes (i 15)
 		      (sys-sleep 1)
@@ -240,7 +241,6 @@
 (test* "shutdown admin" #t
        (begin
 	 (process-send-signal *admin* SIGTERM)
-         (sys-sleep 1) ;; give the spvr time to shutdown ...
 	 (process-wait *admin*)))
 
 (test-end)

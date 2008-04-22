@@ -126,16 +126,18 @@
     (with-error-handler
       (lambda (e)
 	(log-format "~a" (kahua-error-string e #t))
-	(socket-shutdown client 1))	; SHUT_WR
+	(with-ignoring-exception (cut socket-shutdown client 1)))	; SHUT_WR
       (lambda ()
 	(set! request (read input))
 	(with-error-handler
 	  (lambda (e)
 	    (log-format "~a" (kahua-error-string e #t))
 	    (display "#f\n" output)
-	    (flush output)
-	    (socket-shutdown client 2)	; SHUT_RDWR
-	    (socket-close client))
+	    (with-ignoring-exception
+	     (lambda ()
+	       (flush output)
+	       (socket-shutdown client 2)	; SHUT_RDWR
+	       (socket-close client))))
 	  (lambda ()
 	    (let1 result 
 		(if (and (pair? request)
@@ -152,9 +154,11 @@
 		       (handle-object-command request)))
 		    #f)
 	      (write result output) (newline output)
-	      (flush output)
-	      (socket-shutdown client 2)  ; SHUT_RDWR
-	      (socket-close client)))
+	      (with-ignoring-exception
+	       (lambda ()
+		 (flush output)
+		 (socket-shutdown client 2)  ; SHUT_RDWR
+		 (socket-close client)))))
 	  )))
     0))
 

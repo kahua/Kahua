@@ -34,6 +34,7 @@
 	  read-pid-file
 	  check-pid
 	  make-filter-pipeline
+	  with-ignoring-exception
 	  ))
 (select-module kahua.util)
 
@@ -177,5 +178,8 @@
 		    (break #f)))
 	      obj
 	      filtered-filters)))))
+
+(define (with-ignoring-exception thunk)
+  (guard (e (else e)) (thunk)))
 
 (provide "kahua/util")
