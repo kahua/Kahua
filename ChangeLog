@@ -13,7 +13,7 @@
 	* Add: src/kahua/util.scm (r3330)
 	  Add a procedure "with-ignoring-exception".
 
-	* Fix: src/kahua-keyserv.scm, src/kahua-spvr.scm (r3329)
+	* Fix: src/kahua-keyserv.scm, src/kahua-spvr.scm (r3329, r3332)
 	  Fix wrong use of socket-shutdown's the 2nd argument, and comment
 	  its mean (SHUT_RD/SHUT_WR/SHUT_RDWR).
 
