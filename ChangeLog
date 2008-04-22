@@ -1,3 +1,22 @@
+2008-04-22  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* These are fixes of problems on Leopard (Mac OS X 10.5.x).
+
+	* Fix: test/shell.scm, test/httpd.scm, test/dead-lock.scm,
+	       test/admin.scm, test/spvr.scm (r3330)
+	  Wait child processes (w/ process-wait) appropriately and drop
+	  extra sys-sleep.
+
+	* Fix: src/kahua-keyserv.scm, src/kahua-spvr.scm (r3330)
+	  Ignore exceptions in some situation.
+
+	* Add: src/kahua/util.scm (r3330)
+	  Add a procedure "with-ignoring-exception".
+
+	* Fix: src/kahua-keyserv.scm, src/kahua-spvr.scm (r3329)
+	  Fix wrong use of socket-shutdown's the 2nd argument, and comment
+	  its mean (SHUT_RD/SHUT_WR/SHUT_RDWR).
+
 2008-03-06  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 1.0.7.2 released.
