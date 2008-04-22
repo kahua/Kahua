@@ -126,7 +126,7 @@
     (with-error-handler
       (lambda (e)
 	(log-format "~a" (kahua-error-string e #t))
-	(socket-shutdown client 2))
+	(socket-shutdown client 1))	; SHUT_WR
       (lambda ()
 	(set! request (read input))
 	(with-error-handler
@@ -134,7 +134,7 @@
 	    (log-format "~a" (kahua-error-string e #t))
 	    (display "#f\n" output)
 	    (flush output)
-	    (socket-shutdown client 2)
+	    (socket-shutdown client 2)	; SHUT_RDWR
 	    (socket-close client))
 	  (lambda ()
 	    (let1 result 
@@ -153,7 +153,7 @@
 		    #f)
 	      (write result output) (newline output)
 	      (flush output)
-	      (socket-shutdown client 2)
+	      (socket-shutdown client 2)  ; SHUT_RDWR
 	      (socket-close client)))
 	  )))
     0))
