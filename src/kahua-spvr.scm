@@ -617,7 +617,7 @@
 			 (cont (spvr-error-header e)
 			       (list (ref e 'message) (kahua-error-string e #t)))))
 		(receive (header body) (receive-message in)
-		  (socket-shutdown sock)
+		  (with-ignoring-exception (cut socket-shutdown sock 1)) ; SHUT_WR
 		  (cont header body))))))
 	(spvr-errorf <kahua-worker-not-respond>
 		     "Worker ~s (~s) is not running currently" (name-of (type-of self)) (wno-of self)))))
@@ -724,7 +724,7 @@
 			   (guard (e
 				   (#t (kahua:log-format "[spvr]: client closed connection")))
 			     (send-message out header body))))))
-      (socket-shutdown client-sock 1))))
+      (with-ignoring-exception (cut socket-shutdown client-sock 1))))) ; SHUT_WR
 
 ;;
 ;; Actual server loop
@@ -836,7 +836,7 @@
 	    (sys-unlink (sockaddr-name sockaddr)))
 	  (nuke-all-workers spvr)
 	  (thread-pool-wait-all tpool)
-	  (thread-pool-finish-all tpool)
+	  (with-ignoring-exception (cut thread-pool-finish-all tpool))
 	  (stop-httpd spvr)
 	  (stop-keyserv spvr)
 	  (kahua:log-format "[spvr] exitting")

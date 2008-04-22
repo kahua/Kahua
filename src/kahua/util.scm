@@ -42,6 +42,7 @@
 	  kahua:call-with-output-file
 	  kahua:log-open
 	  kahua:log-format
+	  with-ignoring-exception
 	  ))
 (select-module kahua.util)
 
@@ -253,5 +254,8 @@
 
 (define kahua:log-open log-open)
 (define kahua:log-format log-format)
+
+(define (with-ignoring-exception thunk)
+  (guard (e (else e)) (thunk)))
 
 (provide "kahua/util")

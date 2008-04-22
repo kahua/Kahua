@@ -238,7 +238,6 @@
 (test* "shutdown admin" #t
        (begin
 	 (process-send-signal *admin* SIGTERM)
-         (sys-sleep 1) ;; give the spvr time to shutdown ...
 	 (process-wait *admin*)))
 
 (test-end)

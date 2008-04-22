@@ -128,7 +128,7 @@
 		 (newline output)
 		 (flush output)
 		 (loop (read input))))))
-	 (socket-shutdown client 2)))))
+	 (with-ignoring-exception (cut socket-shutdown client 2))))))	; SHUT_RDWR
   0)
 
 (define (handle-object-command key attrs)

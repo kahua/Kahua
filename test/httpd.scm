@@ -60,6 +60,7 @@
 
 ;; Shutdown
 (process-send-signal *spvr* SIGTERM)
+(process-wait *spvr*)
 
 (test-end)
 

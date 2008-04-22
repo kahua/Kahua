@@ -128,7 +128,7 @@
 (test* "shutdown" '()
        (begin
          (process-send-signal *spvr* SIGTERM)
-         (sys-sleep 5) ;; give the spvr time to shutdown ...
+	 (process-wait *spvr*)
          (directory-list "_tmp" :children? #t)))
 
 (test-end)
