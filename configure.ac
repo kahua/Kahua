@@ -10,7 +10,7 @@ AC_GAUCHE_INIT_EXT
 AC_SUBST(PACKAGE_NAME)
 AC_SUBST(PACKAGE_VERSION)
 
-REQUIRED_GAUCHE_VERSION=0.8.11
+REQUIRED_GAUCHE_VERSION=0.8.13
 
 dnl Sets the default value of INSTALL_TYPE macro.
 AC_GAUCHE_INSTALL_TYPE(site)
@@ -154,6 +154,9 @@ AC_ARG_WITH(site-bundle,
                  [Examples installed into /path/to/bundle. Default: none]),[])
 
 dnl Add more test
+
+KAHUA_BUILD_REVISION=`cat REVISION`
+AC_SUBST(KAHUA_BUILD_REVISION)
 
 dnl Set LDFLAGS to generate shared library.
 AC_GAUCHE_FIX_LIBS

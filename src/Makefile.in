@@ -1,5 +1,6 @@
 package	          = @PACKAGE_NAME@
 package_version   = @PACKAGE_VERSION@
+build_revision    = @KAHUA_BUILD_REVISION@
 SHELL             = @SHELL@
 prefix            = @prefix@
 exec_prefix       = @exec_prefix@
@@ -131,6 +132,7 @@ kahua/config.scm: kahua/config.scm.in
 	    -e "s@##KAHUA_CGI_LOGPATH##@$(KAHUA_CGILOG_DIR)@" \
 	    -e "s@##package##@$(package)@" \
 	    -e "s@##KAHUA_VERSION##@$(package_version)@" \
+	    -e "s@##KAHUA_REVISION##@$(build_revision)@" \
             $@.in > $@
 	chmod -w $@
 

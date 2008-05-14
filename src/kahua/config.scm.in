@@ -69,6 +69,7 @@
 	  kahua-template-path
 	  kahua-error-document
           kahua-version
+	  kahua-revision
 
 	  ;; Site Bundle
 	  kahua-site-create
@@ -352,6 +353,8 @@
   (assoc-ref (kahua-error-document-alist) status #f))
 
 (define (kahua-version) "##KAHUA_VERSION##")
+
+(define (kahua-revision) "##KAHUA_REVISION##")
 
 ;; Site Bundle Facility
 
