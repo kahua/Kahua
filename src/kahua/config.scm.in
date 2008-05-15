@@ -355,7 +355,7 @@
 
 (define (kahua-version) "##KAHUA_VERSION##")
 
-(define (kahua-revision) "##KAHUA_REVISION##")
+(define (kahua-revision) "r##KAHUA_REVISION##")
 
 (define kahua-version-info
   (let1 vinfo (format "~a (~a)" (kahua-version) (kahua-revision))
