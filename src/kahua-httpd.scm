@@ -391,10 +391,7 @@
 				   (thread-pool-add-task tpool (cut handle-request sock))))
 			       '(r)))
 	      socks)
-    (do () (#f)
-      (sys-sigmask SIG_SETMASK *default-sigmask*)
-      (selector-select selector 10e6))
-    ))
+    (do () (#f) (selector-select selector 10e6))))
 
 (define (parse-host-spec host port)
   (call-with-values

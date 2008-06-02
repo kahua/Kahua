@@ -748,15 +748,9 @@
 		     '(r))
       (listener-show-prompt listener)))
 
-  ;; The signal mask of "root" thread is changed unexpectedly on Mac OS X 10.4.5,
-  ;; maybe something wrong,  but I don't know what is wrong.
-  ;; So, I restore the signal mask of "root" thread periodically.
-  ;; FIXME!!
   (do () (#f)
-    (sys-sigmask SIG_SETMASK *default-sigmask*)
     (selector-select (selector-of spvr) 10.0e6)
-    (check-workers spvr))
-  )
+    (check-workers spvr)))
 
 ;;;=================================================================
 ;;; Main
