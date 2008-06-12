@@ -187,7 +187,16 @@
 (define-macro (define-elements . names)
   `(begin ,@(map (lambda (n) (list 'define-basic-element n)) names)))
 
-(define-elements
+(define *element-table* (make-hash-table 'eq?))
+(define-macro (define-elements/reg . names)
+  `(begin
+     (define-elements ,@names)
+     ,@(map (lambda (n)
+	      (let1 n/ (string->symbol (string-append (symbol->string n) "/"))
+		`(hash-table-put! ,*element-table* ',n ,n/)))
+	    names)))
+
+(define-elements/reg
   font tt b big i small em strong dfn code samp kbd var cite abbr acronym sub sup span bdo
   br body address div a area link img hr p h1 h2 h3 h4 h5 h6 pre q blockquote ins del
   dl dt dd ol ul li form label input select optgroup option textarea fieldset legend
