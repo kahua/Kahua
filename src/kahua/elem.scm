@@ -1,14 +1,16 @@
 ;; Provides SXML tags implemented as functions
 ;;
-;;  Copyright (c) 2004-2007 Scheme Arts, L.L.C., All rights reserved.
-;;  Copyright (c) 2004-2007 Time Intermedia Corporation, All rights reserved.
+;;  Copyright (c) 2004-2008 Scheme Arts, L.L.C., All rights reserved.
+;;  Copyright (c) 2004-2008 Time Intermedia Corporation, All rights reserved.
 ;;  See COPYING for terms and conditions of using this software
 ;;
 ;; This module implements tags of SXML as functions
 
 (define-module kahua.elem
+  (use srfi-1)
   (use gauche.collection)
-  (export >>=
+  (export unit
+          >>=
 	  >>
 	  get
 	  put
@@ -111,11 +113,31 @@
 
 (define (exec s0 st) (st s0))
 
+(define (non-empty-list? xs) (and (list? xs) (not (null? xs)) xs))
+
+(define (unit t)
+  (receive (tg as) (car+cdr t)
+    (apply (hash-table-get *element-table* tg) (attrs+children as))))
+
+(define (attrs+children ss)
+  (if (null? ss) '()
+      (receive (a as) (car+cdr ss)
+	(if (and (non-empty-list? a)
+		 (or (eq? (car a) '@) (eq? (car a) '@@)))
+	    (cons a (attrs-children as))
+	    (map unit+ ss)))))
+
+(define (unit+ t)
+  (if (string? t) (text/ t)
+      (receive (tg as) (car+cdr t)
+	(apply (hash-table-get *element-table* tg) (attrs+children as)))))
+	  
 (define (node-set sts)
   (if (null? sts)
       empty
       (let1 st (car sts)
 	(cond ((procedure? st) (>> st (node-set (cdr sts))))
+	      ((and (non-empty-list? st) (symbol? (car st))) (map/ unit sts))
 	      (st (>> (text/ st) (node-set (cdr sts))))
 	      (else (node-set (cdr sts)))))))
 
