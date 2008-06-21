@@ -9,6 +9,7 @@
 (define-module kahua.elem
   (use srfi-1)
   (use gauche.collection)
+  (use util.match)
   (export unit
           >>=
 	  >>
@@ -124,7 +125,10 @@
       (receive (a as) (car+cdr ss)
 	(if (and (non-empty-list? a)
 		 (or (eq? (car a) '@) (eq? (car a) '@@)))
-	    (cons a (attrs+children as))
+	    (match a
+	      (('@ . attrs) `(,|@/| ,@attrs))
+              (('@@ . attrs) `(,|@/| ,@attrs)))
+;;	    (cons a (attrs+children as))
 	    (map unit+ ss)))))
 
 (define (unit+ t)
