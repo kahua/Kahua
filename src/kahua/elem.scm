@@ -124,7 +124,7 @@
       (receive (a as) (car+cdr ss)
 	(if (and (non-empty-list? a)
 		 (or (eq? (car a) '@) (eq? (car a) '@@)))
-	    (cons a (attrs-children as))
+	    (cons a (attrs+children as))
 	    (map unit+ ss)))))
 
 (define (unit+ t)
