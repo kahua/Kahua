@@ -128,7 +128,6 @@
 	    (match a
 	      (('@ . attrs) (cons (update (cut cons a <>)) (map unit+ as)))
               (('@@ . attrs) (cons (updata (cut append <> a)) (map unit+ as))))
-;;	    (cons a (attrs+children as))
 	    (map unit+ ss)))))
 
 (define (unit+ t)
