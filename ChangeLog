@@ -1,3 +1,10 @@
+2008-08-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/protocol/http.scm (kahua-header->http-header): do not
+	  add 'domain' attribute in the cookie if the host name doesn't contain
+	  a dot (like 'localhost'); RFC2965 says cookies with such domain
+	  name should be rejected by the client.
+
 2008-06-02  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua-spvr.scm, src/kahua-httpd.scm
