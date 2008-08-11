@@ -1,3 +1,10 @@
+2008-08-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/protocol/http.scm (kahua-header->http-header): do not
+	  add 'domain' attribute in the cookie if the host name doesn't contain
+	  a dot (like 'localhost'); RFC2965 says cookies with such domain
+	  name should be rejected by the client.
+
 2008-05-08  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* 1.0.7.3 released.
@@ -37,7 +44,7 @@
 2008-03-02  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Fix: bug fix reported by Koguro.
-	
+
 2008-03-01  Katsutoshi Itoh <cut-sea@kahua.org>
 
 	* Fix: Some bugs typo and so on.
