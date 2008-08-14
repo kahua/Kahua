@@ -168,11 +168,21 @@
     (cond ((path->path-info (kahua-worker-uri)) => drop-worker-name)
 	  ((kahua-bridge-name) (compose not string-null?) => identity)
 	  (else "/")))
-  (case (kahua-session-domain)
-    ((:site) (site-domain-uri))
-    ((:bridge) (bridge-domain-uri))
-    ((:worker) (kahua-self-uri-full))
-    (else => (lambda (d) (and (string? d) d)))))
+  (let1 d (kahua-session-domain)
+    (or (and-let* ((path (case d
+			   ((:site) (site-domain-uri))
+			   ((:bridge) (bridge-domain-uri))
+			   ((:worker) (kahua-self-uri))
+			   (else #f))))
+	  (string-append (kahua-server-uri) path))
+	(and (string? d) d))))
+
+(define (kahua-session-domain-info)
+  (define (nonlocal-domain h)
+    (and h (string-index h #\.) h))
+  (and-let* ((d (kahua-session-domain-uri)))
+    (receive (scheme _ host port path _ _) (uri-parse d)
+      (list scheme (nonlocal-domain host) port path))))
 
 ;; KAHUA-DEFAULT-HANDLER header body reply-cont default-proc
 ;;                       &keyword stale-proc error-proc eval-proc
@@ -283,11 +293,11 @@
 				(or (session-cont-get cont-id) stale-proc)
 				default-proc)
 			    (make-context state header body))
-		(let1 session-domain-uri (kahua-session-domain-uri)
+		(let1 session-domain (kahua-session-domain-info)
 		  (lambda ()
 		    (reply-cont
-		     (kahua-merge-headers (cons `("x-kahua-session-domain" ,session-domain-uri)
-						(alist-delete "x-kahua-metavariables" header))
+		     (kahua-merge-headers (acons "x-kahua-session-domain" session-domain
+						 (alist-delete "x-kahua-metavariables" header))
 					  (assoc-ref-car context "extra-headers" '())
 					  (hash-table-map
 					      (assoc-ref-car context "x-kahua-headers" '())

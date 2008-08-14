@@ -1,3 +1,8 @@
+2008-08-14  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua/protocol/http.scm, src/kahua/server.scm
+	  Merge the 2008-08-10 fix into the 2008-03-05 fix.
+
 2008-08-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/kahua/protocol/http.scm (kahua-header->http-header): do not
