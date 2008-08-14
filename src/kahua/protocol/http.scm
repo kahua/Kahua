@@ -9,7 +9,6 @@
 
 (define-module kahua.protocol.http
   (use srfi-1)
-  (use srfi-13)
   (use rfc.cookie)
   (use rfc.uri)
   (use util.list)
@@ -139,16 +138,14 @@
   (define (make-cookie e)
     (define (make-karg k v)
       (if v (list k (x->string v)) '()))
-    (define (nonlocal-domain h)
-      (and h (string-index h #\.) h))
     (cons "set-cookie"
 	  (construct-cookie-string
-	   (or (and-let* ((domain (assoc-ref-car kheader "x-kahua-session-domain")))
-		 (receive (scheme _ host port path _ _) (uri-parse domain)
+	   (or (and-let* ((domain (assoc-ref kheader "x-kahua-session-domain")))
+		 (receive (scheme host port path) (apply values domain)
 		   `(("x-kahua-sgsid" ,(cadr e)
-		      ,@(make-karg :domain (nonlocal-domain host))
+		      ,@(make-karg :domain host)
 		      ,@(make-karg :path path)
-		      ,@(make-karg :port (or port 80))
+		      ,@(make-karg :port port)
 		      ,@(make-karg :secure (equal? "https" scheme))
 		      :discard #t
 		      :version 1
