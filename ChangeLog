@@ -1,3 +1,14 @@
+2008-09-20  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* test/config.scm ("error-document-alist"): use 404.html, 503.html
+	("error-document 404"): use 404.html
+	("error-document 503"): use 503.html.
+
+	* test/test.conf (<kahua-config>): use 404.html, 503.html.
+
+	* src/kahua/protocol/http.scm (kahua.protocol.http): use file.util
+	(current-error-page): use file->string-list instead of read and eval.
+
 2008-08-14  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/protocol/http.scm, src/kahua/server.scm
@@ -178,6 +189,8 @@
 	* Change: add explain comment for this modify.
 
 2008-02-11  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* src/kahua/protocol/http.scm (current-error-page): use eval with read from file.
 
 	* cgi/kahua.cgi.in (cgi-error-proc): use current-error-page instead of default-error-page.
 
