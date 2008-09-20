@@ -112,7 +112,7 @@
   (or (and-let* ((path (kahua-error-document status)))
 	(guard (e (else #f))
 	  (file->string-list path)))
-   (default-error-page status message)))
+      (default-error-page status message)))
 
 (define (output-error-page out status msg)
   (write-tree (current-error-page status msg) out))
