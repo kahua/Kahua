@@ -15,6 +15,7 @@
   (use util.match)
   (use text.html-lite)
   (use text.tree)
+  (use file.util)
   (use gauche.charconv)
   (use gauche.sequence)
   (use kahua.util)
@@ -112,8 +113,8 @@
    (and-let* ((path (kahua-error-document status))
 	      (tree (guard
 		     (e (else (default-error-page status message)))
-		     (call-with-input-file path read))))
-     (eval tree (current-module)))
+		     (file->string-list path))))
+     tree)
    (default-error-page status message)))
 
 (define (output-error-page out status msg)
