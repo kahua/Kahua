@@ -109,12 +109,9 @@
        (html:p (html-escape-string msg)))))))
 
 (define (current-error-page status message)
-  (or
-   (and-let* ((path (kahua-error-document status))
-	      (tree (guard
-		     (e (else (default-error-page status message)))
-		     (file->string-list path))))
-     tree)
+  (or (and-let* ((path (kahua-error-document status)))
+	(guard (e (else #f))
+	  (file->string-list path)))
    (default-error-page status message)))
 
 (define (output-error-page out status msg)
