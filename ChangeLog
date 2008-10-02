@@ -1,3 +1,17 @@
+2008-10-02  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* src/kahua/protocol/worker.scm (talk-to-worker): use <kahua-worker-unknown-error> instead of <kahua-worker-not-found>
+
+	* cgi/kahua.cgi.in: <kahua-spvr-not-respond> 503
+	<kahua-worker-not-found> 404
+	<kahua-worker-not-respond> 503
+	<kahua-spvr-session-expired> 410
+
+2008-09-25  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* src/kahua/protocol/worker.scm (<kahua-spvr-not-respond>): add
+	(<kahua-worker-expired>): add
+
 2008-09-20  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
 	* test/config.scm ("error-document-alist"): use 404.html, 503.html
