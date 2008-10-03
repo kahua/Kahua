@@ -1,3 +1,7 @@
+2008-10-03  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* src/kahua/util.scm (kahua-stack-trace): add guard clause for testing.
+
 2008-10-02  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
 	* src/kahua/protocol/worker.scm (talk-to-worker): use <kahua-worker-unknown-error> instead of <kahua-worker-not-found>
