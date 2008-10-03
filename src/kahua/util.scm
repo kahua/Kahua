@@ -77,34 +77,41 @@
 (define assq-ref-car  (pa$ ref-car eq?))
 (define assoc-ref-car (pa$ ref-car equal?))
 
+
+;; (define pair-attribute-get (with-module gauche.internal pair-attribute-get)) ;; test
+
+;; (define fmt (format "~~,,,,~d:a\n" (debug-print-width))) ;; test
+
 ;; KAHUA-ERROR-STRING <error> [detail?]
 ;;  Returns a string representation of error.  If detail? is given,
 ;;  includes the stack trace.  Otherwise, just an error message.
 
 (define (kahua-stack-trace e)
-  (let ((fmt (format "~~,,,,~d:a\n" (debug-print-width)))
-	(pair-attribute-get (with-module gauche.internal pair-attribute-get)))
-    (call-with-output-string
-      (lambda (out)
-	(with-port-locking out
-	  (lambda ()
-	    (if (and (slot-exists? e 'message) (condition-ref e 'message))
-		(format out "*** ~a: ~a\n" (class-name (class-of e)) (condition-ref e 'message))
-		(format out "*** ~a\n" (class-name (class-of e))))
-	    (display "----------------------------------------\n" out)
-	    (for-each (lambda (cp)
-			(format out fmt (unwrap-syntax cp))
-			(when (pair? cp)
-			  (let1 sinfo (pair-attribute-get cp 'source-info #f)
-			    (if (pair? sinfo)
-				(if (pair? (cdr sinfo))
-				    (format out "        At line ~d of ~s\n"
-					    (cadr sinfo) (car sinfo))
-				    (format out "        In ~s\n" (car sinfo)))
-				(display "        [unknown location]:\n" out)))))
-		      (stack-trace-of e))))))))
+  (guard (e (else (let1 mess (condition-ref e 'message)
+		    (kahua:log-format "kahua-stack-trace: message: ~a: error: ~a" mess e)
+		    mess)))
+    (let ((fmt (format "~~,,,,~d:a\n" (debug-print-width)))
+	  (pair-attribute-get (with-module gauche.internal pair-attribute-get)))
+      (call-with-output-string
+	(lambda (out)
+	  (with-port-locking out
+	    (lambda ()
+	      (format out "*** ~a: ~a\n" (class-name (class-of e)) (condition-ref e 'message))
+	      (display "----------------------------------------\n" out)
+	      (for-each (lambda (cp)
+			  (format out fmt (unwrap-syntax cp))
+			  (when (pair? cp)
+			    (let1 sinfo (pair-attribute-get cp 'source-info #f)
+			      (if (pair? sinfo)
+				  (if (pair? (cdr sinfo))
+				      (format out "        At line ~d of ~s\n"
+					      (cadr sinfo) (car sinfo))
+				      (format out "        In ~s\n" (car sinfo)))
+				  (display "        [unknown location]:\n" out)))))
+			(stack-trace-of e)))))))))
 
 (define (kahua-error-string e . maybe-detail?)
+  (kahua:log-format "kahua-error-string: ~a / ~a" e maybe-detail?)
   (cond ((not (get-optional maybe-detail? #f)) (slot-ref e 'message))
 	((kahua-error? e) (kahua-stack-trace e))
 	(else (call-with-output-string
