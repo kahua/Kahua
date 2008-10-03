@@ -101,16 +101,8 @@
 
 (define (talk-to-worker cgsid header params)
   (guard (e ((not (kahua-error? e))
-	     (let1 message 
-		 (cond ((slot-exists? e 'message)
-			(begin
-			  (kahua:log-format "Error: ~a ~s" (class-name (class-of e)) (ref e 'message))
-			  (ref e 'message)))
-		       (else
-			(begin
-			  (kahua:log-format "Error: ~s" e)
-			  (x->string e))))
-	       (error <kahua-worker-unknown-error> message))))
+	     (kahua:log-format "Error: ~a ~s" (class-name (class-of e)) (condition-ref e 'message))
+	     (error <kahua-worker-unknown-error> (condition-ref e 'message))))
     (call-with-client-socket (make-socket-to-worker cgsid)
       (lambda (w-in w-out)
 	(kahua:log-format "C->W header: ~s" header)
