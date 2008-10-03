@@ -197,6 +197,15 @@
 (define-method reply-error ((e <http-method-not-allowed>) out)
   (reply-method-not-allowed out (request-method) (request-uri) (request-version) (with-body?)))
 
+;; 410 Gone
+(define (reply-gone out method uri ver with-body?)
+  (reply out 410 ver (basic-header "text/html")
+	 (and with-body?
+	      (cut output-error-page <> 410
+		   (format "Session key expired of ~a." uri) ))))
+(define-method reply-error ((e <kahua-spvr-session-expired>) out)
+  (reply-gone out (request-method) (request-uri) (request-version) (with-body?)))
+
 ;; 500 Internal Server Error
 (define (reply-internal-server-error out ver with-body?)
   (reply out 500 ver (basic-header "text/html")
@@ -222,6 +231,8 @@
 	      (cut output-error-page <> 503 "Service Unavailable."))))
 (define-method reply-error ((e <kahua-worker-not-respond>) out)
   (reply-service-unavailable out (request-version) #t))
+(define-method reply-error ((e <kahua-spvr-not-respond>) out)
+  (reply-service-unavailable out (request-wersion) #t))
 
 (define (prepare-dispatch-request cs in)
   (define (http-host->server-name host)
