@@ -1,5 +1,16 @@
 2008-10-03  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
+	* src/kahua/util.scm (kahua-error-string): remove debug logging.
+
+	* src/kahua-httpd.scm (reply-gone): add
+	(reply-error): add for <kahua-spvr-session-expired>.
+
+	* cgi/kahua.cgi.in (cgi-error-proc): use kahua-error->status.
+
+	* src/kahua/protocol/http.scm (kahua-error->status): add.
+
+	* src/kahua/protocol/worker.scm (talk-to-worker): use condition-ref.
+
 	* src/kahua/util.scm (kahua-stack-trace): add guard clause for testing.
 
 2008-10-02  ENDO Yasuyuki  <yasuyuki@javaopen.org>
