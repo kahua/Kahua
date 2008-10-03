@@ -111,7 +111,6 @@
 			(stack-trace-of e)))))))))
 
 (define (kahua-error-string e . maybe-detail?)
-  (kahua:log-format "kahua-error-string: ~a / ~a" e maybe-detail?)
   (cond ((not (get-optional maybe-detail? #f)) (slot-ref e 'message))
 	((kahua-error? e) (kahua-stack-trace e))
 	(else (call-with-output-string
