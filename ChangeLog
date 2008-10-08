@@ -66,7 +66,6 @@
 	* src/kahua/protocol/worker.scm (<kahua-spvr-not-respond>): add
 	(<kahua-worker-expired>): add
 
->>>>>>> .merge-right.r3415
 2008-09-20  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
 	* test/config.scm ("error-document-alist"): use 404.html, 503.html
