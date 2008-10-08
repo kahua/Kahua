@@ -19,13 +19,15 @@
   (export talk-to-worker
 	  add-kahua-header!
 	  kahua-worker-header
+	  <kahua-worker-unknown-error>
 	  <kahua-worker-not-found>
 	  <kahua-worker-not-respond>
-	  <kahua-worker-unknown-error>
+	  <kahua-spvr-not-respond>
 	  <kahua-spvr-session-expired>
+	  kahua-worker-unknown-error?
 	  kahua-worker-not-found?
 	  kahua-worker-not-respond?
-	  kahua-worker-unknown-error?
+	  kahua-spvr-not-respond?
 	  kahua-spvr-session-expired?
 	  simplify-path-info
 	  path->path-info
@@ -39,7 +41,10 @@
 
 (define-condition-type <kahua-worker-unknown-error> <kahua-error> kahua-worker-unknown-error?)
 (define-condition-type <kahua-worker-not-found> <kahua-error> kahua-worker-not-found?)
+;;(define-condition-type <kahua-worker-expired> <kahua-error> kahua-worker-expired?)
+;;(define-condition-type <kahua-entry-not-found> <kahua-error> kahua-entry-not-found?)
 (define-condition-type <kahua-worker-not-respond> <kahua-error> kahua-worker-not-respond?)
+(define-condition-type <kahua-spvr-not-respond> <kahua-error> kahua-spvr-not-respond?)
 (define-condition-type <kahua-spvr-session-expired> <kahua-error> kahua-spvr-session-expired?)
 
 (define (add-kahua-header! header . args)
@@ -81,21 +86,23 @@
 	  (("OK" _ ...) #t)
 	  (("SPVR-ERROR" e) (=> break)
 	   (case e
-	     ((<kahua-worker-not-found>)   (error <kahua-worker-not-found> "Worker not found"))
-	     ((<kahua-worker-not-respond>) (error <kahua-worker-not-respond> "Worker not respond"))
+	     ((<kahua-worker-not-found>) (error <kahua-worker-not-found> "Worker not found"))
+;;	     ((<kahua-entry-not-found>)  (error <kahua-entry-not-found> "Entry not found"))
+;;	     ((<kahua-worker-expired>)   (error <kahua-worker-expired> "Worker expired"))
+	     ((<kahua-worker-not-respond>)   (error <kahua-worker-not-respond> "Worker not respond"))
 	     (else (break))))
-	  (else                            (error <kahua-worker-unknown-error> "Unknown worker error"))))
+	  (else                          (error <kahua-worker-unknown-error> "Unknown worker error"))))
       #t))
 
 (define (make-socket-to-worker cgsid)
-  (make-client-socket (worker-id->sockaddr (and cgsid (gsid->worker-id cgsid)) (kahua-sockbase))))
+  (guard (e (else (cond (cgsid (error <kahua-worker-not-respond> "Worker not respond"))
+			(else  (error <kahua-spvr-not-respond> "Server not respond")))))
+  (make-client-socket (worker-id->sockaddr (and cgsid (gsid->worker-id cgsid)) (kahua-sockbase)))))
 
 (define (talk-to-worker cgsid header params)
   (guard (e ((not (kahua-error? e))
-	     (cond ((slot-exists? e 'message)
-		    (kahua:log-format "Error: ~a ~s" (class-name (class-of e)) (slot-ref e 'message)))
-		   (else (kahua:log-format "Error: ~s" e)))
-	     (error <kahua-worker-not-found> "Worker not found")))
+	     (kahua:log-format "Error: ~a ~s" (class-name (class-of e)) (condition-ref e 'message))
+	     (error <kahua-worker-unknown-error> (condition-ref e 'message))))
     (call-with-client-socket (make-socket-to-worker cgsid)
       (lambda (w-in w-out)
 	(kahua:log-format "C->W header: ~s" header)

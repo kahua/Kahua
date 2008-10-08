@@ -36,6 +36,7 @@
 	  output-redirect-page
 	  http-status-string
 	  print-status-line
+	  kahua-error->status
 	  ))
 (select-module kahua.protocol.http)
 
@@ -240,5 +241,13 @@
 
 (define (print-status-line out status version)
   (format out "~a ~a\r\n" (or version 'HTTP/1.0) (http-status-string status version)))
+
+(define (kahua-error->status error)
+  (cond ((<kahua-spvr-not-respond> error)     503)
+	((<kahua-worker-not-found> error)     404)
+;;	((<kahua-entry-not-found> error)      404)
+	((<kahua-worker-not-respond> error)   503)
+	((<kahua-spvr-session-expired> error) 410)
+	(else                                 500)))
 
 (provide "kahua/protocol/http")
