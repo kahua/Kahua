@@ -22,15 +22,13 @@
 
 (define-class <kahua:object-pool-mixin> () () :metaclass <kahua:object-pool-meta>)
 
-(define *slot-protected?* (make-parameter #t))
 ;; NOTE: This is NOT MT-safe!
 (define-method make ((class <kahua:object-pool-meta>) . initargs)
   (let ((table (slot-ref class '%%object-table))
 	(key ((slot-ref class '%%key-of) class initargs)))
     (cond ((hash-table-get table key #f) =>
 	   (lambda (o)
-	     (parameterize ((*slot-protected?* #f))
-	       (initialize o initargs))
+	     (initialize o initargs)
 	     o))
 	  (else
 	   (let1 o (next-method)
@@ -39,6 +37,12 @@
 
 (define-class <kahua:read-only-meta> (<class>) ())
 (define-class <kahua:read-only-mixin> () () :metaclass <kahua:read-only-meta>)
+
+(define *slot-protected?* (make-parameter #t))
+
+(define-method initialize ((self <kahua:read-only-mixin>) initargs)
+  (parameterize ((*slot-protected?* #f))
+    (next-method)))
 
 (define-method compute-get-n-set ((class <kahua:read-only-meta>) slot)
   (let* ((acc (compute-slot-accessor class slot (next-method)))
