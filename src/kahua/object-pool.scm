@@ -54,6 +54,6 @@
 			   (errorf "slot ~s is already initialized." (slot-definition-name slot))
 			   (slot-set-using-accessor! o acc v)))
 		     (cut slot-set-using-accessor! <> acc <>))))
-    (list getter setter bound? #f)))
+    (list getter setter bound? #t)))
 
 (provide "kahua/object-pool")
