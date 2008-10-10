@@ -2,7 +2,9 @@
 
 	* Add: src/kahua/object-pool.scm, test/object-pool.scm
 	  A simple object pooling library is added. This is very experimental but
-	  in order to prepare to modify kahua.config module.
+	  in order to prepare to modify kahua.config module.  The kahua.object-pool
+	  module export classes <kahua:object-pool-meta>, <kahua:object-pool-mixin>,
+	  <kahua:read-only-meta> and <kahua:read-only-mixin>.
 
 2008-10-10  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 

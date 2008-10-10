@@ -9,7 +9,9 @@
 (define-module kahua.object-pool
   (use gauche.parameter)
   (export <kahua:object-pool-meta>
-	  <kahua:object-pool-mixin>))
+	  <kahua:object-pool-mixin>
+	  <kahua:read-only-meta>
+	  <kahua:read-only-mixin>))
 
 (select-module kahua.object-pool)
 
@@ -35,14 +37,19 @@
 	     (hash-table-put! table key o)
 	     o)))))
 
-(define-method compute-get-n-set ((class <kahua:object-pool-meta>) slot)
+(define-class <kahua:read-only-meta> (<class>) ())
+(define-class <kahua:read-only-mixin> () () :metaclass <kahua:read-only-meta>)
+
+(define-method compute-get-n-set ((class <kahua:read-only-meta>) slot)
   (let* ((acc (compute-slot-accessor class slot (next-method)))
 	 (getter (cut slot-ref-using-accessor <> acc))
 	 (bound? (cut slot-bound-using-accessor? <> acc))
-	 (setter (lambda (o v)
-		   (if (and (bound? o) (*slot-protected?*))
-		       (errorf "slot ~s is already initialized." (slot-definition-name slot))
-		       (slot-set-using-accessor! o acc v)))))
+	 (setter (if (slot-definition-option slot :read-only #f)
+		     (lambda (o v)
+		       (if (and (bound? o) (*slot-protected?*))
+			   (errorf "slot ~s is already initialized." (slot-definition-name slot))
+			   (slot-set-using-accessor! o acc v)))
+		     (cut slot-set-using-accessor! <> acc <>))))
     (list getter setter bound? #f)))
 
 (provide "kahua/object-pool")

@@ -13,8 +13,8 @@
 
 (test-section "First: instances are created every initializer.")
 
-(define-class <a-class> (<kahua:object-pool-mixin>)
-  ((a :init-keyword :a)
+(define-class <a-class> (<kahua:object-pool-mixin> <kahua:read-only-mixin>)
+  ((a :init-keyword :a :read-only #t)
    (b :init-keyword :b))
   :key-of (lambda (_ initargs)
 	    (get-keyword* :a initargs #f)))
@@ -55,5 +55,9 @@
 (test* "Identical?" #f (eq? *a* *aa*))
 (test* "slot a" "a" (slot-ref *aa* 'a) string=?)
 (test* "slot b" "a" (slot-ref *aa* 'b) string=?)
+
+(test* "cannot modify read only slot" *test-error* (slot-set! *aa* 'a "b"))
+(test* "can modify slot which is not specified as read-only"
+       "b" (begin (slot-set! *aa* 'b "b") (slot-ref *aa* 'b)) string=?)
 
 (test-end)
