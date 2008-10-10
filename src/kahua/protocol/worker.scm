@@ -95,8 +95,10 @@
       #t))
 
 (define (make-socket-to-worker cgsid)
-  (guard (e (else (cond (cgsid (error <kahua-worker-not-respond> "Worker not respond"))
-			(else  (error <kahua-spvr-not-respond> "Server not respond")))))
+  (guard (e (else 
+	     (kahua:log-format "Error: ~a ~s" (class-name (class-of e)) (condition-ref e 'message))
+	     (cond (cgsid (error <kahua-worker-not-respond> "Worker not respond"))
+		   (else  (error <kahua-spvr-not-respond> "Server not respond")))))
   (make-client-socket (worker-id->sockaddr (and cgsid (gsid->worker-id cgsid)) (kahua-sockbase)))))
 
 (define (talk-to-worker cgsid header params)
