@@ -1,3 +1,9 @@
+2008-10-10  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/config.scm.in, test/config.scm
+	  Kahua made default configuration when kahua.conf is not readable, but now
+	  Kahua report error if kahua.conf is not readable or contains properly expression.
+
 2008-10-07  ENDO Yasuyuki <yasuyuki@javaopen.org>
 
 	* merge from yasuyuki_handle_errors branch rev 3403 to 3415.

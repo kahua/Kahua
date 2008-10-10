@@ -51,7 +51,10 @@
        (kahua-error-document 503))
 
 (test-section "Initialize with Site Bundle")
-(test* "kahua-site-init" *config* (kahua-site-init "./_work") eq?)
+(test* "kahua-site-init: cannot read kahua.conf" *test-error* (kahua-site-init "./_work"))
+(sys-mkdir "./_work/etc" #o755)
+(call-with-output-file "./_work/etc/kahua.conf" (cut write '(make <kahua-config>) <>))
+(test* "kahua-site-init: can read kahua.conf" *config* (kahua-site-init "./_work") eq?)
 (for-each (lambda (e)
 	    (apply (lambda (name accessor path)
 		     (test* name (sys-normalize-pathname path :absolute #t)
