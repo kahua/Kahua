@@ -1,3 +1,9 @@
+2008-10-10  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/object-pool.scm, test/object-pool.scm
+	  A simple object pooling library is added. This is very experimental but
+	  in order to prepare to modify kahua.config module.
+
 2008-10-10  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
 	* src/kahua/protocol/worker.scm (make-socket-to-worker): logging when error occured.
