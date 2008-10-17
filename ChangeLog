@@ -1,3 +1,7 @@
+2008-10-17  ENDO Yasuyuki <yasuyuki@javaopen.org>
+
+	* add contrib/staging/playback-httplog.scm
+
 2008-10-10  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Add: src/kahua/object-pool.scm, test/object-pool.scm
