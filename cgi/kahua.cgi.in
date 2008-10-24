@@ -42,7 +42,7 @@
 ##ADDITIONAL_LIBS##
 
 ;; Change this if you're using non-default log path
-(define-constant *LOG-PATH* "##KAHUA_CGI_LOGPATH##/kahua-cgi.log")
+;(define-constant *LOG-PATH* "##KAHUA_CGI_LOGPATH##/kahua-cgi.log")
 (define-constant *LOG-PREFIX* "~Y ~T ~P[~$]: ")
 
 (define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP SIGPIPE))
@@ -199,7 +199,7 @@
       (display "\r\n" out)
       (send-http-body out (cgi-output-character-encoding) (cadr sexp))))
   (kahua-common-init #f #f)
-  (log-open *LOG-PATH* :prefix *LOG-PREFIX*)
+  (log-open (kahua-cgilogpath "kahua-cgi.log") :prefix *LOG-PREFIX*)
   (call/cc
    (lambda (bye)
      (define (cleanup) (for-each sys-unlink (cgi-temporary-files)))
