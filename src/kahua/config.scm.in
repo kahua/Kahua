@@ -434,7 +434,7 @@
 (define (kahua-common-init site . maybe-conf-file)
   (or (and-let* ((site (or site (sys-getenv "KAHUA_DEFAULT_SITE"))))
 	(apply kahua-site-init site maybe-conf-file))
-      (error "Site bundle must be specified.")))
+      (error "Site bundle must be specified by -S option or KAHUA_DEFAULT_SITE environment.")))
 
 (provide "kahua/config")
 
