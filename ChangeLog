@@ -1,3 +1,13 @@
+2008-10-24  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* test/config.scm (test* "kahua-site-init"): add kahua-cgilog-directory
+	(test* "kahua-site-init again"): add kahua-cgilog-directory
+
+	* src/kahua/config.scm.in (<kahua-custom>): add cgilog-directory
+	(define-kahua-config-accessor): add cgilog-directory
+	(kahua-cgilogpath): add.
+	(define-module kahua.config): add kahua-cgilog-directory, kahua-cgilogpath
+
 2008-08-14  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/protocol/http.scm, src/kahua/server.scm
