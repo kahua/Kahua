@@ -37,6 +37,7 @@
 	  kahua-database-directory
 	  kahua-temporary-directory
 	  kahua-log-directory
+	  kahua-cgilog-directory
 	  kahua-run-directory
 	  kahua-etc-directory
 	  kahua-default-database-name
@@ -59,6 +60,7 @@
 	  kahua-tmpbase
 	  kahua-dbpath
           kahua-logpath
+	  kahua-cgilogpath
 	  kahua-spvr-pidpath
           kahua-keyserv-pidpath
 	  kahua-httpd-pidpath
@@ -113,6 +115,7 @@
 			:init-value "tmp" :place :wdir)
 
    (log-directory :init-keyword :log-directory :init-value "logs" :place :wdir)
+   (cgilog-directory :init-keyword :cgilog-directory :init-value "cgilogs" :place :site)
    (run-directory :init-keyword :run-directory :init-value "" :place :wdir)
    (etc-directory :init-keyword :etc-directory :init-value "##sysconfdir##" :place :site)
 
@@ -264,6 +267,7 @@
 	      database-directory
 	      temporary-directory
 	      log-directory
+	      cgilog-directory
 	      run-directory
 	      etc-directory
 	      default-database-name
@@ -316,6 +320,9 @@
 
 (define (kahua-logpath filename)
   (build-path (kahua-log-directory) filename))
+
+(define (kahua-cgilogpath filename)
+  (build-path (kahua-cgilog-directory) filename))
 
 (define (kahua-pidpath file)
   (build-path (kahua-run-directory) file))
@@ -381,6 +388,8 @@
     (temporary-directory   :value "tmp"
 			   :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
     (log-directory         :value "logs"
+			   :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
+    (cgilog-directory      :value "cgilogs"
 			   :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
     (run-directory         :value "run"
 			   :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
