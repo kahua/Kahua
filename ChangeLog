@@ -1,5 +1,8 @@
 2008-10-24  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
+	* cgi/kahua.cgi.in: unuse *LOG-PREFIX*
+	(main): use kahua-cgilogpath when log-open.
+
 	* test/config.scm (test* "kahua-site-init"): add kahua-cgilog-directory
 	(test* "kahua-site-init again"): add kahua-cgilog-directory
 
