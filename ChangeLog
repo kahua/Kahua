@@ -1,3 +1,18 @@
+2008-10-24  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/config.scm.in, src/Makefile.in
+	          test/sandbox.scm, test/config.scm, test/kahua-call-with-current-context.scm,
+	          test/lambdabooks.scm, test/foldlist.scm, test/redirectcont.scm,
+	          test/developer.scm, test/nqueen.scm, test/plugin.scm, test/query.scm,
+	          test/server.scm, test/shell.scm, test/worker.scm, test/wiki-iki.scm,
+	          test/entry-method.scm, test/httpd.scm, test/admin.scm, test/rollback.scm,
+	          test/spvr.scm, test/multi-paging.scm
+	  Remove: src/make-testconf.scm
+	  <kahua-config> is now based on <kahua:object-pool-mixin> and <kahua:read-only-mixin>,
+	  and kahua-config is now a parameter instead of a procedure.
+	  So test scripts are made fit to this change, and now run on site bundle instead of
+	  temporary working directory and test.conf.
+
 2008-10-17  ENDO Yasuyuki <yasuyuki@javaopen.org>
 
 	* add contrib/staging/playback-httplog.scm

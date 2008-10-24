@@ -9,25 +9,23 @@
 (use rfc.uri)
 (use util.list)
 (use text.tree)
-(use kahua)
+(use file.util)
+
 (use kahua.test.xml)
 (use kahua.test.worker)
-
 (use kahua.persistence) 
 (use kahua.user)
-(use file.util)
+(use kahua.config)
 
 (test-start "worker scripts")
 
-(sys-system "rm -rf _tmp _work")
-(sys-mkdir "_tmp" #o755)
-(sys-mkdir "_work" #o755)
-(sys-mkdir "_work/plugins" #o755)
-(copy-file "../plugins/allow-module.scm"  "_work/plugins/allow-module.scm")
+(define *site* "_site")
 
-(define *config* "./test.conf")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(copy-file "../plugins/allow-module.scm"  #`",|*site*|/plugins/allow-module.scm")
 
-(kahua-init *config*)
+(kahua-common-init *site* #f)
 
 ;;------------------------------------------------------------
 ;; Run hello-world
@@ -36,7 +34,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "../src/kahua-server"
-      "-c" ,*config* "./hello-world.kahua"))
+      "-S" ,*site* "./hello-world.kahua"))
 
  (test* "run hello-world.kahua" #t (worker-running? w))
 
@@ -62,7 +60,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "../src/kahua-server"
-      "-c" ,*config* "./hello-world-st.kahua"))
+      "-S" ,*site* "./hello-world-st.kahua"))
 
  (test* "run hello-world-st.kahua" #t (worker-running? w))
 
@@ -90,7 +88,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "../src/kahua-server"
-      "-c" ,*config* "./greeting.kahua"))
+      "-S" ,*site* "./greeting.kahua"))
 
  (test* "run greeting.kahua" #t (worker-running? w))
 
@@ -118,7 +116,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "../src/kahua-server"
-      "-c" ,*config* "./greeting-st.kahua"))
+      "-S" ,*site* "./greeting-st.kahua"))
 
  (test* "run greeting-st.kahua" #t (worker-running? w))
 
@@ -148,7 +146,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "../src/kahua-server"
-      "-c" ,*config* "./lister.kahua"))
+      "-S" ,*site* "./lister.kahua"))
 
  (test* "run lister.kahua" #t (worker-running? w))
 
@@ -190,7 +188,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "../src/kahua-server"
-      "-c" ,*config* "./lister-st.kahua"))
+      "-S" ,*site* "./lister-st.kahua"))
 
  (test* "run lister-st.kahua" #t (worker-running? w))
 
@@ -233,7 +231,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "../src/kahua-server"
-      "-c" ,*config* "./acont.kahua"))
+      "-S" ,*site* "./acont.kahua"))
 
  (test* "run acont.kahua" #t (worker-running? w))
 
@@ -255,7 +253,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "../src/kahua-server"
-      "-c" ,*config* "./acont-st.kahua"))
+      "-S" ,*site* "./acont-st.kahua"))
 
  (test* "run acont-st.kahua" #t (worker-running? w))
 

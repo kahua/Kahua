@@ -12,25 +12,23 @@
 (use text.tree)
 (use sxml.ssax)
 (use sxml.sxpath)
-(use kahua)
+(use file.util)
+
 (use kahua.test.xml)
 (use kahua.test.worker)
-
 (use kahua.persistence) 
 (use kahua.user)
-(use file.util)
+(use kahua.config)
 
 (test-start "nqueen test scripts")
 
-(sys-system "rm -rf _tmp _work")
-(sys-mkdir "_tmp" #o755)
-(sys-mkdir "_work" #o755)
-(sys-mkdir "_work/plugins" #o755)
-(copy-file "../plugins/allow-module.scm"  "_work/plugins/allow-module.scm")
+(define *site* "_site")
 
-(define *config* "./test.conf")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(copy-file "../plugins/allow-module.scm"  #`",|*site*|/plugins/allow-module.scm")
 
-(kahua-init *config*)
+(kahua-common-init *site* #f)
 
 ;;------------------------------------------------------------
 ;; Run nqueen
@@ -38,7 +36,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "-I../examples" "../src/kahua-server"
-      "-c" ,*config* "../examples/nqueen/nqueen.kahua"))
+      "-S" ,*site* "../examples/nqueen/nqueen.kahua"))
 
  (test* "run nqueen.kahua" #t (worker-running? w))
 
@@ -93,7 +91,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "-I../examples" "../src/kahua-server"
-      "-c" ,*config* "../examples/lazy-nqueen/lazy-nqueen.kahua"))
+      "-S" ,*site* "../examples/lazy-nqueen/lazy-nqueen.kahua"))
 
  (test* "run lazy-nqueen.kahua" #t (worker-running? w))
 

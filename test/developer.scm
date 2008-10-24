@@ -12,16 +12,11 @@
 ;; 開発者アカウント操作のテストを開始する。
 (test-start "developer")
 
-;; テスト環境作成
-(define conf-file (build-path (sys-getcwd) "user.conf"))
-(define conf-lock-file (string-append conf-file ".lock"))
+(define *site* "_site")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
 
-
-(slot-set! (kahua-config) 'userconf-file conf-file)
-
-(sys-system #`"rm -rf ,conf-file ,conf-lock-file")
-(sys-system #`"touch ,conf-file")
-
+(kahua-common-init *site* #f)
 
 ;; ロードテスト
 ;; kahua.developer がロードでき、またそのインターフェイスに齟齬が
@@ -110,7 +105,5 @@
 (test* "kahua-change-developer-password password too short"
        *test-error*
        (kahua-change-developer-password "adnim" "Wp"))
-
-(sys-system #`"rm -rf ,conf-file ,conf-lock-file")
 
 (test-end)

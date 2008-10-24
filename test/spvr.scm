@@ -14,28 +14,31 @@
 
 (test-start "supervisor script")
 
-(sys-system "rm -rf _tmp _work")
+(define *site* "_site")
+
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
 (for-each make-directory*
-          '("_tmp" 
-            "_work/checkout/lister"
-            "_work/checkout/greeting"
-            "_work/checkout/hello"
-            "_work/checkout/ss1"
-            "_work/checkout/ss2"
-            "_work/plugins"))
-(copy-file "../plugins/allow-module.scm"  "_work/plugins/allow-module.scm")
+          (list #`",|*site*|/app/lister"
+		#`",|*site*|/app/greeting"
+		#`",|*site*|/app/hello"
+		#`",|*site*|/app/ss1"
+		#`",|*site*|/app/ss2"))
+(copy-file "../plugins/allow-module.scm" #`",|*site*|/plugins/allow-module.scm")
 
-(copy-file "./lister.kahua"      "./_work/checkout/lister/lister.kahua")
-(copy-file "./greeting.kahua"    "./_work/checkout/greeting/greeting.kahua")
-(copy-file "./hello-world.kahua" "./_work/checkout/hello/hello.kahua")
-(copy-file "./sharedstate.kahua" "./_work/checkout/ss1/ss1.kahua")
-(copy-file "./sharedstate.kahua" "./_work/checkout/ss2/ss2.kahua")
+(for-each (apply$ (lambda (m d)
+		    (copy-file #`",|m|.kahua" #`",|*site*|/app/,|d|/,|d|.kahua")))
+	  '(("lister" "lister")
+	    ("greeting" "greeting")
+	    ("hello-world" "hello")
+	    ("sharedstate" "ss1")
+	    ("sharedstate" "ss2")))
 
-(define *config* "./test.conf")
 (define *spvr* #f)
 (define *gsid* #f)
+(define *app-servers* #`",|*site*|/app-servers")
 
-(kahua-init *config*)
+(kahua-common-init *site* #f)
 
 ;; some utilities
 (define (send-message out header body)
@@ -56,7 +59,7 @@
       (call-with-values (cut receive-message in) receiver))))
 
 ;; prepare app-servers file
-(with-output-to-file "_work/app-servers"
+(with-output-to-file *app-servers*
   (lambda ()
     (write '((hello       :run-by-default 1)
              (greeting    :run-by-default 0)
@@ -67,14 +70,15 @@
 
 (test* "start" #t
        (let* ((p (run-process "../src/kahua-spvr" "--test"
-                              "-c" *config* "-i"
+                              "-S" *site* "-i"
                               :input :pipe :output :pipe))
               )
          (set! *spvr* p)
          (sys-sleep 2) ;; give the spvr time to set up...
-         (and (file-exists? "_tmp/kahua")
-	      (or (eq? (file-type "_tmp/kahua") 'socket)
-                  (eq? (file-type "_tmp/kahua") 'fifo)))))
+	 (let1 path #`",|*site*|/socket/kahua"
+	   (and (file-exists? path)
+		(or (eq? (file-type path) 'socket)
+		    (eq? (file-type path) 'fifo))))))
 
 (test* "listener" #t
        (let* ((out (process-input *spvr*))
@@ -128,7 +132,7 @@
         (lambda (header body) 
           (map (cut get-keyword :worker-type <> #f) body))))
 
-(with-output-to-file "_work/app-servers"
+(with-output-to-file *app-servers*
   (lambda ()
     (write '())))
 
@@ -142,7 +146,7 @@
         '(("x-kahua-worker" "spvr")) '(types)
         (lambda (header body) body)))
 
-(with-output-to-file "_work/app-servers"
+(with-output-to-file *app-servers*
   (lambda ()
     (write '(a b))))
 
@@ -151,7 +155,7 @@
         '(("x-kahua-worker" "spvr")) '(reload)
         (lambda (header body) body)))
 
-(with-output-to-file "_work/app-servers"
+(with-output-to-file *app-servers*
   (lambda ()
     (write '((lister :run-by-default 0)))))
 
@@ -160,7 +164,7 @@
         '(("x-kahua-worker" "spvr")) '(reload)
         (lambda (header body) body)))
 
-(with-output-to-file "_work/app-servers"
+(with-output-to-file *app-servers*
   (lambda ()
     (write '((lister :run-by-default 2)))))
 
@@ -189,7 +193,7 @@
 ;;-----------------------------------------------------------
 (test-section "sharing state")
 
-(with-output-to-file "_work/app-servers"
+(with-output-to-file *app-servers*
   (lambda ()
     (write '((ss1 :run-by-default 1)
              (ss2 :run-by-default 1)))))
@@ -264,6 +268,6 @@
        (begin
          (process-send-signal *spvr* SIGTERM)
 	 (process-wait *spvr*)
-         (directory-list "_tmp" :children? #t)))
+         (directory-list #`",|*site*|/socket" :children? #t)))
 
 (test-end)

@@ -16,10 +16,11 @@
 ;;
 
 (define-module kahua.config
-  (use gauche.mop.singleton)
+  (use gauche.parameter)
   (use file.util)
   (use util.list)
   (use util.match)
+  (use kahua.object-pool)
   (export kahua-init
 	  kahua-common-init
 	  <kahua-custom> <kahua-config>
@@ -87,8 +88,13 @@
 (define-constant *kahua-static-document-url-default* "/##package##")
 (define-constant *kahua-userconf-file-default* "##localstatedir##/user.conf")
 
-(define-class <kahua-custom> ()
-  ((site-root :init-keyword :site-root :init-value #f)
+(define (kahua-version) "##KAHUA_VERSION##")
+(define (kahua-revision) "r##KAHUA_REVISION##")
+
+(define kahua-config (make-parameter #f))
+
+(define-class <kahua-custom> (<kahua:read-only-mixin>)
+  ((site-root :init-keyword :site-root :init-value #f :read-only #t)
    ;; working-directory - where kahua processes keeps logs and
    ;;     other various info.  This directory must be writable by
    ;;     kahua processes.
@@ -171,10 +177,16 @@
 
    ;; internal
    (user-mode :init-value #f)
-   (config-file :init-value #f :init-keyword :config-file :place :site)
+   (config-file :init-value #f :init-keyword :config-file :place :site :read-only #t)
    ))
 
-(define-class <kahua-config-meta> (<singleton-meta>) ())
+(define-class <kahua-config-meta> (<class>) ())
+(define-class <kahua-config-mixin> () () :metaclass <kahua-config-meta>)
+
+(define (kahua::abs-path path base)
+  (or (and-let* ((base base))
+	(abs-path path base))
+      path))
 
 (define-method compute-get-n-set ((class <kahua-config-meta>) slot)
   (let* ((s (slot-definition-name slot))
@@ -189,17 +201,10 @@
 				(sockbase-abs-path sockbase site-root)
 				sockbase))))
 		       ((eq? place :site)
-			(lambda (o)
-			  (let ((site-root (slot-ref o 'site-root))
-				(path (slot-ref-using-accessor o acc)))
-			    (if site-root
-				(abs-path path site-root)
-				path))))
+			(lambda (o) (kahua::abs-path (slot-ref-using-accessor o acc) (slot-ref o 'site-root))))
 		       ((eq? place :wdir)
-			(lambda (o)
-			  (abs-path (slot-ref-using-accessor o acc) (slot-ref o 'working-directory))))
-		       (else
-			(cut slot-ref-using-accessor <> acc))))
+			(lambda (o) (kahua::abs-path (slot-ref-using-accessor o acc) (slot-ref o 'working-directory))))
+		       (else (cut slot-ref-using-accessor <> acc))))
 	 (setter (case s
 		   ((site-root)
 		    (lambda (o v)
@@ -208,9 +213,10 @@
 		    (cut slot-set-using-accessor! <> acc <>)))))
     (list getter setter bound? #t)))
 
-(define-class <kahua-config> (<kahua-custom>)
+(define-class <kahua-config> (<kahua-custom> <kahua:object-pool-mixin> <kahua-config-mixin>)
   ()
-  :metaclass <kahua-config-meta>)
+  :key-of (lambda (_ initargs)
+	    (kahua::abs-path (get-keyword* :config-file initargs #f) (get-keyword* :site-root initargs #f))))
 
 ;; Now not work properly.
 ;; This is called every (kahua-config) :-(
@@ -235,21 +241,16 @@
 ;; If path does not exist, is not readable or contains
 ;; no configuration expression, raise error.
 (define (read-config path)
-  (and-let* ((l (file->sexp-list path)))
-    (guard (e (else (error "Cannot parse configuration file:" path)))
-      (match l ((('make '<kahua-config> . options)) options)))))
+  (match (file->sexp-list path)
+    ((('make '<kahua-config> . options)) options)
+    (else (error "Cannot parse configuration file:" path)))) ; TODO: should raise proper <kahua-error>.
 
 ;; kahua-init [conf-file] [skip-check?]
 ;; if "skip-check?" is #t, read kahua.conf only(not check 
 (define (kahua-init cfile . args)
   (let-keywords* args ((skip-check? #f))
     (let1 cfile (or cfile *kahua-conf-default*)
-      (if (file-is-readable? cfile)
-	  (let1 c (kahua-config)
-	    (initialize c (list* :config-file cfile (or (read-config cfile) '())))
-	    ;; Deprecated...
-	    (unless skip-check? (sanity-check c)))
-	  (errorf "configuration file ~a is not readable." cfile))))
+      (kahua-config (apply make <kahua-config> :config-file cfile (read-config cfile)))))
   ;; Include working directory to *load-path*.
   ;; We don't use add-load-path here, since it is a macro that does
   ;; work at compile time.
@@ -257,9 +258,6 @@
   (kahua-config))
 
 ;; Accessor functions
-
-(define (kahua-config)
-  (instance-of <kahua-config>))
 
 (define-macro (apply-define def . names)
   `(begin ,@(map (lambda (n) (list def n)) names)))
@@ -359,10 +357,6 @@
 (define (kahua-error-document status)
   (assoc-ref (kahua-error-document-alist) status #f))
 
-(define (kahua-version) "##KAHUA_VERSION##")
-
-(define (kahua-revision) "r##KAHUA_REVISION##")
-
 (define kahua-version-info
   (let1 vinfo (format "~a (~a)" (kahua-version) (kahua-revision))
     (lambda () vinfo)))
@@ -385,10 +379,10 @@
 (define (create-site-userconf file site mode)
   (with-output-to-file (abs-path file site) (cut write '()) :mode mode))
 
-(define (create-site-config file site mode)
+(define (create-site-config file site mode . opts)
   (with-output-to-file (abs-path file site)
     (lambda ()
-      (write `(make <kahua-config>)))
+      (write `(make <kahua-config> ,@opts)))
     :mode mode))
 
 (define (create-site-child-dir dir site mode)
@@ -457,9 +451,7 @@
       (sys-umask old-umask))))
 
 (define (read-site-config site-path)
-  (or (and-let* ((path (abs-path (site-default 'config-file) site-path)))
-	(read-config path))
-      '()))
+  (read-config (abs-path (site-default 'config-file) site-path)))
 
 (define (kahua-site-init site-path)
   (let* ((site-path (sys-normalize-pathname site-path :absolute #t :expand #t))
@@ -471,8 +463,8 @@
 				 (list* k (get-keyword :value (cdr e)) r))))
 			 config
 			 *default-site-structure*)))
-    (let1 c (kahua-config)
-      (initialize c (list* :site-root site-path initargs))
+    (let1 c (apply make <kahua-config> :site-root site-path initargs)
+      (kahua-config c)
       (push! *load-path* (kahua-application-directory))
       c)))
 

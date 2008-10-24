@@ -9,23 +9,20 @@
 (use rfc.uri)
 (use util.list)
 (use text.tree)
-(use kahua)
+(use file.util)
+
 (use kahua.test.xml)
 (use kahua.test.worker)
-
 (use kahua.persistence)
 (use kahua.user)
-(use file.util)
+(use kahua.config)
 
 (test-start "rollback")
 
-(sys-system "rm -rf _tmp _work")
-(sys-mkdir "_tmp" #o755)
-(sys-mkdir "_work" #o755)
-(sys-mkdir "_work/plugins" #o755)
-(copy-file "../plugins/allow-module.scm"  "_work/plugins/allow-module.scm")
-
-(define *config* "./test.conf")
+(define *site* "_site")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(copy-file "../plugins/allow-module.scm"  #`",|*site*|/plugins/allow-module.scm")
 
 (define-syntax kahua-eval
   (syntax-rules ()
@@ -34,7 +31,7 @@
               
 
 
-(kahua-init *config*)
+(kahua-common-init *site* #f)
 
 ;;------------------------------------------------------------
 ;; Run rollback
@@ -43,7 +40,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "../src/kahua-server"
-      "-c" ,*config* "./rollback.kahua"))
+      "-S" ,*site* "./rollback.kahua"))
 
  (test* "run rollback.kahua" #t (worker-running? w))
 

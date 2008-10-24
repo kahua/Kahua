@@ -15,33 +15,32 @@
 ;;---------------------------------------------------------------
 (test-section "initialization")
 
-(sys-system "rm -rf _tmp _work user.conf")
-(sys-mkdir "_tmp" #o755)
-(sys-mkdir "_work" #o755)
-(sys-mkdir "_work/checkout" #o755)
-(sys-mkdir "_work/checkout/hello" #o755)
-(sys-mkdir "_work/checkout/greeting" #o755)
-(sys-mkdir "_work/checkout/lister" #o755)
-(copy-file "hello-world.kahua" "_work/checkout/hello/hello.kahua")
-(copy-file "greeting.kahua"    "_work/checkout/greeting/greeting.kahua")
-(copy-file "lister.kahua"      "_work/checkout/lister/lister.kahua")
-(sys-mkdir "_work/plugins" #o755)
-(copy-file "../plugins/allow-module.scm"  "_work/plugins/allow-module.scm")
+(define *site* "_site")
 
-;; copy user.conf
-(copy-file "testuser.conf" "user.conf")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(for-each (apply$ (lambda (m d)
+		    (let1 destdir #`",|*site*|/app/,|d|"
+		      (make-directory* destdir)
+		      (copy-file #`",|m|.kahua" #`",|destdir|/,|d|.kahua"))))
+	  '(("lister" "lister")
+	    ("greeting" "greeting")
+	    ("hello-world" "hello")))
+(copy-file "../plugins/allow-module.scm" #`",|*site*|/plugins/allow-module.scm")
+(copy-file "testuser.conf" #`",|*site*|/etc/user.conf" :if-exists :supersede)
+(define *app-servers* #`",|*site*|/app-servers")
+(define *spvr*   #f)
+(define *admin*  #f)
+
+(kahua-common-init *site* #f)
 
 ;; prepare app-servers file
-(with-output-to-file "_work/app-servers"
+(with-output-to-file *app-servers*
   (lambda ()
     (write '((hello    :run-by-default 1)
              (greeting :run-by-default 0)
              (lister   :run-by-default 0)
              ))))
-
-(define *config* "./test.conf")
-(define *spvr*   #f)
-(define *admin*  #f)
 
 ;;---------------------------------------------------------------
 ;; テストに必要な2つのスクリプトを起動する。
@@ -49,17 +48,16 @@
 
 ;; kahua-spvr を起動する。
 (test* "start spvr" #t
-       (let ((p (run-process "../src/kahua-spvr" "--test"
-			     "-c" *config*)))
+       (let ((p (run-process "../src/kahua-spvr" "--test" "-S" *site*)))
 	 (sys-sleep 3)
-	 (and (file-exists? "_tmp/kahua")
-	      (or (eq? (file-type "_tmp/kahua") 'socket)
-                  (eq? (file-type "_tmp/kahua") 'fifo)))))
+	 (let1 socket-path #`",|*site*|/socket/kahua"
+	   (and (file-exists? socket-path)
+		(or (eq? (file-type socket-path) 'socket)
+		    (eq? (file-type socket-path) 'fifo))))))
 
 ;; kahua-admin を起動する。
 (test* "start admin" 'spvr>
-       (let ((p (run-process "../src/kahua-admin" "--test"
-			     "-c" *config* 
+       (let ((p (run-process "../src/kahua-admin" "--test" "-S" *site* 
 			     :input :pipe :output :pipe :error :pipe)))
 	 (set! *admin* p)
 	 (sys-sleep 1)
@@ -153,7 +151,7 @@
 	     (#/greeting/ ans)))
 
 ;; reload コマンドのテスト。
-;; app-server に登録されている3つのアプリケーションが
+;; app-servers に登録されている3つのアプリケーションが
 ;; 表示されることを確認する。
 (test* "admin: reload" '(hello greeting lister)
        (send&recv 'reload))
@@ -230,7 +228,7 @@
 	 (call/cc (lambda (exit)
 		    (dotimes (i 15)
 		      (sys-sleep 1)
-		      (when (null? (directory-list "_tmp" :children? #t))
+		      (when (null? (directory-list #`",|*site*|/socket" :children? #t))
 			(exit '())))
 		    #f))))
 

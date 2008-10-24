@@ -10,25 +10,23 @@
 (use rfc.uri)
 (use util.list)
 (use text.tree)
-(use kahua)
+(use file.util)
+
 (use kahua.test.xml)
 (use kahua.test.worker)
-
 (use kahua.persistence) 
 (use kahua.user)
-(use file.util)
+(use kahua.config)
 
 (test-start "lambdabooks test scripts")
 
-(sys-system "rm -rf _tmp _work")
-(sys-mkdir "_tmp" #o755)
-(sys-mkdir "_work" #o755)
-(sys-mkdir "_work/plugins" #o755)
-(copy-file "../plugins/allow-module.scm"  "_work/plugins/allow-module.scm")
+(define *site* "_site")
 
-(define *config* "./test.conf")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(copy-file "../plugins/allow-module.scm"  #`",|*site*|/plugins/allow-module.scm")
 
-(kahua-init *config*)
+(kahua-common-init *site* #f)
 
 (debug-print-width #f)
 
@@ -328,11 +326,11 @@
 ;; Run lambdabooks
 (test-section "kahua-server lambdabooks.kahua")
 
-(sys-system "gosh -I../src -I../examples lambdabooks.init -c ./test.conf")
+(sys-system #`"gosh -I../src -I../examples lambdabooks.init -S ,|*site*|")
 
 (with-worker
  (w `("gosh" "-I../src" "-I../examples" "../src/kahua-server.scm"
-      "-c" ,*config* "../examples/lambdabooks/lambdabooks.kahua"))
+      "-S" ,*site* "../examples/lambdabooks/lambdabooks.kahua"))
     
  (test* "run lambdabooks.kahua" #t (worker-running? w))
 

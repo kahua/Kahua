@@ -12,11 +12,18 @@
 (use kahua.gsid)
 (use kahua.session)
 (use kahua.test.xml)
+(use kahua.config)
 (use util.list)
 
 (test-start "kahua.server")
 (use kahua.server)
 (test-module 'kahua.server)
+
+(define *site* "_site")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+
+(kahua-common-init *site* #f)
 
 ;;---------------------------------------------------------------
 (test-section "initialization")

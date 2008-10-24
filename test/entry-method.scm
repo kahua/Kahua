@@ -9,30 +9,28 @@
 (use rfc.uri)
 (use util.list)
 (use text.tree)
-(use kahua)
+(use file.util)
+
 (use kahua.test.xml)
 (use kahua.test.worker)
 
 (use kahua.persistence)
 (use kahua.user)
-(use file.util)
+(use kahua.config)
 
 (test-start "entry-method")
 
-(sys-system "rm -rf _tmp _work")
-(sys-mkdir "_tmp" #o755)
-(sys-mkdir "_work" #o755)
-(sys-mkdir "_work/plugins" #o755)
-(copy-file "../plugins/allow-module.scm"  "_work/plugins/allow-module.scm")
-
-(define *config* "./test.conf")
+(define *site* "_site")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(copy-file "../plugins/allow-module.scm"  #`",|*site*|/plugins/allow-module.scm")
 
 (define-syntax kahua-eval
   (syntax-rules ()
     ((_  body)
      '(eval 'body kahua-app-server))))
 
-(kahua-init *config*)
+(kahua-common-init *site* #f)
 
 ;;------------------------------------------------------------
 ;; Run entry-method
@@ -40,7 +38,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "../src/kahua-server"
-      "-c" ,*config* "./entry-method.kahua"))
+      "-S" ,*site* "./entry-method.kahua"))
 
  (test* "run entry-method.kahua" #t (worker-running? w))
 

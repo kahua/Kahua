@@ -54,7 +54,8 @@
 (test* "kahua-site-init: cannot read kahua.conf" *test-error* (kahua-site-init "./_work"))
 (sys-mkdir "./_work/etc" #o755)
 (call-with-output-file "./_work/etc/kahua.conf" (cut write '(make <kahua-config>) <>))
-(test* "kahua-site-init: can read kahua.conf" *config* (kahua-site-init "./_work") eq?)
+(test* "kahua-site-init: can read kahua.conf, as new config" *config* (kahua-site-init "./_work") (compose not eq?))
+(set! *config* (kahua-config))
 (for-each (lambda (e)
 	    (apply (lambda (name accessor path)
 		     (test* name (sys-normalize-pathname path :absolute #t)
@@ -82,7 +83,7 @@
 
 (kahua-site-create "_site")
 (test* "kahua-site-create" #t (file-is-directory? "_site") eq?)
-(test* "kahua-site-init again" *config* (kahua-site-init "_site") eq?)
+(test* "kahua-site-init again" *config* (kahua-site-init "_site") (compose not eq?))
 (for-each (lambda (e)
 	    (apply (lambda (name accessor path)
 		     (test* name (sys-normalize-pathname path :absolute #t)

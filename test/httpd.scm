@@ -6,6 +6,7 @@
 (use gauche.process)
 (use rfc.http)
 (use kahua.test.xml)
+(use kahua.config)
 (use file.util)
 
 (test-start "kahua-httpd script")
@@ -24,11 +25,24 @@
       (sys-sleep 1))
     (error "httpd-get: retry error")))
 
+(define *site* "_site")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(kahua-common-init *site* #f)
+
+(sys-symlink "../../../examples/lambdabooks" (build-path (kahua-application-directory) "lambdabooks"))
+(with-output-to-file (kahua-app-servers)
+  (cut write '((lambdabooks   :arguments () :run-by-default 1))))
+(copy-file "../plugins/allow-module.scm" (build-path (kahua-plugin-directory) "allow-module.scm"))
+(let1 d (kahua-static-document-path "lambdabooks" "images")
+  (make-directory* d #o755)
+  (copy-file "../examples/lambdabooks/images/lambda-books-logo.png" #`",|d|/lambda-books-logo.png"))
+
 ;;-----------------------------------------------------------
 (test-section "start kahua-spvr with kahua-httpd")
 
 (test* "start" #t
-       (let* ((p (run-process "../src/kahua-spvr" "--test"
+       (let* ((p (run-process "../src/kahua-spvr" "-S" *site*
                               "--httpd" (x->string *port*) "> /dev/null")))
          (set! *spvr* p)
          #t))
@@ -52,9 +66,9 @@
            (http-get #`"localhost:,*port*" "/zzzz")
          status))
 
-(test* "httpd get (static path)" `("200" ,(file-size "../tmp/checkout/lambdabooks/images/lambda-books-logo.png"))
+(test* "httpd get (static path)" `("200" ,(file-size "../examples/lambdabooks/images/lambda-books-logo.png"))
        (receive (status headers body)
-           (http-get #`"localhost:,*port*" "/doc/lambdabooks/images/lambda-books-logo.png")
+           (http-get #`"localhost:,*port*" "/kahua/lambdabooks/images/lambda-books-logo.png")
          (list status
                (string-size body))))
 

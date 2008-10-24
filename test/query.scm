@@ -12,21 +12,19 @@
 
 (test-start "query plugin")
 
-(test-section "initialization")
-(sys-system "rm -rf _work")
-(sys-mkdir "_work" #o775)
-(sys-mkdir "_work/plugins" #o775)
+(define *site* "_site")
 
-(copy-file "../plugins/query.scm" "_work/plugins/query.scm")
-(set! (ref (kahua-config) 'working-directory) "./_work")
+(test-section "initialization")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(copy-file "../plugins/query.scm" #`",|*site*|/plugins/query.scm")
+(kahua-common-init *site* #f)
 
 (initialize-plugins)
 (use-plugin query)
 (use kahua.persistence)
 
-(define *dbpath* (build-path (sys-getcwd) "_tmpefs"))
-(sys-system #`"rm -rf ,*dbpath*")
-(define *dbname* #`"efs:,|*dbpath*|")
+(define *dbname* (kahua-dbpath "efs:db"))
 
 (define-class <address> (<kahua-persistent-base>)
   ((address :allocation :persistent :init-keyword :address)

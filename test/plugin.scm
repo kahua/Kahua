@@ -10,17 +10,16 @@
 
 (test-start "plugin manager")
 
+(define *site* "_site")
+
 ;; --------------------------------------------------------------
 (test-section "initialization")
-(sys-system "rm -rf _work")
-(sys-mkdir "_work" #o775)
-(sys-mkdir "_work/plugins" #o775)
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(copy-file "../plugins/allow-module.scm" #`",|*site*|/plugins/allow-module.scm")
+(copy-file "../plugins/sendmail.scm" #`",|*site*|/plugins/sendmail.scm")
 
-(copy-file "../plugins/allow-module.scm" "_work/plugins/allow-module.scm")
-(copy-file "../plugins/sendmail.scm" "_work/plugins/sendmail.scm")
-
-(set! (ref (kahua-config) 'working-directory) "./_work")
-
+(kahua-common-init *site* #f)
 
 ;;---------------------------------------------------------------
 ;; プラグインモジュールのテストを開始する。

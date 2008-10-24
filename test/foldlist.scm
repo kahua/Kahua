@@ -11,25 +11,23 @@
 (use text.tree)
 (use sxml.ssax)
 (use sxml.sxpath)
-(use kahua)
+(use file.util)
+
 (use kahua.test.xml)
 (use kahua.test.worker)
-
 (use kahua.persistence)
 (use kahua.user)
-(use file.util)
+(use kahua.config)
 
 (test-start "foldlist test scripts")
 
-(sys-system "rm -rf _tmp _work")
-(sys-mkdir "_tmp" #o755)
-(sys-mkdir "_work" #o755)
-(sys-mkdir "_work/plugins" #o755)
-(copy-file "../plugins/allow-module.scm"  "_work/plugins/allow-module.scm")
+(define *site* "_site")
 
-(define *config* "./test.conf")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(copy-file "../plugins/allow-module.scm" #`",|*site*|/plugins/allow-module.scm")
 
-(kahua-init *config*)
+(kahua-common-init *site* #f)
 
 
 ;;------------------------------------------------------------
@@ -39,7 +37,7 @@
 
 (with-worker
  (w `("gosh" "-I../src" "-I../examples" "../src/kahua-server"
-      "-c" ,*config* "../examples/foldlist/foldlist.kahua"))
+      "-S" ,*site* "../examples/foldlist/foldlist.kahua"))
  
  (test* "run foldlist" #t (worker-running? w))
 

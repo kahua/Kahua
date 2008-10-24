@@ -4,8 +4,15 @@
 
 (use gauche.test)
 (use kahua.plugin)
+(use kahua.config)
 
 (test-start "sandbox test")
+
+;; TODO: This should not be required.
+(define *site* "_site")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(kahua-common-init *site* #f)
 
 (define *sandbox* #f)
 

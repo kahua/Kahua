@@ -47,8 +47,6 @@ INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) \
 	       $(SCM_INSTALL_DIR)/kahua/test \
 	       $(SCM_INSTALL_DIR)/kahua/persistence
 
-TESTENV_DIR  = $(top_builddir)/tmp
-
 SH_SCRIPTS  = kahua-spvr    \
               kahua-admin   \
               kahua-install \
@@ -86,7 +84,7 @@ SCMFILES = $(SCM_SCRIPTS) \
 CONFFILE = $(sysconfdir)/kahua.conf
 USERCONFFILE = $(localstatedir)/user.conf
 
-GENERATED = $(SH_SCRIPTS) kahua.conf test.conf \
+GENERATED = $(SH_SCRIPTS) kahua.conf \
             kahua/config.scm kahua.conf
 
 CONFIG_GENERATED = Makefile 
@@ -144,15 +142,11 @@ kahua.conf: kahua.conf.sample
             kahua.conf.sample > $@
 	chmod -w $@
 
-test.conf : make-testconf.scm
-	$(GOSH) ./make-testconf.scm $(top_builddir) $(top_srcdir)
-
 check:
 
 # cleanup
 clean:
 	rm -rf core *~ kahua/*~ $(GENERATED)
-	rm -rf $(TESTENV_DIR)
 
 install: all
 	$(INSTALL) -m 0755 -d $(sysconfdir) $(libexecdir)
