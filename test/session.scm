@@ -15,9 +15,9 @@
 (use kahua.session)
 (test-module 'kahua.session)
 
-(sys-system "rm -rf _tmp _work")
-(sys-mkdir "_tmp" #o777)
-(sys-mkdir "_work" #o777)
+(define *site* "_site")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
 
 ;;------------------------------------------------------------------
 (test-section "initialization")
@@ -28,7 +28,7 @@
 (test* "initialization" #t
        (begin (session-manager-init "worker" #f) #t))
 
-(kahua-init "./test.conf")
+(kahua-common-init *site* #f)
 
 ;;------------------------------------------------------------------
 (test-section "cont session")
@@ -132,7 +132,7 @@
 
 (test* "start key server" #t
        (let* ((p (run-process "gosh" "-I../src" "../src/kahua-keyserv"
-                              "-c" "./test.conf" :output :pipe))
+                              "-S" *site* :output :pipe))
               (id (read-line (process-output p))))
          (set! kserv p)
          (set! kserv-id id)
@@ -140,7 +140,7 @@
 
 (define (get-session-key request)
   (call-with-client-socket
-      (make-client-socket (worker-id->sockaddr kserv-id "unix:_tmp"))
+      (make-client-socket (worker-id->sockaddr kserv-id (kahua-sockbase)))
     (lambda (in out)
       (write request out) (close-output-port out)
       (read in))))
@@ -205,7 +205,7 @@
          (begin
            (set! key (get-session-key '(#f)))
            (let1 sock
-               (make-client-socket (worker-id->sockaddr kserv-id "unix:_tmp"))
+               (make-client-socket (worker-id->sockaddr kserv-id (kahua-sockbase)))
              (call-with-client-socket sock
                (lambda (in out)
                  (display "(poge" out) (close-output-port out)
@@ -217,7 +217,7 @@
   (test* "bad request2" "b"
          (begin
            (let1 sock
-               (make-client-socket (worker-id->sockaddr kserv-id "unix:_tmp"))
+               (make-client-socket (worker-id->sockaddr kserv-id (kahua-sockbase)))
              (call-with-client-socket sock
                (lambda (in out)
                  (display "#<zz>" out) (close-output-port out)

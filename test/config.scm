@@ -19,37 +19,6 @@
 ;; ないことを確認する。
 (test-module 'kahua.config)
 
-(test-section "Old Fashion Configuration")
-(test* "loading config" #t
-       (is-a? (let1 c (kahua-init "./test.conf")
-		(set! *config* c)
-		c) <kahua-config>))
-
-(test* "sockbase" "unix:_tmp"
-       (kahua-sockbase))
-
-(test* "set! sockbase" "unix:foo"
-       (begin (set! (kahua-sockbase) "unix:foo")
-              (kahua-sockbase)))
-
-(test* "log path" "_work/logs/foo.log"
-       (kahua-logpath "foo.log"))
-
-(test* "config file" "./test.conf"
-       (kahua-config-file))
-
-(test* "error-document-alist" '((404 . "_work/404.html") (503 . "_work/503.html"))
-       (kahua-error-document-alist))
-
-(test* "error-document 404" "_work/404.html"
-       (kahua-error-document 404))
-
-(test* "error-document 500" #f
-       (kahua-error-document 500))
-
-(test* "error-document 503" "_work/503.html"
-       (kahua-error-document 503))
-
 (test-section "Initialize with Site Bundle")
 (test* "kahua-site-init: cannot read kahua.conf" *test-error* (kahua-site-init "./_work"))
 (sys-mkdir "./_work/etc" #o755)

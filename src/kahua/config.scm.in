@@ -21,8 +21,7 @@
   (use util.list)
   (use util.match)
   (use kahua.object-pool)
-  (export kahua-init
-	  kahua-common-init
+  (export kahua-common-init
 	  <kahua-custom> <kahua-config>
           kahua-config
 
@@ -218,45 +217,6 @@
   :key-of (lambda (_ initargs)
 	    (kahua::abs-path (get-keyword* :config-file initargs #f) (get-keyword* :site-root initargs #f))))
 
-;; Now not work properly.
-;; This is called every (kahua-config) :-(
-;(define-method make ((class <kahua-config-meta>) . initargs)
-;  (let1 ins (next-method)
-;    (initialize ins initargs)
-;    ins))
-
-(define (sanity-check kahua-conf)
-  ;; do some sanity check
-  (let1 wdir (kahua-working-directory)
-    (unless (and (file-is-directory? wdir)
-                 (file-is-writable? wdir))
-      (error "working directory does not exist or is not writable:" wdir))
-    (make-directory* (kahua-log-directory))
-    (make-directory* (kahua-application-directory))
-    (make-directory* (kahua-plugin-directory))
-    (make-directory* (kahua-template-directory))
-    ))
-
-;; Read configuration from path.
-;; If path does not exist, is not readable or contains
-;; no configuration expression, raise error.
-(define (read-config path)
-  (match (file->sexp-list path)
-    ((('make '<kahua-config> . options)) options)
-    (else (error "Cannot parse configuration file:" path)))) ; TODO: should raise proper <kahua-error>.
-
-;; kahua-init [conf-file] [skip-check?]
-;; if "skip-check?" is #t, read kahua.conf only(not check 
-(define (kahua-init cfile . args)
-  (let-keywords* args ((skip-check? #f))
-    (let1 cfile (or cfile *kahua-conf-default*)
-      (kahua-config (apply make <kahua-config> :config-file cfile (read-config cfile)))))
-  ;; Include working directory to *load-path*.
-  ;; We don't use add-load-path here, since it is a macro that does
-  ;; work at compile time.
-  (push! *load-path* (kahua-application-directory))
-  (kahua-config))
-
 ;; Accessor functions
 
 (define-macro (apply-define def . names)
@@ -451,6 +411,13 @@
       (sys-umask old-umask))))
 
 (define (read-site-config site-path)
+  ;; Read configuration from path.
+  ;; If path does not exist, is not readable or contains
+  ;; no configuration expression, raise error.
+  (define (read-config path)
+    (match (file->sexp-list path)
+      ((('make '<kahua-config> . options)) options)
+      (else (error "Cannot parse configuration file:" path)))) ; TODO: should raise proper <kahua-error>.
   (read-config (abs-path (site-default 'config-file) site-path)))
 
 (define (kahua-site-init site-path)
@@ -468,11 +435,10 @@
       (push! *load-path* (kahua-application-directory))
       c)))
 
-(define (kahua-common-init site conf-file)
-  (cond (site => kahua-site-init)
-	(conf-file => kahua-init)
-	((sys-getenv "KAHUA_DEFAULT_SITE") => kahua-site-init)
-	(else (kahua-init #f))))
+(define (kahua-common-init site . maybe-conf-file)
+  (or (and-let* ((site (or site (sys-getenv "KAHUA_DEFAULT_SITE"))))
+	(kahua-site-init site))		; TODO: conf-file should be handled.
+      (error "Site bundle must be specified.")))
 
 (provide "kahua/config")
 

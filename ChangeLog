@@ -1,5 +1,9 @@
 2008-10-24  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: src/kahua/config.scm.in, test/config.scm, test/session.scm
+	  Drop procedure "kahua-init" because Kahua cannot work without any site bundle.
+	  You must use kahua-common-init instead of kahua-init.
+
 	* Change: src/kahua/config.scm.in, src/Makefile.in
 	          test/sandbox.scm, test/config.scm, test/kahua-call-with-current-context.scm,
 	          test/lambdabooks.scm, test/foldlist.scm, test/redirectcont.scm,
