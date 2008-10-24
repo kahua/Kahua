@@ -48,7 +48,7 @@
 
 ;; kahua-shell と通信する kahua-spvr を起動する。
 (test* "start spvr" #t
-       (let ((p (run-process "../src/kahua-spvr" "--test" "-S" *site*)))
+       (let ((p (run-process "../src/kahua-spvr" "-S" *site*)))
          (set! *spvr* p)
 	 (sys-sleep 3)
 	 (let1 socket-path #`",|*site*|/socket/kahua"
@@ -58,7 +58,7 @@
 
 ;; kahua-shell を起動する。
 (test* "start shell" "Welcome to Kahua."
-       (let ((p (run-process 'env "-i" "../src/kahua-shell" "--test" "-S" *site* 
+       (let ((p (run-process 'env "-i" "../src/kahua-shell" "-S" *site* 
 			     :input :pipe :output :pipe :error :pipe)))
 	 (set! *shell* p)
 	 (sys-sleep 3)

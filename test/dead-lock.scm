@@ -15,20 +15,17 @@
 
 (test-start "dead-lock")
 
-(sys-system "rm -rf _tmp _work")
-(for-each make-directory*
-          '("_tmp" 
-            "_work/checkout/many-as"
-            "_work/plugins"))
+(define *site* "_site")
 
-(copy-file "../plugins/allow-module.scm"  "_work/plugins/allow-module.scm")
-(copy-file "./many-as.kahua"      "./_work/checkout/many-as/many-as.kahua")
-
-(define *config* "./test.conf")
+(sys-system #`"rm -rf ,|*site*|")
+(kahua-site-create *site*)
+(make-directory* #`",|*site*|/app/many-as")
+(copy-file "many-as.kahua" #`",|*site*|/app/many-as/many-as.kahua")
+(copy-file "../plugins/allow-module.scm" #`",|*site*|/plugins/allow-module.scm")
 (define *spvr* #f)
 (define *gsid* #f)
 
-(kahua-init *config*)
+(kahua-common-init *site* #f)
 
 ;; some utilities
 (define (send-message out header body)
@@ -49,7 +46,7 @@
       (call-with-values (cut receive-message in) receiver))))
 
 ;; prepare app-servers file
-(with-output-to-file "_work/app-servers"
+(with-output-to-file #`",|*site*|/app-servers"
   (lambda ()
     (write '((many-as :run-by-default 0)))))
 
@@ -57,15 +54,15 @@
 (test-section "starting spvr")
 
 (test* "start" #t
-       (let* ((p (run-process "../src/kahua-spvr" "--test"
-                              "-c" *config* "-i"
+       (let* ((p (run-process "../src/kahua-spvr" "-S" *site* "-i"
                               :input :pipe :output :pipe))
               )
          (set! *spvr* p)
          (sys-sleep 2) ;; give the spvr time to set up...
-         (and (file-exists? "_tmp/kahua")
-	      (or (eq? (file-type "_tmp/kahua") 'socket)
-                  (eq? (file-type "_tmp/kahua") 'fifo)))))
+	 (let1 socket-path #`",|*site*|/socket/kahua"
+	   (and (file-exists? socket-path)
+		(or (eq? (file-type socket-path) 'socket)
+		    (eq? (file-type socket-path) 'fifo))))))
 
 ;;-----------------------------------------------------------
 (test-section "starting worker")
@@ -129,6 +126,6 @@
        (begin
          (process-send-signal *spvr* SIGTERM)
 	 (process-wait *spvr*)
-         (directory-list "_tmp" :children? #t)))
+         (directory-list #`",|*site*|/socket" :children? #t)))
 
 (test-end)

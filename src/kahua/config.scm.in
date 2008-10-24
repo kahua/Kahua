@@ -410,19 +410,15 @@
 				  (get-keyword :value (cdr b))))))
       (sys-umask old-umask))))
 
-(define (read-site-config site-path)
-  ;; Read configuration from path.
-  ;; If path does not exist, is not readable or contains
-  ;; no configuration expression, raise error.
+(define (kahua-site-init site-path . maybe-conf-file)
+  (define (site-config site-path)
+    (abs-path (site-default 'config-file) site-path))
   (define (read-config path)
     (match (file->sexp-list path)
       ((('make '<kahua-config> . options)) options)
       (else (error "Cannot parse configuration file:" path)))) ; TODO: should raise proper <kahua-error>.
-  (read-config (abs-path (site-default 'config-file) site-path)))
-
-(define (kahua-site-init site-path)
   (let* ((site-path (sys-normalize-pathname site-path :absolute #t :expand #t))
-	 (config (read-site-config site-path))
+	 (config (read-config (or (get-optional maybe-conf-file #f) (site-config site-path))))
 	 (initargs (fold (lambda (e r)
 			   (let1 k (make-keyword (car e))
 			     (if (get-keyword k config #f)
@@ -437,7 +433,7 @@
 
 (define (kahua-common-init site . maybe-conf-file)
   (or (and-let* ((site (or site (sys-getenv "KAHUA_DEFAULT_SITE"))))
-	(kahua-site-init site))		; TODO: conf-file should be handled.
+	(apply kahua-site-init site maybe-conf-file))
       (error "Site bundle must be specified.")))
 
 (provide "kahua/config")

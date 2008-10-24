@@ -48,7 +48,7 @@
 
 ;; kahua-spvr を起動する。
 (test* "start spvr" #t
-       (let ((p (run-process "../src/kahua-spvr" "--test" "-S" *site*)))
+       (let ((p (run-process "../src/kahua-spvr" "-S" *site*)))
 	 (sys-sleep 3)
 	 (let1 socket-path #`",|*site*|/socket/kahua"
 	   (and (file-exists? socket-path)
@@ -57,7 +57,7 @@
 
 ;; kahua-admin を起動する。
 (test* "start admin" 'spvr>
-       (let ((p (run-process "../src/kahua-admin" "--test" "-S" *site* 
+       (let ((p (run-process "../src/kahua-admin" "-S" *site* 
 			     :input :pipe :output :pipe :error :pipe)))
 	 (set! *admin* p)
 	 (sys-sleep 1)

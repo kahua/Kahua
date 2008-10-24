@@ -10,7 +10,7 @@
 	          test/developer.scm, test/nqueen.scm, test/plugin.scm, test/query.scm,
 	          test/server.scm, test/shell.scm, test/worker.scm, test/wiki-iki.scm,
 	          test/entry-method.scm, test/httpd.scm, test/admin.scm, test/rollback.scm,
-	          test/spvr.scm, test/multi-paging.scm
+	          test/spvr.scm, test/multi-paging.scm, test/dead-lock.scm
 	  Remove: src/make-testconf.scm, src/custom.conf.sample
 	  <kahua-config> is now based on <kahua:object-pool-mixin> and <kahua:read-only-mixin>,
 	  and kahua-config is now a parameter instead of a procedure.
