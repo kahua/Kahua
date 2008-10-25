@@ -180,7 +180,7 @@ query:
 	@gosh -I../src ./query.scm >> test.log
 
 dead-lock:
-	@gosh -I../src ./dead-lock.scm >> test.log
+	@env GC_LARGE_ALLOC_WARN_INTERVAL=100 gosh -I../src ./dead-lock.scm >> test.log
 
 serialize:
 	@gosh -I../src ./serialize.scm >> test.log

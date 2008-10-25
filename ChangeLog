@@ -1,3 +1,8 @@
+2008-10-25  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: test/Makefile.in
+	  Suppress Boehm-gc's warning message.
+
 2008-10-24  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/config.scm.in, test/config.scm, test/session.scm
