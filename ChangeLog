@@ -11,6 +11,12 @@
 	(kahua-cgilogpath): add.
 	(define-module kahua.config): add kahua-cgilog-directory, kahua-cgilogpath
 
+2008-10-06  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-httpd.scm:
+	  Fix the problem that directory->index-file returned #<undef> when
+	  cannot find any index file.
+
 2008-08-14  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: src/kahua/protocol/http.scm, src/kahua/server.scm

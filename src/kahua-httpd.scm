@@ -141,12 +141,10 @@
 		      (cut copy-port <> out)))))))
   (define (directory->index-file path)
     (and (file-is-directory? path)
-	 (let/cc ret
-	   (for-each (lambda (idx)
-		       (let1 f #`",|path|/,|idx|"
-			 (when (file-exists? f)
-			   (ret f))))
-		     *INDEX*))))
+	 (any (lambda (idx)
+		(let1 f #`",|path|/,|idx|"
+		  (and (file-exists? f) f)))
+		     *INDEX*)))
   (cond ((file-exists? path)
 	 (let1 path (or (directory->index-file path) path)
 	   (or (and (file-is-regular? path)
