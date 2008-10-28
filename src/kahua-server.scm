@@ -141,6 +141,11 @@
 				      (write r-body output)   (newline output)
 				      (flush output))))
 				selector)))))))
+    (define (orphan-handler in flag)
+      (when (eof-object? (read-byte in))
+	(display "[server]: parent(mybe spvr) has gone, so me too!!\n" (current-error-port))
+	(selector-delete! selector in #f #f)
+	(sys-kill (sys-getpid) SIGTERM)))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
@@ -148,6 +153,7 @@
     (run-kahua-hook-initial)
     (format #t "~a\n" worker-id) (flush)
     (selector-add! selector (socket-fd sock) accept-handler '(r))
+    (selector-add! selector (current-input-port) orphan-handler '(r))
     (with-kahua-db-connection (database-name)
       (lambda (db)
 	(do () (#f)

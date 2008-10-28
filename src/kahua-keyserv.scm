@@ -84,7 +84,7 @@
 	 (sys-unlink (kahua-keyserv-pidpath)))))))
 
 (define (usage)
-  (print "kahua-keyserv [-c <conf-file>][-user <user>]")
+  (print "kahua-keyserv [-S <site-bundle>] [-c <conf-file>] [-t <thread-count>]")
   (exit 0))
 
 ;; server main loop - similar to kahua-server.  call for refactoring.
@@ -93,11 +93,18 @@
         (selector (make <selector>)))
     (define (accept-handler fd flag)
       (thread-pool-add-task tpool (cute handle-request (socket-accept sock))))
+    (define (orphan-handler in flag)
+      (when (eof-object? (read-byte in))
+	(display "keyserv: parent(maybe spvr) has gone, so me too!!\n" (current-error-port))
+	(selector-delete! selector in #f #f)
+	(sys-kill (sys-getpid) SIGTERM)))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
       (sys-chmod (sockaddr-name sockaddr) #o770))
-    (format #t "~a\n" worker-id) (flush) ;; tell spvr about myself
+    (format #t "~a\n" worker-id) ;; tell spvr about myself
+    (close-output-port (current-output-port))
+    (selector-add! selector (current-input-port) orphan-handler '(r))
     (selector-add! selector (socket-fd sock) accept-handler '(r))
 
     (let1 t (make-thread (lambda ()

@@ -400,6 +400,13 @@
 				   (thread-pool-add-task tpool (cut handle-request sock))))
 			       '(r)))
 	      socks)
+    (selector-add! selector (current-input-port)
+		   (lambda (in flag)
+		     (when (eof-object? (read-byte in))
+		       (display "httpd: parent(maybe spvr) has gone, so me too!!\n" (current-error-port))
+		       (selector-delete! selector in #f #f)
+		       (sys-kill (sys-getpid) SIGTERM)))
+		   '(r))
     (do () (#f) (selector-select selector 10e6))))
 
 (define (parse-host-spec host port)
@@ -436,7 +443,6 @@
   (define (usage)
     (display "Usage: kahua-httpd [options ...]
 Options:
-      --user=user         User-custom setting
       --runas=user:group  Run under the specified privilege
   -p, --port=number       Alternative port number to listen
   -c, --conf-file=file    Alternative location of kahua.conf

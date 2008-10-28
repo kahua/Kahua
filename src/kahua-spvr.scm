@@ -202,7 +202,7 @@
 	     (kahua:log-format "[spvr] running ~a failed: ~a"
 			 (car cmd) (kahua-error-string e #t))
 	     (raise e)))
-    (let1 p (apply run-process `(,@cmd :input "/dev/null" :output :pipe :sigmask ,*default-sigmask*))
+    (let1 p (apply run-process `(,@cmd :input :pipe :output :pipe :sigmask ,*default-sigmask*))
       (kahua:log-format "[spvr] running ~a: pid ~a" (car cmd) (process-pid p))
       p)))
 
@@ -560,6 +560,7 @@
          (id    (read-line (process-output p)))
          (wno   (slot-ref self 'next-wno))
 	 (log-str (format "[worker] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
+    (close-input-port (process-output p))
     (slot-set! self 'logger (pa$ kahua:log-format log-str))
     (slot-set! self 'wid id)
     (slot-set! self 'wno wno)
@@ -602,9 +603,8 @@
   (log-worker-action "unexpected finish" self))
 
 (define-method finish-worker ((self <kahua-worker>))
-  (if (not (zombee? self))
-      (unexpected-end self))
-  (close-input-port (process-output (process-of self))))
+  (when (not (zombee? self))
+    (unexpected-end self)))
 
 (define-method dispatch-to-worker ((self <kahua-worker>) header body cont)
   (let1 sockaddr (sockaddr-of self)
