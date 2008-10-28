@@ -604,7 +604,8 @@
 
 (define-method finish-worker ((self <kahua-worker>))
   (when (not (zombee? self))
-    (unexpected-end self)))
+    (unexpected-end self))
+  (close-output-port (process-input (process-of self))))
 
 (define-method dispatch-to-worker ((self <kahua-worker>) header body cont)
   (let1 sockaddr (sockaddr-of self)
