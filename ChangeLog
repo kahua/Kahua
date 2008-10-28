@@ -1,5 +1,9 @@
 2008-10-28  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: src/Makefile.in
+	  Remove: src/user.conf.sample, src/kahua.conf.sample
+	  Now do not install the global configuration file and developer acount database.
+
 	* Change: src/kahua-spvr.scm, src/kahua-httpd.scm,
 	          src/kahua-keyserv.scm, src/kahua-server.scm
 	  Now child processes check spvr is alive or not via pipe,

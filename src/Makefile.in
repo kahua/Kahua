@@ -81,11 +81,7 @@ SCMFILES = $(SCM_SCRIPTS) \
 	   kahua/protocol/worker.scm kahua/protocol/http.scm \
 	   kahua/xml-template.scm kahua/css.scm
 
-CONFFILE = $(sysconfdir)/kahua.conf
-USERCONFFILE = $(localstatedir)/user.conf
-
-GENERATED = $(SH_SCRIPTS) kahua.conf \
-            kahua/config.scm kahua.conf
+GENERATED = $(SH_SCRIPTS) kahua/config.scm
 
 CONFIG_GENERATED = Makefile 
 .PHONY: all check testenv clean distclean install maintainer-clean
@@ -134,14 +130,6 @@ kahua/config.scm: kahua/config.scm.in
             $@.in > $@
 	chmod -w $@
 
-kahua.conf: kahua.conf.sample
-	test ! -f $@ || chmod +w $@
-	sed -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" \
-            -e "s@##localstatedir##@$(localstatedir)@" \
-            -e "s@##KAHUA_STATICDIR##@$(KAHUA_STATICDIR)@" \
-            kahua.conf.sample > $@
-	chmod -w $@
-
 check:
 
 # cleanup
@@ -160,12 +148,6 @@ install: all
         fi
 	$(INSTALL) -m 0444 -T $(SCM_INSTALL_DIR) -S $(srcdir) $(SCMFILES)
 	$(INSTALL) -m 0555 -T $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
-	@if test ! -f $(sysconfdir)/kahua.conf; then \
-	  $(INSTALL) -m 0644 kahua.conf $(sysconfdir)/kahua.conf; \
-	fi
-	@if test ! -f $(localstatedir)/user.conf; then \
-	  $(INSTALL) $(KAHUA_GROUP_OPTION) -m 0660 user.conf.sample $(localstatedir)/user.conf; \
-	fi
 	@if test -d $(sysconfdir)/skel; then \
 	  rm -rf $(sysconfdir)/skel.bak; \
 	  mv $(sysconfdir)/skel $(sysconfdir)/skel.bak; \
