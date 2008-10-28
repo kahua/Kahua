@@ -562,6 +562,7 @@
          (id    (read-line (process-output p)))
          (wno   (slot-ref self 'next-wno))
 	 (log-str (format "[worker] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
+    (close-input-port (process-output p))
     (slot-set! self 'logger (pa$ log-format log-str))
     (slot-set! self 'wid id)
     (slot-set! self 'wno wno)

@@ -1,3 +1,8 @@
+2008-10-28  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: src/kahua-spvr.scm
+	  Close pipe explicitly as soon as when it becomes unnecessary.
+
 2008-10-24  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
 	* cgi/kahua.cgi.in: unuse *LOG-PREFIX*
