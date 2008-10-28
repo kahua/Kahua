@@ -235,7 +235,7 @@
 	(with-locking (car args) (lambda () (doit (cdr args)))))))
 
 (define (config-options)
-  (cond-list ((kahua-site-root) -> (pa$ list "-S"))
+  (cond-list ((kahua-site-root) => (pa$ list "-S"))
 	     ((kahua-config-file) => (pa$ list "-c"))))
 
 ;;;=================================================================
