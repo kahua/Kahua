@@ -355,6 +355,7 @@
   (hash-table-delete! (wid-table-of spvr) (wid-of worker))
   (hash-table-delete! (wno-table-of spvr) (wno-of worker))
   (%remove-worker! type worker)
+  (close-output-port (process-input (process-of worker))) ;; TODO: should move this to any more suitable place.
   (unless (workers-of type)
     (hash-table-delete! (wtype-table-of spvr) (name-of type))))
 (define (unregister-worker spvr type worker)
@@ -425,17 +426,17 @@
 		    (wid-table-of spvr))
       (and k&v (cdr k&v))))
 
-      (while (process-wait-any #t) => p
-	(with-locking spvr
-	  (lambda ()
-	    (and-let* ((w (find-worker-by-process p))
-		       (wtype (type-of w)))
-	      (%unregister-worker spvr wtype w)
-	      (log-worker-action "unexpected terminated worker" w)
-	      (when (kahua-auto-restart)
-		(let1 w (%run-worker spvr wtype)
-		  (log-worker-action "restarted terminated worker type:" w)))
-	      )))))
+  (while (process-wait-any #t) => p
+	 (with-locking spvr
+	   (lambda ()
+	     (and-let* ((w (find-worker-by-process p))
+			(wtype (type-of w)))
+	       (%unregister-worker spvr wtype w)
+	       (log-worker-action "unexpected terminated worker" w)
+	       (when (kahua-auto-restart)
+		 (let1 w (%run-worker spvr wtype)
+		   (log-worker-action "restarted terminated worker type:" w)))
+	       )))))
 
 ;; terminate all workers
 (define-method nuke-all-workers ((self <kahua-spvr>))
@@ -575,9 +576,9 @@
 (define (%terminate! spvr type worker)
   (slot-set! worker 'zombee #t)
   (log-worker-action "terminate" worker)
-  (%unregister-worker spvr type worker)
   (let1 p (process-of worker)
     (process-send-signal p SIGTERM)
+    (%unregister-worker spvr type worker)
     p))
 
 (define-method terminate! ((self <kahua-worker>))
@@ -597,15 +598,6 @@
 				      (map (pa$ %terminate! spvr self)
 					   (circular-list->list wcl))))
 			  spvr self))))
-
-;; dummy method to do something when a worker ends unexpected
-(define-method unexpected-end ((self <kahua-worker>))
-  (log-worker-action "unexpected finish" self))
-
-(define-method finish-worker ((self <kahua-worker>))
-  (when (not (zombee? self))
-    (unexpected-end self))
-  (close-output-port (process-input (process-of self))))
 
 (define-method dispatch-to-worker ((self <kahua-worker>) header body cont)
   (let1 sockaddr (sockaddr-of self)
