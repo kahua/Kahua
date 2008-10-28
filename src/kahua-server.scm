@@ -200,7 +200,7 @@
 			(prof "profile=s")
                         . mods)
     (unless (pair? mods)
-      (error "usage: kahua-server [-S <site>] [-c <conf>] [-user <user>] [-k <keyserv-id>] [-default-db <default-db-path>] [-profile <profile-out>] <app-server> <args> ..." mods))
+      (error "usage: kahua-server [-S <site>] [-c <conf>] [-k <keyserv-id>] [-default-db <default-db-path>] [-profile <profile-out>] <app-server> <args> ..." mods))
     (set! *kahua-top-module* (car mods))
     (kahua-common-init site conf-file)
     (set! kahua-app-server (kahua-application-environment))

@@ -235,10 +235,8 @@
 	(with-locking (car args) (lambda () (doit (cdr args)))))))
 
 (define (config-options)
-  (cond ((kahua-site-root) => (lambda (s) (list (list "-S" s))))
-	(else
-	 (cond-list ((kahua-config-file) => (pa$ list "-c"))
-		    ((ref (kahua-config) 'user-mode) => (pa$ list "-user"))))))
+  (cond-list ((kahua-site-root) -> (pa$ list "-S"))
+	     ((kahua-config-file) => (pa$ list "-c"))))
 
 ;;;=================================================================
 ;;; Keyserv management
@@ -610,7 +608,7 @@
 			 (cont (spvr-error-header e)
 			       (list (ref e 'message) (kahua-error-string e #t)))))
 		(receive (header body) (receive-message in)
-		  (with-ignoring-exception (cut socket-shutdown sock 1)) ; SHUT_WR
+		  (with-ignoring-exception (cut socket-shutdown sock SHUT_WR))
 		  (cont header body))))))
 	(spvr-errorf <kahua-worker-not-respond>
 		     "Worker ~s (~s) is not running currently" (name-of (type-of self)) (wno-of self)))))
@@ -717,7 +715,7 @@
 			   (guard (e
 				   (#t (kahua:log-format "[spvr]: client closed connection")))
 			     (send-message out header body))))))
-      (with-ignoring-exception (cut socket-shutdown client-sock 1))))) ; SHUT_WR
+      (with-ignoring-exception (cut socket-shutdown client-sock SHUT_WR)))))
 
 ;;
 ;; Actual server loop
@@ -756,7 +754,6 @@
   (print "  -i, --interactive     Interactive REPL prompt to stdio")
   (print "  -s, --sockbase=spec   Alternative socket base")
   (print "  -l, --logfile=file    Alternative log file ('-' for stdout)")
-  (print "      --user=user       User-custom setting")
   (print "  -H, --httpd=[host:]port  Accept http connection on port")
   (print "  -h, --help            Show this")
   (print "See http://www.kahua.org/ for the details")
