@@ -78,17 +78,10 @@
           ))
 (select-module kahua.config)
 
-(define-constant *kahua-conf-default* "##sysconfdir##/kahua.conf")
-(define-constant *kahua-working-directory-default* "##localstatedir##")
-(define-constant *kahua-socket-base-default* "unix:##SOCKET_BASE_DIR##")
-(define-constant *kahua-cgilog-directory-default* "##KAHUA_CGI_LOGPATH##")
-(define-constant *kahua-etc-directory-default* "##sysconfdir##")
-(define-constant *kahua-static-document-path-default* "##KAHUA_STATICDIR##")
-(define-constant *kahua-static-document-url-default* "/##package##")
-(define-constant *kahua-userconf-file-default* "##localstatedir##/user.conf")
-
 (define (kahua-version) "##KAHUA_VERSION##")
 (define (kahua-revision) "r##KAHUA_REVISION##")
+
+(define-constant *kahua-static-document-url-default* "/##package##")
 
 (define kahua-config (make-parameter #f))
 
@@ -97,50 +90,43 @@
    ;; working-directory - where kahua processes keeps logs and
    ;;     other various info.  This directory must be writable by
    ;;     kahua processes.
-   (working-directory :init-keyword :working-directory
-                      :init-value *kahua-working-directory-default* :place :site)
+   (working-directory :init-keyword :working-directory :place :site)
 
    ;; sockbase - specifies where to open the server socket.
    ;;     Currently only unix domain socket is supported.
    ;;     The socket directory must be writable by kahua processes.
-   (sockbase          :init-keyword :sockbase
-                      :init-value *kahua-socket-base-default* :place :site)
+   (sockbase          :init-keyword :sockbase :place :site)
 
-   (app-servers :init-keyword :app-servers :init-value "app-servers" :place :wdir)
+   (app-servers :init-keyword :app-servers :place :site)
 
    ;; application-directory - where there are kahua application code.
    ;;     Default: $(database-directory)/checkout
-   (application-directory :init-keyword :application-directory
-			  :init-value "checkout" :place :wdir)
+   (application-directory :init-keyword :application-directory :place :site)
 
-   (plugin-directory :init-keyword :plugin-directory
-		     :init-value "plugins" :place :wdir)
+   (plugin-directory :init-keyword :plugin-directory :place :site)
 
-   (template-directory :init-keyword :template-directory
-		       :init-value "templates" :place :wdir)
+   (template-directory :init-keyword :template-directory :place :site)
 
    ;; database-directory - where kahua default database directory is placed.
    ;;     Default database path is $(database-directory)/db
-   (database-directory :init-keyword :database-directory
-		       :init-value "" :place :wdir)
+   (database-directory :init-keyword :database-directory :place :site)
 
    ;; data-directory - where generic files store.
-   (data-directory :init-keyword :data-directory :init-value "data" :place :wdir)
+   (data-directory :init-keyword :data-directory :place :site)
 
    ;; temporary-directory - where bridges and workers share to read/write
    ;;                       temporary files.
-   (temporary-directory :init-keyword :temporary-directory
-			:init-value "tmp" :place :wdir)
+   (temporary-directory :init-keyword :temporary-directory :place :site)
 
-   (log-directory :init-keyword :log-directory :init-value "logs" :place :wdir)
-   (cgilog-directory :init-keyword :cgilog-directory :init-value *kahua-cgilog-directory-default* :place :site)
-   (run-directory :init-keyword :run-directory :init-value "" :place :wdir)
-   (etc-directory :init-keyword :etc-directory :init-value *kahua-etc-directory-default* :place :site)
+   (log-directory :init-keyword :log-directory :place :site)
+   (cgilog-directory :init-keyword :cgilog-directory :place :site)
+   (run-directory :init-keyword :run-directory :place :site)
+   (etc-directory :init-keyword :etc-directory :place :site)
 
    ;; static-document-path - where kahua process puts static documents.
    ;;     Httpd must be able to show the contents under this directory.
    ;;     This directoy must be writable by kahua processes.
-   (static-document-path :init-keyword :static-document-path :init-value *kahua-static-document-path-default* :place :site)
+   (static-document-path :init-keyword :static-document-path :place :site)
 
    ;; static-document-url - the url path to reference the contents of
    ;;     static-document-path via httpd.
@@ -159,8 +145,7 @@
    (secure-sandbox :init-keyword :secure-sandbox :init-value #t)
 
    ;; userconf-file - developer account file
-   (userconf-file :init-keyword :userconf-file
-		  :init-value *kahua-userconf-file-default* :place :site)
+   (userconf-file :init-keyword :userconf-file :place :site)
 
    (spvr-concurrency :init-keyword :spvr-concurrency :init-value 10)
 
@@ -201,8 +186,6 @@
 				sockbase))))
 		       ((eq? place :site)
 			(lambda (o) (kahua::abs-path (slot-ref-using-accessor o acc) (slot-ref o 'site-root))))
-		       ((eq? place :wdir)
-			(lambda (o) (kahua::abs-path (slot-ref-using-accessor o acc) (slot-ref o 'working-directory))))
 		       (else (cut slot-ref-using-accessor <> acc))))
 	 (setter (case s
 		   ((site-root)
@@ -370,6 +353,8 @@
 			   :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
     (log-directory         :value "logs"
 			   :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
+    (cgilog-directory      :value "cgilogs"
+			   :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
     (run-directory         :value "run"
 			   :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
     (etc-directory         :value "etc"

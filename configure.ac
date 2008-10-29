@@ -63,20 +63,6 @@ are not installed automatically.  Default: $libexecdir/kahua]),
   ])
 AC_SUBST(KAHUA_CGIDIR)
 
-dnl Sets cgi log directory
-KAHUA_CGILOGDIR=$localstatedir/kahua/cgilog
-AC_ARG_WITH(cgilogdir,
-  AC_HELP_STRING([--with-cgilogdir=PATH],
-                 [Specifies the directory where Kahua cgi script log should be
-output to.  If disabled (--with-cgilogdir=no or --without-cgilogdir), cgi script log directory is not specified automatically.  Default: $localstatedir/kahua/cgilog]),
-  [
-    case "$with_cgilogdir" in
-      yes|no) KAHUA_CGILOGDIR= ;;
-      *)      KAHUA_CGILOGDIR=$with_cgilogdir ;;
-    esac
-  ])
-AC_SUBST(KAHUA_CGILOGDIR)
-
 FASTCGI_EXT=fcg
 AC_ARG_WITH(fastcgi-ext,
   AC_HELP_STRING([--with-fastcgi-ext=EXT],
@@ -100,55 +86,7 @@ AC_ARG_WITH(fastcgi,
   ])
 AC_SUBST(FASTCGI_SCRIPT)
 
-KAHUA_STATICDIR=$localstatedir/kahua/static
-AC_ARG_WITH(staticdir,
-  AC_HELP_STRING([--with-staticdir=PATH],
-                 [Specifies the directory where Kahua static documents should be
-installed.  Default: $KAHUA_STATICDIR]),
-  [
-    case "$with_staticdir" in
-      yes|no) KAHUA_STATICDIR= ;;
-      *)      KAHUA_STATICDIR=$with_staticdir ;;
-    esac
-  ])
-AC_SUBST(KAHUA_STATICDIR)
-
-KAHUA_USER_OPTION=
-AC_ARG_WITH(kahua-user,
-  AC_HELP_STRING([--with-kahua-user=USER],
-                 [User name execute kahua servers. Default: none]),
-  [
-    case "$with_kahua_user" in
-      yes|no)  KAHUA_USER_OPTION= ;;
-      *)       KAHUA_USER_OPTION="-o $with_kahua_user" ;;
-    esac
-  ])
-AC_SUBST(KAHUA_USER_OPTION)
-
-KAHUA_GROUP_OPTION=
-AC_ARG_WITH(kahua-group,
-  AC_HELP_STRING([--with-kahua-group=GROUP],
-                 [Group name execute kahua servers. Default: none]),
-  [
-    case "$with_kahua_group" in
-      yes|no) KAHUA_GROUP_OPTION= ;;
-      *)      KAHUA_GROUP_OPTION="-g $with_kahua_group" ;;
-    esac
-  ])
-AC_SUBST(KAHUA_GROUP_OPTION)
-
-CGI_USER_OPTION=
-AC_ARG_WITH(cgi-user,
-  AC_HELP_STRING([--with-cgi-user=USER],
-                 [User name execute kahua CGI. Default: none]),
-  [
-    case "$with_cgi_user" in
-      yes|no) CGI_USER_OPTION= ;;
-      *)      CGI_USER_OPTION="-o $with_cgi_user" ;;
-    esac
-  ])
-AC_SUBST(CGI_USER_OPTION)
-
+dnl Site bundle for examples. 
 AC_ARG_WITH(site-bundle,
   AC_HELP_STRING([--with-site-bundle=/path/to/site],
                  [Examples installed into /path/to/bundle. Default: none]),[])

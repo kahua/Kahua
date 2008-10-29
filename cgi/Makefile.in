@@ -27,14 +27,9 @@ VPATH             = $(srcdir)
 top_builddir      = @top_builddir@
 top_srcdir        = @top_srcdir@
 
-CGI_USER_OPTION   = @CGI_USER_OPTION@
-KAHUA_USER_OPTION = @KAHUA_USER_OPTION@
-KAHUA_GROUP_OPTION= @KAHUA_GROUP_OPTION@
-
 DESTDIR           =
 
 KAHUA_CGI_DIR = @KAHUA_CGIDIR@
-KAHUA_CGILOG_DIR = @KAHUA_CGILOGDIR@
 
 SOCKET_BASE_DIR = $(prefix)/tmp/$(package)
 
@@ -74,10 +69,7 @@ install:
 	  for f in $(SCRIPTS); do \
 	    $(INSTALL) -m 0555 $$f $(KAHUA_CGI_DIR)/$$f; \
 	  done; \
-	fi; \
-	if test "$(KAHUA_CGILOG_DIR)" != ""; then \
-	  $(INSTALL) $(CGI_USER_OPTION) $(KAHUA_GROUP_OPTION) -m 0750 -d $(KAHUA_CGILOG_DIR); \
-	fi; \
+	fi
 
 uninstall:
 	cd $(KAHUA_CGI_DIR) && rm -f $(SCRIPTS)

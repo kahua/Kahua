@@ -131,7 +131,7 @@
 (define kserv-id #f)
 
 (test* "start key server" #t
-       (let* ((p (run-process "gosh" "-I../src" "../src/kahua-keyserv"
+       (let* ((p (run-process "gosh" "-I../src" "../src/kahua-keyserv.scm"
                               "-S" *site* :output :pipe))
               (id (read-line (process-output p))))
          (set! kserv p)

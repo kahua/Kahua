@@ -49,12 +49,8 @@
         (print "    echo \"$0: Cannot locate kahua source tree\"")
         (print "    exit 1")
         (print "  fi")
-        (print "  # adds -c $libpath/test.conf to the option.  it will be")
-        (print "  # overridden if the user gives -c option.")
-        (print "  confopt=\"-c $libpath/test.conf\"")
         (print "else")
         (print "  libpath=" libdir)
-        (print "  confopt=")
         (print "fi")
         (print "exec "gosh " -I${libpath} ${libpath}/"basename".scm"
                " --gosh " gosh " ${confopt}"

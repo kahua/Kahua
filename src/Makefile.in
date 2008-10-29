@@ -22,9 +22,6 @@ VPATH             = $(srcdir)
 top_builddir      = @top_builddir@
 top_srcdir        = @top_srcdir@
 
-KAHUA_USER_OPTION = @KAHUA_USER_OPTION@
-KAHUA_GROUP_OPTION= @KAHUA_GROUP_OPTION@
-
 DESTDIR           =
 
 GOSH                   = @GOSH@
@@ -33,8 +30,6 @@ INSTALL                = @GAUCHE_INSTALL@
 INSTALL_TYPE           = @INSTALL_TYPE@
 SCM_INSTALL_DIR        = $(libdir)
 SCRIPT_INSTALL_DIR     = $(bindir)
-KAHUA_STATICDIR        = @KAHUA_STATICDIR@
-KAHUA_CGILOG_DIR       = @KAHUA_CGILOGDIR@
 SOCKET_BASE_DIR        = $(prefix)/tmp/$(package)
 TMP_BASE_DIR           = $(localstatedir)/tmp
 
@@ -119,12 +114,7 @@ kahua-user :
 
 kahua/config.scm: kahua/config.scm.in
 	test ! -f $@ || chmod +w $@
-	sed -e "s@##sysconfdir##@$(sysconfdir)@" \
-	    -e "s@##localstatedir##@$(localstatedir)@" \
-	    -e "s@##SOCKET_BASE_DIR##@$(SOCKET_BASE_DIR)@" \
-	    -e "s@##KAHUA_STATICDIR##@$(KAHUA_STATICDIR)@" \
-	    -e "s@##KAHUA_CGI_LOGPATH##@$(KAHUA_CGILOG_DIR)@" \
-	    -e "s@##package##@$(package)@" \
+	sed -e "s@##package##@$(package)@" \
 	    -e "s@##KAHUA_VERSION##@$(package_version)@" \
 	    -e "s@##KAHUA_REVISION##@$(build_revision)@" \
             $@.in > $@
@@ -138,14 +128,6 @@ clean:
 
 install: all
 	$(INSTALL) -m 0755 -d $(sysconfdir) $(libexecdir)
-	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0775 -d $(localstatedir)
-	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0770 -d $(localstatedir)/checkout \
-		   $(localstatedir)/logs $(localstatedir)/data
-	$(INSTALL) $(KAHUA_USER_OPTION) $(KAHUA_GROUP_OPTION) -m 0770 -d \
-		   $(SOCKET_BASE_DIR) $(TMP_BASE_DIR)
-	@if test "$(KAHUA_STATICDIR)" != ""; then \
-	  $(INSTALL) $(KAHUA_GROUP_OPTION) -m 0775 -d $(KAHUA_STATICDIR); \
-        fi
 	$(INSTALL) -m 0444 -T $(SCM_INSTALL_DIR) -S $(srcdir) $(SCMFILES)
 	$(INSTALL) -m 0555 -T $(SCRIPT_INSTALL_DIR) $(SH_SCRIPTS)
 	@if test -d $(sysconfdir)/skel; then \
@@ -154,6 +136,7 @@ install: all
 	fi
 	@if test ! -d $(sysconfdir)/skel; then \
 	  cp -R ../skel $(sysconfdir)/skel; \
+	  find $(sysconfdir)/skel -name .svn -type d|xargs rm -rf; \
 	  mv $(sysconfdir)/skel/TEMPLATE_DIST $(sysconfdir)/skel/DIST; \
 	  mv $(sysconfdir)/skel/TEMPLATE_DIST_EXCLUDE $(sysconfdir)/skel/DIST_EXCLUDE; \
 	fi

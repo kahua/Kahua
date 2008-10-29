@@ -54,7 +54,7 @@
 (test-section "starting spvr")
 
 (test* "start" #t
-       (let* ((p (run-process "../src/kahua-spvr" "-S" *site* "-i"
+       (let* ((p (run-process "../src/kahua-spvr" "--test" "-S" *site* "-i"
                               :input :pipe :output :pipe))
               )
          (set! *spvr* p)

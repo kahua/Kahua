@@ -42,7 +42,7 @@
 (test-section "start kahua-spvr with kahua-httpd")
 
 (test* "start" #t
-       (let* ((p (run-process "../src/kahua-spvr" "-S" *site*
+       (let* ((p (run-process "../src/kahua-spvr" "--test" "-S" *site*
                               "--httpd" (x->string *port*) "> /dev/null")))
          (set! *spvr* p)
          #t))

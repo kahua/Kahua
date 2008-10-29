@@ -20,9 +20,6 @@ VPATH             = $(srcdir)
 top_builddir      = @top_builddir@
 top_srcdir        = @top_srcdir@
 
-KAHUA_USER_OPTION = @KAHUA_USER_OPTION@
-KAHUA_GROUP_OPTION= @KAHUA_GROUP_OPTION@
-
 DESTDIR  =
 
 GOSH		  = @GOSH@
@@ -30,7 +27,7 @@ GAUCHE_CONFIG	  = @GAUCHE_CONFIG@
 INSTALL		  = @GAUCHE_INSTALL@
 MKINSTDIR	  = $(INSTALL) -d
 
-INSTALL_DIR = $(localstatedir)/plugins
+INSTALL_DIR = $(libdir)/plugins
 
 PLUGINS = allow-module.scm sendmail.scm query.scm fileio.scm \
           dsl-simple.scm
@@ -45,7 +42,7 @@ check:
 clean:
 
 install:
-	$(INSTALL) $(KAHUA_GROUP_OPTION) -m 0775 -d $(INSTALL_DIR)
+	$(INSTALL) -m 0755 -d $(INSTALL_DIR)
 	$(INSTALL) -m 444 -T $(INSTALL_DIR) -S $(srcdir) $(PLUGINS)
 
 uninstall:
