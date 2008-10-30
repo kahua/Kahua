@@ -19,9 +19,12 @@
 (select-module kahua.plugin)
 
 ;; plugin container
-(define *plugins* (make-hash-table 'string=?))
+(define-constant *plugins* (make-hash-table 'string=?))
 
-;; make anonymous module for binding plugin procedues.
+;; plugin's procedures are bound this module.
+(define-constant *sandbox-plugin* (make-hash-table 'eq?))
+
+;; make anonymous module for binding plugin procedures.
 (define (make-sandbox-module)
   (let ((m (make-module #f)))
     (eval '(import kahua.plugin) m)
@@ -33,9 +36,6 @@
       (let ((m (make-sandbox-module)))
         (hash-table-put! *sandbox-plugin* name m)
         m)))
-
-;; plugin's procedues are bound this module.
-(define *sandbox-plugin* (make-hash-table 'eq?))
 
 ;; plugin class.
 (define-class <kahua-plugin> ()
@@ -147,9 +147,8 @@
 ;; load all plugin file.
 (define (initialize-plugins plugin-dir)
   (let1 plugin-files (directory-list plugin-dir :filter (lambda (n) (string-suffix? ".scm" n)))
-    (set! *plugins* (make-hash-table 'string=?))
-    ;; make new module.
-    (set! *sandbox-plugin* (make-hash-table 'eq?))
+    (hash-table-clear! *plugins*)
+    (hash-table-clear! *sandbox-plugin*)
     (for-each (cut refresh-plugin <> plugin-dir) plugin-files)))
 
 ;; refresh a target plugin.
