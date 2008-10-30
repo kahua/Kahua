@@ -204,7 +204,7 @@
     (set! *kahua-top-module* (car mods))
     (kahua-common-init site conf-file)
     (set! kahua-app-server (kahua-application-environment))
-    (initialize-plugins)
+    (initialize-plugins (kahua-plugin-directory))
     (kahua-app-args (cdr mods))
     (load-kahua-module (car mods))
     (when db (primary-database-name db))

@@ -9,7 +9,6 @@
   (use srfi-1)
   (use srfi-13)
   (use file.util)
-  (use kahua.config)
   (export define-export <kahua-plugin> lookup-exports
           expand-define %load-plugin use-plugin
           define-plugin allow-module register-plugin
@@ -146,18 +145,16 @@
        ))))
 
 ;; load all plugin file.
-(define (initialize-plugins)
-  (let* ((plugin-dir (kahua-plugin-directory))
-         (plugin-files (directory-list plugin-dir 
-                        :filter (lambda (n) (string-suffix? ".scm" n)))))
+(define (initialize-plugins plugin-dir)
+  (let1 plugin-files (directory-list plugin-dir :filter (lambda (n) (string-suffix? ".scm" n)))
     (set! *plugins* (make-hash-table 'string=?))
     ;; make new module.
     (set! *sandbox-plugin* (make-hash-table 'eq?))
-    (for-each refresh-plugin plugin-files)))
+    (for-each (cut refresh-plugin <> plugin-dir) plugin-files)))
 
 ;; refresh a target plugin.
-(define (refresh-plugin filename)
-  (let1 plugin (sys-normalize-pathname (build-path (kahua-plugin-directory) filename) :absolute #t)
+(define (refresh-plugin filename dir)
+  (let1 plugin (sys-normalize-pathname (build-path dir filename) :absolute #t)
     (load plugin :environment (get-sandbox-module (string->symbol plugin)))))
 
 (define (all-plugins)

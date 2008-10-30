@@ -214,7 +214,7 @@
           ((and (= (length cmd) 2)
                 (equal? (car cmd) 'reload))
            ;; reload plugins
-           (send-command wid '(initialize-plugins))
+           (send-command wid '(initialize-plugins (kahua-plugin-directory)))
            (format #t "plugin reloaded: ~a\n" (cadr cmd))
            (show-plugin wid))
           (else (error "unknown plugin command" cmd)))

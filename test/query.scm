@@ -20,7 +20,7 @@
 (copy-file "../plugins/query.scm" #`",|*site*|/plugins/query.scm")
 (kahua-common-init *site* #f)
 
-(initialize-plugins)
+(initialize-plugins (kahua-plugin-directory))
 (use-plugin query)
 (use kahua.persistence)
 

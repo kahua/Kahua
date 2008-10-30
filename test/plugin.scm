@@ -33,7 +33,7 @@
 
 ;; プラグインの初期化ができることを確認する。
 (test* "initialize plugins" "#<undef>"
-       (x->string (initialize-plugins)))
+       (x->string (initialize-plugins (kahua-plugin-directory))))
 
 ;; プラグインが登録されたことを確認する。
 (test* "are there plugins" #t

@@ -1,8 +1,16 @@
+2008-10-30  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/plugin.scm, src/kahua/kahua-server.scm, src/kahua-admin.scm,
+	          test/plugin.scm, test/query.scm
+	  Now initialize-plugins requires a plugin directory as an argument.  This change is
+	  to support multiple plugin directories (working in progress).
+
 2008-10-29  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: plugins/Makefile.in, cgi/Makefile.in, src/Makefile.in
 	  Now do not make $(localstatedir) and so on.  These are needed when Kahua run on
-	  old fashion working directory.
+	  old fashion working directory.  And the global plugin directory is moved to under
+	  $(libdir).
 
 	* Change: src/kahua/config.scm.in, test/config.scm, configure.ac
 	  Now Kahua run on any site bundle only, so drop obsolete code and configure options. 
