@@ -18,7 +18,7 @@
 
 (select-module kahua.plugin)
 
-;; plugin container
+;; plugin meta-information container
 (define-constant *plugins* (make-hash-table 'string=?))
 
 ;; plugin's procedures are bound this module.
@@ -124,14 +124,25 @@
 
 ;; plugin registrar.
 (define-syntax define-plugin
-  (syntax-rules (version export require)
-    ((define-plugin name
-       (version v)
-       (export symbol1 symbol2 ...)
-       (depend module1 module2 ...))
-       (register-plugin name v
-                        '(symbol1 symbol2 ...) '(module1 module2 ...))
-     )))
+  (syntax-rules (version export depend)
+    ;; for backward compatibility
+    ((_ name
+	(version v)
+	(export symbol1 symbol2 ...)
+	(depend #f))
+     (define-plugin name (version v) (export symbol1 symbol2 ...)))
+    ((_ name
+	(version v)
+	(export symbol1 symbol2 ...))
+     (register-plugin name v '(symbol1 symbol2 ...) '()))
+    ((_ name
+	(version v)
+	(export symbol1 symbol2 ...)
+	(depend module1 ...))
+     (register-plugin name v '(symbol1 symbol2 ...) '(module1 ...)))
+    ((_ arg1 ...)
+     (syntax-error "malformed syntax: " (define-plugin arg1 ...)))
+    ))
 
 ;; plugin registrar for gauche module.
 (define-syntax allow-module

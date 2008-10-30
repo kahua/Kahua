@@ -1,5 +1,8 @@
 2008-10-30  Tatsuya BIZENN  <bizenn@arthub.net>
 
+	* Change: src/kahua/plugin.scm
+	  Now it's able to omit depend option or form (depend) on define-plugin macro.
+
 	* Change: src/kahua/plugin.scm, src/kahua/kahua-server.scm, src/kahua-admin.scm,
 	          test/plugin.scm, test/query.scm
 	  Now initialize-plugins requires a plugin directory as an argument.  This change is
