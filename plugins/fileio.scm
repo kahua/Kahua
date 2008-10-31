@@ -12,8 +12,7 @@
 	  with-input-from-uploaded-file
 	  get-original-name
 	  save-uploaded-file
-	  send-downloaded-file)
-  (depend #f))
+	  send-downloaded-file))
 
 (define (get-tmpfile-path spec)
   (car spec))

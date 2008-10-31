@@ -48,8 +48,7 @@
 	  date->ymd
 	  ymd->date
 	  calendar/
-	  )
-  (depend #f))
+	  ))
 
 ;; anonymous page
 (define (anonpage . body)

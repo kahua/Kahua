@@ -13,8 +13,7 @@
   (export QUERY
 	  FROM: WHERE: ORDERBY: PRJ: ref:
 	  =: <: >: %%: <=: >=:
-	  and: or:)
-  (depend #f))
+	  and: or:))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

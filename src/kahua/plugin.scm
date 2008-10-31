@@ -42,8 +42,8 @@
   (  
    (name :init-keyword :name)
    (version :init-keyword :version)
-   (depend :init-keyword :depend :init-value '())
-   (export :init-keyword :export :init-value '())
+   (export :init-keyword  :export)
+   (depend :init-keyword  :depend)
    ))
 
 ;; explicitly. define a procedue globally in somewhere,

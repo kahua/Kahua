@@ -1,3 +1,9 @@
+2008-10-31  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Change: src/kahua/plugin.scm,
+	          plugins/query.scm, plugins/fileio.scm, plugins/dsl-simple.scm, plugins/sendmail.scm
+	  Drop depend option because it's now not needed.
+
 2008-10-30  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/plugin.scm

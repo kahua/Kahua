@@ -5,8 +5,7 @@
 
 (define-plugin "sendmail"
   (version "0.1")
-  (export sendmail)
-  (depend #f))
+  (export sendmail))
 
 (define-export (sendmail to from subject body)
   (call-with-output-process
