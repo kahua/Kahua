@@ -15,7 +15,11 @@
 				   (lambda (in) (read-block (string-size prompt) in))
 				   read-line)))
     (let* ((p (run-process cmd&args :input :pipe :output :pipe))
-	   (r (reader (process-output p))))
-      (values p (string-incomplete->complete r)))))
+	   (in (process-output p))
+	   (omode (port-buffering in)))
+      (set! (port-buffering in) :full)
+      (unwind-protect
+       (values p (string-incomplete->complete (reader in)))
+       (set! (port-buffering in) omode)))))
 
 (provide "kahua/test/util")
