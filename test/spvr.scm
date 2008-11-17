@@ -15,6 +15,7 @@
 (test-start "supervisor script")
 
 (define *site* "_site")
+(define-constant *prompt* "kahua> ")
 
 (sys-system #`"rm -rf ,|*site*|")
 (kahua-site-create *site*)
@@ -71,19 +72,17 @@
 (test* "start" #t
        (let* ((p (run-process "../src/kahua-spvr" "--test" "-S" *site* "-i"
                               :input :pipe :output :pipe))
-              )
+	      (prompt (read-block (string-length *prompt*) (process-output p))))
          (set! *spvr* p)
-         (sys-sleep 2) ;; give the spvr time to set up...
 	 (let1 path #`",|*site*|/socket/kahua"
-	   (and (file-exists? path)
+	   (and (string=? *prompt* (string-incomplete->complete prompt))
+		(file-exists? path)
 		(or (eq? (file-type path) 'socket)
 		    (eq? (file-type path) 'fifo))))))
 
 (test* "listener" #t
-       (let* ((out (process-input *spvr*))
-              (in  (process-output *spvr*))
-              )
-         (read in) ;; prompt
+       (let ((out (process-input *spvr*))
+	     (in  (process-output *spvr*)))
          (write '(is-a? *spvr* <kahua-spvr>) out)
          (newline out)
          (flush out)
