@@ -59,7 +59,7 @@
 ;; kahua-shell を起動する。
 (define-constant *shell-motd* "Welcome to Kahua.")
 (test* "start shell" *shell-motd*
-       (receive (p motd) (kahua:invoke&wait `("env" "-i" "../src/kahua-shell" "--test" "-S" ,*site*) :reader read-line)
+       (receive (p motd) (kahua:invoke&wait `("env" "-i" "../src/kahua-shell" "--test" "-S" ,*site*))
 	 (set! *shell* p)
 	 motd)
        string=?)
