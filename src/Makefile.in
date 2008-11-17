@@ -68,7 +68,7 @@ SCMFILES = $(SCM_SCRIPTS) \
            kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
            kahua/config.scm kahua/session.scm kahua/server.scm \
            kahua/developer.scm kahua/partcont.scm kahua/elem.scm \
-           kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm \
+           kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm kahua/test/util.scm \
            kahua/sandbox.scm kahua/plugin.scm kahua/error-report.scm \
            kahua/thread-pool.scm kahua/object-pool.scm kahua/persistence/fs.scm \
            kahua/persistence/efs.scm kahua/persistence/dbi.scm \

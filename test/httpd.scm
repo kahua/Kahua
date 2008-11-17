@@ -5,9 +5,10 @@
 (use gauche.test)
 (use gauche.process)
 (use rfc.http)
-(use kahua.test.xml)
-(use kahua.config)
 (use file.util)
+(use kahua.test.xml)
+(use kahua.test.util)
+(use kahua.config)
 
 (test-start "kahua-httpd script")
 
@@ -41,13 +42,12 @@
 ;;-----------------------------------------------------------
 (test-section "start kahua-spvr with kahua-httpd")
 
-(test* "start" #t
-       (let* ((p (run-process "../src/kahua-spvr" "--test" "-S" *site*
-                              "--httpd" (x->string *port*) "> /dev/null")))
+(define-constant *spvr-prompt* "kahua> ")
+(test* "start" *spvr-prompt*
+       (receive (p prompt) (kahua:invoke&wait `("../src/kahua-spvr" "--test" "-S" ,*site* "-i" "--httpd" ,*port*) :prompt *spvr-prompt*)
          (set! *spvr* p)
-         #t))
-
-(sys-sleep 3) ;; give time for kahua-spvr to start
+	 prompt)
+       string=?)
 
 ;;-----------------------------------------------------------
 (test-section "access to the page")

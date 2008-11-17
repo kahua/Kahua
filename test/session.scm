@@ -10,6 +10,7 @@
 (use util.list)
 (use kahua.gsid)
 (use kahua.config)
+(use kahua.test.util)
 
 (test-start "kahua.session")
 (use kahua.session)
@@ -131,9 +132,7 @@
 (define kserv-id #f)
 
 (test* "start key server" #t
-       (let* ((p (run-process "gosh" "-I../src" "../src/kahua-keyserv.scm"
-                              "-S" *site* :output :pipe))
-              (id (read-line (process-output p))))
+       (receive (p id) (kahua:invoke&wait `("gosh" "-I../src" "../src/kahua-keyserv.scm" "-S" ,*site*))
          (set! kserv p)
          (set! kserv-id id)
          (string? id)))

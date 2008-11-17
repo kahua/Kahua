@@ -11,6 +11,7 @@
 (use sxml.sxpath)
 (use kahua.config)
 (use kahua.gsid)
+(use kahua.test.util)
 
 (test-start "supervisor script")
 
@@ -70,9 +71,7 @@
 (test-section "basic functionality")
 
 (test* "start" #t
-       (let* ((p (run-process "../src/kahua-spvr" "--test" "-S" *site* "-i"
-                              :input :pipe :output :pipe))
-	      (prompt (read-block (string-length *prompt*) (process-output p))))
+       (receive (p prompt) (kahua:invoke&wait `("../src/kahua-spvr" "--test" "-S" ,*site* "-i") :prompt *prompt*)
          (set! *spvr* p)
 	 (let1 path #`",|*site*|/socket/kahua"
 	   (and (string=? *prompt* (string-incomplete->complete prompt))

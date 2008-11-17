@@ -12,6 +12,7 @@
 (use sxml.sxpath)
 (use kahua.config)
 (use kahua.gsid)
+(use kahua.test.util)
 
 (test-start "dead-lock")
 
@@ -54,15 +55,12 @@
 (test-section "starting spvr")
 
 (test* "start" #t
-       (let* ((p (run-process "../src/kahua-spvr" "--test" "-S" *site* "-i"
-                              :input :pipe :output :pipe))
-              )
-         (set! *spvr* p)
-         (sys-sleep 2) ;; give the spvr time to set up...
-	 (let1 socket-path #`",|*site*|/socket/kahua"
-	   (and (file-exists? socket-path)
-		(or (eq? (file-type socket-path) 'socket)
-		    (eq? (file-type socket-path) 'fifo))))))
+       (let ((p (kahua:invoke&wait `("../src/kahua-spvr" "--test" "-S" ,*site* "-i") :prompt "kahua> "))
+	     (socket-path #`",|*site*|/socket/kahua"))
+	 (set! *spvr* p)
+	 (and (file-exists? socket-path)
+	      (or (eq? (file-type socket-path) 'socket)
+		  (eq? (file-type socket-path) 'fifo)))))
 
 ;;-----------------------------------------------------------
 (test-section "starting worker")
@@ -71,7 +69,6 @@
        (let* ((out (process-input *spvr*))
               (in  (process-output *spvr*))
               )
-         (read in) ;; prompt
          (write '(begin (run-worker *spvr* 'many-as) #t) out)
          (newline out)
          (flush out)

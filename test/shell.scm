@@ -9,6 +9,7 @@
 (use file.util)
 (use kahua.config)
 (use kahua.gsid)
+(use kahua.test.util)
 
 (test-start "kahua-shell script")
 
@@ -48,24 +49,20 @@
 
 ;; kahua-shell と通信する kahua-spvr を起動する。
 (test* "start spvr" #t
-       (let ((p (run-process "../src/kahua-spvr" "--test" "-S" *site*)))
+       (let ((p (kahua:invoke&wait `("../src/kahua-spvr" "--test" "-S" ,*site* "-i") :prompt "kahua> "))
+	     (socket-path #`",|*site*|/socket/kahua"))
          (set! *spvr* p)
-	 (sys-sleep 3)
-	 (let1 socket-path #`",|*site*|/socket/kahua"
-	   (and (file-exists? socket-path)
-		(or (eq? (file-type socket-path) 'socket)
-		    (eq? (file-type socket-path) 'fifo))))))
+	 (and (file-exists? socket-path)
+	      (or (eq? (file-type socket-path) 'socket)
+		  (eq? (file-type socket-path) 'fifo)))))
 
 ;; kahua-shell を起動する。
-(test* "start shell" "Welcome to Kahua."
-       (let ((p (run-process 'env "-i" "../src/kahua-shell" "--test" "-S" *site* 
-			     :input :pipe :output :pipe :error :pipe)))
+(define-constant *shell-motd* "Welcome to Kahua.")
+(test* "start shell" *shell-motd*
+       (receive (p motd) (kahua:invoke&wait `("env" "-i" "../src/kahua-shell" "--test" "-S" ,*site*) :reader read-line)
 	 (set! *shell* p)
-	 (sys-sleep 3)
-	 (let* ((out (process-input  *shell*))
-		(in  (process-output *shell*)))
-           (read-line in))
-           ))
+	 motd)
+       string=?)
 
 ;;---------------------------------------------------------------
 ;; テストに必要なユーティリティを定義する。
@@ -118,8 +115,6 @@
 ;;------------------------------------------------------------
 ;; シェルコマンドをテスト
 (test-section "shell command test")
-
-(sys-sleep 3)
 
 ;; 認証テスト。
 ;; アプリケーションサーバの選択プロンプトが出ることを確認する。

@@ -9,6 +9,7 @@
 (use file.util)
 (use kahua.config)
 (use kahua.gsid)
+(use kahua.test.util)
 
 (test-start "kahua-admin script")
 
@@ -48,22 +49,19 @@
 
 ;; kahua-spvr を起動する。
 (test* "start spvr" #t
-       (let ((p (run-process "../src/kahua-spvr" "--test" "-S" *site*)))
-	 (sys-sleep 3)
-	 (let1 socket-path #`",|*site*|/socket/kahua"
-	   (and (file-exists? socket-path)
-		(or (eq? (file-type socket-path) 'socket)
-		    (eq? (file-type socket-path) 'fifo))))))
+       (let ((p (kahua:invoke&wait `("../src/kahua-spvr" "--test" "-S" ,*site* "-i") :prompt "kahua> "))
+	     (socket-path #`",|*site*|/socket/kahua"))
+	 (and (file-exists? socket-path)
+	      (or (eq? (file-type socket-path) 'socket)
+		  (eq? (file-type socket-path) 'fifo)))))
 
 ;; kahua-admin を起動する。
-(test* "start admin" 'spvr>
-       (let ((p (run-process "../src/kahua-admin" "--test" "-S" *site* 
-			     :input :pipe :output :pipe :error :pipe)))
+(define-constant *admin-prompt* "spvr> ")
+(test* "start admin" *admin-prompt*
+       (receive (p prompt) (kahua:invoke&wait `("../src/kahua-admin" "--test" "-S" ,*site*) :prompt *admin-prompt*)
 	 (set! *admin* p)
-	 (sys-sleep 1)
-	 (let* ((out (process-input  *admin*))
-		(in  (process-output *admin*)))
-	   (read in))))
+	 prompt)
+       string=?)
 
 ;;---------------------------------------------------------------
 ;; テスト用のユーティリティを定義する。

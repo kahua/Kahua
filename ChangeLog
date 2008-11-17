@@ -1,3 +1,10 @@
+2008-11-17  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Add: src/kahua/test/util.scm
+	  Change: test/shell.scm, test/session.scm, test/dead-lock.scm,
+	          test/httpd.scm, test/admin.scm, test/spvr.scm
+	  Add kahua:invoke&wait procedure and use it in test scripts.
+
 2008-10-31  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Change: src/kahua/plugin.scm,
