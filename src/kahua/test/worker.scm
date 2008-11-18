@@ -25,6 +25,7 @@
   (use kahua.config)
   (use kahua.gsid)
   (use kahua.test.xml)
+  (use kahua.test.util)
   (export run-worker worker-running?
           call-worker call-worker/gsid call-worker/gsid->sxml
           reset-gsid shutdown-worker with-worker set-gsid
@@ -50,10 +51,8 @@
 
 
 (define (run-worker command)
-  (let* ((p  (apply run-process (append command '(:output :pipe))))
-         (id (read-line (process-output p))))
-    (make <worker-subprocess>
-      :worker-id id :worker-process p)))
+  (receive (p id) (kahua:invoke&wait command)
+    (make <worker-subprocess> :worker-id id :worker-process p)))
 
 (define-method worker-running? ((worker <worker-subprocess>))
   (string? (ref worker 'worker-id)))
