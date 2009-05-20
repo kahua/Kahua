@@ -26,7 +26,7 @@
 
 ;; サンドボックスモジュールを作成し、それが無名モジュールで
 ;; あることを確認する。
-(test* "make sandbox module" "#<module #>"
+(test* "make sandbox module" (write-to-string (make-module #f))
        (let ((m (make-sandbox-module)))
          (set! *sandbox* m)
          (x->string m)))

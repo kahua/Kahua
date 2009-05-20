@@ -1,3 +1,10 @@
+2009-05-20  Tatsuya BIZENN  <bizenn@arthub.net>
+
+	* Fix: test/sandbox.scm, test/shell.scm
+	  Compare the result of (write-to-string (make-module #f)) instead of "#<module #>",
+	  because anonymous module's printing result has been changed from #<module #> to
+	  #<module #f>.
+
 2008-11-17  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Add: src/kahua/test/util.scm
