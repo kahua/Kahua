@@ -159,7 +159,7 @@
 
 ;; 接続先がアプリケーションであるか。
 ;; カレントモジュールが無名モジュール(サンドボックス)であることを確認する。
-(test* "shell: evaluation" "#<module #>"
+(test* "shell: evaluation" (write-to-string (make-module #f))
        (begin
          (sys-sleep 1)
          (send '(current-module))
