@@ -23,7 +23,7 @@
   :group 'kahua)
 
 (defcustom kahua-command-path "##bindir##"
-  "path of kahua commands"
+  "*Path of Kahua commands."
   :type 'string
   :group 'kahua)
 
