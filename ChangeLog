@@ -5,6 +5,7 @@
 	(kahua-command-buffer-setup): add argument 'path
 	(run-kahua-shell): add argument path and kahua-read-path
 	(run-kahua): add argument 'path and kahua-read-path
+	(kahua-command-path): fix doc-string.
 
 2009-05-20  Tatsuya BIZENN  <bizenn@arthub.net>
 
