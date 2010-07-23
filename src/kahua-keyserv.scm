@@ -45,18 +45,17 @@
 (use gauche.net)
 (use gauche.parseopt)
 (use gauche.selector)
+(use gauche.threads)
+(use control.thread-pool)
 (use util.list)
 (use util.match)
 (use srfi-27)
 (use kahua.config)
 (use kahua.util)
 (use kahua.gsid)
-(use kahua.thread-pool)
 
 (define-constant *default-timeout* (* 3 3600))
 (define-constant *TERMINATION-SIGNALS* (sys-sigset-add! (make <sys-sigset>) SIGTERM SIGINT SIGHUP))
-
-(define *default-sigmask* #f)
 
 (define (main args)
   (let-args (cdr args) ((site "S=s")
@@ -73,14 +72,13 @@
        (begin
 	 (set-signal-handler! SIGPIPE #f)
 	 (sys-sigmask SIG_BLOCK *TERMINATION-SIGNALS*)
-	 (set! *default-sigmask* (sys-sigmask 0 #f))
 	 (run-server wid sockaddr tpool)
 	 (sys-sigwait *TERMINATION-SIGNALS*)
 	 0)
        (begin
 	 (when (is-a? sockaddr <sockaddr-un>)
 	   (sys-unlink (sockaddr-name sockaddr)))
-	 (thread-pool-wait-all tpool)
+	 (terminate-all! tpool 0)
 	 (sys-unlink (kahua-keyserv-pidpath)))))))
 
 (define (usage)
@@ -92,7 +90,7 @@
   (let ((sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
         (selector (make <selector>)))
     (define (accept-handler fd flag)
-      (thread-pool-add-task tpool (cute handle-request (socket-accept sock))))
+      (add-job! tpool (cute handle-request (socket-accept sock))))
     (define (orphan-handler in flag)
       (when (eof-object? (read-byte in))
 	(display "keyserv: parent(maybe spvr) has gone, so me too!!\n" (current-error-port))

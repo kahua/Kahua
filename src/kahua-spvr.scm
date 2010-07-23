@@ -33,11 +33,11 @@
 (use util.queue)
 (use util.list)
 (use util.match)
+(use control.thread-pool)
 (use kahua.config)
 (use kahua.gsid)
 (use kahua.developer)
 (use kahua.util)
-(use kahua.thread-pool)
 (use kahua.protocol.worker)
 
 (define *spvr* #f) ;; bound to supervisor object for convenience
@@ -726,7 +726,7 @@
 		   (socket-fd kahua-sock)
 		   (lambda (fd flags)
 		     (let1 client (socket-accept kahua-sock)
-		       (thread-pool-add-task tpool (cut handle-kahua spvr client))))
+		       (add-job! tpool (cut handle-kahua spvr client))))
 		   '(r)))
   (when use-listener
     (let* ((listener (make <listener> :prompter (lambda () (display "kahua> "))))
@@ -819,8 +819,8 @@
 	  (when (is-a? sockaddr <sockaddr-un>)
 	    (sys-unlink (sockaddr-name sockaddr)))
 	  (nuke-all-workers spvr)
-	  (thread-pool-wait-all tpool)
-	  (with-ignoring-exception (cut thread-pool-finish-all tpool))
+	  (wait-all tpool)
+	  (with-ignoring-exception (cut terminate-all! tpool 5e8))
 	  (stop-httpd spvr)
 	  (stop-keyserv spvr)
 	  (kahua:log-format "[spvr] exitting")
