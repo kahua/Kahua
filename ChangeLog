@@ -1,3 +1,10 @@
+2010-07-23  Tatsuya BIZENN  <bizenn@kahua.org>
+
+	* Change: src/kahua-spvr.scm, src/kahua-keyserv.scm, src/kahua-httpd.scm
+	  Drop: src/kahua/thread-pool.scm
+	  Now use Gauche(trunk)'s new library module control.thread-pool instead
+	  of kahua.thread-pool.
+
 2009-05-20  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: test/sandbox.scm, test/shell.scm
