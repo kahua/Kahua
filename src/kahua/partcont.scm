@@ -20,41 +20,13 @@
 ;; 2. the meta continuation can handle multiple values
 
 (define-module kahua.partcont
-  (use gauche.parameter)
-  (export reset/pc call/pc let/pc))
+  (extend gauche.partcont)
+  (export let/pc))
 (select-module kahua.partcont)
-
-(define meta-continuation
-  (make-parameter
-   (lambda _ (error "stale meta-continuation invoked"))))
-
-(define-syntax reset/pc
-  (syntax-rules ()
-    ((reset/pc expr)
-     (%reset (lambda () expr)))))
 
 (define-syntax let/pc
   (syntax-rules ()
     ((let/pc kont . body)
      (call/pc (lambda (kont) . body)))))
-
-(define (%abort thunk)
-  (receive v (thunk)
-    (apply (meta-continuation) v)))
-
-(define (%reset thunk)
-  (let1 save (meta-continuation)
-    (call/cc
-     (lambda (k)
-       (meta-continuation (lambda vals
-                            (meta-continuation save)
-                            (apply k vals)))
-       (%abort thunk)))))
-
-(define (call/pc proc)
-  (call/cc
-   (lambda (k)
-     (%abort (lambda ()
-               (proc (lambda vals (reset/pc (apply k vals)))))))))
 
 (provide "kahua/partcont")

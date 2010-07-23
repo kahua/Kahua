@@ -1,5 +1,9 @@
 2010-07-23  Tatsuya BIZENN  <bizenn@kahua.org>
 
+	* Change: src/kahua/partcont.scm, src/kahua/server.scm,
+	          test/partcont.scm
+	  Use native partial continuation support of Gauche.
+
 	* Change: src/kahua-spvr.scm, src/kahua-keyserv.scm, src/kahua-httpd.scm
 	  Drop: src/kahua/thread-pool.scm
 	  Now use Gauche(trunk)'s new library module control.thread-pool instead
