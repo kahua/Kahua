@@ -70,7 +70,7 @@ SCMFILES = $(SCM_SCRIPTS) \
            kahua/developer.scm kahua/partcont.scm kahua/elem.scm \
            kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm kahua/test/util.scm \
            kahua/sandbox.scm kahua/plugin.scm kahua/error-report.scm \
-           kahua/thread-pool.scm kahua/object-pool.scm kahua/persistence/fs.scm \
+           kahua/object-pool.scm kahua/persistence/fs.scm \
            kahua/persistence/efs.scm kahua/persistence/dbi.scm \
 	   kahua/persistence/mysql.scm kahua/persistence/postgresql.scm \
 	   kahua/protocol/worker.scm kahua/protocol/http.scm \
