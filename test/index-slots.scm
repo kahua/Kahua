@@ -12,7 +12,7 @@
 (test-start (format "index slots (~a)" ((#/^(\w+):/ *dbname*) 1)))
 
 (use kahua.persistence)
-(test-module 'kahua.persistence)
+(test-module 'kahua.persistence :bypass-arity-check '(read-kahua-instance class-subclasses class-subclasses*))
 
 (test-section "Prologue")
 

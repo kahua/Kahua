@@ -765,10 +765,11 @@
 ;; ((arg1 <class1>) G93 arg3 ...)
 ;; => (arg1 G93 arg3 ...)
 (define (gen-lambda-args specs)
-  (map (lambda (spec)
-         (cond ((pair? spec) (car spec))
-               (else spec)))
-       specs))
+  (map* (lambda (spec)
+          (cond ((pair? spec) (car spec))
+                (else spec)))
+        (^x'())
+        specs))
 
 ;; ((arg1 <class1>) "str1" "str2" ...)
 ;; => ((1 . "str1") (2 . "str2") ...)
@@ -811,7 +812,7 @@
 
 (define-macro (define-method-rule name args . body)
   (let* ((rarg (if (dotted-list? args) (cdr (last-pair args)) '()))
-         (args (map identity args))
+         (args (map* identity (^x'()) args))
          (specs (append (gen-specializers args) (if (null? rarg) rarg 'rarg)))
          (rules (append (gen-rules args) rarg))
          (method-args (append (gen-method-args args) rarg))
@@ -828,7 +829,7 @@
                            '())
        (define-method ,name ,method-args
          (let1 rules (hash-table-get (ref ,name 'rules) ',specs)
-           (,apply-rule rules (append (list ,@(map identity lambda-args)) ,rarg)))))))
+           (,apply-rule rules (append (list ,@(map* identity (^x '()) lambda-args)) ,rarg)))))))
 
 ;;
 ;; kahua-call-with-current-context
