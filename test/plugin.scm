@@ -1,6 +1,6 @@
-;; -*- coding: euc-jp ; mode: scheme -*-
+;; -*- coding: utf-8 ; mode: scheme -*-
 ;; test plugin module.
-;; Kahua.plugin ¥â¥¸¥å¡¼¥ë¤Î¥Æ¥¹¥È
+;; Kahua.plugin ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ãƒ†ã‚¹ãƒˆ
 
 ;; $Id: plugin.scm,v 1.4 2006/05/12 04:11:33 bizenn Exp $
 
@@ -25,60 +25,60 @@
 
 
 ;;---------------------------------------------------------------
-;; ¥×¥é¥°¥¤¥ó¥â¥¸¥å¡¼¥ë¤Î¥Æ¥¹¥È¤ò³«»Ï¤¹¤ë¡£
+;; ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ãƒ†ã‚¹ãƒˆã‚’é–‹å§‹ã™ã‚‹ã€‚
 (test-section "plugin")
 
-;; ¥í¡¼¥É¥Æ¥¹¥È
-;; kahua.plugin ¤¬¥í¡¼¥É¤Ç¤­¡¢¤Ş¤¿¤½¤Î¥¤¥ó¥¿¡¼¥Õ¥§¥¤¥¹¤Ëóòó÷¤¬
-;; ¤Ê¤¤¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; ãƒ­ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆ
+;; kahua.plugin ãŒãƒ­ãƒ¼ãƒ‰ã§ãã€ã¾ãŸãã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ã‚¤ã‚¹ã«é½Ÿé½¬ãŒ
+;; ãªã„ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (use kahua.plugin)
 (test-module 'kahua.plugin)
 
-;; ¥×¥é¥°¥¤¥ó¤Î½é´ü²½¤¬¤Ç¤­¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã®åˆæœŸåŒ–ãŒã§ãã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "initialize plugins" "#<undef>"
        (x->string (initialize-plugins)))
 
-;; ¥×¥é¥°¥¤¥ó¤¬ÅĞÏ¿¤µ¤ì¤¿¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ãŒç™»éŒ²ã•ã‚ŒãŸã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "are there plugins" #t
        (> (length (all-plugins)) 1))
 
 ;;---------------------------------------------------------------
-;; ¥µ¥ó¥É¥Ü¥Ã¥¯¥¹Æâ¤Ç¤Î¥Æ¥¹¥È
+;; ã‚µãƒ³ãƒ‰ãƒœãƒƒã‚¯ã‚¹å†…ã§ã®ãƒ†ã‚¹ãƒˆ
 (test-section "in a sandbox")
 
 (define *sandbox* (make-sandbox-module))
 
-;; ¥×¥é¥°¥¤¥ó srfi-1 ¤ò¥í¡¼¥É¤¹¤ëÁ°¤Ë¤Ï filter ¼êÂ³¤­¤¬¤Ê¤¤¤Î¤Ç¡¢
-;; ¥Æ¥¹¥È¤Ë¼ºÇÔ¤¹¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ srfi-1 ã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹å‰ã«ã¯ filter æ‰‹ç¶šããŒãªã„ã®ã§ã€
+;; ãƒ†ã‚¹ãƒˆã«å¤±æ•—ã™ã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "no plugin loads yet"
        *test-error*
        (eval '(filter odd? '(1 2 3 4 5))  *sandbox*))
 
-;; ¥×¥é¥°¥¤¥ó srfi-1 ¤ò¥í¡¼¥É¤·¤¿¤¢¤È¤Ë filter ¼êÂ³¤­¤ò»È¤¨¤ë¤³¤È¤ò
-;; ³ÎÇ§¤¹¤ë¡£
+;; ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ srfi-1 ã‚’ãƒ­ãƒ¼ãƒ‰ã—ãŸã‚ã¨ã« filter æ‰‹ç¶šãã‚’ä½¿ãˆã‚‹ã“ã¨ã‚’
+;; ç¢ºèªã™ã‚‹ã€‚
 (test* "load srfi-1 plugin"
        '(1 3 5)
        (eval '(begin (use srfi-1) (filter odd? '(1 2 3 4 5))) *sandbox*))
 
-;; ¥×¥é¥°¥¤¥ó srfi-1 ¤Î filter ¼êÂ³¤­¤Ç¤¢¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ srfi-1 ã® filter æ‰‹ç¶šãã§ã‚ã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "this is srfi-1's filter"
        (eval 'filter (find-module 'srfi-1))
        (eval 'filter *sandbox*))
 
-;; ¥×¥é¥°¥¤¥ó gauche.collection ¤ò¥í¡¼¥É¤·¤¿¤¢¤È¤Ë filter ¼êÂ³¤­¤¬
-;; gauche.collection¤Î¤â¤Î¤Ç¤¢¤ë¤³¤È¤ò³ÎÇ§¤¹¤ë¡£
+;; ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ gauche.collection ã‚’ãƒ­ãƒ¼ãƒ‰ã—ãŸã‚ã¨ã« filter æ‰‹ç¶šããŒ
+;; gauche.collectionã®ã‚‚ã®ã§ã‚ã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ã€‚
 (test* "replace filter to the gauche.collections's one"
        (eval 'filter (find-module 'gauche.collection))
        (eval '(begin (use gauche.collection) filter) *sandbox*))
 
-;; ¥×¥é¥°¥¤¥ó sendmail ¤ò¥í¡¼¥É¤¹¤ëÁ°¤Ë¤Ï sendmail ¼êÂ³¤­¤¬¤Ê¤¤¤³¤È¤ò
-;; ³ÎÇ§¤¹¤ë¡£
+;; ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ sendmail ã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹å‰ã«ã¯ sendmail æ‰‹ç¶šããŒãªã„ã“ã¨ã‚’
+;; ç¢ºèªã™ã‚‹ã€‚
 (test* "sendmail does not exists"
        *test-error*
        (eval 'sendmail *sandbox*))
 
-;; ¥×¥é¥°¥¤¥ó sendmail ¤ò¥í¡¼¥É¤·¤¿¤¢¤È¤Ë sendmail ¼êÂ³¤­¤¬¤¢¤ë¤³¤È¤ò
-;; ³ÎÇ§¤¹¤ë¡£
+;; ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ sendmail ã‚’ãƒ­ãƒ¼ãƒ‰ã—ãŸã‚ã¨ã« sendmail æ‰‹ç¶šããŒã‚ã‚‹ã“ã¨ã‚’
+;; ç¢ºèªã™ã‚‹ã€‚
 (test* "load sendmail plugin" #t
        (eval '(begin (use-plugin sendmail)
                      (global-variable-bound? (current-module) 'sendmail))
