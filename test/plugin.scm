@@ -57,10 +57,10 @@
        '(2 . 1)
        (eval '(begin (use srfi-1) (xcons 1 2)) *sandbox*))
 
-;; プラグイン srfi-1 の filter 手続きであることを確認する。
-(test* "this is srfi-1's filter"
-       (eval 'filter (find-module 'srfi-1))
-       (eval 'filter *sandbox*))
+;; プラグイン srfi-1 の xcons 手続きであることを確認する。
+(test* "this is srfi-1's xcons"
+       (eval 'xcons (find-module 'srfi-1))
+       (eval 'xcons *sandbox*))
 
 ;; プラグイン gauche.collection をロードしたあとに filter 手続きが
 ;; gauche.collectionのものであることを確認する。
