@@ -27,7 +27,7 @@
 ;;   kahua.persistentceがロードでき、またそのインタフェースに
 ;;   齟齬がないことを確認する。
 (use kahua.persistence)
-(test-module 'kahua.persistence)
+(test-module 'kahua.persistence :bypass-arity-check '(read-kahua-instance))
 
 ;;----------------------------------------------------------
 ;; 基本的なテスト

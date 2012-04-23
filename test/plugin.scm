@@ -45,17 +45,17 @@
 
 (define *sandbox* (make-sandbox-module))
 
-;; プラグイン srfi-1 をロードする前には filter 手続きがないので、
+;; プラグイン srfi-1 をロードする前には xcons 手続きがないので、
 ;; テストに失敗することを確認する。
 (test* "no plugin loads yet"
        *test-error*
-       (eval '(filter odd? '(1 2 3 4 5))  *sandbox*))
+       (eval '(xcons 1 2)  *sandbox*))
 
-;; プラグイン srfi-1 をロードしたあとに filter 手続きを使えることを
+;; プラグイン srfi-1 をロードしたあとに xcons 手続きを使えることを
 ;; 確認する。
 (test* "load srfi-1 plugin"
-       '(1 3 5)
-       (eval '(begin (use srfi-1) (filter odd? '(1 2 3 4 5))) *sandbox*))
+       '(2 . 1)
+       (eval '(begin (use srfi-1) (xcons 1 2)) *sandbox*))
 
 ;; プラグイン srfi-1 の filter 手続きであることを確認する。
 (test* "this is srfi-1's filter"

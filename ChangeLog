@@ -1,3 +1,20 @@
+2012-04-23  Tatsuya BIZENN  <bizenn@kahua.org>
+
+	* Change: test/index-slots.scm, test/persistence.scm
+	  Recently, Gauche check the arity of generic functions.  So
+	  some method add to bypass-arity-check list, and some tests
+	  fail on Gauche before 3982bd1399fef1a206ad1e3bc2d527e37a10f6ab.
+	  Watch out!!
+
+	* Change: test/plugin.scm
+	  Recently, Gauche supports "filter" as built-in procedure.  So
+	  use xcons instead of filter for some plugin tests.
+
+	* Fix: src/kahua/server.scm
+	  Fixed the code depending on the bug of Gauche that map accept
+	  improper lists and ignore a trailing element.  This fix is
+	  suggested by Shiro Kawai.
+
 2011-09-26  Shiro Kawai  <shiro@acm.org>
 
 	* Fix: src/kahua/persistence.scm (on-key-cache?):
