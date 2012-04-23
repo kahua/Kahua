@@ -15,6 +15,15 @@
 	  Now use Gauche(trunk)'s new library module control.thread-pool instead
 	  of kahua.thread-pool.
 
+2010-05-29  ENDO Yasuyuki  <yasuyuki@javaopen.org>
+
+	* emacs/kahua.el.in (kahua-command-path): add.
+	(kahua-read-path): add
+	(kahua-command-buffer-setup): add argument 'path
+	(run-kahua-shell): add argument path and kahua-read-path
+	(run-kahua): add argument 'path and kahua-read-path
+	(kahua-command-path): fix doc-string.
+
 2009-05-20  Tatsuya BIZENN  <bizenn@arthub.net>
 
 	* Fix: test/sandbox.scm, test/shell.scm

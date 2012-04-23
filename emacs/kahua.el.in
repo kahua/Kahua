@@ -20,12 +20,17 @@
   :type 'boolean
   :group 'kahua)
 
-(defcustom kahua-admin-command "##bindir##/kahua-admin"
+(defcustom kahua-command-path "##bindir##"
+  "*Path of Kahua commands."
+  :type 'string
+  :group 'kahua)
+
+(defcustom kahua-admin-command "/kahua-admin"
   "*Kahua-admin command file(full path or base name)."
   :type 'string
   :group 'kahua)
 
-(defcustom kahua-shell-command "##bindir##/kahua-shell"
+(defcustom kahua-shell-command "/kahua-shell"
   "*Kahua-shell command file(full path or base name)."
   :type 'string
   :group 'kahua)
@@ -117,6 +122,10 @@ Editing commands are similar to those of 'scheme-mode'."
   (if (and kahua-ssh-mode (not (string= host "")))
       (read-string "username: " kahua-default-user)
     ""))
+(defun kahua-read-path (host)
+  (if (and kahua-ssh-mode (not (string= host "")))
+      (read-string "command-path: " kahua-command-path)
+    ""))
 (defun kahua-read-site ()
   (let ((insert-default-directory nil))
     (let ((site (read-directory-name "site bundle: " nil nil nil kahua-site-bundle)))
@@ -124,17 +133,17 @@ Editing commands are similar to those of 'scheme-mode'."
 	  nil
 	site))))
 
-(defun kahua-command-buffer-setup (bufname comname command host user site)
+(defun kahua-command-buffer-setup (bufname comname path command host user site)
   (if (not (comint-check-proc bufname))
       (let* ((use-ssh          (and kahua-ssh-mode (not (string= host ""))))
-             (program          (if use-ssh "ssh" command))
+             (program          (if use-ssh "ssh" (concat path command)))
              (kahua-shell-args (if (or (not site) (string= site ""))
                                    '() (list "-S" (expand-file-name site))))
              (args             (if use-ssh
                                    `(,@kahua-ssh-opts
                                      ,(if (string= user "")
                                           host (concat user "@" host))
-                                     ,command
+                                     ,(concat path command)
                                      ,@kahua-shell-args)
                                  kahua-shell-args)))
         (set-buffer (apply 'make-comint comname program nil args))
@@ -166,12 +175,13 @@ Editing commands are similar to those of 'scheme-mode'."
 	(when (not (get-buffer-window-list "*kahua-shell*" t t))
 	  (message "%s" result-string))))))
 
-(defun run-kahua-shell (host user site)
+(defun run-kahua-shell (host user path site)
   (interactive
    (let* ((host (kahua-read-server))
           (user (kahua-read-user host))
+	  (path (kahua-read-path host))
 	  (site (kahua-read-site)))
-     (list host user site)))
+     (list host user path site)))
   (unless (get-buffer "*kahua-shell*")
     (let ((add-password-hook?
            (not (memq 'comint-watch-for-password-prompt
@@ -187,18 +197,19 @@ Editing commands are similar to those of 'scheme-mode'."
 	(add-hook 'comint-output-filter-functions
 		  'kahua-watch-for-eval-result t t))))
   (kahua-command-buffer-setup "*kahua-shell*" "kahua-shell"
-			      kahua-shell-command host user site))
+			      path kahua-shell-command host user site))
 
-(defun run-kahua (host user site)
+(defun run-kahua (host user path site)
   (interactive
    (let* ((host (kahua-read-server))
 	  (user (kahua-read-user host))
+	  (path (kahua-read-path host))
 	  (site (kahua-read-site)))
      (list host user site)))
   (unless (get-buffer "*kahua-admin*")
     (set-buffer (get-buffer-create "*kahua-admin*")))
   (kahua-command-buffer-setup "*kahua-admin*" "kahua-admin"
-			      kahua-admin-command host user site))
+			      path kahua-admin-command host user site))
 
 (provide 'kahua)
 
