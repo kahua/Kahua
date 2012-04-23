@@ -1624,7 +1624,7 @@
   (and-let* ((obj (read-key-cache db cn key))
 	     ((not (removed? obj)))
 	     (class (current-class-of obj)))
-    (and (slot-bound-using-class class obj slot-name)
+    (and (slot-bound-using-class? class obj slot-name)
 	 (equal? (slot-ref-using-class class obj slot-name) slot-value)
 	 obj)))
 

@@ -1,3 +1,9 @@
+2011-09-26  Shiro Kawai  <shiro@acm.org>
+
+	* Fix: src/kahua/persistence.scm (on-key-cache?):
+	  Fixed typo of a function name.  It's been there for a while, but
+	  revealed by more strict test-module in the newer version of Gauche.
+
 2010-05-29  ENDO Yasuyuki  <yasuyuki@javaopen.org>
 
 	* emacs/kahua.el.in (kahua-command-path): add.
