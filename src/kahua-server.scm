@@ -76,7 +76,7 @@
           ((initial)  (action (kahua-hook-initial)  thunk))
           ((before) (action (kahua-hook-before) thunk))
           ((after)  (action (kahua-hook-after)  thunk))
-          (else     (error "illigal place is specified: ~S" place))
+          (else     (error "illegal place is specified: ~S" place))
           ))
     (values (lambda (place thunk)
               (make-hook-action add-hook! place thunk))
