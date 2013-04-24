@@ -1,3 +1,11 @@
+2013-04-24  Shiro Kawai  <shiro@acm.org>
+
+	* Fix: src/kahua-server.scm (kahua-server-main): Open log drain
+	  earlier, right after we call kahua-common-init, so that we can
+	  log whatever errors happening before the server main loop.
+	  (load-kahua-module): Logs the stack trace when module loading
+	  is failed, for easier troubleshooting.
+
 2012-04-23  Tatsuya BIZENN  <bizenn@kahua.org>
 
 	* Change: test/index-slots.scm, test/persistence.scm

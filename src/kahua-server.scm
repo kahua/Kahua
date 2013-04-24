@@ -99,7 +99,7 @@
 	(unless (kahua-db-ping db)
 	  (kahua-db-reopen db))
 	(let1 do-reply (guard (e (else
-				  (kahua:log-format "[worker]: Unknown error: ~a" (ref e 'message))
+				  (kahua:log-format "[server]: Unknown error: ~a" (ref e 'message))
 				  (lambda ()
 				    (reply-cont '(("x-kahua-status" "ERROR"))
 						(kahua-error-string e #t)))))
@@ -116,10 +116,11 @@
 (define (default-handler) ((main-proc)))
 
 (define (load-kahua-module mod)
-  (guard (e (else
-	     (report-error e)
+  (guard (e [else
+             (kahua:log-format "[server]: Failed to load modules.\n~a"
+                               (kahua-error-string e #t))
 	     (print "ERROR loading module")
-	     (exit 0)))
+	     (exit 0)])
     (load mod :environment kahua-app-server)))
 
 (define (run-server worker-id sockaddr profile)
@@ -130,7 +131,7 @@
 	(call-with-client-socket client
 	  (lambda (input output)
 	    (set! (port-buffering input) :none)
-	    (guard (e (else (kahua:log-format "[worker]: Read error occured in accept-handler: ~a" (ref e 'message))))
+	    (guard (e (else (kahua:log-format "[server]: Read error occured in accept-handler: ~a" (ref e 'message))))
 	      (let ((header (read input))
 		    (body   (read input)))
 		(handle-request header body
@@ -203,6 +204,7 @@
       (error "usage: kahua-server [-S <site>] [-c <conf>] [-k <keyserv-id>] [-default-db <default-db-path>] [-profile <profile-out>] <app-server> <args> ..." mods))
     (set! *kahua-top-module* (car mods))
     (kahua-common-init site conf-file)
+    (kahua:log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
     (set! kahua-app-server (kahua-application-environment))
     (initialize-plugins (kahua-plugin-directory))
     (kahua-app-args (cdr mods))
@@ -225,7 +227,6 @@
 	 (lambda (bye)
 	   (define (finish-server sig)
 	     (kahua:log-format "[~a] ~a" worker-name (sys-signal-name sig)) (bye 0))
-	   (kahua:log-open (kahua-logpath "kahua-spvr.log") :prefix "~Y ~T ~P[~$]: ")
 	   (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
 	   (guard (e (else
 		      (kahua:log-format "[server] error in main:\n~a"
