@@ -684,7 +684,7 @@
 	      (dispatch parse-rest (cdr args) ps ks ms rs))
 	     (((? symbol? var) .  more)
 	      (proc args ps ks ms rs))
-	     (else (error "malformed entry-lambda form:" (cdr args)))))
+	     (else (error "malformed entry-lambda form:" args))))
 
     (define (parse-path args ps ks ms rs)
       (dispatch parse-path (cdr args) (cons (car args) ps) ks ms rs))
