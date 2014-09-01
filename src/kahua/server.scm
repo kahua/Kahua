@@ -670,17 +670,17 @@
     (define (dispatch proc args ps ks ms rs)
       (match args
 	     ;; illegal case reject
-	     ((:rest (? keyword? bad) . more)
+	     ((':rest (? keyword? bad) . more)
 	      (error "malformed entry-lambda :rest form:" (list key bad)))
 	     (((? keyword? tail))
 	      (error "malformed entry-lambda keyword tail form:" tail))
 	     ;; legal case
 	     (() (values (reverse ps) (reverse ks) (reverse ms) rs))
-	     ((:keyword var . more)
+	     ((':keyword var . more)
 	      (dispatch parse-key (cdr args) ps ks ms rs))
-	     (((or :multi-value-keyword :mvkeyword) var . more)
+	     (((or ':multi-value-keyword ':mvkeyword) var . more)
 	      (dispatch parse-mvkey (cdr args) ps ks ms rs))
-	     ((:rest . vars)
+	     ((':rest . vars)
 	      (dispatch parse-rest (cdr args) ps ks ms rs))
 	     (((? symbol? var) .  more)
 	      (proc args ps ks ms rs))

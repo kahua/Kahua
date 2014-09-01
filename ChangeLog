@@ -1,3 +1,8 @@
+2014-08-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (entry-lambda): Quote literal keywords
+	  in match pattern so that newer Gauche won't complain.
+
 2013-04-24  Shiro Kawai  <shiro@acm.org>
 
 	* Fix: src/kahua-server.scm (kahua-server-main): Open log drain
