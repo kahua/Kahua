@@ -164,7 +164,8 @@
        . restargs)
     (if (< (length restargs) 2)
 	(usage)
-	(apply dispatch-command restargs))))
+	(apply dispatch-command restargs)))
+  0)
 
 (define (usage)
   (with-output-to-port (current-error-port)
