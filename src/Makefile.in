@@ -112,6 +112,12 @@ kahua-package :
 kahua-user :
 	$(MAKE_SH_SCRIPT) kahua-user
 
+kahua-package.scm: kahua-package.scm.in
+	test ! -f $@ || chmod +w $@
+	sed -e "s@##SYSCONFDIR##@$(sysconfdir)@" \
+	    $@.in > $@
+	chmod -w $@
+
 kahua/config.scm: kahua/config.scm.in
 	test ! -f $@ || chmod +w $@
 	sed -e "s@##package##@$(package)@" \

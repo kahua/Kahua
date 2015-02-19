@@ -129,7 +129,7 @@
   (let-args args ((creator "creator=s")
 		  (mail "mail=s")
 		  . projects)
-    (let1 skel (build-path "/usr/local/etc/kahua" "skel") ; FIXME!!
+    (let1 skel (build-path "##SYSCONFDIR##" "skel") ; FIXME!!
       (for-each (cut generate skel <> creator mail) projects))))
 
 ;;
