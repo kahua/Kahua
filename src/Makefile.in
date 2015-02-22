@@ -76,7 +76,7 @@ SCMFILES = $(SCM_SCRIPTS) \
 	   kahua/protocol/worker.scm kahua/protocol/http.scm \
 	   kahua/xml-template.scm kahua/css.scm
 
-GENERATED = $(SH_SCRIPTS) kahua/config.scm
+GENERATED = $(SH_SCRIPTS) kahua/config.scm kahua-package.scm
 
 CONFIG_GENERATED = Makefile 
 .PHONY: all check testenv clean distclean install maintainer-clean
@@ -106,11 +106,17 @@ kahua-dbutil :
 kahua-config :
 	$(MAKE_SH_SCRIPT) kahua-config
 
-kahua-package :
+kahua-package : kahua-package.scm.in
 	$(MAKE_SH_SCRIPT) kahua-package
 
 kahua-user :
 	$(MAKE_SH_SCRIPT) kahua-user
+
+kahua-package.scm: kahua-package.scm.in
+	test ! -f $@ || chmod +w $@
+	sed -e "s@##SYSCONFDIR##@$(sysconfdir)@" \
+	    $@.in > $@
+	chmod -w $@
 
 kahua/config.scm: kahua/config.scm.in
 	test ! -f $@ || chmod +w $@

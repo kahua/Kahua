@@ -31,7 +31,7 @@
 	    (copy-file #`"../templates/,f" #`"_work/templates/%%_PROJECT_NAME_%%/,f"))
 	  (directory-list "../templates" :children? #t :filter file-is-regular? :filter-add-path? #t))
 
-(kahua-init *config*)
+(kahua-common-init #f *config*)
 
 ;;------------------------------------------------------------
 ;; Run %%_PROJECT_NAME_%%

@@ -1,3 +1,13 @@
+2015-02-19  Yasuyuki ENDO <yasuyuki@kahua.org>
+
+	* Fix: skel/test/test.scm.in: use kahua-common-init
+	  instead of kahua-init.
+
+2015-02-18  Yasuyuki ENDO <yasuyuki@kahua.org>
+
+	* Fix: src/kahua-package.scm build from src/kahua-package.scm.in.
+	  Because to use sysconfdir to read skel dir to generate-skel.
+
 2015-02-16  Yasuyuki ENDO <yasuyuki@kahua.org>
 
 	* Fix: src/kahua-package.scm: main returns code 0.
