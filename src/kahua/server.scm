@@ -890,7 +890,7 @@
 ;;  [syntax] define-entry-method name (arg ... :keyword karg ... :rest restarg) body ...
 
 (define-syntax define-entry-method
-  (syntax-rules ()
+  (syntax-rules (:rest :keyword :multi-value-keyword :mvkeyword)
     ((_ "finish" name pargs kargs body)
      (begin
        (define-method-rule name pargs

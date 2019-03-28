@@ -1,3 +1,9 @@
+2019-03-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/kahua/server.scm (define-entry-method): Fix for symbol-keyword
+	  integration; the keyword must be listed as the literals in
+	  syntax-rules.
+
 2015-02-19  Yasuyuki ENDO <yasuyuki@kahua.org>
 
 	* Fix: skel/test/test.scm.in: use kahua-common-init
