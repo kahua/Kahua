@@ -83,8 +83,8 @@
 ;; user must be <kahua-user>.  caller must sync db.
 (define (kahua-user-password-change-force user new-password)
   (and (is-a? user (kahua-current-user-class))
-       (set! (ref user 'password-hash) (crypt-passwd new-password))
-       #t))
+       (begin (set! (ref user 'password-hash) (crypt-passwd new-password))
+              #t)))
 
 
 ;; user may be <kahua-user> object or #f

@@ -1693,14 +1693,15 @@
 
 (define (ensure-transaction o)
   (let1 klass (current-class-of o)
-    (unless (or (eq? klass <kahua-persistent-metainfo>)
-		(not (slot-bound-using-class? klass o '%transaction-id))
-		(current-transaction? o))
-      ;; First, we update %transaction-id slot to avoid infinit loop.
-      (update-transaction! o)
-      ;; read-kahua-instance syncs in-db and in-memory object.
-      (read-kahua-instance o)
-      )))
+    (or (eq? klass <kahua-persistent-metainfo>)
+        (not (slot-bound-using-class? klass o '%transaction-id))
+        (current-transaction? o)
+        (begin
+          ;; First, we update %transaction-id slot to avoid infinit loop.
+          (update-transaction! o)
+          ;; read-kahua-instance syncs in-db and in-memory object.
+          (read-kahua-instance o)
+          #t))))
 
 (define (persistent-slot-syms class)
   (map car (filter (lambda (slot)

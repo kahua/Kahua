@@ -173,7 +173,8 @@
                     (hash-table-put! (ref worker 'sessions)
                                      key
                                      (save-session (cdr p) (make <session>))))))
-              ps))
+              ps)
+    #t)
 
   (lambda (pattern input)
     (if (and (pair? input)
