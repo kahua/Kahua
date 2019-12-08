@@ -1089,7 +1089,8 @@
 		       (increment-generation metainfo signature)))
 		(and-let* ((curr-gen (ref class 'generation))
 			   ((not (= prev-gen curr-gen))))
-		  (slot-set! metainfo 'previous-generation curr-gen))))
+		  (slot-set! metainfo 'previous-generation curr-gen)))
+              #t)
 	    ;; metainfo does not exist.
 	    (register-metainfo signature)))))
 
