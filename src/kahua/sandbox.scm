@@ -12,6 +12,7 @@
   (use srfi-13)
   (use srfi-14)
   (use kahua.plugin)
+  (use kahua.config)
   (export make-sandbox-module
           export-module enable-module-except
           disable-bindings)
@@ -65,7 +66,7 @@
 (define (make-sandbox-module)
   (let ((m (make-module #f)))
     (eval
-     '(begin
+     `(begin
         (import kahua.sandbox)
 
         ;; this is a temporary setting for existing example applications.
@@ -90,21 +91,22 @@
 
         (export-module kahua.plugin use-plugin)
 
-        (if (kahua-secure-sandbox)
-            (disable-bindings open-input-file open-output-file
-                              call-with-input-file call-with-output-file
-                              with-input-from-file with-output-to-file
-                              load transcript-on transcript-off
-                              null-environment scheme-report-environment
-                              interaction-environment
+        ,@(if (kahua-secure-sandbox)
+            '((disable-bindings open-input-file open-output-file
+                                call-with-input-file call-with-output-file
+                                with-input-from-file with-output-to-file
+                                load transcript-on transcript-off
+                                null-environment scheme-report-environment
+                                interaction-environment
 
-                              exit sys-exit sys-abort
+                                exit sys-exit sys-abort
 
-                              import require
+                                import require
 
-                              select-module
-                              with-module define-module
-                              define-in-module find-module))
+                                select-module
+                                with-module define-module
+                                define-in-module find-module))
+            '())
 
         ;; override
         (define use use-plugin)
