@@ -53,7 +53,7 @@
 (define-method initialize ((db <kahua-db-fs>) initargs)
   (define (build-real-path db-path)
     (cond ((#/^fs:/ db-path) => (lambda (m) (rxmatch-after m)))
-	  (else db-path)))
+          (else db-path)))
   (define (build-lock-path db-path)
     (build-path (sys-dirname db-path) (string-append (sys-basename db-path) ".lock")))
   (define (build-id-counter-path path)
@@ -80,12 +80,12 @@
 (define (%call-writer-to-file-safely file tmpbase writer encoding)
   (receive (out tmp) (sys-mkstemp tmpbase)
     (let1 out (if encoding
-		  (wrap-with-output-conversion out encoding)
-		  out)
+                  (wrap-with-output-conversion out encoding)
+                  out)
       (guard (e (else (sys-unlink tmp) (raise e)))
-	(writer out)
-	(close-output-port out)
-	(sys-rename tmp file)))))
+        (writer out)
+        (close-output-port out)
+        (sys-rename tmp file)))))
 
 (define-constant *lock-db-fs* (make <sys-flock> :type F_WRLCK))
 (define-constant *unlock-db-fs* (make <sys-flock> :type F_UNLCK))
@@ -96,7 +96,7 @@
         (cond ((zero? retry) #f)
               ((sys-fcntl lock-port F_SETLK *lock-db-fs*)
                (set! (lock-port-of db) lock-port)
-	       #t)
+               #t)
               (else (sys-sleep 1) (try-lock (- retry 1)))))
       (try-lock 10))))
 (define-method unlock-db ((db <kahua-db-fs>))
@@ -118,25 +118,25 @@
   (let1 tmp (tmp-path-of db)
     (mk-dbdir tmp)
     (with-output-to-file (id-counter-path-of db) (cut write (id-counter-of db))
-			 :if-exists :error)
+                         :if-exists :error)
     (with-output-to-file (character-encoding-path-of db) (cut write (character-encoding-of db))
-			 :if-exists :error))
+                         :if-exists :error))
   db)
 
 (define-method kahua-db-open ((db <kahua-db-fs>))
   (define (read-character-encoding db)
     (let1 cefile (character-encoding-path-of db)
       (if (file-is-regular? cefile)
-	  (let1 ce (with-input-from-file cefile read)
-	    (unless (symbol? ce)
-	      (error "kahua-db-open: symbol required but got as character-encoding: " ce))
-	    (unless (ces-upper-compatible? (gauche-character-encoding) ce)
-	      (kahua:log-format "DB character encoding ~a differ from native ~a" ce (gauche-character-encoding))
-	      (kahua:log-format "You should convert it into native encoding ~a" (gauche-character-encoding)))
-	    ce)
-	  (let1 ce (gauche-character-encoding)
-	    (with-output-to-file cefile (cut write ce))
-	    ce))))
+          (let1 ce (with-input-from-file cefile read)
+            (unless (symbol? ce)
+              (error "kahua-db-open: symbol required but got as character-encoding: " ce))
+            (unless (ces-upper-compatible? (gauche-character-encoding) ce)
+              (kahua:log-format "DB character encoding ~a differ from native ~a" ce (gauche-character-encoding))
+              (kahua:log-format "You should convert it into native encoding ~a" (gauche-character-encoding)))
+            ce)
+          (let1 ce (gauche-character-encoding)
+            (with-output-to-file cefile (cut write ce))
+            ce))))
 
   (unless (lock-db db)
     (error "kahua-db-open: couldn't obtain database lock: " db))
@@ -160,7 +160,7 @@
   (define (read-id-counter db)
     (let1 cnt (with-input-from-file (id-counter-path-of db) read)
       (unless (number? cnt)
-	(error "kahua-db-open: number required but got as id-counter: " cnt))
+        (error "kahua-db-open: number required but got as id-counter: " cnt))
       cnt))
 
   (next-method)
@@ -177,7 +177,7 @@
 
 (define (data-path db cn . key)
   (apply build-path (real-path-of db)
-	 (class-name->path-component cn) key))
+         (class-name->path-component cn) key))
 
 (define (alive-path db cn . key)
   (apply build-path (data-path db cn) *alive* key))
@@ -187,11 +187,11 @@
     (unless (file-is-directory? alive-path)
       (mk-dbdir alive-path)
       (let1 c (make-kahua-collection db class '(:include-removed-object? #t))
-	(for-each (lambda (i)
-		    (unless (removed? i)
-		      (let1 k (key-of i)
-			(sys-symlink (build-path ".." k) (build-path alive-path k)))))
-		  c)))))
+        (for-each (lambda (i)
+                    (unless (removed? i)
+                      (let1 k (key-of i)
+                        (sys-symlink (build-path ".." k) (build-path alive-path k)))))
+                  c)))))
 
 (define (create-class-directory* db class)
   (let1 class-path (data-path db (class-name class))
@@ -201,12 +201,12 @@
 
 (define (maintain-alive-link db obj)
   (let* ((class (class-of obj))
-	 (key (key-of obj))
-	 (link-path (alive-path db (class-name class) key)))
+         (key (key-of obj))
+         (link-path (alive-path db (class-name class) key)))
     (if (removed? obj)
-	(sys-unlink link-path)
-	(unless (file-exists? link-path)
-	  (sys-symlink (build-path ".." key) link-path)))))
+        (sys-unlink link-path)
+        (unless (file-exists? link-path)
+          (sys-symlink (build-path ".." key) link-path)))))
 
 (define-method read-kahua-instance ((db <kahua-db-fs>)
                                     (class <kahua-persistent-meta>)
@@ -214,61 +214,61 @@
   (let1 path (data-path db (class-name class) key)
     (and (file-exists? path)
          (call-with-input-file path
-	   (lambda (in)
-	     (with-port-locking in (cut read in)))
-	   :encoding (character-encoding-of db)))))
+           (lambda (in)
+             (with-port-locking in (cut read in)))
+           :encoding (character-encoding-of db)))))
 
 (define-method write-kahua-instance ((db <kahua-db-fs>)
                                      (obj <kahua-persistent-base>))
   (create-class-directory* db (class-of obj))
   (let* ((file-path (data-path db (class-name (class-of obj)) (key-of obj)))
-	 (writer (lambda (out)
-		   (with-port-locking out (cut kahua-write obj out)))))
+         (writer (lambda (out)
+                   (with-port-locking out (cut kahua-write obj out)))))
     (if (ref obj '%floating-instance)
-	(guard (e (else (error <kahua-persistence-error>
-			       :message (format "duplicate key: ~s" (key-of obj)))))
-	  (call-with-output-file file-path
-	    writer
-	    :if-exists :error
-	    :encoding (character-encoding-of db)))
-	(%call-writer-to-file-safely file-path
-				     (tmp-path-of db)
-				     writer
-				     (character-encoding-of db)))
+        (guard (e (else (error <kahua-persistence-error>
+                               :message (format "duplicate key: ~s" (key-of obj)))))
+          (call-with-output-file file-path
+            writer
+            :if-exists :error
+            :encoding (character-encoding-of db)))
+        (%call-writer-to-file-safely file-path
+                                     (tmp-path-of db)
+                                     writer
+                                     (character-encoding-of db)))
     (maintain-alive-link db obj)
     (set! (ref obj '%floating-instance) #f)
     (set! (ref obj '%modified-index-slots) '())))
 
 (define-method kahua-db-write-id-counter ((db <kahua-db-fs>))
   (%call-writer-to-file-safely (id-counter-path-of db)
-			       (tmp-path-of db)
-			       (pa$ write (id-counter-of db)) #f))
+                               (tmp-path-of db)
+                               (pa$ write (id-counter-of db)) #f))
 
 
 (define-method kahua-persistent-instances ((db <kahua-db-fs>) class opts)
   (let-keywords* opts ((index #f)
-		       (keys #f)
-		       (predicate #f)
-		       (include-removed-object? #f))
+                       (keys #f)
+                       (predicate #f)
+                       (include-removed-object? #f))
     (when index (kahua-db-fs-error "Index slot is not supported: please upgrade to kahua.persistent.efs"))
     (let* ((filter-proc (if predicate
-			    (lambda (v) (and (predicate v) v))
-			    identity))
-	   (cn (class-name class))
-	   (target-dir (if include-removed-object?
-			   (data-path db cn)
-			   (data-path db cn *alive*)))
-	   (dir-filter (if include-removed-object?
-			   file-is-regular?
-			   file-is-symlink?)))
+                            (lambda (v) (and (predicate v) v))
+                            identity))
+           (cn (class-name class))
+           (target-dir (if include-removed-object?
+                           (data-path db cn)
+                           (data-path db cn *alive*)))
+           (dir-filter (if include-removed-object?
+                           file-is-regular?
+                           file-is-symlink?)))
       (filter-map (lambda (k)
-		    (and-let* ((obj (find-kahua-instance class k include-removed-object?)))
-		      (filter-proc obj)))
-		  (or keys
-		      (if (file-is-directory? target-dir)
-			  (directory-list target-dir :children? #t
-					  :filter dir-filter :filter-add-path? #t)
-			  '()))))))
+                    (and-let* ((obj (find-kahua-instance class k include-removed-object?)))
+                      (filter-proc obj)))
+                  (or keys
+                      (if (file-is-directory? target-dir)
+                          (directory-list target-dir :children? #t
+                                          :filter dir-filter :filter-add-path? #t)
+                          '()))))))
 
 ;;=================================================================
 ;; Database Consistency Check and Fix
@@ -276,23 +276,23 @@
 
 (define-method dbutil:instance-files-fold ((db <kahua-db-fs>) class-name proc knil)
   (fold proc knil
-	(directory-list (data-path db class-name) :add-path? #t :children? #t
-			:filter file-is-regular? :filter-add-path? #t)))
+        (directory-list (data-path db class-name) :add-path? #t :children? #t
+                        :filter file-is-regular? :filter-add-path? #t)))
 
 ;; Sweep all instances' object id and compare max of them with id-counter
 ;;
 (define-method dbutil:check-id-counter ((db <kahua-db-fs>) do-fix?)
   (let* ((ce (character-encoding-of db))
-	 (max-id (dbutil:persistent-classes-fold
-		  db (lambda (cn r)
-		       (dbutil:instance-files-fold
-			db cn (lambda (p r)
-				(max r (ref (with-input-from-file p read :encoding ce) 'id)))
-			r))
-		  0)))
+         (max-id (dbutil:persistent-classes-fold
+                  db (lambda (cn r)
+                       (dbutil:instance-files-fold
+                        db cn (lambda (p r)
+                                (max r (ref (with-input-from-file p read :encoding ce) 'id)))
+                        r))
+                  0)))
     (cond ((> (id-counter-of db) max-id)                  'OK)
-	  (do-fix? (set! (id-counter-of db) (+ max-id 1)) 'FIXED)
-	  (else                                           'NG))))
+          (do-fix? (set! (id-counter-of db) (+ max-id 1)) 'FIXED)
+          (else                                           'NG))))
 
 ;; Sweep all instances data as raw string, and check each data character
 ;; encoding is match with (character-encoding-of db).
@@ -301,29 +301,29 @@
   (define (string-compatible? bs ces1 ces2)
     (guard (e (else #f))
       (let ((s1 (ces-convert bs ces1))
-	    (s2 (ces-convert bs ces2)))
-	(string=? s1 s2))))
+            (s2 (ces-convert bs ces2)))
+        (string=? s1 s2))))
   (define (convert p bs from to)
     (cond (do-fix?
-	   (%call-writer-to-file-safely p (tmp-path-of db)
-					(pa$ display (ces-convert bs from))
-					to)
-	   'FIXED)
-	  (else 'NG)))
+           (%call-writer-to-file-safely p (tmp-path-of db)
+                                        (pa$ display (ces-convert bs from))
+                                        to)
+           'FIXED)
+          (else 'NG)))
   (let1 ce (character-encoding-of db)
     (dbutil:persistent-classes-fold
      db (lambda (cn r)
-	  (dbutil:instance-files-fold
-	   db cn (lambda (p r)
-		   (let* ((s (sys-stat p))
-			  (size (ref s 'size))
-			  (data (with-input-from-file p (cut read-block size)))
-			  (gce (ces-guess-from-string data "*JP")))
-		     (if (or (ces-equivalent? ce gce)
-			     (string-compatible? data ce gce))
-			 r
-			 (convert p data gce ce))))
-	   r))
+          (dbutil:instance-files-fold
+           db cn (lambda (p r)
+                   (let* ((s (sys-stat p))
+                          (size (ref s 'size))
+                          (data (with-input-from-file p (cut read-block size)))
+                          (gce (ces-guess-from-string data "*JP")))
+                     (if (or (ces-equivalent? ce gce)
+                             (string-compatible? data ce gce))
+                         r
+                         (convert p data gce ce))))
+           r))
      'OK)))
 
 ;; Check alive directory (%%alive under each class directory) and removed flag of
@@ -332,29 +332,29 @@
 (define-method dbutil:check-removed-flag-facility ((db <kahua-db-fs>) do-fix?)
   (define (%fix-alive-path apath removed? r)
     (cond (removed?
-	   (if (file-exists? apath)
-	       (cond (do-fix? (sys-remove apath) 'FIXED)
-		     (else                       'NG))
-	       r))
-	  ((file-is-symlink? apath) r)
-	  (do-fix? (sys-symlink (build-path ".." (sys-basename apath)) apath) 'FIXED)
-	  (else                                                               'NG)))
+           (if (file-exists? apath)
+               (cond (do-fix? (sys-remove apath) 'FIXED)
+                     (else                       'NG))
+               r))
+          ((file-is-symlink? apath) r)
+          (do-fix? (sys-symlink (build-path ".." (sys-basename apath)) apath) 'FIXED)
+          (else                                                               'NG)))
   (define (%fix-alive-directory adir)
     (and do-fix? (mk-dbdir adir) 'FIXED))
   (let1 ce (character-encoding-of db)
     (dbutil:persistent-classes-fold
      db (lambda (cn r)
-	  (let1 adir (alive-path db cn)
-	    (if (or (file-is-directory? adir)
-		    (%fix-alive-directory adir))
-		(dbutil:instance-files-fold
-		 db cn (lambda (p r)
-			 (let* ((i (with-input-from-file p read :encoding ce))
-				(removed? (ref i 'removed?))
-				(apath (alive-path db cn (sys-basename p))))
-			   (%fix-alive-path apath removed? r)))
-		 r)
-		'NG)))
+          (let1 adir (alive-path db cn)
+            (if (or (file-is-directory? adir)
+                    (%fix-alive-directory adir))
+                (dbutil:instance-files-fold
+                 db cn (lambda (p r)
+                         (let* ((i (with-input-from-file p read :encoding ce))
+                                (removed? (ref i 'removed?))
+                                (apath (alive-path db cn (sys-basename p))))
+                           (%fix-alive-path apath removed? r)))
+                 r)
+                'NG)))
      'OK)))
 
 (define-constant *proc-table*
@@ -364,11 +364,11 @@
 
 (define-method dbutil:check&fix-database ((db <kahua-db-fs>) writer do-fix?)
   (for-each (lambda (e)
-	      (let ((do-check (car e))
-		    (msg-prefix (cdr e)))
-		(writer msg-prefix)
-		(writer (do-check db do-fix?))
-		(writer "\n")))
-	    *proc-table*))
+              (let ((do-check (car e))
+                    (msg-prefix (cdr e)))
+                (writer msg-prefix)
+                (writer (do-check db do-fix?))
+                (writer "\n")))
+            *proc-table*))
 
 (provide "kahua/persistence/fs")

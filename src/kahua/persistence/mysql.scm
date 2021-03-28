@@ -20,12 +20,12 @@
   (safe-execute
    (lambda ()
      (dbi-do (connection-of db)
-	     (format "set character set ~a" (case (gauche-character-encoding)
-					      ((utf-8)  'utf8)
-					      ((euc-jp) 'ujis)
-					      ((sjis)   'sjis)
-					      (else     'binary)))
-	     '(:pass-through #t)))))
+             (format "set character set ~a" (case (gauche-character-encoding)
+                                              ((utf-8)  'utf8)
+                                              ((euc-jp) 'ujis)
+                                              ((sjis)   'sjis)
+                                              (else     'binary)))
+             '(:pass-through #t)))))
 
 (define-constant *db-charset-collation*
   (case (gauche-character-encoding)
@@ -46,8 +46,8 @@
 
 (define-method initialize-kahua-db-idcount ((db <kahua-db-mysql>) n)
   (dbi-do (connection-of db)
-	  (format "update ~a set value = ?" *kahua-db-idcount*)
-	  '() n))
+          (format "update ~a set value = ?" *kahua-db-idcount*)
+          '() n))
 
 
 ;; Class table counter
@@ -78,12 +78,12 @@
 (define-method lock-tables ((db <kahua-db-mysql>) . tables)
   (define (construct-table-lock-sql specs)
     (and (not (null? specs))
-	 (call-with-output-string
-	   (lambda (out)
-	     (format out "lock tables ~a ~a" (caar specs) (cdar specs))
-	     (for-each (lambda (spec)
-			 (format out ",~a ~a" (car spec) (cdr spec)))
-		       (cdr specs))))))
+         (call-with-output-string
+           (lambda (out)
+             (format out "lock tables ~a ~a" (caar specs) (cdar specs))
+             (for-each (lambda (spec)
+                         (format out ",~a ~a" (car spec) (cdr spec)))
+                       (cdr specs))))))
   (and-let* ((query (construct-table-lock-sql (serialize-table-locks tables))))
     (dbi-do (connection-of db) query '(:pass-through #t))))
 
@@ -98,43 +98,43 @@
   (with-dbi-transaction db
     (lambda (conn)
       (with-locking-tables db
-	(lambda ()
-	  (dbi-do conn *update-kahua-db-idcount* '(:pass-through #t))
-	  (x->integer (car (map (cut dbi-get-value <> 0)
-				(dbi-do conn *select-kahua-db-idcount* '(:pass-through #t))))))
-	*kahua-db-idcount*))))
+        (lambda ()
+          (dbi-do conn *update-kahua-db-idcount* '(:pass-through #t))
+          (x->integer (car (map (cut dbi-get-value <> 0)
+                                (dbi-do conn *select-kahua-db-idcount* '(:pass-through #t))))))
+        *kahua-db-idcount*))))
 
 (define-method class-table-next-suffix ((db <kahua-db-mysql>))
   (define *select-kahua-db-classcount* "select last_insert_id()")
   (define *update-kahua-db-classcount*
     (format "update ~a set value = last_insert_id(value+1)" *kahua-db-classcount*))
   (guard (e (else (format (current-error-port)
-			  "Error: class-table-next-suffix: ~a" (ref e 'message))))
+                          "Error: class-table-next-suffix: ~a" (ref e 'message))))
     (with-dbi-transaction db
       (lambda (conn)
-	(with-locking-tables db
-	  (lambda ()
-	    (dbi-do conn *update-kahua-db-classcount* '(:pass-through #t))
-	    (x->integer (car (map (cut dbi-get-value <> 0)
-				  (dbi-do conn *select-kahua-db-classcount* '(:pass-through #t))))))
-	  *kahua-db-classcount*)))))
+        (with-locking-tables db
+          (lambda ()
+            (dbi-do conn *update-kahua-db-classcount* '(:pass-through #t))
+            (x->integer (car (map (cut dbi-get-value <> 0)
+                                  (dbi-do conn *select-kahua-db-classcount* '(:pass-through #t))))))
+          *kahua-db-classcount*)))))
 
 (define-method create-kahua-class-table ((db <kahua-db-mysql>)
-					 (class <kahua-persistent-meta>))
+                                         (class <kahua-persistent-meta>))
   (define (create-class-table-sql tabname slots)
     (receive (columns indexes)
-	(fold2 (lambda (s columns indexes)
-		 (or (and-let* ((index (slot-definition-option s :index #f))
-				(colname (slot-name->column-name (slot-definition-name s))))
-		       (values (cons (format "~a longtext binary" colname) columns)
-			       (case index
-				 ((:unique) (cons (format "constraint unique (~a(255))" colname) indexes))
-				 ((:any) (cons (format "index (~a(255))" colname) indexes))
-				 (else indexes))))
-		     (values columns indexes)))
-	       '()
-	       '()
-	       slots)
+        (fold2 (lambda (s columns indexes)
+                 (or (and-let* ((index (slot-definition-option s :index #f))
+                                (colname (slot-name->column-name (slot-definition-name s))))
+                       (values (cons (format "~a longtext binary" colname) columns)
+                               (case index
+                                 ((:unique) (cons (format "constraint unique (~a(255))" colname) indexes))
+                                 ((:any) (cons (format "index (~a(255))" colname) indexes))
+                                 (else indexes))))
+                     (values columns indexes)))
+               '()
+               '()
+               slots)
       (format "
 create table ~a (
  id      integer not null,
@@ -147,52 +147,52 @@ create table ~a (
  index                  (removed)
 ~a
 ) type=~a"
-	      tabname
-	      (string-join columns "," 'suffix)
-	      (string-join indexes "," 'prefix)
-	      (table-type-of db))))
+              tabname
+              (string-join columns "," 'suffix)
+              (string-join indexes "," 'prefix)
+              (table-type-of db))))
   (let ((cname (class-name class))
-	(newtab (format *kahua-class-table-format* (class-table-next-suffix db))))
+        (newtab (format *kahua-class-table-format* (class-table-next-suffix db))))
     (insert-kahua-db-classes db cname newtab)
     (dbi-do (connection-of db)
-	    (create-class-table-sql newtab (class-slots class))
-	    '(:pass-through #t))
+            (create-class-table-sql newtab (class-slots class))
+            '(:pass-through #t))
     (register-to-table-map db cname newtab)
     newtab))
 
 (define-method table-should-be-locked? ((db <kahua-db-mysql>)
-					(obj <kahua-persistent-base>))
+                                        (obj <kahua-persistent-base>))
   #t)					; Always should lock the table.
 
 ;;
 ;; Index handling
 ;;
 (define-method create-index-column ((db <kahua-db-mysql>)
-				    (class <kahua-persistent-meta>)
-				    slot-name index-type)
+                                    (class <kahua-persistent-meta>)
+                                    slot-name index-type)
   (let ((conn (connection-of db))
-	(tabname (kahua-class->table-name* db class))
-	(colname (slot-name->column-name slot-name)))
+        (tabname (kahua-class->table-name* db class))
+        (colname (slot-name->column-name slot-name)))
     (dbi-do conn (format "alter table ~a add ~a longtext" tabname colname) '(:pass-through #t))
     (dbi-do conn (format "alter table ~a add ~a index (~a(255))"
-			 tabname (if (eq? index-type :unique) "unique" "") colname)
-	    '(:pass-through #t))))
+                         tabname (if (eq? index-type :unique) "unique" "") colname)
+            '(:pass-through #t))))
 (define-method change-index-type ((db <kahua-db-mysql>)
-				  (class <kahua-persistent-meta>)
-				  slot-name index-type)
+                                  (class <kahua-persistent-meta>)
+                                  slot-name index-type)
   (let ((conn (connection-of db))
-	(tabname (kahua-class->table-name* db class))
-	(colname (slot-name->column-name slot-name)))
+        (tabname (kahua-class->table-name* db class))
+        (colname (slot-name->column-name slot-name)))
     (dbi-do conn (format "alter table ~a drop index ~a" tabname colname) '(:pass-through #t))
     (dbi-do conn (format "alter table ~a add ~a index (~a(255))"
-			 tabname (if (eq? index-type :unique) "unique" "") colname)
-	    '(:pass-through #t))))
+                         tabname (if (eq? index-type :unique) "unique" "") colname)
+            '(:pass-through #t))))
 (define-method drop-index-column ((db <kahua-db-mysql>)
-				  (class <kahua-persistent-meta>)
-				  slot-name)
+                                  (class <kahua-persistent-meta>)
+                                  slot-name)
   (let ((conn (connection-of db))
-	(tabname (kahua-class->table-name* db class))
-	(colname (slot-name->column-name slot-name)))
+        (tabname (kahua-class->table-name* db class))
+        (colname (slot-name->column-name slot-name)))
     (dbi-do conn (format "alter table ~a drop ~a" tabname colname) '(:pass-through #t))))
 
 ;;
@@ -209,14 +209,14 @@ create table ~a (
   (define set-primary-key (format "alter table ~a add constraint primary key (id)" tabname))
   (let1 conn (connection-of db)
     (for-each (lambda (stmt)
-		(guard (e (else (warn tabname e)))
-		  (dbi-do conn stmt '(:pass-through #t))))
-	      `(,add-id-column ,drop-primary-key ,modify-keyval-type ,add-unique))
+                (guard (e (else (warn tabname e)))
+                  (dbi-do conn stmt '(:pass-through #t))))
+              `(,add-id-column ,drop-primary-key ,modify-keyval-type ,add-unique))
     (for-each (lambda (r)
-		(let ((k (dbi-get-value r 0))
-		      (o (read-from-string (dbi-get-value r 1))))
-		  (dbi-do conn update-table '() (ref o 'id) k)))
-	      (dbi-do conn select-table '()))
+                (let ((k (dbi-get-value r 0))
+                      (o (read-from-string (dbi-get-value r 1))))
+                  (dbi-do conn update-table '() (ref o 'id) k)))
+              (dbi-do conn select-table '()))
     (guard (e (else (warn tabname e) #f))
       (dbi-do conn set-primary-key '(:pass-through #t))
       #t)

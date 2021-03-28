@@ -1,8 +1,8 @@
-;; -*- mode: scheme; coding: utf-8 -*- 
+;; -*- mode: scheme; coding: utf-8 -*-
 (define-module kahua.error-report
   (use kahua.util)
   (use kahua.elem)
-  
+
   (export kahua-log-bug kahua-error-report-proc)
   )
 

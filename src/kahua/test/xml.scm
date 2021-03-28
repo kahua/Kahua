@@ -83,9 +83,9 @@
 ;;
 ;;     (!permute <pattern> ...)
 ;;         Matches a sequence of any permutation of <pattern>s.
-;;         The permuted pattern is spliced to the containing 
+;;         The permuted pattern is spliced to the containing
 ;;         sequece of <content>; that is, the following pattern:
-;;         
+;;
 ;;          (ul (li "foo") (!permute (li "bar") (li "baz")) (li "oof"))
 ;;
 ;;         matches the input:
@@ -124,7 +124,7 @@
 ;;         (!permute ?* <pattern> ?* <pattern> ... <pattern> ?*),
 ;;         but !contain is much more efficient.
 ;;
-;;     When an optional argument extra-check is given, it is 
+;;     When an optional argument extra-check is given, it is
 ;;     called with one argument, an assoc list of pattern variable
 ;;     and the matched value.  It can perform extra check, and returns
 ;;     #f if the check fails, or #t if succeeds.

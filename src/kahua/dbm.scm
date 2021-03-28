@@ -60,7 +60,7 @@
          (obj (find-kahua-instance class 'key k)))
     (if obj
         (set! (ref obj 'value) v)
-	(make class :key k :value v))
+        (make class :key k :value v))
     #t))
 
 (define-method dbm-get ((self <kahua-dbm>) key . args)
@@ -68,17 +68,17 @@
   (let* ((k (%dbm-k2s self key))
          (class (kahua-dbm-class self)))
     (cond ((find-kahua-instance class 'key k)
-	   => (lambda (obj)
-		(%dbm-s2v self (slot-ref obj 'value))))
-	  (else
-	   (get-optional args
-			 (errorf "kahua-dbm: no data for key ~s in database ~s"
-				 key class))))))
+           => (lambda (obj)
+                (%dbm-s2v self (slot-ref obj 'value))))
+          (else
+           (get-optional args
+                         (errorf "kahua-dbm: no data for key ~s in database ~s"
+                                 key class))))))
 
 (define-method dbm-exists? ((self <kahua-dbm>) key)
   (next-method)
   (find-kahua-instance (kahua-dbm-class self)
-		       'key (%dbm-k2s self key)))
+                       'key (%dbm-k2s self key)))
 
 (define-method dbm-delete! ((self <kahua-dbm>) key)
   (next-method)
@@ -90,9 +90,9 @@
 (define-method dbm-fold ((self <kahua-dbm>) proc seed)
   (next-method)
   (fold (lambda (obj seed)
-	  (proc (%dbm-s2k self (ref obj 'key))
-		(%dbm-s2v self (ref obj 'value))
-		seed))
+          (proc (%dbm-s2k self (ref obj 'key))
+                (%dbm-s2v self (ref obj 'value))
+                seed))
         seed (make-kahua-collection (kahua-dbm-class self))))
 
 (define-method dbm-db-exists? ((class <kahua-dbm-meta>) name)

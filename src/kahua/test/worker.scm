@@ -65,7 +65,7 @@
       (lambda (in out)
         (write header out) (newline out)
         (write body out)   (newline out)
-	(flush out)
+        (flush out)
         (let* ((header (read in))
                (body   (read in)))
           (proc header body))))))
@@ -124,8 +124,8 @@
     ((_ (w command) body ...)
      (let1 w (run-worker command)
        (unwind-protect
-	(begin body ...)
-	(shutdown-worker w))))))
+        (begin body ...)
+        (shutdown-worker w))))))
 
 ;; Returns a procedure that can be used as the fourth arg of test*
 ;; to match the resulting xml, as well as to save the session id
@@ -156,7 +156,7 @@
       (let ((p (car path&query))
             (query (cdr path&query)))
         (receive (cgsid xtra-path) (string-scan (or p "") "/" 'both)
-	  (set! (ref session 'state-sid) (ref worker 'state-sid))
+          (set! (ref session 'state-sid) (ref worker 'state-sid))
           (set! (ref session 'cont-sid) (or cgsid p))
           (set! (ref session 'path-info)
               (and xtra-path
@@ -203,15 +203,15 @@
 (define (header->sxml h b)
   (define (url-fragment-cutoff pair)
     (cond ((and (eq? (car pair) 'Location)
-	     (string-scan (cadr pair) #\# 'before))
-	   => (lambda (url)
-		(list (car pair) url)))
-	  (else pair)))
+             (string-scan (cadr pair) #\# 'before))
+           => (lambda (url)
+                (list (car pair) url)))
+          (else pair)))
   (cons '*TOP*
         (map (lambda (item)
                (url-fragment-cutoff
-		(cons (string->symbol (car item))
-		      (cdr item))))
+                (cons (string->symbol (car item))
+                      (cdr item))))
              h)))
 
 (define (test/send&pick label w send-data)

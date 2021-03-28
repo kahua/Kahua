@@ -74,17 +74,17 @@
     (define (unlock)
       (let ((record (make <sys-flock> :type F_UNLCK)))
         (sys-fcntl lock-port F_SETLK record)))
-    
+
     (if (lock)
-	(guard (e (else
-		   (unlock)
-		   (sys-unlink temp-file)
-		   (raise e)))
+        (guard (e (else
+                   (unlock)
+                   (sys-unlink temp-file)
+                   (raise e)))
           (let1 temp (developers)
             (with-output-to-file temp-file (cut write temp))
             (sys-rename temp-file conf-file)
             (unlock)))
-	(error "can't lock userconf file" conf-file))))
+        (error "can't lock userconf file" conf-file))))
 
 
 ;; misc functions

@@ -12,67 +12,67 @@
   (use util.match)
   (export unit
           >>=
-	  >>
-	  get
-	  put
-	  update
+          >>
+          get
+          put
+          update
           rev-nodes
-	  node-set
+          node-set
           node-set/
-	  empty
-	  exec
-	  text/
-	  font/ tt/ i/ b/ big/ small/ em/ strong/ dfn/ code/ samp/ kbd/ var/
-	  cite/ abbr/ acronym/ sub/ sup/ span/ bdo/ br/ body/ address/ div/
-	  a/ area/ link/ img/ hr/ p/ h1/ h2/ h3/ h4/ h5/ h6/
-	  pre/ q/ blockquote/ ins/ del/ dl/ dt/ dd/ ol/ ul/ li/
-	  form/ label/ input/ select/ optgroup/ option/ textarea/ fieldset/
-	  legend/ button/ table/ caption/ thead/ tfoot/ tbody/ colgroup/
+          empty
+          exec
+          text/
+          font/ tt/ i/ b/ big/ small/ em/ strong/ dfn/ code/ samp/ kbd/ var/
+          cite/ abbr/ acronym/ sub/ sup/ span/ bdo/ br/ body/ address/ div/
+          a/ area/ link/ img/ hr/ p/ h1/ h2/ h3/ h4/ h5/ h6/
+          pre/ q/ blockquote/ ins/ del/ dl/ dt/ dd/ ol/ ul/ li/
+          form/ label/ input/ select/ optgroup/ option/ textarea/ fieldset/
+          legend/ button/ table/ caption/ thead/ tfoot/ tbody/ colgroup/
           col/ tr/ th/ td/ head/ title/ base/ meta/ style/ script/ noscript/
-	  html/ frameset/ frame/
-	  @/
-	  @@/
-	  a/cont/
-	  form/cont/
+          html/ frameset/ frame/
+          @/
+          @@/
+          a/cont/
+          form/cont/
           frame/cont/
           extra-header/
-	  map/
+          map/
           with-ie/
-	  &/
-	  when/ unless/
+          &/
+          when/ unless/
 
-	  applet/ param/ object/ embed/ noembed/
+          applet/ param/ object/ embed/ noembed/
 
-	  node-list->node-set
-	  node-list-to-node-set
-	  node-set:
-	  font: tt: i: b: big: small: em: strong: dfn: code: samp: kbd: var:
-	  cite: abbr: acronym: sub: sup: span: bdo: br: body: address: div:
-	  a: area: link: img: hr: p: h1: h2: h3: h4: h5: h6:
-	  pre: q: blockquote: ins: del: dl: dt: dd: ol: ul: li:
-	  form: label: input: select: optgroup: option: textarea: fieldset:
-	  legend: button: table: caption: thead: tfoot: tbody: colgroup:
+          node-list->node-set
+          node-list-to-node-set
+          node-set:
+          font: tt: i: b: big: small: em: strong: dfn: code: samp: kbd: var:
+          cite: abbr: acronym: sub: sup: span: bdo: br: body: address: div:
+          a: area: link: img: hr: p: h1: h2: h3: h4: h5: h6:
+          pre: q: blockquote: ins: del: dl: dt: dd: ol: ul: li:
+          form: label: input: select: optgroup: option: textarea: fieldset:
+          legend: button: table: caption: thead: tfoot: tbody: colgroup:
           col: tr: th: td: head: title: base: meta: style: script: noscript:
-	  html: frameset: frame:
-	  @:
-	  @@:
-	  a/cont:
-	  form/cont:
+          html: frameset: frame:
+          @:
+          @@:
+          a/cont:
+          form/cont:
           frame/cont:
           extra-header:
-	  map:
-	  with-ie:
-	  &:
-	  when: unless:
+          map:
+          with-ie:
+          &:
+          when: unless:
 
-	  applet: param: object: embed: noembed:
+          applet: param: object: embed: noembed:
 
-	  define-basic-element
-	  define-elements
+          define-basic-element
+          define-elements
 
-	  make-no-escape-text-element
-	  no-escape?
-	  ))
+          make-no-escape-text-element
+          no-escape?
+          ))
 
 (select-module kahua.elem)
 
@@ -92,9 +92,9 @@
 
 (define (entity->string val)
   (cond ((char? val) (format "#x~x" (char->ucs val))) ; character itself
-	((integer? val) (format "#x~x" val))	      ; character code
-	((or (string? val) (symbol? val)) val)	      ; character name
-	(else (error "& node require string or symbol(character name), integer(character code) or character itself, but got " val))))
+        ((integer? val) (format "#x~x" val))	      ; character code
+        ((or (string? val) (symbol? val)) val)	      ; character name
+        (else (error "& node require string or symbol(character name), integer(character code) or character itself, but got " val))))
 
 ;; -------------------------------------------------------------------------
 ;; State thread : State -> State
@@ -123,26 +123,26 @@
 (define (attrs+children ss)
   (if (null? ss) '()
       (receive (a as) (car+cdr ss)
-	(if (and (non-empty-list? a)
-		 (or (eq? (car a) '@) (eq? (car a) '@@)))
-	    (match a
-	      (('@ . attrs) (cons (update (cut cons a <>)) (map unit+ as)))
+        (if (and (non-empty-list? a)
+                 (or (eq? (car a) '@) (eq? (car a) '@@)))
+            (match a
+              (('@ . attrs) (cons (update (cut cons a <>)) (map unit+ as)))
               (('@@ . attrs) (cons (updata (cut append <> a)) (map unit+ as))))
-	    (map unit+ ss)))))
+            (map unit+ ss)))))
 
 (define (unit+ t)
   (if (string? t) (text/ t)
       (receive (tg as) (car+cdr t)
-	(apply (hash-table-get *element-table* tg) (attrs+children as)))))
-	  
+        (apply (hash-table-get *element-table* tg) (attrs+children as)))))
+
 (define (node-set sts)
   (if (null? sts)
       empty
       (let1 st (car sts)
-	(cond ((procedure? st) (>> st (node-set (cdr sts))))
-	      ((and (non-empty-list? st) (symbol? (car st))) (map/ unit sts))
-	      (st (>> (text/ st) (node-set (cdr sts))))
-	      (else (node-set (cdr sts)))))))
+        (cond ((procedure? st) (>> st (node-set (cdr sts))))
+              ((and (non-empty-list? st) (symbol? (car st))) (map/ unit sts))
+              (st (>> (text/ st) (node-set (cdr sts))))
+              (else (node-set (cdr sts)))))))
 
 (define (node-set/ . args)
   (node-set args))
@@ -164,13 +164,13 @@
   (syntax-rules ()
     ((_ expr . body)
      (cond (expr . body)
-	   (else empty)))))
+           (else empty)))))
 
 (define-syntax unless/
   (syntax-rules ()
     ((_ expr . body)
      (cond (expr empty)
-	   (else . body)))))
+           (else . body)))))
 
 ;; SXML tag
 
@@ -195,20 +195,20 @@
 (define (rev-nodes node-set)
   (define (rev node)
     (cond ((pair? node)
-	   (let1 name (car node)
-	     (case name
-	       ((@ @@) node)
-	       (else (cons name (rev-nodes (cdr node)))))))
-	  ((no-escape? node) node)
-	  (else (x->string node))))
+           (let1 name (car node)
+             (case name
+               ((@ @@) node)
+               (else (cons name (rev-nodes (cdr node)))))))
+          ((no-escape? node) node)
+          (else (x->string node))))
   (reverse (map rev node-set)))
 
 (define-macro (define-basic-element name)
   (let ((name/ (string->symbol (string-append (symbol->string name) "/")))
-	(name: (string->symbol (string-append (symbol->string name) ":"))))
+        (name: (string->symbol (string-append (symbol->string name) ":"))))
     `(define-values (,name/ ,name:)
        (values (lambda args (update (cut cons (cons (quote ,name) (exec '() (node-set args))) <>)))
-	       (lambda args (cons (quote ,name) (flatten args)))))))
+               (lambda args (cons (quote ,name) (flatten args)))))))
 (define-macro (define-elements . names)
   `(begin ,@(map (lambda (n) (list 'define-basic-element n)) names)))
 
@@ -217,9 +217,9 @@
   `(begin
      (define-elements ,@names)
      ,@(map (lambda (n)
-	      (let1 n/ (string->symbol (string-append (symbol->string n) "/"))
-		`(hash-table-put! ,*element-table* ',n ,n/)))
-	    names)))
+              (let1 n/ (string->symbol (string-append (symbol->string n) "/"))
+                `(hash-table-put! ,*element-table* ',n ,n/)))
+            names)))
 
 (define-elements/reg
   font tt b big i small em strong dfn code samp kbd var cite abbr acronym sub sup span bdo
@@ -235,16 +235,16 @@
 (define (flatten ls)
   (reverse
    (fold (lambda (e r)
-	   (cond ((null? e) r)
-		 ((pair? e)
-		  (case (car e)
-		    ((node-set) (fold cons r (cdr e)))
-		    (else (cons e r))))
-		 ((no-escape? e) (cons e r))
-		 (e (cons (x->string e) r))
-		 (else r)))
-	 '()
-	 ls)))
+           (cond ((null? e) r)
+                 ((pair? e)
+                  (case (car e)
+                    ((node-set) (fold cons r (cdr e)))
+                    (else (cons e r))))
+                 ((no-escape? e) (cons e r))
+                 (e (cons (x->string e) r))
+                 (else r)))
+         '()
+         ls)))
 
 (define (node-list->node-set ls) (cons 'node-set (flatten ls)))
 (define node-list-to-node-set node-list->node-set) ; for backward compatibility
@@ -278,12 +278,12 @@
   (syntax-rules ()
     ((_ expr . body)
      (cond (expr . body)
-	   (else (node-set:))))))
+           (else (node-set:))))))
 
 (define-syntax unless:
   (syntax-rules ()
     ((_ expr . body)
      (cond (expr (node-set:))
-	   (else . body)))))
+           (else . body)))))
 
 (provide "kahua/elem")

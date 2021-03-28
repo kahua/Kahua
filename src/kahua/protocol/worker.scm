@@ -17,24 +17,24 @@
   (use kahua.config)
   (use kahua.util)
   (export talk-to-worker
-	  add-kahua-header!
-	  kahua-worker-header
-	  <kahua-worker-unknown-error>
-	  <kahua-worker-not-found>
-	  <kahua-worker-not-respond>
-	  <kahua-spvr-not-respond>
-	  <kahua-spvr-session-expired>
-	  kahua-worker-unknown-error?
-	  kahua-worker-not-found?
-	  kahua-worker-not-respond?
-	  kahua-spvr-not-respond?
-	  kahua-spvr-session-expired?
-	  simplify-path-info
-	  path->path-info
-	  path-info->abs-path
-	  normalize-path
-	  rel-path-info
-	  )
+          add-kahua-header!
+          kahua-worker-header
+          <kahua-worker-unknown-error>
+          <kahua-worker-not-found>
+          <kahua-worker-not-respond>
+          <kahua-spvr-not-respond>
+          <kahua-spvr-session-expired>
+          kahua-worker-unknown-error?
+          kahua-worker-not-found?
+          kahua-worker-not-respond?
+          kahua-spvr-not-respond?
+          kahua-spvr-session-expired?
+          simplify-path-info
+          path->path-info
+          path-info->abs-path
+          normalize-path
+          rel-path-info
+          )
   )
 
 (select-module kahua.protocol.worker)
@@ -49,89 +49,89 @@
 
 (define (add-kahua-header! header . args)
   (let loop ((h header)
-	     (pairs args))
+             (pairs args))
     (if (null? pairs)
-	h
-	(let ((key (car pairs))
-	      (value (cadr pairs)))
-	  (if value
-	      (loop (assoc-set! h key (list value)) (cddr pairs))
-	      (loop h (cddr pairs)))))))
+        h
+        (let ((key (car pairs))
+              (value (cadr pairs)))
+          (if value
+              (loop (assoc-set! h key (list value)) (cddr pairs))
+              (loop h (cddr pairs)))))))
 
 (define (kahua-worker-header worker path-info . args)
   (let-keywords* args ((server-uri #f)
-		       (worker-uri #f)
-		       (metavariables #f)
-		       (sgsid #f)
-		       (cgsid #f)
-		       (remote-addr #f)
-		       (bridge #f))
+                       (worker-uri #f)
+                       (metavariables #f)
+                       (sgsid #f)
+                       (cgsid #f)
+                       (remote-addr #f)
+                       (bridge #f))
     (reverse!
      (add-kahua-header! '()
-			"x-kahua-worker"        worker
-			"x-kahua-path-info"     path-info
-			"x-kahua-sgsid"         sgsid
-			"x-kahua-cgsid"         cgsid
-			"x-kahua-worker-uri"    worker-uri
-			"x-kahua-server-uri"    server-uri
-			"x-kahua-bridge"        bridge
-			"x-kahua-remote-addr"   remote-addr
-			"x-kahua-metavariables" metavariables
-			))))
+                        "x-kahua-worker"        worker
+                        "x-kahua-path-info"     path-info
+                        "x-kahua-sgsid"         sgsid
+                        "x-kahua-cgsid"         cgsid
+                        "x-kahua-worker-uri"    worker-uri
+                        "x-kahua-server-uri"    server-uri
+                        "x-kahua-bridge"        bridge
+                        "x-kahua-remote-addr"   remote-addr
+                        "x-kahua-metavariables" metavariables
+                        ))))
 
 ;; Too ugly. FIXME!!
 (define (check-kahua-status kheader kbody)
   (or (and-let* ((kahua-status (assoc-ref kheader "x-kahua-status")))
-	(match kahua-status
-	  (("OK" _ ...) #t)
-	  (("SPVR-ERROR" e) (=> break)
-	   (case e
-	     ((<kahua-worker-not-found>) (error <kahua-worker-not-found> "Worker not found"))
+        (match kahua-status
+          (("OK" _ ...) #t)
+          (("SPVR-ERROR" e) (=> break)
+           (case e
+             ((<kahua-worker-not-found>) (error <kahua-worker-not-found> "Worker not found"))
 ;;	     ((<kahua-entry-not-found>)  (error <kahua-entry-not-found> "Entry not found"))
 ;;	     ((<kahua-worker-expired>)   (error <kahua-worker-expired> "Worker expired"))
-	     ((<kahua-worker-not-respond>)   (error <kahua-worker-not-respond> "Worker not respond"))
-	     (else (break))))
-	  (else                          (error <kahua-worker-unknown-error> "Unknown worker error"))))
+             ((<kahua-worker-not-respond>)   (error <kahua-worker-not-respond> "Worker not respond"))
+             (else (break))))
+          (else                          (error <kahua-worker-unknown-error> "Unknown worker error"))))
       #t))
 
 (define (make-socket-to-worker cgsid)
-  (guard (e (else 
-	     (kahua:log-format "Error: ~a ~s" (class-name (class-of e)) (condition-ref e 'message))
-	     (cond (cgsid (error <kahua-worker-not-respond> "Worker not respond"))
-		   (else  (error <kahua-spvr-not-respond> "Server not respond")))))
+  (guard (e (else
+             (kahua:log-format "Error: ~a ~s" (class-name (class-of e)) (condition-ref e 'message))
+             (cond (cgsid (error <kahua-worker-not-respond> "Worker not respond"))
+                   (else  (error <kahua-spvr-not-respond> "Server not respond")))))
   (make-client-socket (worker-id->sockaddr (and cgsid (gsid->worker-id cgsid)) (kahua-sockbase)))))
 
 (define (talk-to-worker cgsid header params)
   (guard (e ((not (kahua-error? e))
-	     (kahua:log-format "Error: ~a ~s" (class-name (class-of e)) (condition-ref e 'message))
-	     (error <kahua-worker-unknown-error> (condition-ref e 'message))))
+             (kahua:log-format "Error: ~a ~s" (class-name (class-of e)) (condition-ref e 'message))
+             (error <kahua-worker-unknown-error> (condition-ref e 'message))))
     (call-with-client-socket (make-socket-to-worker cgsid)
       (lambda (w-in w-out)
-	(kahua:log-format "C->W header: ~s" header)
-	(kahua:log-format "C->W params: ~s" params)
-	(write header w-out)
-	(write params w-out)
-	(flush w-out)
-	(let* ((w-header (read w-in))
-	       (w-body   (read w-in)))
-	  (kahua:log-format "C<-W header: ~s" w-header)
-	  (check-kahua-status w-header w-body)
-	  (values w-header w-body))))))
+        (kahua:log-format "C->W header: ~s" header)
+        (kahua:log-format "C->W params: ~s" params)
+        (write header w-out)
+        (write params w-out)
+        (flush w-out)
+        (let* ((w-header (read w-in))
+               (w-body   (read w-in)))
+          (kahua:log-format "C<-W header: ~s" w-header)
+          (check-kahua-status w-header w-body)
+          (values w-header w-body))))))
 
 ;; This function assumes path is already applied uri-decode-string.
 (define (simplify-path-info path-info)
   (reverse!
    (fold (lambda (comp res)
-	   (cond ((not comp) res)
-		 ((string-null? comp) res)
-		 ((string=? "." comp) res)
-		 ((string=? ".." comp)
-		  (if (null? res)
-		      res
-		      (cdr res)))
-		 (else (cons comp res))))
-	 '()
-	 path-info)))
+           (cond ((not comp) res)
+                 ((string-null? comp) res)
+                 ((string=? "." comp) res)
+                 ((string=? ".." comp)
+                  (if (null? res)
+                      res
+                      (cdr res)))
+                 (else (cons comp res))))
+         '()
+         path-info)))
 
 (define (path->path-info path)
   (if path
@@ -147,10 +147,10 @@
 
 (define (rel-path-info path-info base-info)
   (let loop ((p path-info)
-	     (b base-info))
+             (b base-info))
     (cond ((null? b) p)
-	  ((null? p) #f)
-	  ((string=? (car p) (car b)) (loop (cdr p) (cdr b)))
-	  (else #f))))
+          ((null? p) #f)
+          ((string=? (car p) (car b)) (loop (cdr p) (cdr b)))
+          (else #f))))
 
 (provide "kahua/protocol/worker")

@@ -22,59 +22,59 @@
   (use util.match)
   (use kahua.object-pool)
   (export kahua-common-init
-	  <kahua-custom> <kahua-config>
+          <kahua-custom> <kahua-config>
           kahua-config
 
-	  ;; Global Accessor
-	  kahua-site-root
+          ;; Global Accessor
+          kahua-site-root
           kahua-sockbase
-	  kahua-working-directory
-	  kahua-app-servers
-	  kahua-application-directory
-	  kahua-plugin-directory
-	  kahua-template-directory
-	  kahua-database-directory
-	  kahua-data-directory
-	  kahua-temporary-directory
-	  kahua-log-directory
-	  kahua-cgilog-directory
-	  kahua-run-directory
-	  kahua-etc-directory
-	  kahua-default-database-name
-	  kahua-error-document-alist
+          kahua-working-directory
+          kahua-app-servers
+          kahua-application-directory
+          kahua-plugin-directory
+          kahua-template-directory
+          kahua-database-directory
+          kahua-data-directory
+          kahua-temporary-directory
+          kahua-log-directory
+          kahua-cgilog-directory
+          kahua-run-directory
+          kahua-etc-directory
+          kahua-default-database-name
+          kahua-error-document-alist
 
-	  ;; Global Getter
+          ;; Global Getter
           kahua-timeout-mins
           kahua-userconf-file
-	  kahua-auto-restart
-	  kahua-secure-sandbox
-	  kahua-spvr-concurrency
-	  kahua-httpd-concurrency
-	  kahua-keyserv-concurrency
-	  kahua-session-domain
+          kahua-auto-restart
+          kahua-secure-sandbox
+          kahua-spvr-concurrency
+          kahua-httpd-concurrency
+          kahua-keyserv-concurrency
+          kahua-session-domain
           kahua-config-file
 
-	  ;; Utilities
-	  kahua-sockbase-abs-path
-	  kahua-tmpbase
-	  kahua-dbpath
-	  kahua-datapath
+          ;; Utilities
+          kahua-sockbase-abs-path
+          kahua-tmpbase
+          kahua-dbpath
+          kahua-datapath
           kahua-logpath
-	  kahua-cgilogpath
-	  kahua-spvr-pidpath
+          kahua-cgilogpath
+          kahua-spvr-pidpath
           kahua-keyserv-pidpath
-	  kahua-httpd-pidpath
+          kahua-httpd-pidpath
           kahua-static-document-path
           kahua-static-document-url
-	  kahua-template-path
-	  kahua-error-document
+          kahua-template-path
+          kahua-error-document
           kahua-version
-	  kahua-revision
-	  kahua-version-info
+          kahua-revision
+          kahua-version-info
 
-	  ;; Site Bundle
-	  kahua-site-create
-	  kahua-site-init
+          ;; Site Bundle
+          kahua-site-create
+          kahua-site-init
           ))
 (select-module kahua.config)
 
@@ -131,13 +131,13 @@
    ;; static-document-url - the url path to reference the contents of
    ;;     static-document-path via httpd.
    (static-document-url  :init-keyword :static-document-url :init-value *kahua-static-document-url-default*)
-   
+
    (default-database-name :init-keyword :default-database-name :init-value "db")
 
    ;; timeout-mins - session period of time
    (timeout-mins :init-keyword :timeout-mins
                  :init-value 60)
-   
+
    ;; auto restart setting
    (auto-restart :init-keyword :auto-restart :init-value #f)
 
@@ -169,36 +169,36 @@
 
 (define (kahua::abs-path path base)
   (or (and-let* ((base base))
-	(abs-path path base))
+        (abs-path path base))
       path))
 
 (define-method compute-get-n-set ((class <kahua-config-meta>) slot)
   (let* ((s (slot-definition-name slot))
-	 (place (slot-definition-option slot :place #f))
-	 (acc (compute-slot-accessor class slot (next-method)))
-	 (bound? (cut slot-bound-using-accessor? <> acc))
-	 (getter (cond ((eq? s 'sockbase)
-			(lambda (o)
-			  (let ((site-root (slot-ref o 'site-root))
-				(sockbase (slot-ref-using-accessor o acc)))
-			    (if site-root
-				(sockbase-abs-path sockbase site-root)
-				sockbase))))
-		       ((eq? place :site)
-			(lambda (o) (kahua::abs-path (slot-ref-using-accessor o acc) (slot-ref o 'site-root))))
-		       (else (cut slot-ref-using-accessor <> acc))))
-	 (setter (case s
-		   ((site-root)
-		    (lambda (o v)
-		      (slot-set-using-accessor! o acc (and v (abs-path v (current-directory))))))
-		   (else
-		    (cut slot-set-using-accessor! <> acc <>)))))
+         (place (slot-definition-option slot :place #f))
+         (acc (compute-slot-accessor class slot (next-method)))
+         (bound? (cut slot-bound-using-accessor? <> acc))
+         (getter (cond ((eq? s 'sockbase)
+                        (lambda (o)
+                          (let ((site-root (slot-ref o 'site-root))
+                                (sockbase (slot-ref-using-accessor o acc)))
+                            (if site-root
+                                (sockbase-abs-path sockbase site-root)
+                                sockbase))))
+                       ((eq? place :site)
+                        (lambda (o) (kahua::abs-path (slot-ref-using-accessor o acc) (slot-ref o 'site-root))))
+                       (else (cut slot-ref-using-accessor <> acc))))
+         (setter (case s
+                   ((site-root)
+                    (lambda (o v)
+                      (slot-set-using-accessor! o acc (and v (abs-path v (current-directory))))))
+                   (else
+                    (cut slot-set-using-accessor! <> acc <>)))))
     (list getter setter bound? #t)))
 
 (define-class <kahua-config> (<kahua-custom> <kahua:object-pool-mixin> <kahua-config-mixin>)
   ()
   :key-of (lambda (_ initargs)
-	    (kahua::abs-path (get-keyword* :config-file initargs #f) (get-keyword* :site-root initargs #f))))
+            (kahua::abs-path (get-keyword* :config-file initargs #f) (get-keyword* :site-root initargs #f))))
 
 ;; Accessor functions
 
@@ -212,37 +212,37 @@
       (lambda () (slot-ref (kahua-config) (quote ,name)))
       (lambda (arg) (slot-set! (kahua-config) (quote ,name) arg)))))
 (apply-define define-kahua-config-accessor
-	      sockbase
-	      working-directory
-	      app-servers
-	      application-directory
-	      plugin-directory
-	      template-directory
-	      database-directory
-	      data-directory
-	      temporary-directory
-	      log-directory
-	      cgilog-directory
-	      run-directory
-	      etc-directory
-	      default-database-name
-	      auto-restart
-	      error-document-alist)
+              sockbase
+              working-directory
+              app-servers
+              application-directory
+              plugin-directory
+              template-directory
+              database-directory
+              data-directory
+              temporary-directory
+              log-directory
+              cgilog-directory
+              run-directory
+              etc-directory
+              default-database-name
+              auto-restart
+              error-document-alist)
 
 ;; Define global getter
 (define-macro (define-kahua-config-getter name)
   `(define ,(string->symbol #`"kahua-,|name|")
      (lambda () (slot-ref (kahua-config) (quote ,name)))))
 (apply-define define-kahua-config-getter
-	      site-root
-	      timeout-mins
-	      userconf-file
-	      secure-sandbox
-	      spvr-concurrency
-	      httpd-concurrency
-	      keyserv-concurrency
-	      session-domain
-	      config-file)
+              site-root
+              timeout-mins
+              userconf-file
+              secure-sandbox
+              spvr-concurrency
+              httpd-concurrency
+              keyserv-concurrency
+              session-domain
+              config-file)
 
 ;; Utilities
 
@@ -250,7 +250,7 @@
   (if (absolute-path? path)
       (simplify-path path)
       (let1 path (simplify-path (expand-path path))
-	(simplify-path (if (absolute-path? path) path (build-path base path))))))
+        (simplify-path (if (absolute-path? path) path (build-path base path))))))
 
 (define (sockbase-abs-path sockbase base)
   (rxmatch-case sockbase
@@ -334,65 +334,65 @@
 ;; Default Site Bundle Structure
 (define-constant *default-site-structure*
   `((working-directory     :value ""
-			   :shared-mode #o751 :private-mode #o711 :creator ,create-site-child-dir)
+                           :shared-mode #o751 :private-mode #o711 :creator ,create-site-child-dir)
     (sockbase              :value "socket"
-			   :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
     (app-servers           :value "app-servers"
-			   :shared-mode #o640 :private-mode #o600 :creator ,create-site-app-servers)
+                           :shared-mode #o640 :private-mode #o600 :creator ,create-site-app-servers)
     (application-directory :value "app"
-			   :shared-mode #o771 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o771 :private-mode #o700 :creator ,create-site-child-dir)
     (plugin-directory      :value "plugins"
-			   :shared-mode #o771 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o771 :private-mode #o700 :creator ,create-site-child-dir)
     (template-directory    :value "templates"
-			   :shared-mode #o771 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o771 :private-mode #o700 :creator ,create-site-child-dir)
     (database-directory    :value "database"
-			   :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
     (data-directory        :value "data"
-			   :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
     (temporary-directory   :value "tmp"
-			   :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
     (log-directory         :value "logs"
-			   :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
     (cgilog-directory      :value "cgilogs"
-			   :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o770 :private-mode #o700 :creator ,create-site-child-dir)
     (run-directory         :value "run"
-			   :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
     (etc-directory         :value "etc"
-			   :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
+                           :shared-mode #o750 :private-mode #o700 :creator ,create-site-child-dir)
     (static-document-path  :value "static"
-			   :shared-mode #o775 :private-mode #o755 :creator ,create-site-child-dir)
+                           :shared-mode #o775 :private-mode #o755 :creator ,create-site-child-dir)
     (userconf-file         :value "etc/user.conf"
-			   :shared-mode #o660 :private-mode #o600 :creator ,create-site-userconf)
+                           :shared-mode #o660 :private-mode #o600 :creator ,create-site-userconf)
     (config-file           :value "etc/kahua.conf"
-			   :shared-mode #o660 :private-mode #o600 :creator ,create-site-config)
+                           :shared-mode #o660 :private-mode #o600 :creator ,create-site-config)
     ))
 
 (define (site-default name)
   (and-let* ((l (assq name *default-site-structure*))
-	     (props (cdr l)))
+             (props (cdr l)))
     (get-keyword :value props)))
 
 (define (kahua-site-create path . args)
   (let-keywords* args ((owner #f)
-		       (group #f)
-		       (shared? #f))
+                       (group #f)
+                       (shared? #f))
     (make-directory* (abs-path ".." (sys-normalize-pathname path :absolute #t :expand #t)))
     (let1 old-umask (sys-umask 0)
       (for-each (lambda (e)
-		  (let* ((e (cdr e))
-			 (target (get-keyword :value e))
-			 (create (get-keyword :creator e))
-			 (mode (if shared?
-				   (get-keyword :shared-mode e)
-				   (get-keyword :private-mode e))))
-		    (create target path mode)
-		    (sys-chown (abs-path target path)
-			       (if owner (sys-user-name->uid owner) -1)
-			       (if group (sys-group-name->gid group) -1))))
-		(sort *default-site-structure*
-		      (lambda (a b)
-			(string<? (get-keyword :value (cdr a))
-				  (get-keyword :value (cdr b))))))
+                  (let* ((e (cdr e))
+                         (target (get-keyword :value e))
+                         (create (get-keyword :creator e))
+                         (mode (if shared?
+                                   (get-keyword :shared-mode e)
+                                   (get-keyword :private-mode e))))
+                    (create target path mode)
+                    (sys-chown (abs-path target path)
+                               (if owner (sys-user-name->uid owner) -1)
+                               (if group (sys-group-name->gid group) -1))))
+                (sort *default-site-structure*
+                      (lambda (a b)
+                        (string<? (get-keyword :value (cdr a))
+                                  (get-keyword :value (cdr b))))))
       (sys-umask old-umask))))
 
 (define (kahua-site-init site-path . maybe-conf-file)
@@ -403,14 +403,14 @@
       ((('make '<kahua-config> . options)) options)
       (else (error "Cannot parse configuration file:" path)))) ; TODO: should raise proper <kahua-error>.
   (let* ((site-path (sys-normalize-pathname site-path :absolute #t :expand #t))
-	 (config (read-config (or (get-optional maybe-conf-file #f) (site-config site-path))))
-	 (initargs (fold (lambda (e r)
-			   (let1 k (make-keyword (car e))
-			     (if (get-keyword k config #f)
-				 r
-				 (list* k (get-keyword :value (cdr e)) r))))
-			 config
-			 *default-site-structure*)))
+         (config (read-config (or (get-optional maybe-conf-file #f) (site-config site-path))))
+         (initargs (fold (lambda (e r)
+                           (let1 k (make-keyword (car e))
+                             (if (get-keyword k config #f)
+                                 r
+                                 (list* k (get-keyword :value (cdr e)) r))))
+                         config
+                         *default-site-structure*)))
     (let1 c (apply make <kahua-config> :site-root site-path initargs)
       (kahua-config c)
       (push! *load-path* (kahua-application-directory))
@@ -418,7 +418,7 @@
 
 (define (kahua-common-init site . maybe-conf-file)
   (or (and-let* ((site (or site (sys-getenv "KAHUA_DEFAULT_SITE"))))
-	(apply kahua-site-init site maybe-conf-file))
+        (apply kahua-site-init site maybe-conf-file))
       (error "Site bundle must be specified by -S option or KAHUA_DEFAULT_SITE environment.")))
 
 (provide "kahua/config")

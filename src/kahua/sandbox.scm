@@ -80,7 +80,7 @@
         (use kahua.server)
         (use kahua.developer)
         (use kahua.elem)
-	(use kahua.xml-template)
+        (use kahua.xml-template)
 
         ;; for class redefinition.
         ;; require is done at compile time but also clear
@@ -90,25 +90,25 @@
 
         (export-module kahua.plugin use-plugin)
 
-	(if (kahua-secure-sandbox)
-	    (disable-bindings open-input-file open-output-file
-			      call-with-input-file call-with-output-file
-			      with-input-from-file with-output-to-file
-			      load transcript-on transcript-off
-			      null-environment scheme-report-environment 
-			      interaction-environment
+        (if (kahua-secure-sandbox)
+            (disable-bindings open-input-file open-output-file
+                              call-with-input-file call-with-output-file
+                              with-input-from-file with-output-to-file
+                              load transcript-on transcript-off
+                              null-environment scheme-report-environment
+                              interaction-environment
 
-			      exit sys-exit sys-abort
+                              exit sys-exit sys-abort
 
-			      import require
+                              import require
 
-			      select-module
-			      with-module define-module
-			      define-in-module find-module))
+                              select-module
+                              with-module define-module
+                              define-in-module find-module))
 
         ;; override
         (define use use-plugin)
-        
+
         )
 
      m)

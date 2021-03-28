@@ -39,7 +39,7 @@
 
 ;; plugin class.
 (define-class <kahua-plugin> ()
-  (  
+  (
    (name :init-keyword :name)
    (version :init-keyword :version)
    (export :init-keyword  :export)
@@ -59,13 +59,13 @@
 ;; this procedure treats the case of 'export-all'd module.
 (define (%get-export-symbols name)
   (let1 m (filter (lambda (m)
-		    (eq? (module-name m) name))
-		  (all-modules))
+                    (eq? (module-name m) name))
+                  (all-modules))
     (if (null? m)
-	'()
-	(hash-table-map
-	 (module-table (car m))
-	 (lambda (k v) k)))))
+        '()
+        (hash-table-map
+         (module-table (car m))
+         (lambda (k v) k)))))
 
 ;; find out which symbols a plugin defines.
 (define (lookup-exports name)
@@ -83,8 +83,8 @@
                            modules)
                      (error "symbol not found." name s))))
          (if (eq? symbols #t)
-	     (%get-export-symbols name)
-	     symbols))))
+             (%get-export-symbols name)
+             symbols))))
 
 ;; find symbol then define in sandbox plugin module.
 (define-macro (expand-define name module)
@@ -127,18 +127,18 @@
   (syntax-rules (version export depend)
     ;; for backward compatibility
     ((_ name
-	(version v)
-	(export symbol1 symbol2 ...)
-	(depend #f))
+        (version v)
+        (export symbol1 symbol2 ...)
+        (depend #f))
      (define-plugin name (version v) (export symbol1 symbol2 ...)))
     ((_ name
-	(version v)
-	(export symbol1 symbol2 ...))
+        (version v)
+        (export symbol1 symbol2 ...))
      (register-plugin name v '(symbol1 symbol2 ...) '()))
     ((_ name
-	(version v)
-	(export symbol1 symbol2 ...)
-	(depend module1 ...))
+        (version v)
+        (export symbol1 symbol2 ...)
+        (depend module1 ...))
      (register-plugin name v '(symbol1 symbol2 ...) '(module1 ...)))
     ((_ arg1 ...)
      (syntax-error "malformed syntax: " (define-plugin arg1 ...)))

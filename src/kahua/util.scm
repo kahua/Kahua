@@ -21,29 +21,29 @@
   (use gauche.logger)
   (use kahua.config)
   (export *default-charset*
-	  make-content-type
-	  kahua-error-string
-	  <kahua-error>
-	  kahua-error?
-	  stack-trace-of
-	  with-sigmask
-	  filter-map1
-	  ref-car
-	  assq-ref-car
-	  assoc-ref-car
-	  http-date->date
-	  time->rfc1123-string
-	  date->rfc1123-string
-	  setuidgid!
-	  write-pid-file
-	  read-pid-file
-	  check-pid
-	  make-filter-pipeline
-	  kahua:call-with-output-file
-	  kahua:log-open
-	  kahua:log-format
-	  with-ignoring-exception
-	  ))
+          make-content-type
+          kahua-error-string
+          <kahua-error>
+          kahua-error?
+          stack-trace-of
+          with-sigmask
+          filter-map1
+          ref-car
+          assq-ref-car
+          assoc-ref-car
+          http-date->date
+          time->rfc1123-string
+          date->rfc1123-string
+          setuidgid!
+          write-pid-file
+          read-pid-file
+          check-pid
+          make-filter-pipeline
+          kahua:call-with-output-file
+          kahua:log-open
+          kahua:log-format
+          with-ignoring-exception
+          ))
 (select-module kahua.util)
 
 (define-condition-type <kahua-error> <error> kahua-error?
@@ -54,9 +54,9 @@
   (unless (get-keyword :stack-trace initargs #f)
     (let1 st (vm-get-stack-trace-lite)
       (slot-set! self 'stack-trace
-		 (if (and (pair? st) (equal? (car st) '(vm-get-stack-trace-lite)))
-		     (cdr st)
-		     st)))))
+                 (if (and (pair? st) (equal? (car st) '(vm-get-stack-trace-lite)))
+                     (cdr st)
+                     st)))))
 
 (define-constant *default-charset*
   (case (gauche-character-encoding)
@@ -88,33 +88,33 @@
 
 (define (kahua-stack-trace e)
   (guard (e (else (let1 mess (condition-ref e 'message)
-		    (kahua:log-format "kahua-stack-trace: message: ~a: error: ~a" mess e)
-		    mess)))
+                    (kahua:log-format "kahua-stack-trace: message: ~a: error: ~a" mess e)
+                    mess)))
     (let ((fmt (format "~~,,,,~d:a\n" (debug-print-width)))
-	  (pair-attribute-get (with-module gauche.internal pair-attribute-get)))
+          (pair-attribute-get (with-module gauche.internal pair-attribute-get)))
       (call-with-output-string
-	(lambda (out)
-	  (with-port-locking out
-	    (lambda ()
-	      (format out "*** ~a: ~a\n" (class-name (class-of e)) (condition-ref e 'message))
-	      (display "----------------------------------------\n" out)
-	      (for-each (lambda (cp)
-			  (format out fmt (unwrap-syntax cp))
-			  (when (pair? cp)
-			    (let1 sinfo (pair-attribute-get cp 'source-info #f)
-			      (if (pair? sinfo)
-				  (if (pair? (cdr sinfo))
-				      (format out "        At line ~d of ~s\n"
-					      (cadr sinfo) (car sinfo))
-				      (format out "        In ~s\n" (car sinfo)))
-				  (display "        [unknown location]:\n" out)))))
-			(stack-trace-of e)))))))))
+        (lambda (out)
+          (with-port-locking out
+            (lambda ()
+              (format out "*** ~a: ~a\n" (class-name (class-of e)) (condition-ref e 'message))
+              (display "----------------------------------------\n" out)
+              (for-each (lambda (cp)
+                          (format out fmt (unwrap-syntax cp))
+                          (when (pair? cp)
+                            (let1 sinfo (pair-attribute-get cp 'source-info #f)
+                              (if (pair? sinfo)
+                                  (if (pair? (cdr sinfo))
+                                      (format out "        At line ~d of ~s\n"
+                                              (cadr sinfo) (car sinfo))
+                                      (format out "        In ~s\n" (car sinfo)))
+                                  (display "        [unknown location]:\n" out)))))
+                        (stack-trace-of e)))))))))
 
 (define (kahua-error-string e . maybe-detail?)
   (cond ((not (get-optional maybe-detail? #f)) (slot-ref e 'message))
-	((kahua-error? e) (kahua-stack-trace e))
-	(else (call-with-output-string
-		(cut with-error-to-port <> (cut report-error e))))))
+        ((kahua-error? e) (kahua-stack-trace e))
+        (else (call-with-output-string
+                (cut with-error-to-port <> (cut report-error e))))))
 
 (define (with-sigmask how mask thunk)
   (let1 old_sigset (sys-sigmask how mask)
@@ -123,10 +123,10 @@
 (define-method filter-map1 (f (c <collection>))
   (reverse!
    (fold (lambda (e res)
-	   (let1 v (f e)
-	     (if v (cons v res) res)))
-	 '()
-	 c)))
+           (let1 v (f e)
+             (if v (cons v res) res)))
+         '()
+         c)))
 
 ;;
 ;; HTTP/1.1 Date string handling
@@ -162,32 +162,32 @@
 
   (rxmatch-case str
     (rfc1123-date-rx (#f #f date mon year hour min sec)
-		     (make-date 0
-				(x->integer sec)
-				(x->integer min)
-				(x->integer hour)
-				(x->integer date)
-				(mon->integer mon)
-				(x->integer year)
-				0))
+                     (make-date 0
+                                (x->integer sec)
+                                (x->integer min)
+                                (x->integer hour)
+                                (x->integer date)
+                                (mon->integer mon)
+                                (x->integer year)
+                                0))
     (rfc850-date-rx (#f #f date mon yy hour min sec)
-		    (make-date 0
-			       (x->integer sec)
-			       (x->integer min)
-			       (x->integer hour)
-			       (x->integer date)
-			       (mon->integer mon)
-			       (yy->integer yy)
-			       0))
+                    (make-date 0
+                               (x->integer sec)
+                               (x->integer min)
+                               (x->integer hour)
+                               (x->integer date)
+                               (mon->integer mon)
+                               (yy->integer yy)
+                               0))
     (asctime-date-rx (#f #f mon date hour min sec year)
-		     (make-date 0
-				(x->integer sec)
-				(x->integer min)
-				(x->integer hour)
-				(x->integer date)
-				(mon->integer mon)
-				(x->integer year)
-				0))
+                     (make-date 0
+                                (x->integer sec)
+                                (x->integer min)
+                                (x->integer hour)
+                                (x->integer date)
+                                (mon->integer mon)
+                                (x->integer year)
+                                0))
     (else #f)))
 
 (define-method time->rfc1123-string ((time <number>))
@@ -200,11 +200,11 @@
 (define (setuidgid! user:group)
   (when user:group
     (and-let* ((m (#/([^\:]+)(?::([^\:]+))?/ user:group))
-	       (pw (sys-getpwnam (m 1)))
-	       (uid (ref pw 'uid))
-	       (gid (or (and-let* ((g (m 2)))
-			  (sys-group-name->gid g))
-			(ref pw 'gid))))
+               (pw (sys-getpwnam (m 1)))
+               (uid (ref pw 'uid))
+               (gid (or (and-let* ((g (m 2)))
+                          (sys-group-name->gid g))
+                        (ref pw 'gid))))
       (sys-setgid gid)
       (sys-setuid uid))))
 
@@ -227,36 +227,36 @@
   (let1 filtered-filters (filter identity filter-list)
     (lambda (obj)
       (let/cc break
-	(fold (lambda (f obj)
-		(if obj
-		    (and (f obj) obj)
-		    (break #f)))
-	      obj
-	      filtered-filters)))))
+        (fold (lambda (f obj)
+                (if obj
+                    (and (f obj) obj)
+                    (break #f)))
+              obj
+              filtered-filters)))))
 
 (define (kahua:call-with-output-file outfile proc . kargs)
   (let-keywords kargs ((backup-file #f)
-		       (tmpbase     #f)
-		       (perm        #f)
-		       (encoding (gauche-character-encoding))
-		       . kargs)
+                       (tmpbase     #f)
+                       (perm        #f)
+                       (encoding (gauche-character-encoding))
+                       . kargs)
     (let1 outdir (sys-dirname outfile)
       (make-directory* outdir)
       (receive (out tmpfile)
-	  (sys-mkstemp (build-path outdir (or tmpbase "kahua-tmp-")))
-	(let1 out (wrap-with-output-conversion out encoding)
-	  (when (and backup-file (file-is-regular? outfile))
-	    (sys-link outfile backup-file))
-	  (guard (e (else
-		     (sys-unlink tmpfile)
-		     (unless (port-closed? out)
-		       (close-output-port out))
-		     (raise e)))
-	    (proc out outfile)
-	    (close-output-port out)
-	    (when perm
-	      (sys-chmod tmpfile perm))
-	    (sys-rename tmpfile outfile)))))))
+          (sys-mkstemp (build-path outdir (or tmpbase "kahua-tmp-")))
+        (let1 out (wrap-with-output-conversion out encoding)
+          (when (and backup-file (file-is-regular? outfile))
+            (sys-link outfile backup-file))
+          (guard (e (else
+                     (sys-unlink tmpfile)
+                     (unless (port-closed? out)
+                       (close-output-port out))
+                     (raise e)))
+            (proc out outfile)
+            (close-output-port out)
+            (when perm
+              (sys-chmod tmpfile perm))
+            (sys-rename tmpfile outfile)))))))
 
 (define kahua:log-open log-open)
 (define kahua:log-format log-format)

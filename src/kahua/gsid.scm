@@ -27,7 +27,7 @@
 ;; a continuation ID has an unlimited extent by default.
 ;;
 ;; The other is a state ID, which stands for a monadic state of
-;; the session.  It carries a stateful information---therefore can't 
+;; the session.  It carries a stateful information---therefore can't
 ;; be backtracked.
 ;;
 ;; In a typical web session, the continuation ID is kept in parameters

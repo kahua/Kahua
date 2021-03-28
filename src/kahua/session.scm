@@ -48,12 +48,12 @@
           <session-state>
           session-state-register
           session-state-get
-	  session-state-ref
+          session-state-ref
           session-state-discard
           session-state-sweep
           session-state-refresh
           session-flush-all
-	  session-state-all-keys)
+          session-state-all-keys)
   )
 (select-module kahua.session)
 
@@ -149,34 +149,34 @@
 ;;   Register continuation closure CONT with id ID.  Usually ID should be
 ;;   omitted, and the session manager generates one for you.  Returns
 ;;   the assigned ID.   If the same closure of CONT is already registered,
-;;   already-assigned ID is returned (explicitly giving different ID 
+;;   already-assigned ID is returned (explicitly giving different ID
 ;;   removes old entry).  If CONT is not a procedure, returns #f.
 (define (session-cont-register cont . maybe-id)
   (and (procedure? cont)
        (let1 given-id (get-optional maybe-id #f)
-	 (cond ((cont-closure->session cont) =>
-		(lambda (entry)
-		  (cond ((not given-id) (slot-ref entry 'key))
-			((equal? given-id (slot-ref entry 'key))
-			 (slot-ref entry 'key))
-			(else (replace-key entry given-id)))))
-	       (else (slot-ref (apply make <session-cont>
-				      :closure cont
-				      (if given-id `(:key ,given-id :permanent? #t) '()))
-			       'key))))))
+         (cond ((cont-closure->session cont) =>
+                (lambda (entry)
+                  (cond ((not given-id) (slot-ref entry 'key))
+                        ((equal? given-id (slot-ref entry 'key))
+                         (slot-ref entry 'key))
+                        (else (replace-key entry given-id)))))
+               (else (slot-ref (apply make <session-cont>
+                                      :closure cont
+                                      (if given-id `(:key ,given-id :permanent? #t) '()))
+                               'key))))))
 
 ;; SESSION-CONT-GET id
 ;;   Returns the continuation procedure associated with ID.
 ;;   If such a procedure doesn't exist, returns #f.
 (define (session-cont-get id)
   (cond ((cont-key->session id) =>
-	 (lambda (entry)
-	   ;; update timestamp
-	   (slot-set! entry 'timestamp (sys-time))
-	   (session-cont-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
-	   (values (slot-ref entry 'closure)
-		   (slot-ref entry 'permanent?))))
-	(else (values #f #f))))
+         (lambda (entry)
+           ;; update timestamp
+           (slot-set! entry 'timestamp (sys-time))
+           (session-cont-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
+           (values (slot-ref entry 'closure)
+                   (slot-ref entry 'permanent?))))
+        (else (values #f #f))))
 
 ;; SESSION-CONT-DISCARD id
 ;;   Discards the session specified by ID.
@@ -206,7 +206,7 @@
 ;;
 ;; The content of session-state may be passed around across the
 ;; process boundary, so only serializable object can be stored.
-;; 
+;;
 ;; If session-server-id is given to session-manager-init, the
 ;; session key is stored in the key server.
 
@@ -246,9 +246,9 @@
       (and (vector? v)
            (let loop ((i (- (vector-length v) 1)))
              (if (negative? i)
-		 #t
-		 (and (kahua-sendable-object? (vector-ref v i))
-		      (loop (- i 1))))))
+                 #t
+                 (and (kahua-sendable-object? (vector-ref v i))
+                      (loop (- i 1))))))
       ))
 
 ;; Obtain the newest session-state.
@@ -258,17 +258,17 @@
      self
      (keyserver
       (cons (ref self '%session-id)
-	    (filter (compose kahua-sendable-object? cdr) attrs))))))
+            (filter (compose kahua-sendable-object? cdr) attrs))))))
 
 (define-method synchronize-session-state ((self <session-state>) result)
   (let* ((old (ref self '%properties))
-	 (new-keys (map car (cdr result)))
-	 (dup (lambda (attr)
-		(memq (car attr) new-keys))))
+         (new-keys (map car (cdr result)))
+         (dup (lambda (attr)
+                (memq (car attr) new-keys))))
     (set! (ref self '%timestamp)
-	  (assq-ref (cdr result) '%ctime))
+          (assq-ref (cdr result) '%ctime))
     (set! (ref self '%properties)
-	  (append (cdr result) (remove dup old)))))
+          (append (cdr result) (remove dup old)))))
 
 ;; Local session table.  Keeps key <-> <session-state>
 (define state-sessions
@@ -286,23 +286,23 @@
 ;; NB: This work properly on single thread program only.
 (define (keyserver request)
   (let*-values (((keyserv) (session-server-id))
-		((client in out)
-		 (cond ((slot-ref keyserv 'socket)
-			(lambda (s) (and s (eq? 'connected (socket-status s))))
-			=> (lambda (s)
-			     (values s (slot-ref keyserv 'in) (slot-ref keyserv 'out))))
-		       (else
-			(let* ((s (make-client-socket (slot-ref keyserv 'sockaddr)))
-			       (in (socket-input-port s))
-			       (out (socket-output-port s)))
-			  (slot-set! keyserv 'socket s)
-			  (slot-set! keyserv 'in in)
-			  (slot-set! keyserv 'out out)
-			  (values s in out))))))
+                ((client in out)
+                 (cond ((slot-ref keyserv 'socket)
+                        (lambda (s) (and s (eq? 'connected (socket-status s))))
+                        => (lambda (s)
+                             (values s (slot-ref keyserv 'in) (slot-ref keyserv 'out))))
+                       (else
+                        (let* ((s (make-client-socket (slot-ref keyserv 'sockaddr)))
+                               (in (socket-input-port s))
+                               (out (socket-output-port s)))
+                          (slot-set! keyserv 'socket s)
+                          (slot-set! keyserv 'in in)
+                          (slot-set! keyserv 'out out)
+                          (values s in out))))))
     (write request out) (flush out)
     (let1 result (read in)
       (unless (pair? result)
-	(error "keyserver failure: check log file"))
+        (error "keyserver failure: check log file"))
       result)))
 
 ;; SESSION-STATE-REGISTER [id]
@@ -327,15 +327,15 @@
                                       (list id)
                                       `(ref ,id))))
                (state (or (hash-table-get (state-sessions) id #f)
-			  (make <session-state> :session-id id))))
+                          (make <session-state> :session-id id))))
           (synchronize-session-state state result)
           (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
           state)
         (let1 state (or (hash-table-get (state-sessions) id #f)
                         (hash-table-get (state-sessions)
                                         (session-state-register id)))
-	  (if refresh? (session-state-refresh id))
-	  (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
+          (if refresh? (session-state-refresh id))
+          (session-state-sweep (* 60 (ref (kahua-config) 'timeout-mins)))
           state))))
 
 (define (session-state-ref id)
@@ -356,7 +356,7 @@
        (keyserver (list 'flush age)))
   (let ((cutoff (- (sys-time) age)))
     (sweep-hash-table (state-sessions)
-		      (lambda (val) (< (ref val '%timestamp) cutoff)))))
+                      (lambda (val) (< (ref val '%timestamp) cutoff)))))
 
 ;; SESSION-STATE-REFRESH id
 ;;   Update session timestamp.
@@ -364,7 +364,7 @@
   (and (session-server-id)
        (keyserver (list id)))
   (set! (ref (hash-table-get (state-sessions) id) '%timestamp)
-	(sys-time)))
+        (sys-time)))
 
 (define (session-state-all-keys)
   (if (session-server-id)
@@ -379,4 +379,3 @@
   (state-sessions (make-hash-table 'string=?)))
 
 (provide "kahua/session")
-

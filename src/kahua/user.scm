@@ -13,9 +13,9 @@
   (use gauche.collection)
   (export <kahua-user> kahua-user? kahua-add-user kahua-check-user kahua-find-user
           kahua-user-password-change kahua-user-password-change-force
-	  kahua-user-has-role? kahua-user-add-role! kahua-user-drop-role!
-	  dbpath-of inactive? active? name-of roles-of kahua-current-user-class
-	  ))
+          kahua-user-has-role? kahua-user-add-role! kahua-user-drop-role!
+          dbpath-of inactive? active? name-of roles-of kahua-current-user-class
+          ))
 (select-module kahua.user)
 
 (define-class <kahua-user-meta> (<class>)
@@ -39,8 +39,8 @@
    ))
 
 (define-method find-kahua-instance ((user-class <kahua-user-meta>)
-				    (login-name <string>)
-				    . args)
+                                    (login-name <string>)
+                                    . args)
   (apply find-kahua-instance user-class 'login-name login-name))
 
 (define-method dbpath-of ((user <kahua-user>))
@@ -66,7 +66,7 @@
 (define (kahua-check-user login-name password)
   (find (lambda (user)
           (and (equal? (ref user 'login-name) login-name)
-	       (active? user)
+               (active? user)
                (match-passwd password (ref user 'password-hash))))
         (make-kahua-collection (kahua-current-user-class))))
 
