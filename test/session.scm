@@ -119,7 +119,7 @@
          (let ((state (session-state-get "nosuchid")))
            (list (ref state 'x-slot) (ref state 'y-slot)))))
 
-(test* "sweep" '(#f #f)         
+(test* "sweep" '(#f #f)
        (begin
          (session-state-sweep -1)
          (let ((state (session-state-get "nosuchid")))
@@ -156,7 +156,7 @@
            (and (pair? reply)
                 (string? (car reply))
                 (not (string=? (car key) (car reply))))))
-               
+
   (test* "attach attr" '("adagio" e-moll)
          (let1 reply (get-session-key (list (car key)
                                             '(tempo . "adagio")
@@ -286,7 +286,7 @@
          (let ((state (session-state-get "nosuchid")))
            (list (ref state 'x-slot) (ref state 'y-slot)))))
 
-(test* "sweep" '(#f #f)         
+(test* "sweep" '(#f #f)
        (begin
          (session-state-sweep -1)
          (let ((state (session-state-get "nosuchid")))

@@ -11,8 +11,8 @@
 ;; DBI-backed-up test.
 (cond ((global-variable-bound? (current-module) '*dbname*)
        (rxmatch-if (#/^(\w+):/ *dbname*) (#f driver)
-	 (test-start #`"persistence/,|driver| (,|*dbname*|)")
-	 (test-start #`"persistence/efs (,|*dbname*|)")))
+         (test-start #`"persistence/,|driver| (,|*dbname*|)")
+         (test-start #`"persistence/efs (,|*dbname*|)")))
       (else
        (error "You must define \*dbname\* for database name.")))
 
@@ -38,33 +38,33 @@
 (test* "creating database" '(#t #t #t #t)
        (with-db (db *dbname*)
          (cons (is-a? db <kahua-db>)
-	       (case (class-name (class-of db))
-		 ((<kahua-db-fs> <kahua-db-efs>)
-		  (list
-		   (file-is-directory? (ref db 'real-path))
-		   (file-is-regular? (ref db 'id-counter-path))
-		   (file-is-regular? (ref db 'character-encoding-path))))
+               (case (class-name (class-of db))
+                 ((<kahua-db-fs> <kahua-db-efs>)
+                  (list
+                   (file-is-directory? (ref db 'real-path))
+                   (file-is-regular? (ref db 'id-counter-path))
+                   (file-is-regular? (ref db 'character-encoding-path))))
                  ((<kahua-db-mysql>)
-		  (list
-		   (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
-		   (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_idcount"))
-			      (p (map (cut dbi-get-value <> 0) r)))
-		     (and (pair? p) (integer? (x->integer (car p)))))
-		   (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_classcount"))
-			      (p (map (cut dbi-get-value <> 0) r)))
-		     (and (pair? p) (integer? (x->integer (car p)))))))
-		 ((<kahua-db-postgresql>)
-		  (list
-		   (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
-		   (and-let* ((r (dbi-do (ref db 'connection)
-					 "select count(*) from pg_class where relname='kahua_db_idcount' and relkind='S'"))
-			      (p (map (cut dbi-get-value <> 0) r)))
-		     (and (pair? p) (= (x->integer (car p)) 1)))
-		   (and-let* ((r (dbi-do (ref db 'connection)
-					 "select count(*) from pg_class where relname='kahua_db_classcount' and relkind='S'"))
-			      (p (map (cut dbi-get-value <> 0) r)))
-		     (and (pair? p) (= (x->integer (car p)) 1))))))
-	       )))
+                  (list
+                   (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
+                   (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_idcount"))
+                              (p (map (cut dbi-get-value <> 0) r)))
+                     (and (pair? p) (integer? (x->integer (car p)))))
+                   (and-let* ((r (dbi-do (ref db 'connection) "select value from kahua_db_classcount"))
+                              (p (map (cut dbi-get-value <> 0) r)))
+                     (and (pair? p) (integer? (x->integer (car p)))))))
+                 ((<kahua-db-postgresql>)
+                  (list
+                   (and (dbi-do (ref db 'connection) "select class_name, table_name from kahua_db_classes") #t)
+                   (and-let* ((r (dbi-do (ref db 'connection)
+                                         "select count(*) from pg_class where relname='kahua_db_idcount' and relkind='S'"))
+                              (p (map (cut dbi-get-value <> 0) r)))
+                     (and (pair? p) (= (x->integer (car p)) 1)))
+                   (and-let* ((r (dbi-do (ref db 'connection)
+                                         "select count(*) from pg_class where relname='kahua_db_classcount' and relkind='S'"))
+                              (p (map (cut dbi-get-value <> 0) r)))
+                     (and (pair? p) (= (x->integer (car p)) 1))))))
+               )))
 
 ;;  データベースがwith-dbの動的スコープ中で有効であり、
 ;;  その外で無効になることを確認する。
@@ -148,14 +148,14 @@
 (test* "Final slot overriding: %kahua-persistent-base::id"
        *test-error*
        (eval '(define-class <kahua-violation-id> (<kahua-persistent-base>)
-		((%kahua-persistent-base::id :init-value 0)))
-	     (current-module)))
+                ((%kahua-persistent-base::id :init-value 0)))
+             (current-module)))
 (test* "Final slot overriding: %kahua-persistent-base::db"
        *test-error*
        (eval '(define-class <kahua-violation-db> (<kahua-persistent-base>)
-		((%kahua-persistent-base::db :init-value #f)
-		 (%kahua-persistent-base::id :init-value 0)))
-	     (current-module)))
+                ((%kahua-persistent-base::db :init-value #f)
+                 (%kahua-persistent-base::id :init-value 0)))
+             (current-module)))
 
 ;;----------------------------------------------------------
 ;; トランザクションに関するテスト
@@ -166,10 +166,10 @@
 ;;   いないことを確認する。
 (test* "abort transaciton" '(2 "hh" a "PP")
        (guard (e (else (with-clean-db (db *dbname*)
-			 (list-slots (get-test-obj 2)))))
-	 (with-clean-db (db *dbname*)
-	   (set! (ref (get-test-obj 2) 'quick) 'whoops)
-	   (error "abort!"))))
+                         (list-slots (get-test-obj 2)))))
+         (with-clean-db (db *dbname*)
+           (set! (ref (get-test-obj 2) 'quick) 'whoops)
+           (error "abort!"))))
 
 ;;   永続インスタンス変更後に一度中間commitしてからまたインスタンスを
 ;;   変更し、トランザクションをerrorで中断する。
@@ -177,13 +177,13 @@
 ;;   変更を受け、それ以降の変更は受けていないことを確認する。
 (test* "commit & abort" '(2 whoops a "PP")
        (guard (e (else
-		  (with-clean-db (db *dbname*)
-		    (list-slots (get-test-obj 2)))))
-	 (with-clean-db (db *dbname*)
-	   (set! (ref (get-test-obj 2) 'quick) 'whoops)
-	   (kahua-db-sync db)
-	   (set! (ref (get-test-obj 2) 'quock) 'whack)
-	   (error "abort!"))))
+                  (with-clean-db (db *dbname*)
+                    (list-slots (get-test-obj 2)))))
+         (with-clean-db (db *dbname*)
+           (set! (ref (get-test-obj 2) 'quick) 'whoops)
+           (kahua-db-sync db)
+           (set! (ref (get-test-obj 2) 'quock) 'whack)
+           (error "abort!"))))
 
 ;;----------------------------------------------------------
 ;; 永続オブジェクト間の参照に関するテスト
@@ -353,15 +353,15 @@
 
 (test* "kahua-test-sub w/ predicate" '("woo")
        (sort (with-clean-db (db *dbname*)
-	       (map (cut ref <> 'woo)
-		    (make-kahua-collection <kahua-test-sub>
-					   :predicate (lambda (obj)
-							(string=? "woo" (ref obj 'woo))))))))
+               (map (cut ref <> 'woo)
+                    (make-kahua-collection <kahua-test-sub>
+                                           :predicate (lambda (obj)
+                                                        (string=? "woo" (ref obj 'woo))))))))
 
 (test* "kahua-test-sub w/ keys" '(4 5)
        (sort (with-clean-db (db *dbname*)
-	       (map kahua-persistent-id
-		    (make-kahua-collection <kahua-test-sub> :keys '("wooboo" "wooobooo"))))))
+               (map kahua-persistent-id
+                    (make-kahua-collection <kahua-test-sub> :keys '("wooboo" "wooobooo"))))))
 
 ;; This tests key-cache table initialization protocol
 ;; 永続コレクションの作成時に、in-memoryデータベースのインデックスハッシュが
@@ -371,7 +371,7 @@
        (with-clean-db (db *dbname*)
          (make-kahua-collection <kahua-test-sub>)
          (sort (hash-table-keys (with-module kahua.persistence (key-cache-of db)))
-	       (lambda (a b) (string<? (cdr a) (cdr b))))))
+               (lambda (a b) (string<? (cdr a) (cdr b))))))
 
 ;; <kahua-test>と，そのsubclassである<kahua-test-sub>両者ともの
 ;; 永続インスタンスのコレクションを，<kahua-test>に対する
@@ -381,7 +381,7 @@
        (sort (with-clean-db (db *dbname*)
                (map (lambda (i) (cons (kahua-persistent-id i) (class-name (class-of i))))
                     (make-kahua-collection <kahua-test> :subclasses #t)))
-	     (lambda (a b) (< (car a) (car b)))))
+             (lambda (a b) (< (car a) (car b)))))
 
 (define-class <hogehoge> (<kahua-persistent-base>)
   ((a :allocation :persistent :init-keyword :a)))
@@ -544,7 +544,7 @@
 ;;             quock       quock       quock                   quock
 ;;                         bar         bar                     bar
 ;;                                                 bee         bee
-;; 
+;;
 ;; source-id   "Rev 3"     "Rev 3"     "Rev 4"     "Rev 5"     "Rev 6"
 ;;             "Rev 4"     "Rev 4"
 ;; -------------------------------------------------------
@@ -564,7 +564,7 @@
 ;;   まず、<kahua-test-sub>[0]で作成された永続インスタンスを読み出し、
 ;;   それが<kahua-test-sub>[3]の構成にアップデートされていることを確認する。
 (test* "translation [0]->[3]"
-       '(:slots 
+       '(:slots
          ((quick . q1) (muick . m1) (woo . "1") (boo . "B") (bee . beebee))
          :hidden
          ((quock . o1))
@@ -773,7 +773,7 @@
                              objs)
                  :instance-generation (map (cut ref <> '%persistent-generation)
                                            objs)))))
-       
+
 
 (test* "translation [1]->[4]"
        '(:slots
@@ -1040,16 +1040,16 @@
 
 (test* "redefine instance(1)" '(#f 0)
        (with-db (db *dbname*)
-	 (let* ((obj (find-kahua-instance <redefine-A> "a"))
-		(base (ref obj 'base)))	; trigger instance update.
-	   (set! *id2* (kahua-persistent-id obj))
-	   (list (eq? *id* (kahua-persistent-id obj)) base))))
+         (let* ((obj (find-kahua-instance <redefine-A> "a"))
+                (base (ref obj 'base)))	; trigger instance update.
+           (set! *id2* (kahua-persistent-id obj))
+           (list (eq? *id* (kahua-persistent-id obj)) base))))
 
 (test* "find redefined instance(1)" '(#t 0)
        (with-clean-db (db *dbname*)
-		      (let1 obj (find-kahua-instance <redefine-B> "a")
-			(list (eq? *id2* (kahua-persistent-id obj))
-			      (ref obj 'base)))))
+                      (let1 obj (find-kahua-instance <redefine-B> "a")
+                        (list (eq? *id2* (kahua-persistent-id obj))
+                              (ref obj 'base)))))
 
 (define-class <redefine-C> (<kahua-persistent-base>)
   ((base :allocation :persistent :init-value 0)
@@ -1144,13 +1144,13 @@
 (define *key* #f)
 (with-clean-db (db *dbname*)
   (let* ((obj (car (map identity (make-kahua-collection <hogehoge>))))
-	 (key (key-of obj)))
+         (key (key-of obj)))
     (test* "before remove-kahua-instance" #f (removed? obj) eq?)
     (test* "remove-kahua-instance" (undefined) (remove-kahua-instance obj) eq?)
     (test* "after remove-kahua-instance" #t (removed? obj) eq?)
     (test* "find-kahua-instance" #f (find-kahua-instance <hogehoge> key) eq?)
     (test* "find-kahua-instance w/ #t" #t (and-let* ((o (find-kahua-instance <hogehoge> key #t)))
-					    (removed? o)) eq?)
+                                            (removed? o)) eq?)
     (test* "make-kahua-collection" '() (map identity (make-kahua-collection <hogehoge>)) eq?)
     (let1 l (map identity (make-kahua-collection <hogehoge> :include-removed-object? #t))
       (test* "make-kahua-collection w/ :include-removed-object?" 1 (length l) =)
@@ -1163,7 +1163,7 @@
   (let1 key *key*
     (test* "find-kahua-instance" #f (find-kahua-instance <hogehoge> key) eq?)
     (test* "find-kahua-instance w/ #t" #t (and-let* ((o (find-kahua-instance <hogehoge> key #t)))
-					    (removed? o)) eq?)
+                                            (removed? o)) eq?)
     (test* "make-kahua-collection" '() (map identity (make-kahua-collection <hogehoge>)) eq?)
     (let1 l (map identity (make-kahua-collection <hogehoge> :include-removed-object? #t))
       (test* "make-kahua-collection w/ :include-removed-object?" 1 (length l) =)
@@ -1173,13 +1173,13 @@
 ;; Third: new object and remove it immediately
 (with-clean-db (db *dbname*)
   (let* ((obj (make <hogehoge> :a 'aa))
-	 (key (key-of obj)))
+         (key (key-of obj)))
     (test* "before remove-kahua-instance" #f (removed? obj) eq?)
     (test* "remove-kahua-instance" (undefined) (remove-kahua-instance obj) eq?)
     (test* "after remove-kahua-instance" #t (removed? obj) eq?)
     (test* "find-kahua-instance" #f (find-kahua-instance <hogehoge> key) eq?)
     (test* "find-kahua-instance w/ #t" #t (and-let* ((o (find-kahua-instance <hogehoge> key #t)))
-					    (removed? o)) eq?)
+                                            (removed? o)) eq?)
     (test* "make-kahua-collection" '() (map identity (make-kahua-collection <hogehoge>)) eq?)
     (let1 l (map identity (make-kahua-collection <hogehoge> :include-removed-object? #t))
       (test* "make-kahua-collection w/ :include-removed-object?" 2 (length l) =))
@@ -1191,8 +1191,8 @@
 ;; Forth: reference to other objects
 (with-clean-db (db *dbname*)
   (let* ((l (map identity (make-kahua-collection <kahua-test>)))
-	 (obj (car l))
-	 (key (key-of obj)))
+         (obj (car l))
+         (key (key-of obj)))
     (test* "before remove-kahua-instance" #f (removed? (ref obj 'quick)) eq?)
     (test* "length of kahua-collection" 2 (length l) =)
     (test* "remove-kahua-instance" (undefined) (remove-kahua-instance (ref obj 'quick)) eq?)
@@ -1201,8 +1201,8 @@
     ))
 (with-clean-db (db *dbname*)
   (let* ((l (map identity (make-kahua-collection <kahua-test>)))
-	 (obj (car l))
-	 (key (key-of obj)))
+         (obj (car l))
+         (key (key-of obj)))
     (test* "after remove-kahua-instance" #f (ref obj 'quick) eq?)
     (test* "length of kahua-collection" 1 (length (map identity (make-kahua-collection <kahua-test>))) =)
     ))

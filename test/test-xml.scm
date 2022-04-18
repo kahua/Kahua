@@ -365,7 +365,7 @@
         '(input (@ (type "submit") (name "foo") (value "bar")))))
 
 ;; this is for compatiblity w/ older test code
-(test* "attr - includes directive" #t 
+(test* "attr - includes directive" #t
        (test-sxml-match?
         '(input (@ (!permute (type "submit") (name "foo") (value "bar"))))
         '(input (@ (name "foo") (value "bar") (type "submit")))))

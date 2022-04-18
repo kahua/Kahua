@@ -38,7 +38,7 @@
 (with-worker
  (w `("gosh" "-I../src" "-I../examples" "../src/kahua-server"
       "-S" ,*site* "../examples/foldlist/foldlist.kahua"))
- 
+
  (test* "run foldlist" #t (worker-running? w))
 
  (test* "initial screen"
@@ -47,35 +47,32 @@
         (make-match&pick w))
 
  (test* "open tree screen 1"
-	'(*TOP* (a (@ (href ?&)) "[open] "))
-	(call-worker/gsid->sxml w '() '(("content" "(a (b (c)))"))
-				'(// li a))
-	(make-match&pick w))
- 
+        '(*TOP* (a (@ (href ?&)) "[open] "))
+        (call-worker/gsid->sxml w '() '(("content" "(a (b (c)))"))
+                                '(// li a))
+        (make-match&pick w))
+
  (test* "open tree screen 2"
-	'(*TOP* (a ?@ "[close] ")
-		(a (@ (href ?&)) "[open] "))
-	(call-worker/gsid->sxml w '() '() '(// li a))
-	(make-match&pick w))
+        '(*TOP* (a ?@ "[close] ")
+                (a (@ (href ?&)) "[open] "))
+        (call-worker/gsid->sxml w '() '() '(// li a))
+        (make-match&pick w))
 
  (test* "open tree screen 3"
-	'(*TOP* (a ?@ "[close] ")
-		(a ?@ "[close] ")
-		(a (@ (href ?&)) "[open] "))
-	(call-worker/gsid->sxml w '() '() '(// li a))
-	(make-match&pick w))
+        '(*TOP* (a ?@ "[close] ")
+                (a ?@ "[close] ")
+                (a (@ (href ?&)) "[open] "))
+        (call-worker/gsid->sxml w '() '() '(// li a))
+        (make-match&pick w))
 
  (test* "open tree screen 4"
-	'(*TOP* (a ?@ "[close] ")
-		(a ?@ "[close] ")
-		(a (@ (href ?&)) "[close] "))
-	(call-worker/gsid->sxml w '() '() '(// li a))
-	(make-match&pick w))
+        '(*TOP* (a ?@ "[close] ")
+                (a ?@ "[close] ")
+                (a (@ (href ?&)) "[close] "))
+        (call-worker/gsid->sxml w '() '() '(// li a))
+        (make-match&pick w))
 
  )
 
 ;;
 (test-end)
-
-
-

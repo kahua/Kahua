@@ -22,19 +22,19 @@
 (kahua-site-create *site*)
 (for-each make-directory*
           (list #`",|*site*|/app/lister"
-		#`",|*site*|/app/greeting"
-		#`",|*site*|/app/hello"
-		#`",|*site*|/app/ss1"
-		#`",|*site*|/app/ss2"))
+                #`",|*site*|/app/greeting"
+                #`",|*site*|/app/hello"
+                #`",|*site*|/app/ss1"
+                #`",|*site*|/app/ss2"))
 (copy-file "../plugins/allow-module.scm" #`",|*site*|/plugins/allow-module.scm")
 
 (for-each (apply$ (lambda (m d)
-		    (copy-file #`",|m|.kahua" #`",|*site*|/app/,|d|/,|d|.kahua")))
-	  '(("lister" "lister")
-	    ("greeting" "greeting")
-	    ("hello-world" "hello")
-	    ("sharedstate" "ss1")
-	    ("sharedstate" "ss2")))
+                    (copy-file #`",|m|.kahua" #`",|*site*|/app/,|d|/,|d|.kahua")))
+          '(("lister" "lister")
+            ("greeting" "greeting")
+            ("hello-world" "hello")
+            ("sharedstate" "ss1")
+            ("sharedstate" "ss2")))
 
 (define *spvr* #f)
 (define *gsid* #f)
@@ -73,15 +73,15 @@
 (test* "start" #t
        (receive (p prompt) (kahua:invoke&wait `("../src/kahua-spvr" "--test" "-S" ,*site* "-i") :prompt *prompt*)
          (set! *spvr* p)
-	 (let1 path #`",|*site*|/socket/kahua"
-	   (and (string=? *prompt* (string-incomplete->complete prompt))
-		(file-exists? path)
-		(or (eq? (file-type path) 'socket)
-		    (eq? (file-type path) 'fifo))))))
+         (let1 path #`",|*site*|/socket/kahua"
+           (and (string=? *prompt* (string-incomplete->complete prompt))
+                (file-exists? path)
+                (or (eq? (file-type path) 'socket)
+                    (eq? (file-type path) 'fifo))))))
 
 (test* "listener" #t
        (let ((out (process-input *spvr*))
-	     (in  (process-output *spvr*)))
+             (in  (process-output *spvr*)))
          (write '(is-a? *spvr* <kahua-spvr>) out)
          (newline out)
          (flush out)
@@ -108,7 +108,7 @@
             (and (string? stat-gsid)
                  (string? cont-gsid)
                  body)))))
-             
+
 ;;-----------------------------------------------------------
 (test-section "spvr protocol")
 
@@ -126,7 +126,7 @@
 (test* "kill" '(greeting)
        (send&receive
         '(("x-kahua-worker" "spvr")) '(kill hello)
-        (lambda (header body) 
+        (lambda (header body)
           (map (cut get-keyword :worker-type <> #f) body))))
 
 (with-output-to-file *app-servers*
@@ -167,24 +167,24 @@
 
 (test* "reload and check kicked" '(greeting lister lister)
        (begin
-	 (send&receive
-	  '(("x-kahua-worker" "spvr")) '(reload)
-	  (lambda (header body) body))
-	 (send&receive
-	  `(("x-kahua-worker" "spvr")) '(ls)
-	  (lambda (header body)
-	    (map (cut get-keyword :worker-type <> #f) body)))))
+         (send&receive
+          '(("x-kahua-worker" "spvr")) '(reload)
+          (lambda (header body) body))
+         (send&receive
+          `(("x-kahua-worker" "spvr")) '(ls)
+          (lambda (header body)
+            (map (cut get-keyword :worker-type <> #f) body)))))
 
 (test* "run" '(lister)
        (send&receive
         '(("x-kahua-worker" "spvr")) '(run lister)
-        (lambda (header body) 
+        (lambda (header body)
           (map (cut get-keyword :worker-type <> #f) body))))
 
 (test* "run" '(greeting lister lister lister)
        (send&receive
         '(("x-kahua-worker" "spvr")) '(ls)
-        (lambda (header body) 
+        (lambda (header body)
           (map (cut get-keyword :worker-type <> #f) body))))
 
 ;;-----------------------------------------------------------
@@ -200,7 +200,7 @@
          (send&receive '(("x-kahua-worker" "spvr")) '(kill *) (lambda _ #f))
          (send&receive '(("x-kahua-worker" "spvr")) '(reload) (lambda _ #f))
          (send&receive '(("x-kahua-worker" "spvr")) '(ls)
-                       (lambda (header body) 
+                       (lambda (header body)
                          (map (cut get-keyword :worker-type <> #f) body)))))
 
 (let ()
@@ -264,7 +264,7 @@
 (test* "shutdown" '()
        (begin
          (process-send-signal *spvr* SIGTERM)
-	 (process-wait *spvr*)
+         (process-wait *spvr*)
          (directory-list #`",|*site*|/socket" :children? #t)))
 
 (test-end)

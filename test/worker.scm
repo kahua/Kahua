@@ -13,7 +13,7 @@
 
 (use kahua.test.xml)
 (use kahua.test.worker)
-(use kahua.persistence) 
+(use kahua.persistence)
 (use kahua.user)
 (use kahua.config)
 
@@ -42,8 +42,8 @@
        '(*TOP* (html (head ?*)
                      (body ?@
                            (h1 ?*)
-			   (h2 ?*)
-			   (p ?*))))
+                           (h2 ?*)
+                           (p ?*))))
        (call-worker/gsid->sxml w '() '())
        (make-match&pick w))
 
@@ -68,8 +68,8 @@
        '(*TOP* (html (head ?*)
                      (body ?@
                            (h1 ?*)
-			   (h2 ?*)
-			   (p ?*))))
+                           (h2 ?*)
+                           (p ?*))))
        (call-worker/gsid->sxml w '() '())
        (make-match&pick w))
 
@@ -101,7 +101,7 @@
                             )))
        (call-worker/gsid->sxml w '() '())
        (make-match&pick w))
- 
+
  (test* "next greeting.kahua"
         '(*TOP* (html (head (title "Welcome"))
                       (body ?@
@@ -129,7 +129,7 @@
                             )))
        (call-worker/gsid->sxml w '() '())
        (make-match&pick w))
- 
+
  (test* "next greeting-st.kahua"
         '(*TOP* (html (head (title "Welcome"))
                       (body ?@

@@ -3,19 +3,19 @@
 (define *data* '((1 2 3) (4 5 6) (7 8 9) (10 11 12) (13 14 15)))
 (define (paging/ @id p)
   (div/ (@/ (id @id))
-	(a/cont/ (@@/ (target @id)
-		      ;; back :: parts-cont pattern A
-		      (parts-cont paging/ @id (- p 1))) "<<")
-	(a/cont/ (@@/ (target @id)
-		      ;; forward :: parts-cont pattern B
-		      (parts-cont (lambda () (paging/ @id (+ p 1))))) ">>")
-	(ul/ (map/ li/ (list-ref *data* p)))))
+        (a/cont/ (@@/ (target @id)
+                      ;; back :: parts-cont pattern A
+                      (parts-cont paging/ @id (- p 1))) "<<")
+        (a/cont/ (@@/ (target @id)
+                      ;; forward :: parts-cont pattern B
+                      (parts-cont (lambda () (paging/ @id (+ p 1))))) ">>")
+        (ul/ (map/ li/ (list-ref *data* p)))))
 
 (define (data-in/ @id data)
   (form/cont/ (@/ (id @id))
     (@@/ (target @id)
-	 (parts-cont (entry-lambda (:keyword name age)
-		 (data-in/ @id (cons `(,name . ,age) data)))))
+         (parts-cont (entry-lambda (:keyword name age)
+                 (data-in/ @id (cons `(,name . ,age) data)))))
     (input/ (@/ (type "text") (name "name")))
     (input/ (@/ (type "text") (name "age")))
     (input/ (@/ (type "submit") (value "Add")))

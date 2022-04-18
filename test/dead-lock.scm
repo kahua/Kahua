@@ -56,11 +56,11 @@
 
 (test* "start" #t
        (let ((p (kahua:invoke&wait `("../src/kahua-spvr" "--test" "-S" ,*site* "-i") :prompt "kahua> "))
-	     (socket-path #`",|*site*|/socket/kahua"))
-	 (set! *spvr* p)
-	 (and (file-exists? socket-path)
-	      (or (eq? (file-type socket-path) 'socket)
-		  (eq? (file-type socket-path) 'fifo)))))
+             (socket-path #`",|*site*|/socket/kahua"))
+         (set! *spvr* p)
+         (and (file-exists? socket-path)
+              (or (eq? (file-type socket-path) 'socket)
+                  (eq? (file-type socket-path) 'fifo)))))
 
 ;;-----------------------------------------------------------
 (test-section "starting worker")
@@ -85,44 +85,44 @@
 ;(sys-sleep 60) ;; Uncomment, if you want time to run strace
 
 (test* "show response length" 1000000
-       (string-length 
-	(cadar
-	 (send&receive '(("x-kahua-worker" "many-as"))
-		       '()
-		       (lambda (header body)
-			 (receive (sgsid cgsid) (get-gsid-from-header header)
-			   #f)
-			 (get-as body))))))
+       (string-length
+        (cadar
+         (send&receive '(("x-kahua-worker" "many-as"))
+                       '()
+                       (lambda (header body)
+                         (receive (sgsid cgsid) (get-gsid-from-header header)
+                           #f)
+                         (get-as body))))))
 
 
 (test* "show response length" 1000000
        (string-length
-	(cadar
-	 (begin
-	   (for-each 
-	    thread-start!
-	    (list-tabulate 
-	     10
-	     (lambda (_)
-	       (make-thread
-		(lambda ()
-		  (send&receive '(("x-kahua-worker" "many-as"))
-				'()
-				(lambda (header body)
-				  (receive (sgsid cgsid) (get-gsid-from-header header)
-				    #f)
-				  (get-as body))))))))
-	   (send&receive '(("x-kahua-worker" "many-as"))
-			 '()
-			 (lambda (header body)
-			   (receive (sgsid cgsid) (get-gsid-from-header header)
-			     #f)
-			   (get-as body)))))))
+        (cadar
+         (begin
+           (for-each
+            thread-start!
+            (list-tabulate
+             10
+             (lambda (_)
+               (make-thread
+                (lambda ()
+                  (send&receive '(("x-kahua-worker" "many-as"))
+                                '()
+                                (lambda (header body)
+                                  (receive (sgsid cgsid) (get-gsid-from-header header)
+                                    #f)
+                                  (get-as body))))))))
+           (send&receive '(("x-kahua-worker" "many-as"))
+                         '()
+                         (lambda (header body)
+                           (receive (sgsid cgsid) (get-gsid-from-header header)
+                             #f)
+                           (get-as body)))))))
 
 (test* "shutdown" '()
        (begin
          (process-send-signal *spvr* SIGTERM)
-	 (process-wait *spvr*)
+         (process-wait *spvr*)
          (directory-list #`",|*site*|/socket" :children? #t)))
 
 (test-end)

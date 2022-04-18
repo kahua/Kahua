@@ -20,7 +20,7 @@
 (define test-selector
   (compose tree->string
            (with-module kahua.css parse-selector)))
-  
+
 (define test-ruleset
   (compose tree->string
            (with-module kahua.css parse-ruleset)))

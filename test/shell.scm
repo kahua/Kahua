@@ -21,12 +21,12 @@
 (sys-system #`"rm -rf ,|*site*|")
 (kahua-site-create *site*)
 (for-each (apply$ (lambda (m d)
-		    (let1 destdir #`",|*site*|/app/,|d|"
-		      (make-directory* destdir)
-		      (copy-file #`",|m|.kahua" #`",|destdir|/,|d|.kahua"))))
-	  '(("lister" "lister")
-	    ("greeting" "greeting")
-	    ("hello-world" "hello")))
+                    (let1 destdir #`",|*site*|/app/,|d|"
+                      (make-directory* destdir)
+                      (copy-file #`",|m|.kahua" #`",|destdir|/,|d|.kahua"))))
+          '(("lister" "lister")
+            ("greeting" "greeting")
+            ("hello-world" "hello")))
 (copy-file "../plugins/allow-module.scm" #`",|*site*|/plugins/allow-module.scm")
 (copy-file "testuser.conf" #`",|*site*|/etc/user.conf" :if-exists :supersede)
 (define *app-servers* #`",|*site*|/app-servers")
@@ -50,18 +50,18 @@
 ;; kahua-shell と通信する kahua-spvr を起動する。
 (test* "start spvr" #t
        (let ((p (kahua:invoke&wait `("../src/kahua-spvr" "--test" "-S" ,*site* "-i") :prompt "kahua> "))
-	     (socket-path #`",|*site*|/socket/kahua"))
+             (socket-path #`",|*site*|/socket/kahua"))
          (set! *spvr* p)
-	 (and (file-exists? socket-path)
-	      (or (eq? (file-type socket-path) 'socket)
-		  (eq? (file-type socket-path) 'fifo)))))
+         (and (file-exists? socket-path)
+              (or (eq? (file-type socket-path) 'socket)
+                  (eq? (file-type socket-path) 'fifo)))))
 
 ;; kahua-shell を起動する。
 (define-constant *shell-motd* "Welcome to Kahua.")
 (test* "start shell" *shell-motd*
        (receive (p motd) (kahua:invoke&wait `("env" "-i" "../src/kahua-shell" "--test" "-S" ,*site*))
-	 (set! *shell* p)
-	 motd)
+         (set! *shell* p)
+         motd)
        string=?)
 
 ;;---------------------------------------------------------------
@@ -86,30 +86,30 @@
 
 (define (send&recv msg)
   (let* ((out (shell-out))
-	 (in  (shell-in)))
+         (in  (shell-in)))
     (read in)      ;; read prompt
     (if (pair? msg)
-	(for-each (lambda (e)
-		    (write e out) (display " " out)) msg)
-	(write msg out))   ;; write command
+        (for-each (lambda (e)
+                    (write e out) (display " " out)) msg)
+        (write msg out))   ;; write command
     (newline out)
     (flush out)
     (read in)))
 
 (define (send&recv-str msg)
   (let* ((out (shell-out))
-	 (in  (shell-in)))
+         (in  (shell-in)))
     (read in)         ;; read prompt
     (if (pair? msg)
-	(for-each (lambda (e)
-		    (write e out) (display " " out)) msg)
-	(write msg out))   ;; write command
+        (for-each (lambda (e)
+                    (write e out) (display " " out)) msg)
+        (write msg out))   ;; write command
     (newline out)
     (flush out)
     (sys-sleep 2)
     (let1 ret (read-block 1000 in)
-	  (newline out)
-	  (string-incomplete->complete ret))))
+          (newline out)
+          (string-incomplete->complete ret))))
 
 
 ;;------------------------------------------------------------
@@ -130,9 +130,9 @@
          (sys-sleep 1)
          (read-line (shell-in))
          (sys-sleep 1)
-	 ((setter port-buffering) (shell-in) :none)
-         (string-incomplete->complete 
-	  (read-block 1000 (shell-in)))
+         ((setter port-buffering) (shell-in) :none)
+         (string-incomplete->complete
+          (read-block 1000 (shell-in)))
          ))
 
 ;; 認証されたら接続するアプリケーションサーバを選択してログインする。
@@ -172,8 +172,7 @@
 
 (test* "shutdown shell" #t
        (begin
-	 (process-send-signal *shell* SIGTERM)
-	 (process-wait *shell*)))
+         (process-send-signal *shell* SIGTERM)
+         (process-wait *shell*)))
 
 (test-end)
-

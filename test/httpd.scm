@@ -20,9 +20,9 @@
   (let/cc ret
     (dotimes (i 10)
       (guard (e (else #f))
-	(receive (status headers body)
-	    (http-get host path)
-	  (ret status headers body)))
+        (receive (status headers body)
+            (http-get host path)
+          (ret status headers body)))
       (sys-sleep 1))
     (error "httpd-get: retry error")))
 
@@ -46,7 +46,7 @@
 (test* "start" *spvr-prompt*
        (receive (p prompt) (kahua:invoke&wait `("../src/kahua-spvr" "--test" "-S" ,*site* "-i" "--httpd" ,*port*) :prompt *spvr-prompt*)
          (set! *spvr* p)
-	 prompt)
+         prompt)
        string=?)
 
 ;;-----------------------------------------------------------
@@ -56,7 +56,7 @@
        (receive (status headers body)
            (http-get/retry #`"localhost:,*port*" "/lambdabooks" 10)
          (list status
-               (test-xml-match? 
+               (test-xml-match?
                 '(html (head (title "Lambda books") ?*)
                        (body ?*))
                 body))))
@@ -77,5 +77,3 @@
 (process-wait *spvr*)
 
 (test-end)
-
-                              

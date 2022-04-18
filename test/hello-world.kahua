@@ -2,9 +2,9 @@
 #|
 (define (simple-page ttl . elems)
   (node-set: (html: (head: (title: ttl))
-		    (body: (@: (bgcolor "white"))
-			   (h1: ttl)
-			   (node-list-to-node-set elems)))))
+                    (body: (@: (bgcolor "white"))
+                           (h1: ttl)
+                           (node-list-to-node-set elems)))))
 
 (define (hello-world)
   (simple-page "Hello, world!"))
@@ -12,13 +12,13 @@
 
 (define (simple-page ttl . elems)
   (node-set: (html: (head: (title: ttl))
-		    (body: (@: (bgcolor "white"))
-			   (h1: ttl)
-			   (map: identity elems)))))
+                    (body: (@: (bgcolor "white"))
+                           (h1: ttl)
+                           (map: identity elems)))))
 
 (define (hello-world)
   (simple-page "Hello, world!"
-	       (h2: "Hello")
-	       (p: "hello, world")))
+               (h2: "Hello")
+               (p: "hello, world")))
 
 (initialize-main-proc hello-world)

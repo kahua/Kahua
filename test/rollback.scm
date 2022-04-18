@@ -28,7 +28,7 @@
   (syntax-rules ()
     ((_  body)
      '(eval 'body kahua-app-server))))
-              
+
 
 
 (kahua-common-init *site* #f)
@@ -44,7 +44,7 @@
 
  (test* "run rollback.kahua" #t (worker-running? w))
 
- 
+
  (test* "make object"
         '(*TOP*
           (html

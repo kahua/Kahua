@@ -16,7 +16,7 @@
 
 (use kahua.test.xml)
 (use kahua.test.worker)
-(use kahua.persistence) 
+(use kahua.persistence)
 (use kahua.user)
 (use kahua.config)
 
@@ -97,77 +97,77 @@
 
  (test* "initial screen"
         '(html (head (title ?*))
-	       (body ?@
-		     (h1 ?*)
-		     (a ?@ "6-Queens")
-		     ?*
-		     (a ?@ "7-Queens")
-		     ?*
-		     (a (@ (href ?&)) "8-Queens")
-		     ?*
-		     (a ?@ "9-Queens")
-		     ?*
-		     (a ?@ "10-Queens")
-		     ?*
-		     (a ?@ "11-Queens")
-		     ?*
-		     (a ?@ "12-Queens")))
+               (body ?@
+                     (h1 ?*)
+                     (a ?@ "6-Queens")
+                     ?*
+                     (a ?@ "7-Queens")
+                     ?*
+                     (a (@ (href ?&)) "8-Queens")
+                     ?*
+                     (a ?@ "9-Queens")
+                     ?*
+                     (a ?@ "10-Queens")
+                     ?*
+                     (a ?@ "11-Queens")
+                     ?*
+                     (a ?@ "12-Queens")))
         (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
         (make-match&pick w))
 
  (test* "8 queen (1)"
         '(html (head (title ?*))
-	       (body ?@
-		     (h1 ?*)
-		     (p ?*
-			(table ?@
-			 (tr (td "○")(td "○")(td "○")(td "●") 
-			     (td "○")(td "○")(td "○")(td "○"))
-			 (tr (td "○")(td "●")(td "○")(td "○")
-			     (td "○")(td "○")(td "○")(td "○"))
-			 (tr (td "○")(td "○")(td "○")(td "○")
-			     (td "○")(td "○")(td "●")(td "○"))
-			 (tr (td "○")(td "○")(td "●")(td "○")
-			     (td "○")(td "○")(td "○")(td "○"))
-			 (tr (td "○")(td "○")(td "○")(td "○")
-			     (td "○")(td "●")(td "○")(td "○"))
-			 (tr (td "○")(td "○")(td "○")(td "○")
-			     (td "○")(td "○")(td "○")(td "●"))
-			 (tr (td "○")(td "○")(td "○")(td "○")
-			     (td "●")(td "○")(td "○")(td "○"))
-			 (tr (td "●")(td "○")(td "○")(td "○")
-			     (td "○")(td "○")(td "○")(td "○"))
-			 )
-			(a (@ (href ?&)) "Next")
-			?*)))
+               (body ?@
+                     (h1 ?*)
+                     (p ?*
+                        (table ?@
+                         (tr (td "○")(td "○")(td "○")(td "●")
+                             (td "○")(td "○")(td "○")(td "○"))
+                         (tr (td "○")(td "●")(td "○")(td "○")
+                             (td "○")(td "○")(td "○")(td "○"))
+                         (tr (td "○")(td "○")(td "○")(td "○")
+                             (td "○")(td "○")(td "●")(td "○"))
+                         (tr (td "○")(td "○")(td "●")(td "○")
+                             (td "○")(td "○")(td "○")(td "○"))
+                         (tr (td "○")(td "○")(td "○")(td "○")
+                             (td "○")(td "●")(td "○")(td "○"))
+                         (tr (td "○")(td "○")(td "○")(td "○")
+                             (td "○")(td "○")(td "○")(td "●"))
+                         (tr (td "○")(td "○")(td "○")(td "○")
+                             (td "●")(td "○")(td "○")(td "○"))
+                         (tr (td "●")(td "○")(td "○")(td "○")
+                             (td "○")(td "○")(td "○")(td "○"))
+                         )
+                        (a (@ (href ?&)) "Next")
+                        ?*)))
         (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
         (make-match&pick w))
 
  (test* "8 queen (1)"
         '(html (head (title ?*))
-	       (body ?@
-		     (h1 ?*)
-		     (p "2個目の解"
- 			(table ?@
- 			 (tr (td "○")(td "○")(td "○")(td "○")
- 			     (td "●")(td "○")(td "○")(td "○"))
- 			 (tr (td "○")(td "●")(td "○")(td "○")
- 			     (td "○")(td "○")(td "○")(td "○"))
- 			 (tr (td "○")(td "○")(td "○")(td "●") 
- 			     (td "○")(td "○")(td "○")(td "○"))
- 			 (tr (td "○")(td "○")(td "○")(td "○")
- 			     (td "○")(td "○")(td "●")(td "○"))
- 			 (tr (td "○")(td "○")(td "●")(td "○")
- 			     (td "○")(td "○")(td "○")(td "○"))
- 			 (tr (td "○")(td "○")(td "○")(td "○")
- 			     (td "○")(td "○")(td "○")(td "●"))
- 			 (tr (td "○")(td "○")(td "○")(td "○")
- 			     (td "○")(td "●")(td "○")(td "○"))
- 			 (tr (td "●")(td "○")(td "○")(td "○")
- 			     (td "○")(td "○")(td "○")(td "○"))
- 			 )
- 			(a (@ (href ?&)) "Next")
- 			?*)))
+               (body ?@
+                     (h1 ?*)
+                     (p "2個目の解"
+                        (table ?@
+                         (tr (td "○")(td "○")(td "○")(td "○")
+                             (td "●")(td "○")(td "○")(td "○"))
+                         (tr (td "○")(td "●")(td "○")(td "○")
+                             (td "○")(td "○")(td "○")(td "○"))
+                         (tr (td "○")(td "○")(td "○")(td "●")
+                             (td "○")(td "○")(td "○")(td "○"))
+                         (tr (td "○")(td "○")(td "○")(td "○")
+                             (td "○")(td "○")(td "●")(td "○"))
+                         (tr (td "○")(td "○")(td "●")(td "○")
+                             (td "○")(td "○")(td "○")(td "○"))
+                         (tr (td "○")(td "○")(td "○")(td "○")
+                             (td "○")(td "○")(td "○")(td "●"))
+                         (tr (td "○")(td "○")(td "○")(td "○")
+                             (td "○")(td "●")(td "○")(td "○"))
+                         (tr (td "●")(td "○")(td "○")(td "○")
+                             (td "○")(td "○")(td "○")(td "○"))
+                         )
+                        (a (@ (href ?&)) "Next")
+                        ?*)))
         (call-worker/gsid w '() '() (lambda (h b) (tree->string b)))
         (make-match&pick w))
  )

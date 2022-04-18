@@ -62,21 +62,21 @@
               (body (p "a-cont")))
        (let ((cgsid (session-cont-register a-cont)))
          ((kahua-default-handler `(("x-kahua-cgsid" ,cgsid))
-				 '()
-				 (lambda (h b) b)
-				 identity
-				 :render-proc a-renderer))))
+                                 '()
+                                 (lambda (h b) b)
+                                 identity
+                                 :render-proc a-renderer))))
 
 (test* "kahua-default-handler (stale proc)"
        '(html (head (title "test"))
               (body (p "unknown session key")))
        ((kahua-default-handler `(("x-kahua-cgsid" "bongobongo"))
-			       '()
-			       (lambda (h b) b)
-			       identity
-			       :render-proc a-renderer
-			       :stale-proc (lambda _
-					     '(p "unknown session key")))))
+                               '()
+                               (lambda (h b) b)
+                               identity
+                               :render-proc a-renderer
+                               :stale-proc (lambda _
+                                             '(p "unknown session key")))))
 
 (test* "kahua-default-handler (session state)"
        '(html (head (title "test"))
@@ -93,26 +93,26 @@
               (sgsid  #f)
               )
          ((kahua-default-handler `(("x-kahua-cgsid" ,cgsid1))
-				 '()
-				 (lambda (h b)
-				   (receive (state cont)
-				       (get-gsid-from-header h)
-				     (set! sgsid state)
-				     #f))
-				 identity
-				 :render-proc a-renderer))
+                                 '()
+                                 (lambda (h b)
+                                   (receive (state cont)
+                                       (get-gsid-from-header h)
+                                     (set! sgsid state)
+                                     #f))
+                                 identity
+                                 :render-proc a-renderer))
          ((kahua-default-handler `(("x-kahua-sgsid" ,sgsid)
-				   ("x-kahua-cgsid" ,cgsid2))
-				 '()
-				 (lambda (h b) b)
-				 identity
-				 :render-proc a-renderer))
+                                   ("x-kahua-cgsid" ,cgsid2))
+                                 '()
+                                 (lambda (h b) b)
+                                 identity
+                                 :render-proc a-renderer))
          ((kahua-default-handler `(("x-kahua-sgsid" ,sgsid)
-				   ("x-kahua-cgsid" ,cgsid3))
-				 '()
-				 (lambda (h b) b)
-				 identity
-				 :render-proc a-renderer))
+                                   ("x-kahua-cgsid" ,cgsid3))
+                                 '()
+                                 (lambda (h b) b)
+                                 identity
+                                 :render-proc a-renderer))
          ))
 
 
@@ -311,27 +311,27 @@
 
 (test* "extra-header" '((("foo" "bar")) ())
        ((kahua-default-handler
-	 '()
-	 '()
-	 (lambda (h b)
-	   (list (filter (lambda (e) (not (#/^x-(?:kahua|robots)-/ (car e)))) h) b))
-	 (lambda ()
-	   '((extra-header (@ (name "foo") (value "bar"))))))))
+         '()
+         '()
+         (lambda (h b)
+           (list (filter (lambda (e) (not (#/^x-(?:kahua|robots)-/ (car e)))) h) b))
+         (lambda ()
+           '((extra-header (@ (name "foo") (value "bar"))))))))
 
 (test* "extra-header" '(("foo" "bar") ("voo" "doo"))
        ((kahua-default-handler
-	 '()
-	 '()
-	 (lambda (h b)
-	   (filter (lambda (e) (not (#/^x-(?:kahua|robots)-/ (car e)))) h))
-	 (lambda ()
-	   '((html
-	      (head
-	       (extra-header (@ (name "foo") (value "bar")))
-	       (title "hoge"))
-	      (body
-	       (p
-		(extra-header (@ (name "voo") (value "doo")))))))))))
+         '()
+         '()
+         (lambda (h b)
+           (filter (lambda (e) (not (#/^x-(?:kahua|robots)-/ (car e)))) h))
+         (lambda ()
+           '((html
+              (head
+               (extra-header (@ (name "foo") (value "bar")))
+               (title "hoge"))
+              (body
+               (p
+                (extra-header (@ (name "voo") (value "doo")))))))))))
 
 
 ;;---------------------------------------------------------------

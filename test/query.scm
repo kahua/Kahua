@@ -90,7 +90,7 @@
 
 (test* "orderby:" #f
        ((cadr (ORDERBY: 'DESC (lambda (o) o))) 1 2))
-       
+
 (test* "orderby:" #t
        ((cadr (ORDERBY: 'DESC (lambda (o) o))) 2 1))
 
@@ -125,12 +125,12 @@
          (sort (map (cut ref <> 'num)
                     (QUERY (FROM: <numnum>)
                            (WHERE: (>: 10 (ref: <numnum> 'num)))))))
-  
+
   (test* "pred: >" '(98 99)
          (sort (map (cut ref <> 'num)
                     (QUERY (FROM: <numnum>)
                            (WHERE: (>: (ref: <numnum> 'num) 97))))))
-  
+
   (test* "pred: <" '(98 99)
          (sort (map (cut ref <> 'num)
                     (QUERY (FROM: <numnum>)
@@ -139,22 +139,22 @@
   (testq "pred: %%" '(("hoge" "kenji hisazumi"))
          (QUERY (FROM:  <address>)
                 (WHERE: (%%: (ref: 'name) "kenji"))))
-  
+
   (testq "and: hit" '(("hoge" "kenji hisazumi"))
          (QUERY (FROM:  <address>)
                 (WHERE: (and: (=: (ref: <address> 'address) "hoge")
                               (=: (ref: <address> 'name) "kenji hisazumi")))))
-                                  
+
   (testq "and: miss" '()
          (QUERY (FROM:  <address>)
                 (WHERE: (and: (=: (ref: <address> 'address) "hoge")
                               (=: (ref: <address> 'name) "kenji")))))
-  
+
   (testq "or: hit" '(("hoge" "kenji hisazumi"))
          (QUERY (FROM:  <address>)
                 (WHERE: (or: (=: "hoge" (ref: <address> 'address))
                              (=: "kenji" (ref: <address> 'name))))))
-  
+
   (testq "or: miss" '()
          (QUERY (FROM:  <address>)
                 (WHERE: (or: (=: "hogee" (ref: <address> 'address))
@@ -164,7 +164,7 @@
          (sort (QUERY (PRJ: (ref: 'num))
                       (FROM: <numnum>)
                       (WHERE: (<: (ref: 'num) 10)))))
-  
+
   (test* "order by" '(0 1 2 3 4 5 6 7 8 9)
          (QUERY (PRJ: (ref: 'num))
                 (FROM: <numnum>)
@@ -189,8 +189,8 @@
 
 (with-db (db *dbname*)
   (testq "null/#f value is regarded as a #f" '(("hoge" "kenji hisazumi"))
-	 (QUERY (FROM: <address>)
-		(WHERE: (%%: (ref: 'name) "kenji"))))
+         (QUERY (FROM: <address>)
+                (WHERE: (%%: (ref: 'name) "kenji"))))
   )
 
 

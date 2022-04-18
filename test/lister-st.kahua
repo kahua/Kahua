@@ -6,9 +6,9 @@
 (define (simple-page-template ttl)
   (lambda elems
     (html/ (head/ (title/ ttl))
-	   (body/ (@/ (bgcolor "white"))
-		  (h1/ ttl)
-		  (node-set elems)))))
+           (body/ (@/ (bgcolor "white"))
+                  (h1/ ttl)
+                  (node-set elems)))))
 
 (define all-items
   (map (lambda (n) (li/ (x->string n))) (iota 15)))
@@ -16,11 +16,11 @@
 (define (lister items template)
   (lambda ()
     (receive (cur next)
-	     (split-at* items 10)
-	     (template
-	      (ul/ (node-set cur) 
-		   (if (null? next) empty
-		       (li/ (a/cont/ (@@/ (cont (lister next template)))
-				     "Next"))))))))
+             (split-at* items 10)
+             (template
+              (ul/ (node-set cur)
+                   (if (null? next) empty
+                       (li/ (a/cont/ (@@/ (cont (lister next template)))
+                                     "Next"))))))))
 
 (initialize-main-proc (lister all-items (simple-page-template "Lister")))

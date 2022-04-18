@@ -21,12 +21,12 @@
 (sys-system #`"rm -rf ,|*site*|")
 (kahua-site-create *site*)
 (for-each (apply$ (lambda (m d)
-		    (let1 destdir #`",|*site*|/app/,|d|"
-		      (make-directory* destdir)
-		      (copy-file #`",|m|.kahua" #`",|destdir|/,|d|.kahua"))))
-	  '(("lister" "lister")
-	    ("greeting" "greeting")
-	    ("hello-world" "hello")))
+                    (let1 destdir #`",|*site*|/app/,|d|"
+                      (make-directory* destdir)
+                      (copy-file #`",|m|.kahua" #`",|destdir|/,|d|.kahua"))))
+          '(("lister" "lister")
+            ("greeting" "greeting")
+            ("hello-world" "hello")))
 (copy-file "../plugins/allow-module.scm" #`",|*site*|/plugins/allow-module.scm")
 (copy-file "testuser.conf" #`",|*site*|/etc/user.conf" :if-exists :supersede)
 (define *app-servers* #`",|*site*|/app-servers")
@@ -50,17 +50,17 @@
 ;; kahua-spvr を起動する。
 (test* "start spvr" #t
        (let ((p (kahua:invoke&wait `("../src/kahua-spvr" "--test" "-S" ,*site* "-i") :prompt "kahua> "))
-	     (socket-path #`",|*site*|/socket/kahua"))
-	 (and (file-exists? socket-path)
-	      (or (eq? (file-type socket-path) 'socket)
-		  (eq? (file-type socket-path) 'fifo)))))
+             (socket-path #`",|*site*|/socket/kahua"))
+         (and (file-exists? socket-path)
+              (or (eq? (file-type socket-path) 'socket)
+                  (eq? (file-type socket-path) 'fifo)))))
 
 ;; kahua-admin を起動する。
 (define-constant *admin-prompt* "spvr> ")
 (test* "start admin" *admin-prompt*
        (receive (p prompt) (kahua:invoke&wait `("../src/kahua-admin" "--test" "-S" ,*site*) :prompt *admin-prompt*)
-	 (set! *admin* p)
-	 prompt)
+         (set! *admin* p)
+         prompt)
        string=?)
 
 ;;---------------------------------------------------------------
@@ -79,30 +79,30 @@
 
 (define (send&recv msg)
   (let* ((out (admin-out))
-	 (in  (admin-in)))
+         (in  (admin-in)))
     (read in)      ;; read prompt
     (if (pair? msg)
-	(for-each (lambda (e)
-		    (write e out) (display " " out)) msg)
-	(write msg out))   ;; write command
+        (for-each (lambda (e)
+                    (write e out) (display " " out)) msg)
+        (write msg out))   ;; write command
     (newline out)
     (flush out)
     (read in)))
 
 (define (send&recv-str msg)
   (let* ((out (admin-out))
-	 (in  (admin-in)))
+         (in  (admin-in)))
     (read in)         ;; read prompt
     (if (pair? msg)
-	(for-each (lambda (e)
-		    (write e out) (display " " out)) msg)
-	(write msg out))   ;; write command
+        (for-each (lambda (e)
+                    (write e out) (display " " out)) msg)
+        (write msg out))   ;; write command
     (newline out)
     (flush out)
     (sys-sleep 2)
     (let1 ret (read-block 1000 in)
-	  (newline out)
-	  (string-incomplete->complete ret))))
+          (newline out)
+          (string-incomplete->complete ret))))
 
 (newline (admin-out))
 
@@ -115,14 +115,14 @@
 ;; hello アプリケーションが一覧にあることを確認する。
 (test* "admin: ls" #f
        (not (#/wno\s+pid\s+type\s+since\s+wid.+hello/
-	     (send&recv-str 'ls))))
+             (send&recv-str 'ls))))
 
 ;; help コマンドを実行。
 ;; コマンドのリストが表示されることを確認する。
 (test* "admin: help" #t
        (let1 ans (send&recv 'help)
-	     (and (list? ans)
-		  (< 0 (length ans)))))
+             (and (list? ans)
+                  (< 0 (length ans)))))
 
 ;; type コマンドを実行。
 ;; hello greeting lister の3つのアプリケーションが表示される
@@ -134,19 +134,19 @@
 ;; greeting が起動することを確認する。
 (test* "admin: run greeting" #f
        (let1 ans (send&recv-str '(run greeting))
-	     (not (#/greeting/ ans))))
+             (not (#/greeting/ ans))))
 
 ;; run コマンドのテスト。2回目。
 ;; lister が起動することを確認する。
 (test* "admin: run lister" #f
        (let1 ans (send&recv-str '(run lister))
-	     (not (#/lister/ ans))))
+             (not (#/lister/ ans))))
 
 ;; kill コマンドのテスト。
 ;; greeting を終了できることを確認する。
 (test* "admin: kill 1(greeting)" #f
        (let1 ans (send&recv-str '(kill 1))
-	     (#/greeting/ ans)))
+             (#/greeting/ ans)))
 
 ;; reload コマンドのテスト。
 ;; app-servers に登録されている3つのアプリケーションが
@@ -170,20 +170,20 @@
 ;; 接続先が hello であることを確認する。
 (test* "admin: connect: (kahua-worker-type)" "hello"
        (begin
-	 (write '(kahua-worker-type) (admin-out))
-	 (newline (admin-out))
-	 (flush (admin-out))
-	 (read (admin-in))))
+         (write '(kahua-worker-type) (admin-out))
+         (newline (admin-out))
+         (flush (admin-out))
+         (read (admin-in))))
 
 ;; hello から切断できることを確認する。
 (test* "admin: connect: disconnect" #f
        (begin
-	 (write 'disconnect (admin-out))
-	 (newline (admin-out))
-	 (flush (admin-out))
-	 (sys-sleep 1)
-	 (not (#/spvr>/ (string-incomplete->complete
-			 (read-block 1000 (admin-in)))))))
+         (write 'disconnect (admin-out))
+         (newline (admin-out))
+         (flush (admin-out))
+         (sys-sleep 1)
+         (not (#/spvr>/ (string-incomplete->complete
+                         (read-block 1000 (admin-in)))))))
 
 (newline (admin-out))
 
@@ -222,19 +222,18 @@
 ;; shutdown コマンドを実行し、kahua-spvr が終了できることを確認する。
 (test* "shutdown spvr" '()
        (begin
-	 (send&recv 'shutdown)
-	 (call/cc (lambda (exit)
-		    (dotimes (i 15)
-		      (sys-sleep 1)
-		      (when (null? (directory-list #`",|*site*|/socket" :children? #t))
-			(exit '())))
-		    #f))))
+         (send&recv 'shutdown)
+         (call/cc (lambda (exit)
+                    (dotimes (i 15)
+                      (sys-sleep 1)
+                      (when (null? (directory-list #`",|*site*|/socket" :children? #t))
+                        (exit '())))
+                    #f))))
 
 ;; kahua-admin が終了することを確認する。
 (test* "shutdown admin" #t
        (begin
-	 (process-send-signal *admin* SIGTERM)
-	 (process-wait *admin*)))
+         (process-send-signal *admin* SIGTERM)
+         (process-wait *admin*)))
 
 (test-end)
-

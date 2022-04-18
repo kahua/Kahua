@@ -3,7 +3,7 @@
 (define-entry (many-as)
   (node-set:
    (html: (head: (title: "many-as"))
-	  (body: (@: (bgcolor "white"))
-		 (p: (make-string 1000000 #\a))))))
-		 
+          (body: (@: (bgcolor "white"))
+                 (p: (make-string 1000000 #\a))))))
+
 (initialize-main-proc many-as)

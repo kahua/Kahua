@@ -55,15 +55,15 @@
         (make-match&pick w))
 
  (test* "header->sxml"
-	'(*TOP* (!contain (Status "303 See Other") (Location ?&)))
-	(call-worker/gsid w '(("x-kahua-cgsid" "redirectcont/second"))
-			  '(("arg" "bbbb")) header->sxml)
-	(make-match&pick w))
+        '(*TOP* (!contain (Status "303 See Other") (Location ?&)))
+        (call-worker/gsid w '(("x-kahua-cgsid" "redirectcont/second"))
+                          '(("arg" "bbbb")) header->sxml)
+        (make-match&pick w))
 
  (test* "next acont.kahua"
-	'(*TOP* (html (body "bbbb" (a (@ (href ?&)) "top"))))
-	(call-worker/gsid->sxml w '() '())
-	(make-match&pick w))
+        '(*TOP* (html (body "bbbb" (a (@ (href ?&)) "top"))))
+        (call-worker/gsid->sxml w '() '())
+        (make-match&pick w))
  )
 
 (test-end)

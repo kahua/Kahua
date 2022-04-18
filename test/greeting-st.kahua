@@ -2,17 +2,17 @@
 
 (define (simple-page ttl . elems)
   (html/ (head/ (title/ ttl))
-	 (body/ (@/ (bgcolor "white"))
-		(h1/ ttl)
-		(node-set elems))))
+         (body/ (@/ (bgcolor "white"))
+                (h1/ ttl)
+                (node-set elems))))
 
 (define-entry (greeting :keyword name)
   (if name
-    (simple-page "Welcome" "Hello, " name "! How are you?") 
+    (simple-page "Welcome" "Hello, " name "! How are you?")
     (simple-page "Please tell me your name."
                  (form/cont/ (@@/ (cont greeting))
                              (input/ (@/ (type "text")
                                          (size "15")
-					 (name "name")))))))
+                                         (name "name")))))))
 
 (initialize-main-proc greeting)

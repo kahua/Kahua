@@ -11,7 +11,7 @@
 
 (test* "string" "Kahua is a web application framework."
        (deserialize-string
-	(serialize-string "Kahua is a web application framework.")))
+        (serialize-string "Kahua is a web application framework.")))
 
 (test* "integer" 12345678901234567890
        (deserialize-string (serialize-string 12345678901234567890)))
@@ -36,7 +36,7 @@
 
 (test* "pair" '(1 (2 . 3) 4 (5 6 (7) 8.0) -9 "end")
        (deserialize-string
-	(serialize-string '(1 (2 . 3) 4 (5 6 (7) 8.0) -9 "end"))))
+        (serialize-string '(1 (2 . 3) 4 (5 6 (7) 8.0) -9 "end"))))
 
 (test* "nil" ()
        (deserialize-string (serialize-string ())))
@@ -94,8 +94,8 @@
 
 (test* "slot brother name" "jirou"
        (ref
-	(ref (deserialize-string (serialize-string tarou)) 'brother)
-	'name))
+        (ref (deserialize-string (serialize-string tarou)) 'brother)
+        'name))
 
 ;;---------------------------------------------------------------
 (test-section "reference")
@@ -107,18 +107,18 @@
 
 (test* "pair" #t
        (let ((p (deserialize-string (serialize-string pair2))))
-	 (eq? (car p) (cadr p))))
+         (eq? (car p) (cadr p))))
 
 (test* "pair" #t
        (let ((p (deserialize-string (serialize-string pair3))))
-	 (eq? p (cadr p))))
+         (eq? p (cadr p))))
 
 (define vector1 (vector 1 2 3))
 (define vector2 (vector vector1 vector1))
 
 (test* "vector" #t
        (let ((v (deserialize-string (serialize-string vector2))))
-	 (eq? (vector-ref v 0) (vector-ref v 1))))
+         (eq? (vector-ref v 0) (vector-ref v 1))))
 
 ;;---------------------------------------------------------------
 (test-section "cyclic reference")
@@ -128,14 +128,14 @@
 
 (test* "pair" #t
        (let ((p (deserialize-string (serialize-string cpair))))
-	 (eq? p (cdr p))))
+         (eq? p (cdr p))))
 
 (define cvector (vector "1" 2 3 4))
 (vector-set! cvector 0 cvector)
 
 (test* "vector" #t
        (let ((v (deserialize-string (serialize-string cvector))))
-	 (eq? v (vector-ref v 0))))
+         (eq? v (vector-ref v 0))))
 
 ;;---------------------------------------------------------------
 (test-section "regexp")
@@ -169,20 +169,20 @@
 
 (test* "key check" #t
        (let ((object (deserialize-string (serialize-string ht))))
-	 (equal? (sort (hash-table-keys ht))
-		 (sort (hash-table-keys object)))))
+         (equal? (sort (hash-table-keys ht))
+                 (sort (hash-table-keys object)))))
 
 (test* "value check" (hash-table-get ht 2)
        (let ((object (deserialize-string (serialize-string ht))))
-	 (hash-table-get object 2)))
+         (hash-table-get object 2)))
 
 (test* "value check" #t
        (let ((object (deserialize-string (serialize-string ht))))
-	 (eq? object (hash-table-get object 3))))
+         (eq? object (hash-table-get object 3))))
 
 (test* "value check" <person>
        (let ((object (deserialize-string (serialize-string ht))))
-	 (class-of (hash-table-get object 4))))
+         (class-of (hash-table-get object 4))))
 
 ;;---------------------------------------------------------------
 (test-section "keyword")

@@ -42,7 +42,7 @@ KAHUAFILES = acont-st.kahua acont.kahua greeting-st.kahua greeting.kahua \
 
 # 'make check' runs almost all tests.
 # 'make <testname>' runs a specific test.
-# 
+#
 #  Test persistence-dbi isn't run by make check, since it assumes
 #  certain database settings.  See persistence-dbi.scm for the details.
 
@@ -193,4 +193,3 @@ distclean: clean
 
 maintainer-clean: clean
 	rm -rf $(CONFIG_GENERATED)
-

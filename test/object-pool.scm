@@ -17,17 +17,17 @@
   ((a :init-keyword :a :read-only #t)
    (b :init-keyword :b))
   :key-of (lambda (_ initargs)
-	    (get-keyword* :a initargs #f)))
+            (get-keyword* :a initargs #f)))
 
 (test* "First object" <a-class> (let1 a (make <a-class> :a "a" :b "a")
-				  (set! *a* a)
-				  (class-of a)))
+                                  (set! *a* a)
+                                  (class-of a)))
 (test* "slot a" "a" (slot-ref *a* 'a) string=?)
 (test* "slot b" "a" (slot-ref *a* 'b) string=?)
 
 (test* "Second object" <a-class> (let1 b (make <a-class> :a "b" :b "b")
-				   (set! *b* b)
-				   (class-of b)))
+                                   (set! *b* b)
+                                   (class-of b)))
 (test* "slot a" "b" (slot-ref *b* 'a) string=?)
 (test* "slot b" "b" (slot-ref *b* 'b) string=?)
 
@@ -50,8 +50,8 @@
 (define *bb* #f)
 
 (test* "First object" <b-class> (let1 a (make <b-class> :a "a" :b "a")
-				  (set! *aa* a)
-				  (class-of a)))
+                                  (set! *aa* a)
+                                  (class-of a)))
 (test* "Identical?" #f (eq? *a* *aa*))
 (test* "slot a" "a" (slot-ref *aa* 'a) string=?)
 (test* "slot b" "a" (slot-ref *aa* 'b) string=?)

@@ -15,7 +15,7 @@
 
 (use kahua.test.xml)
 (use kahua.test.worker)
-(use kahua.persistence) 
+(use kahua.persistence)
 (use kahua.user)
 (use kahua.config)
 
@@ -52,7 +52,7 @@
 
  ;; NB: we should be able to select the A element in recent changes list
  ;; by sxpath (// "td[@id='recentchanges']" a), but it doesn't work on
- ;; Gauche 0.7.4.1 due to the bug in sxpath-ext.scm.  
+ ;; Gauche 0.7.4.1 due to the bug in sxpath-ext.scm.
  (test* "commit - recentchanges"
         '(*TOP*
           (a ?@ "[Login]")

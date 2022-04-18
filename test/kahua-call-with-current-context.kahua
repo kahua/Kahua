@@ -6,7 +6,7 @@
    (body/
     (h1/ "callee")
     (a/cont/ (@@/ (cont return))
-	     "return caller"))))
+             "return caller"))))
 
 (define-entry (caller)
   (kahua-call-with-current-context
@@ -14,11 +14,11 @@
      (html/
       (body/
        (h1/ (begin
-	      (inc! *counter*)
-	      *counter*))
+              (inc! *counter*)
+              *counter*))
        (h2/ (or (kahua-context-ref "query") ""))
        (a/cont/ (@@/ (cont (lambda ()
-			     (callee self))))
-		"call"))))))
+                             (callee self))))
+                "call"))))))
 
 (initialize-main-proc (lambda _ (caller)))

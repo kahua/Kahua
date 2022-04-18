@@ -45,7 +45,7 @@
 (test* "kahua-add-user (non-dup)" #t
        (with-db (db *dbname*)
          (not (not (kahua-add-user "guest" "molokai")))))
-         
+
 (test* "kahua-check-user" "shiro"
        (with-db (db *dbname*)
          (and-let* ((u (kahua-check-user "shiro" "manapua")))
@@ -63,17 +63,17 @@
 
 (test* "kahua-user-password-change" "shiro"
        (with-db (db *dbname*)
-		(let1 user (kahua-find-user "shiro")
-		      (kahua-user-password-change user "manapua" "manahune")
-		      (and-let* ((u (kahua-check-user "shiro" "manahune")))
-				(ref u 'login-name)))))
+                (let1 user (kahua-find-user "shiro")
+                      (kahua-user-password-change user "manapua" "manahune")
+                      (and-let* ((u (kahua-check-user "shiro" "manahune")))
+                                (ref u 'login-name)))))
 
 (test* "kahua-user-password-change-force" "shiro"
        (with-db (db *dbname*)
-		(let1 user (kahua-find-user "shiro")
-		      (kahua-user-password-change-force user "urashima")
-		      (and-let* ((u (kahua-check-user "shiro" "urashima")))
-				(ref u 'login-name)))))
+                (let1 user (kahua-find-user "shiro")
+                      (kahua-user-password-change-force user "urashima")
+                      (and-let* ((u (kahua-check-user "shiro" "urashima")))
+                                (ref u 'login-name)))))
 
 ;;
 ;; app subclass of <kahua-user>.
@@ -98,10 +98,10 @@
 
 (test* "kahua-user?" #t
        (with-db (db *dbname*)
-	 (every kahua-user?
-		(list (kahua-find-user "shiro")
-		      (kahua-find-user "nobsun")
-		      (kahua-find-user "admin")))))
+         (every kahua-user?
+                (list (kahua-find-user "shiro")
+                      (kahua-find-user "nobsun")
+                      (kahua-find-user "admin")))))
 
 (test* "kahua-find-user" #f
        (with-db (db *dbname*)
@@ -115,7 +115,7 @@
 (test* "kahua-add-user (non-dup)" #t
        (with-db (db *dbname*)
          (not (not (kahua-add-user "guest" "molokai")))))
-         
+
 (test* "kahua-check-user" "shiro"
        (with-db (db *dbname*)
          (and-let* ((u (kahua-check-user "shiro" "manapua")))
@@ -133,23 +133,23 @@
 
 (test* "kahua-user-password-change" "shiro"
        (with-db (db *dbname*)
-		(let1 user (kahua-find-user "shiro")
-		      (kahua-user-password-change user "manapua" "manahune")
-		      (and-let* ((u (kahua-check-user "shiro" "manahune")))
-				(ref u 'login-name)))))
+                (let1 user (kahua-find-user "shiro")
+                      (kahua-user-password-change user "manapua" "manahune")
+                      (and-let* ((u (kahua-check-user "shiro" "manahune")))
+                                (ref u 'login-name)))))
 
 (test* "kahua-user-password-change-force" "shiro"
        (with-db (db *dbname*)
-		(let1 user (kahua-find-user "shiro")
-		      (kahua-user-password-change-force user "urashima")
-		      (and-let* ((u (kahua-check-user "shiro" "urashima")))
-				(ref u 'login-name)))))
+                (let1 user (kahua-find-user "shiro")
+                      (kahua-user-password-change-force user "urashima")
+                      (and-let* ((u (kahua-check-user "shiro" "urashima")))
+                                (ref u 'login-name)))))
 
 (test* "remove-kahua-instance: before sync" #t
        (with-db (db *dbname*)
-	 (let1 user (kahua-find-user "shiro")
-	   (remove-kahua-instance user)
-	   (removed? user))))
+         (let1 user (kahua-find-user "shiro")
+           (remove-kahua-instance user)
+           (removed? user))))
 
 (test* "remove-kahua-instance: after sync" #f (with-db (db *dbname*) (kahua-find-user "shiro")))
 

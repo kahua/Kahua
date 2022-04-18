@@ -45,16 +45,16 @@
          '(("query" "123")
            )
          '(// (or@ h1 h2 a)))
-	(make-match&pick w))
+        (make-match&pick w))
 
  (test* "callee"
-	'(*TOP* (h1 "callee") (a (@ (href ?&)) "return caller"))
-	(call-worker/gsid->sxml
-	 w
-	 '()
-	 '()
-	 '(// (or@ h1 h2 a)))
-	(make-match&pick w))
+        '(*TOP* (h1 "callee") (a (@ (href ?&)) "return caller"))
+        (call-worker/gsid->sxml
+         w
+         '()
+         '()
+         '(// (or@ h1 h2 a)))
+        (make-match&pick w))
 
  (test* "caller with incremented counter and query not changed"
         '(*TOP* (!permute (h1 "2") (h2 "123") (a (@ (href ?&)) "call")))
@@ -63,7 +63,7 @@
          '()
          '()
          '(// (or@ h1 h2 a)))
-	(make-match&pick w))
+        (make-match&pick w))
 
  )
 
