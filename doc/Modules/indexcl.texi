@@ -1,8 +1,7 @@
-@node Class Index, Variable Index, Module Index, Top
+@node Class Index, Variable Index, Module Index, Top @c -*-coding:utf-8-*-
 @appendix Class Index
-@c NODE Index - ¥¯¥é¥¹º÷°ú
+@c NODE Index - ã‚¯ãƒ©ã‚¹ç´¢å¼•
 
 For readability, the surrounding @code{<} and @code{>} are stripped off.
 
 @printindex cl
-

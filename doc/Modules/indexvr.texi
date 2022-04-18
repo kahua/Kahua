@@ -1,5 +1,4 @@
-@node Variable Index, , Class Index, Top
+@node Variable Index, , Class Index, Top  @c -*-coding:utf-8-*-
 @appendix Variable Index
-@c NODE Index - ÊÑ¿ôº÷°ú
+@c NODE Index - å¤‰æ•°ç´¢å¼•
 @printindex vr
-

@@ -1,54 +1,54 @@
-@node kahua.developer, kahua.gsid, kahua.config, Top
+@node kahua.developer, kahua.gsid, kahua.config, Top @c -*-coding:utf-8-*-
 @chapter @code{kahua.developer} - Developer
-@c NODE ��ȯ��, @code{kahua.developer} - ��ȯ��
+@c NODE 開発者, @code{kahua.developer} - 開発者
 
 @deftp {Module} kahua.developer
 @mdindex kahua.developer
 @c JP
-���Υ⥸�塼��ϡ�Kahua �γ�ȯ�ԥ�������ȵ�ǽ���󶡤��ޤ���
+このモジュールは、Kahua の開発者アカウント機能を提供します。
 
-��ȯ�ԥ�������Ȥ�̾�����ѥ���ɡ�ʣ���Υ����������ޤ���
+開発者アカウントは名前、パスワード、複数のロールを持ちます。
 
-��ȯ�ԥ�������Ȥϡ�kahua-shell �� Emacs���饤����Ȥ�Ȥ��Ȥ���
-�桼�����ѥ⡼�ɤ˥�����������Ȥ������Ѥ���ޤ���
+開発者アカウントは、kahua-shell と Emacsクライアントを使うとき、
+ユーザ専用モードにアクセスするときに利用されます。
 
-��������Ⱦ���� kahua.conf �� userconf-file �����ꤵ�줿�ե��������¸����ޤ���
+アカウント情報は kahua.conf の userconf-file に設定されたファイルに保存されます。
 @c COMMON
 @end deftp
 
 @defun kahua-add-developer name password roles
 @c JP
-��ȯ�ԥ�������Ȥ���Ͽ���ޤ���roles �ˤϥꥹ�Ȥ�Ϳ���Ƥ���������
-��Ͽ�Ǥ���� #t ���֤��ޤ���
-name ��������Ͽ����Ƥ����硢�ѥ���ɤ�û�������ϥ��顼�ˤʤ�ޤ���
-name��3ʸ���ʾ塢�ѥ���ɤ�4ʸ���ʾ�ɬ�פǤ���
+開発者アカウントを登録します。roles にはリストを与えてください。
+登録できれば #t を返します。
+name が既に登録されている場合、パスワードが短かい場合はエラーになります。
+nameは3文字以上、パスワードは4文字以上必要です。
 @c COMMON
 @end defun
 
 @defun kahua-delete-developer name
 @c JP
-��ȯ�ԥ�������Ȥ������ޤ���
-����Ǥ���� #t ���֤��ޤ���
-��������Ȥ�¸�ߤ��ʤ����ϥ��顼�ˤʤ�ޤ���
+開発者アカウントを削除します。
+削除できれば #t を返します。
+アカウントが存在しない場合はエラーになります。
 @c COMMON
 @end defun
 
 @defun kahua-check-developer
 @c JP
-��ȯ�ԥ�������Ȥ�ǧ�ڤ�Ԥ��ޤ���
-��������� #t�����Ԥ����#f ���֤��ޤ���
+開発者アカウントの認証を行います。
+成功すれば #t、失敗すれば#f を返します。
 @c COMMON
 @end defun
 
 @defun kahua-change-developer-password name new-password
 @c JP
-��ȯ�ԥ�������ȤΥѥ���ɤ��ѹ����ޤ���
-�ѥ���ɤ�3ʸ���ʲ��ξ��ϥ��顼�ˤʤ�ޤ���
+開発者アカウントのパスワードを変更します。
+パスワードが3文字以下の場合はエラーになります。
 @c COMMON
 @end defun
 
 @defun kahua-list-developer
 @c JP
-��Ͽ����Ƥ��볫ȯ�ԥ�������Ȥ�̾���Υꥹ�Ȥ��֤��ޤ���
+登録されている開発者アカウントの名前のリストを返します。
 @c COMMON
 @end defun

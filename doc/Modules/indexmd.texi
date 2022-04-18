@@ -1,4 +1,4 @@
-@node Module Index, Class Index, Function and Syntax Index, Top
+@node Module Index, Class Index, Function and Syntax Index, Top @c -*-coding:utf-8-*-
 @appendix Module Index
-@c NODE Index - ¥â¥¸¥å¡¼¥ëº÷°ú
+@c NODE Index - ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ç´¢å¼•
 @printindex md
