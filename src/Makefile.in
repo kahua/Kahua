@@ -37,48 +37,48 @@ MAKE_SH_SCRIPT   = $(GOSH) $(top_srcdir)/src/make-script.scm "$(GOSH)" "$(libdir
 
 INSTALL_DIRS = $(SCRIPT_INSTALL_DIR) \
 	       $(SCM_SCRIPT_INSTALL_DIR) \
-               $(SCM_INSTALL_DIR) \
-               $(SCM_INSTALL_DIR)/kahua \
+	       $(SCM_INSTALL_DIR) \
+	       $(SCM_INSTALL_DIR)/kahua \
 	       $(SCM_INSTALL_DIR)/kahua/test \
 	       $(SCM_INSTALL_DIR)/kahua/persistence
 
 SH_SCRIPTS  = kahua-spvr    \
-              kahua-admin   \
-              kahua-install \
-              kahua-shell \
+	      kahua-admin   \
+	      kahua-install \
+	      kahua-shell \
 	      kahua-httpd \
 	      kahua-dbutil \
-              kahua-config \
+	      kahua-config \
 	      kahua-package \
-              kahua-user
+	      kahua-user
 
 SCM_SCRIPTS  = kahua-spvr.scm    \
-               kahua-admin.scm   \
-               kahua-install.scm \
-               kahua-shell.scm   \
-               kahua-server.scm  \
-               kahua-keyserv.scm \
+	       kahua-admin.scm   \
+	       kahua-install.scm \
+	       kahua-shell.scm   \
+	       kahua-server.scm  \
+	       kahua-keyserv.scm \
 	       kahua-httpd.scm   \
 	       kahua-dbutil.scm  \
-               kahua-config.scm  \
-               kahua-package.scm \
+	       kahua-config.scm  \
+	       kahua-package.scm \
 	       kahua-user.scm
 
 SCMFILES = $(SCM_SCRIPTS) \
-           kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
-           kahua/config.scm kahua/session.scm kahua/server.scm \
-           kahua/developer.scm kahua/partcont.scm kahua/elem.scm \
-           kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm kahua/test/util.scm \
-           kahua/sandbox.scm kahua/plugin.scm kahua/error-report.scm \
-           kahua/object-pool.scm kahua/persistence/fs.scm \
-           kahua/persistence/efs.scm kahua/persistence/dbi.scm \
+	   kahua.scm kahua/gsid.scm kahua/persistence.scm kahua/user.scm \
+	   kahua/config.scm kahua/session.scm kahua/server.scm \
+	   kahua/developer.scm kahua/partcont.scm kahua/elem.scm \
+	   kahua/util.scm kahua/test/xml.scm kahua/test/worker.scm kahua/test/util.scm \
+	   kahua/sandbox.scm kahua/plugin.scm kahua/error-report.scm \
+	   kahua/object-pool.scm kahua/persistence/fs.scm \
+	   kahua/persistence/efs.scm kahua/persistence/dbi.scm \
 	   kahua/persistence/mysql.scm kahua/persistence/postgresql.scm \
 	   kahua/protocol/worker.scm kahua/protocol/http.scm \
 	   kahua/xml-template.scm kahua/css.scm
 
 GENERATED = $(SH_SCRIPTS) kahua/config.scm kahua-package.scm
 
-CONFIG_GENERATED = Makefile 
+CONFIG_GENERATED = Makefile
 .PHONY: all check testenv clean distclean install maintainer-clean
 
 all: $(GENERATED)
@@ -123,7 +123,7 @@ kahua/config.scm: kahua/config.scm.in
 	sed -e "s@##package##@$(package)@" \
 	    -e "s@##KAHUA_VERSION##@$(package_version)@" \
 	    -e "s@##KAHUA_REVISION##@$(build_revision)@" \
-            $@.in > $@
+	    $@.in > $@
 	chmod -w $@
 
 check:
@@ -158,5 +158,3 @@ distclean: clean
 
 maintainer-clean: clean
 	rm -rf $(CONFIG_GENERATED)
-
-

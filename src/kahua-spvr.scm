@@ -121,13 +121,13 @@
   ((spvr   :init-keyword :spvr :getter spvr-of) ; back ptr to spvr
    (name   :init-keyword :name :getter name-of)	; worker type name (symbol)
    (count  :init-keyword :count
-	   :getter count-of :init-value 0)	; count of running worker
+           :getter count-of :init-value 0)	; count of running worker
    (workers :init-value #f :getter workers-of)  ; circular list of kahua-worker instances.
    (mutex  :init-form (make-mutex) :getter mutex-of)))
 
 (define-class <kahua-worker> ()
   ((type   :getter type-of	      ; back ptr to kahua-worker-type
-	   :init-keyword :type)
+           :init-keyword :type)
    (wid    :getter wid-of)	      ; worker id (string)
    (wno    :getter wno-of)	      ; Worker No.
    (process :getter process-of)	      ; worker process
@@ -136,7 +136,7 @@
    (start-time :getter start-time-of  ; timestamp
                :init-form (sys-time))
    (zombee :getter zombee?	      ; it's going to shutdown?
-	   :init-form #f)
+           :init-form #f)
    ;; internal
    (next-wno :allocation :class :init-value 0)
    ))
@@ -157,7 +157,7 @@
 (define (spvr-error-header err)
   (let1 err-name (class-name (class-of err))
     (kahua:log-format "SPVR-ERROR: ~a: ~a"
-		      err-name (if (slot-exists? err 'message) (slot-ref err 'message) ""))
+                      err-name (if (slot-exists? err 'message) (slot-ref err 'message) ""))
     `(("x-kahua-status" "SPVR-ERROR" ,err-name))))
 
 ;; If errors occur before spvr service starts, we should terminate
@@ -198,20 +198,20 @@
 
 (define (run-piped-cmd cmd)
   (kahua:log-format "[spvr] running ~a" cmd)
-  (guard (e (else 
-	     (kahua:log-format "[spvr] running ~a failed: ~a"
-			 (car cmd) (kahua-error-string e #t))
-	     (raise e)))
+  (guard (e (else
+             (kahua:log-format "[spvr] running ~a failed: ~a"
+                         (car cmd) (kahua-error-string e #t))
+             (raise e)))
     (let1 p (apply run-process `(,@cmd :input :pipe :output :pipe :sigmask ,*default-sigmask*))
       (kahua:log-format "[spvr] running ~a: pid ~a" (car cmd) (process-pid p))
       p)))
 
 (define (circular-list->list cl)
   (let loop ((l (cons (car cl) '()))
-	     (p (cdr cl)))
+             (p (cdr cl)))
     (if (eq? p cl)
-	(reverse! l)
-	(loop (cons (car p) l) (cdr p)))))
+        (reverse! l)
+        (loop (cons (car p) l) (cdr p)))))
 
 (define (circular-list-insert-next! cl item)
   (set-cdr! cl (cons item (cdr cl)))
@@ -231,12 +231,12 @@
 (define (with-locking-chain thunk . args)
   (let doit ((args args))
     (if (null? args)
-	(thunk)
-	(with-locking (car args) (lambda () (doit (cdr args)))))))
+        (thunk)
+        (with-locking (car args) (lambda () (doit (cdr args)))))))
 
 (define (config-options)
   (cond-list ((kahua-site-root) => (pa$ list "-S"))
-	     ((kahua-config-file) => (pa$ list "-c"))))
+             ((kahua-config-file) => (pa$ list "-c"))))
 
 ;;;=================================================================
 ;;; Keyserv management
@@ -244,7 +244,7 @@
 
 (define (start-keyserv spvr)
   (let* ((s (kahua-site-root))
-	 (cmd (script-command spvr "kahua-keyserv.scm" (config-options)))
+         (cmd (script-command spvr "kahua-keyserv.scm" (config-options)))
          (kserv (run-piped-cmd cmd))
          (kserv-id (read-line (process-output kserv))))
     (set! (ref spvr 'keyserv)
@@ -264,14 +264,14 @@
 
 (define (start-httpd spvr spec)
   (let* ((m (#/^\d+$/ spec))
-	 (s (kahua-site-root))
-	 (cmd (script-command spvr "kahua-httpd.scm"
-			      (append (config-options)
-				      `(("-l" ,(kahua-logpath "kahua-httpd.log")))
-				      (if m
-					  `(("-p" ,(m 0)))
-					  `((,spec))))))
-	 (httpd (run-piped-cmd cmd)))
+         (s (kahua-site-root))
+         (cmd (script-command spvr "kahua-httpd.scm"
+                              (append (config-options)
+                                      `(("-l" ,(kahua-logpath "kahua-httpd.log")))
+                                      (if m
+                                          `(("-p" ,(m 0)))
+                                          `((,spec))))))
+         (httpd (run-piped-cmd cmd)))
     (set! (ref spvr 'httpd) httpd)
     (close-input-port (process-output httpd))))
 
@@ -288,33 +288,33 @@
 (define (worker-script worker-type spvr)
   (cond ((assq worker-type *worker-types*)
          => (lambda (p)
-	      (let-keywords* (cdr p)
-		  ((run-by-default 0)	; ignore(to avoid WARNING)
-		   (args :arguments '())
-		   (profile :profile #f)
-		   (dbname :default-database-name #f))
-		(let1 s (kahua-site-root)
-		  (script-command
-		   spvr
-		   "kahua-server.scm"
-		   (append (config-options)
-			   (cond-list ((ref spvr 'keyserv) => (lambda (k) `("-k" ,(ref k 'id))))
-				      (profile => (cut list "-profile" <>))
-				      (dbname => (cut list "-default-db" <>))
-				      (#t (cons (let1 type (symbol->string worker-type)
-						  (string-append type "/" type ".kahua"))
-						args)))))))))
+              (let-keywords* (cdr p)
+                  ((run-by-default 0)	; ignore(to avoid WARNING)
+                   (args :arguments '())
+                   (profile :profile #f)
+                   (dbname :default-database-name #f))
+                (let1 s (kahua-site-root)
+                  (script-command
+                   spvr
+                   "kahua-server.scm"
+                   (append (config-options)
+                           (cond-list ((ref spvr 'keyserv) => (lambda (k) `("-k" ,(ref k 'id))))
+                                      (profile => (cut list "-profile" <>))
+                                      (dbname => (cut list "-default-db" <>))
+                                      (#t (cons (let1 type (symbol->string worker-type)
+                                                  (string-append type "/" type ".kahua"))
+                                                args)))))))))
         (else
-	 (log-format "Worker not found")
-	 (spvr-errorf <kahua-worker-not-found>
-		      "unknown worker type: ~a" worker-type))))
+         (log-format "Worker not found")
+         (spvr-errorf <kahua-worker-not-found>
+                      "unknown worker type: ~a" worker-type))))
 
 (define (load-app-servers-file)
   (define (find-default-worker-type lis)
     (and-let* ((w (find (lambda (e)
-			  (and-let* ((rbd (get-keyword :run-by-default (cdr e) #f)))
-			    (> rbd 0)))
-			lis)))
+                          (and-let* ((rbd (get-keyword :run-by-default (cdr e) #f)))
+                            (> rbd 0)))
+                        lis)))
       (car w)))
   (let1 app-map (kahua-app-servers)
     (define (check-entries lis) ;; check vailidy of app-servers entries
@@ -333,7 +333,7 @@
           (cond ((check-entries lis)
                  (kahua:log-format "[spvr] loaded ~a" app-map)
                  (set! *worker-types* lis)
-		 (set! *default-worker-type* (find-default-worker-type *worker-types*))
+                 (set! *default-worker-type* (find-default-worker-type *worker-types*))
                  #t)
                 (else
                  (kahua:log-format "[spvr] malformed app-servers file: ~a" app-map)
@@ -362,9 +362,9 @@
 ;; start workers that are specified as "run by default"
 (define (run-default-workers spvr)
   (map (lambda (w)
-	 (let1 wtype (car w)
-	   (run-workers spvr wtype (get-keyword :run-by-default (cdr w) 0))
-	   wtype))
+         (let1 wtype (car w)
+           (run-workers spvr wtype (get-keyword :run-by-default (cdr w) 0))
+           wtype))
        *worker-types*))
 
 ;; start worker specified by worker-class
@@ -382,7 +382,7 @@
 
 (define-method run-worker ((self <kahua-spvr>) (worker-type <symbol>))
   (let1 type (or (hash-table-get (wtype-table-of self) worker-type #f)
-		 (make <kahua-worker-type> :spvr self :name worker-type))
+                 (make <kahua-worker-type> :spvr self :name worker-type))
     (run-worker self type)))
 
 (define-method run-workers ((self <kahua-spvr>) (type <kahua-worker-type>) count)
@@ -393,14 +393,14 @@
 (define-method run-workers ((self <kahua-spvr>) (worker-type <symbol>) count)
   (when (> count 0)
     (let1 type (or (hash-table-get (wtype-table-of self) worker-type #f)
-		   (make <kahua-worker-type> :spvr self :name worker-type))
+                   (make <kahua-worker-type> :spvr self :name worker-type))
       (run-workers self type count))))
 
 ;; returns a list of workers
 (define-method %list-workers ((self <kahua-spvr>))
   (sort! (hash-table-values (wno-table-of self))
-	 (lambda (w1 w2)
-	   (< (slot-ref w1 'wno) (slot-ref w2 'wno)))))
+         (lambda (w1 w2)
+           (< (slot-ref w1 'wno) (slot-ref w2 'wno)))))
 
 (define-method list-workers ((self <kahua-spvr>))
   (with-locking self (cut %list-workers self)))
@@ -408,10 +408,10 @@
 (define-method %list-workers ((self <kahua-worker-type>))
   (let1 wcl (workers-of self)
     (if wcl
-	(sort! (circular-list->list wcl)
-	       (lambda (w1 w2)
-		 (< (slot-ref w1 'wno) (slot-ref w2 'wno))))
-	'())))
+        (sort! (circular-list->list wcl)
+               (lambda (w1 w2)
+                 (< (slot-ref w1 'wno) (slot-ref w2 'wno))))
+        '())))
 
 (define-method list-workers ((self <kahua-worker-type>))
   (with-locking self (cut %list-workers self)))
@@ -420,21 +420,21 @@
 (define (check-workers spvr)
   (define (find-worker-by-process p)
     (let1 k&v (find (lambda (k&v)
-		      (eq? (process-of (cdr k&v)) p))
-		    (wid-table-of spvr))
+                      (eq? (process-of (cdr k&v)) p))
+                    (wid-table-of spvr))
       (and k&v (cdr k&v))))
 
   (while (process-wait-any #t) => p
-	 (with-locking spvr
-	   (lambda ()
-	     (and-let* ((w (find-worker-by-process p))
-			(wtype (type-of w)))
-	       (%unregister-worker spvr wtype w)
-	       (log-worker-action "unexpected terminated worker" w)
-	       (when (kahua-auto-restart)
-		 (let1 w (%run-worker spvr wtype)
-		   (log-worker-action "restarted terminated worker type:" w)))
-	       )))))
+         (with-locking spvr
+           (lambda ()
+             (and-let* ((w (find-worker-by-process p))
+                        (wtype (type-of w)))
+               (%unregister-worker spvr wtype w)
+               (log-worker-action "unexpected terminated worker" w)
+               (when (kahua-auto-restart)
+                 (let1 w (%run-worker spvr wtype)
+                   (log-worker-action "restarted terminated worker type:" w)))
+               )))))
 
 ;; terminate all workers
 (define-method nuke-all-workers ((self <kahua-spvr>))
@@ -446,17 +446,17 @@
 (define-method restart-workers ((self <kahua-spvr>) (workers <list>))
   (let1 type&ids (map (lambda (w)
                        (let ((type (name-of (type-of w)))
-			     (wid  (wid-of w)))
-			 (log-worker-action "restart" w)
+                             (wid  (wid-of w)))
+                         (log-worker-action "restart" w)
                          (terminate! w)
-			 (cons type wid)))
+                         (cons type wid)))
                       workers)
     (for-each (lambda (t&i) (run-worker self (car t&i))) type&ids)
     (map cdr type&ids)))
 
 (define-method restart-workers ((self <kahua-spvr>) (worker-type <symbol>))
   (let* ((type (hash-table-get (wtype-table-of self) worker-type))
-	 (wlist (circular-list->list (workers-of type))))
+         (wlist (circular-list->list (workers-of type))))
     (restart-workers self wlist)))
 
 (define-method restart-workers ((self <kahua-spvr>) (wid <string>))
@@ -480,8 +480,8 @@
 
 (define-method %find-worker ((self <kahua-spvr>) (wtype <symbol>))
   (let1 wtype (if (eq? wtype '||)
-		  *default-worker-type*
-		  wtype)
+                  *default-worker-type*
+                  wtype)
     (and-let* ((wt (hash-table-get (wtype-table-of self) wtype #f)))
       (%next-worker! wt))))
 (define-method find-worker ((self <kahua-spvr>) (wtype <symbol>))
@@ -500,22 +500,22 @@
 (define-method initialize ((self <kahua-worker-type>) initargs)
   (next-method)
   (let* ((spvr (spvr-of self))
-	 (wid-table (wid-table-of spvr))
-	 (wno-table (wno-table-of spvr)))
+         (wid-table (wid-table-of spvr))
+         (wno-table (wno-table-of spvr)))
     (with-locking-chain
      (lambda ()
        (hash-table-put! (wtype-table-of spvr) (name-of self) self)
        (dotimes (_ (count-of self))
-	 (let1 w (make <kahua-worker> :type self)
-	   (%register-worker spvr self w)
-	   )))
+         (let1 w (make <kahua-worker> :type self)
+           (%register-worker spvr self w)
+           )))
      spvr self)))
 
 (define (%next-worker! wtype)
   (let1 w (and (workers-of wtype)
-	       (receive (w next) (car+cdr (slot-ref wtype 'workers))
-		 (slot-set! wtype 'workers next)
-		 w))
+               (receive (w next) (car+cdr (slot-ref wtype 'workers))
+                 (slot-set! wtype 'workers next)
+                 w))
     w))
 
 (define-method next-worker! ((self <kahua-worker-type>))
@@ -524,25 +524,25 @@
 (define (%add-worker! type w)
   (if (<= (count-of type) 0)
       (begin
-	(slot-set! type 'count 1)
-	(slot-set! type 'workers (circular-list w)))
+        (slot-set! type 'count 1)
+        (slot-set! type 'workers (circular-list w)))
       (begin
-	(inc! (ref type 'count))
-	(slot-set! type 'workers (circular-list-insert-next! (slot-ref type 'workers) w))
-	(slot-set! type 'workers (cdr (slot-ref type 'workers))))))
+        (inc! (ref type 'count))
+        (slot-set! type 'workers (circular-list-insert-next! (slot-ref type 'workers) w))
+        (slot-set! type 'workers (cdr (slot-ref type 'workers))))))
 (define-method add-worker! ((self <kahua-worker-type>) (worker <kahua-worker>))
   (with-locking self (cut %add-worker! self worker)))
 
 (define (%remove-worker! type w)
   (let1 l (remove! (pa$ eq? w) (circular-list->list (workers-of type)))
     (if (null? l)
-	(begin
-	  (slot-set! type 'count 0)
-	  (slot-set! type 'workers #f))
-	(begin
-	  (slot-set! type 'count (length l))
-	  (set-cdr! (last-pair l) l)
-	  (slot-set! type 'workers l)))
+        (begin
+          (slot-set! type 'count 0)
+          (slot-set! type 'workers #f))
+        (begin
+          (slot-set! type 'count (length l))
+          (set-cdr! (last-pair l) l)
+          (slot-set! type 'workers l)))
     ))
 (define-method remove-worker! ((self <kahua-worker-type>) (worker <kahua-worker>))
   (with-locking self (cut %remove-worker! self worker)))
@@ -554,20 +554,20 @@
 (define-method initialize ((self <kahua-worker>) initargs)
   (next-method)
   (let* ((wtype (type-of self))
-	 (cmd   (worker-script (name-of wtype) (slot-ref wtype 'spvr)))
+         (cmd   (worker-script (name-of wtype) (slot-ref wtype 'spvr)))
          (p     (run-piped-cmd cmd))
          (id    (read-line (process-output p)))
          (wno   (slot-ref self 'next-wno))
-	 (log-str (format "[worker] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
+         (log-str (format "[worker] ~~A: ~A(~A - ~A)" (name-of wtype) wno id)))
     (close-input-port (process-output p))
     (slot-set! self 'logger (pa$ kahua:log-format log-str))
     (slot-set! self 'wid id)
     (slot-set! self 'wno wno)
     (slot-set! self 'process p)
     (slot-set! self 'sockaddr
-	       (if (eof-object? id)
-		   #f
-		   (worker-id->sockaddr id (slot-ref (spvr-of wtype) 'sockbase))))
+               (if (eof-object? id)
+                   #f
+                   (worker-id->sockaddr id (slot-ref (spvr-of wtype) 'sockbase))))
     (inc! (ref self 'next-wno))
     ))
 
@@ -583,35 +583,35 @@
   (if (zombee? self)
       #f
       (let* ((type (type-of self))
-	     (spvr (spvr-of type)))
-	(with-locking-chain (lambda ()
-			      (process-wait (%terminate! spvr type self)))
-			    spvr type))))
+             (spvr (spvr-of type)))
+        (with-locking-chain (lambda ()
+                              (process-wait (%terminate! spvr type self)))
+                            spvr type))))
 
 (define-method terminate! ((self <kahua-worker-type>))
   (let1 spvr (spvr-of self)
     (and-let* ((wcl (workers-of self)))
       (with-locking-chain (lambda ()
-			    (for-each process-wait
-				      (map (pa$ %terminate! spvr self)
-					   (circular-list->list wcl))))
-			  spvr self))))
+                            (for-each process-wait
+                                      (map (pa$ %terminate! spvr self)
+                                           (circular-list->list wcl))))
+                          spvr self))))
 
 (define-method dispatch-to-worker ((self <kahua-worker>) header body cont)
   (let1 sockaddr (sockaddr-of self)
     (if sockaddr
-	(let1 sock (make-client-socket sockaddr)
-	  (call-with-client-socket sock
-	    (lambda (in out)
-	      (send-message out header body)
-	      (guard (e (else
-			 (cont (spvr-error-header e)
-			       (list (ref e 'message) (kahua-error-string e #t)))))
-		(receive (header body) (receive-message in)
-		  (with-ignoring-exception (cut socket-shutdown sock SHUT_WR))
-		  (cont header body))))))
-	(spvr-errorf <kahua-worker-not-respond>
-		     "Worker ~s (~s) is not running currently" (name-of (type-of self)) (wno-of self)))))
+        (let1 sock (make-client-socket sockaddr)
+          (call-with-client-socket sock
+            (lambda (in out)
+              (send-message out header body)
+              (guard (e (else
+                         (cont (spvr-error-header e)
+                               (list (ref e 'message) (kahua-error-string e #t)))))
+                (receive (header body) (receive-message in)
+                  (with-ignoring-exception (cut socket-shutdown sock SHUT_WR))
+                  (cont header body))))))
+        (spvr-errorf <kahua-worker-not-respond>
+                     "Worker ~s (~s) is not running currently" (name-of (type-of self)) (wno-of self)))))
 
 ;;;=================================================================
 ;;; Supervisor commands
@@ -621,55 +621,55 @@
   (let1 t (make-hash-table 'eq?)
     (define (worker-info w)
       (list :worker-id    (wid-of w)
-	    :worker-count (wno-of w)
-	    :worker-type  (name-of (type-of w))
-	    :worker-pid   (process-pid (process-of w))
-	    :start-time   (start-time-of w)))
+            :worker-count (wno-of w)
+            :worker-type  (name-of (type-of w))
+            :worker-pid   (process-pid (process-of w))
+            :start-time   (start-time-of w)))
     (for-each (lambda (e)
-		(hash-table-put! t (car e) (cdr e)))
-	      `((ls       . ,(lambda _ (map worker-info (list-workers *spvr*))))
-		(run      . ,(lambda args (map (lambda (type) (worker-info (run-worker *spvr* type))) args)))
-		(kill     . ,(lambda args
-			       (for-each
-				(lambda (type-or-count)
-				  (cond ((eq? type-or-count '*) 
-					 (nuke-all-workers *spvr*))
-					((symbol? type-or-count)
-					 (terminate! (hash-table-get (wtype-table-of *spvr*) type-or-count)))
-					((string? type-or-count)
-					 (terminate! (hash-table-get (wid-table-of *spvr*) type-or-count)))
-					((integer? type-or-count)
-					 (terminate! (hash-table-get (wno-table-of *spvr*) type-or-count)))))
-				args)
-			       (map worker-info (list-workers *spvr*))))
-		(types    . ,(lambda _ (map car *worker-types*)))
-		(reload   . ,(lambda _ (and (load-app-servers-file)
-					    (run-default-workers *spvr*))))
-		(restart  . ,(lambda args
-			       (fold
-				(lambda (type-or-wno res)
-				  (append res
-					  (cond ((eq? type-or-wno '*)
-						 (restart-workers *spvr* (hash-table-values (wid-table-of *spvr*))))
-						((symbol? type-or-wno) ; worker type
-						 (restart-workers *spvr* type-or-wno))
-						((string? type-or-wno) ; wid
-						 (restart-workers *spvr* type-or-wno))
-						((integer? type-or-wno)	; wno
-						 (restart-workers *spvr* type-or-wno)))))
-				'()
-				args)))
-		(shutdown . ,(lambda _
-			       (kahua:log-format "[spvr] shutdown requested")
-			       (sys-kill (sys-getpid) SIGTERM)))
-		(help     . ,(lambda _ (hash-table-keys t)))
-		(version  . ,(lambda _ (kahua-version)))))
+                (hash-table-put! t (car e) (cdr e)))
+              `((ls       . ,(lambda _ (map worker-info (list-workers *spvr*))))
+                (run      . ,(lambda args (map (lambda (type) (worker-info (run-worker *spvr* type))) args)))
+                (kill     . ,(lambda args
+                               (for-each
+                                (lambda (type-or-count)
+                                  (cond ((eq? type-or-count '*)
+                                         (nuke-all-workers *spvr*))
+                                        ((symbol? type-or-count)
+                                         (terminate! (hash-table-get (wtype-table-of *spvr*) type-or-count)))
+                                        ((string? type-or-count)
+                                         (terminate! (hash-table-get (wid-table-of *spvr*) type-or-count)))
+                                        ((integer? type-or-count)
+                                         (terminate! (hash-table-get (wno-table-of *spvr*) type-or-count)))))
+                                args)
+                               (map worker-info (list-workers *spvr*))))
+                (types    . ,(lambda _ (map car *worker-types*)))
+                (reload   . ,(lambda _ (and (load-app-servers-file)
+                                            (run-default-workers *spvr*))))
+                (restart  . ,(lambda args
+                               (fold
+                                (lambda (type-or-wno res)
+                                  (append res
+                                          (cond ((eq? type-or-wno '*)
+                                                 (restart-workers *spvr* (hash-table-values (wid-table-of *spvr*))))
+                                                ((symbol? type-or-wno) ; worker type
+                                                 (restart-workers *spvr* type-or-wno))
+                                                ((string? type-or-wno) ; wid
+                                                 (restart-workers *spvr* type-or-wno))
+                                                ((integer? type-or-wno)	; wno
+                                                 (restart-workers *spvr* type-or-wno)))))
+                                '()
+                                args)))
+                (shutdown . ,(lambda _
+                               (kahua:log-format "[spvr] shutdown requested")
+                               (sys-kill (sys-getpid) SIGTERM)))
+                (help     . ,(lambda _ (hash-table-keys t)))
+                (version  . ,(lambda _ (kahua-version)))))
     t))
 
 (define (handle-spvr-command body)
   (unless (pair? body) (error "bad spvr command:" body))
   (let1 proc (hash-table-get *spvr-command-table* (car body)
-			     (lambda _ (error "unknown spvr command:" body)))
+                             (lambda _ (error "unknown spvr command:" body)))
     (apply proc (cdr body))))
 
 ;;;=================================================================
@@ -684,22 +684,22 @@
                 ((wtype) (get-worker-type header)))
     (kahua:log-format "[spvr] header: ~s" header)
     (cond ((equal? wtype 'spvr)
-	   ;; this is a supervisor command.
-	   (cont '(("x-kahua-status" "OK")) (handle-spvr-command body)))
-	  (cont-h
-	   ;; we know which worker handles the request
-	   (let1 w (find-worker self cont-h)
-	     (unless w
-	       (spvr-errorf <kahua-spvr-session-expired> "Session key expired"))
-	     (dispatch-to-worker w header body cont)))
-	  (else
-	   ;; this is a session-initiating request.  wtype must be symbol.
-	   (let1 w (find-worker self wtype)
-	     (unless w
-	       (if (assq wtype *worker-types*)
-		   (spvr-errorf <kahua-worker-not-respond> "Worker ~a is not running currently." wtype)
-		   (spvr-errorf <kahua-worker-not-found> "/~a" wtype)))
-	     (dispatch-to-worker w header body cont))))
+           ;; this is a supervisor command.
+           (cont '(("x-kahua-status" "OK")) (handle-spvr-command body)))
+          (cont-h
+           ;; we know which worker handles the request
+           (let1 w (find-worker self cont-h)
+             (unless w
+               (spvr-errorf <kahua-spvr-session-expired> "Session key expired"))
+             (dispatch-to-worker w header body cont)))
+          (else
+           ;; this is a session-initiating request.  wtype must be symbol.
+           (let1 w (find-worker self wtype)
+             (unless w
+               (if (assq wtype *worker-types*)
+                   (spvr-errorf <kahua-worker-not-respond> "Worker ~a is not running currently." wtype)
+                   (spvr-errorf <kahua-worker-not-found> "/~a" wtype)))
+             (dispatch-to-worker w header body cont))))
     ))
 
 ;;; "Kahua request" handler.  Client is kahua.cgi or kahua-admin.
@@ -707,14 +707,14 @@
   (call-with-client-socket client-sock
     (lambda (in out)
       (guard (e (else
-		 (send-message out (spvr-error-header e)
-			       (list (ref e 'message) (kahua-error-string e #t)))))
-	(receive (header body) (receive-message in)
-	  (handle-common self header body
-			 (lambda (header body)
-			   (guard (e
-				   (#t (kahua:log-format "[spvr]: client closed connection")))
-			     (send-message out header body))))))
+                 (send-message out (spvr-error-header e)
+                               (list (ref e 'message) (kahua-error-string e #t)))))
+        (receive (header body) (receive-message in)
+          (handle-common self header body
+                         (lambda (header body)
+                           (guard (e
+                                   (#t (kahua:log-format "[spvr]: client closed connection")))
+                             (send-message out header body))))))
       (with-ignoring-exception (cut socket-shutdown client-sock SHUT_WR)))))
 
 ;;
@@ -723,20 +723,20 @@
 (define (run-server spvr tpool kahua-sock use-listener)
   (when kahua-sock
     (selector-add! (selector-of spvr)
-		   (socket-fd kahua-sock)
-		   (lambda (fd flags)
-		     (let1 client (socket-accept kahua-sock)
-		       (add-job! tpool (cut handle-kahua spvr client))))
-		   '(r)))
+                   (socket-fd kahua-sock)
+                   (lambda (fd flags)
+                     (let1 client (socket-accept kahua-sock)
+                       (add-job! tpool (cut handle-kahua spvr client))))
+                   '(r)))
   (when use-listener
     (let* ((listener (make <listener> :prompter (lambda () (display "kahua> "))))
-	   (listener-handler (listener-read-handler listener)))
+           (listener-handler (listener-read-handler listener)))
       (set! (port-buffering (current-input-port)) :none)
       (selector-add! (selector-of spvr)
-		     (current-input-port)
-		     (lambda _ 
-		       (listener-handler))
-		     '(r))
+                     (current-input-port)
+                     (lambda _
+                       (listener-handler))
+                     '(r))
       (listener-show-prompt listener)))
 
   (do () (#f)
@@ -777,56 +777,56 @@
                                         ; wrapper script adds it.
       ;; initialization
       (kahua-common-init site conf-file) ; this must come after getting lib-path
-					 ; since kahua-init adds to *load-path*
+                                         ; since kahua-init adds to *load-path*
       (when sockbase (set! (kahua-sockbase) sockbase))
       (write-pid-file (kahua-spvr-pidpath))
       (cond ((equal? logfile "-") (kahua:log-open #t :prefix "~Y ~T ~P[~$]: "))
             (logfile (kahua:log-open logfile :prefix "~Y ~T ~P[~$]: "))
             (else    (kahua:log-open (kahua-logpath "kahua-spvr.log")
                                :prefix "~Y ~T ~P[~$]: ")))
-      
+
       (let* ((sockaddr (supervisor-sockaddr (kahua-sockbase)))
              (spvr     (make <kahua-spvr>
                          :gosh-path gosh
                          :lib-path lib-path))
              (kahua-sock (make-server-socket sockaddr :reuse-addr? #t :backlog SOMAXCONN))
-	     (tpool (make-thread-pool (or thnum (kahua-spvr-concurrency)))))
+             (tpool (make-thread-pool (or thnum (kahua-spvr-concurrency)))))
         (set! *spvr* spvr)
         ;; hack
         (when (is-a? sockaddr <sockaddr-un>)
           (sys-chmod (sockaddr-name sockaddr) #o770))
         (start-keyserv spvr)
-	(when httpd (start-httpd spvr httpd))
+        (when httpd (start-httpd spvr httpd))
         (kahua:log-format "[spvr] started at ~a" sockaddr)
-	(let1 ret
-	    (call/cc
-	     (lambda (bye)
-	       (define (finish-server sig)
-		 (kahua:log-format "[spvr] ~a" (sys-signal-name sig))
-		  (bye 0))
-	       (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
-	       (set-signal-handler! SIGPIPE #f) ; ignore SIGPIPE
-	       (set! *default-sigmask* (sys-sigmask 0 #f))
-	       (guard (e (else
-			  (kahua:log-format "[spvr] error in main:\n~a" 
-				      (kahua-error-string e #t))
-			  (report-error e)
-			  (bye 70)))
-		 (load-app-servers-file)
-		 (run-default-workers spvr)
-		 (run-server spvr tpool kahua-sock listener)
-		 (bye 0))))
-	  (when (is-a? sockaddr <sockaddr-un>)
-	    (sys-unlink (sockaddr-name sockaddr)))
-	  (nuke-all-workers spvr)
-	  (wait-all tpool)
-	  (with-ignoring-exception (cut terminate-all! tpool 5e8))
-	  (stop-httpd spvr)
-	  (stop-keyserv spvr)
-	  (kahua:log-format "[spvr] exitting")
-	  (sys-unlink (kahua-spvr-pidpath))
-	  ret)
-	))))
+        (let1 ret
+            (call/cc
+             (lambda (bye)
+               (define (finish-server sig)
+                 (kahua:log-format "[spvr] ~a" (sys-signal-name sig))
+                  (bye 0))
+               (set-signal-handler! *TERMINATION-SIGNALS* finish-server)
+               (set-signal-handler! SIGPIPE #f) ; ignore SIGPIPE
+               (set! *default-sigmask* (sys-sigmask 0 #f))
+               (guard (e (else
+                          (kahua:log-format "[spvr] error in main:\n~a"
+                                      (kahua-error-string e #t))
+                          (report-error e)
+                          (bye 70)))
+                 (load-app-servers-file)
+                 (run-default-workers spvr)
+                 (run-server spvr tpool kahua-sock listener)
+                 (bye 0))))
+          (when (is-a? sockaddr <sockaddr-un>)
+            (sys-unlink (sockaddr-name sockaddr)))
+          (nuke-all-workers spvr)
+          (wait-all tpool)
+          (with-ignoring-exception (cut terminate-all! tpool 5e8))
+          (stop-httpd spvr)
+          (stop-keyserv spvr)
+          (kahua:log-format "[spvr] exitting")
+          (sys-unlink (kahua-spvr-pidpath))
+          ret)
+        ))))
 
 ;; Local variables:
 ;; mode: scheme

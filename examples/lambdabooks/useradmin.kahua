@@ -16,80 +16,80 @@
   ;; this should eventually be in some library.
   (define (auth-error)
     (cont (node-set/
-	   (h2/ "認証エラー")
-	   (p/ "あなたは指定のコンテンツにアクセスする権限を持っていません。"
-	       "もし、普通の操作によってこの画面に到達したのなら、"
-	       "サイト構築のミスである可能性が高いです。"
-	       (a/ (@/ (href "mailto:admin@kahua.org")) "サイト管理者")
-	       "に連絡して下さい。")
-	   (a/cont/ "[トップページに戻る]"))))
+           (h2/ "認証エラー")
+           (p/ "あなたは指定のコンテンツにアクセスする権限を持っていません。"
+               "もし、普通の操作によってこの画面に到達したのなら、"
+               "サイト構築のミスである可能性が高いです。"
+               (a/ (@/ (href "mailto:admin@kahua.org")) "サイト管理者")
+               "に連絡して下さい。")
+           (a/cont/ "[トップページに戻る]"))))
 
   ;; For now, we hardcode roles
   (define allowed-roles '(admin developer editor))
 
   (define (make-role-checkboxes user-roles)
     (map/ (lambda (role)
-	    (node-set/
-	     (input/ (@/ (type "checkbox") (name "roles") (value role)
-			 (checked (and (memq role user-roles) "checked"))))
-	     (x->string role) (br/)))
-	  allowed-roles))
+            (node-set/
+             (input/ (@/ (type "checkbox") (name "roles") (value role)
+                         (checked (and (memq role user-roles) "checked"))))
+             (x->string role) (br/)))
+          allowed-roles))
 
   (define (user-commit user inactive? roles)
     (let ((logname (slot-ref user 'login-name))
-	  (roles (map string->symbol roles)))
+          (roles (map string->symbol roles)))
       (cond ((kahua-authorized? 'admin)
-	     (if (equal? logname "admin")
-		 (unless (memq 'admin roles)
-		   (push! roles 'admin))
-		 (slot-set! user 'inactive inactive?))
-	     (slot-set! user 'role-alist roles)
-	     (user-edit-panel user #t))
-	    (else (auth-error)))))
+             (if (equal? logname "admin")
+                 (unless (memq 'admin roles)
+                   (push! roles 'admin))
+                 (slot-set! user 'inactive inactive?))
+             (slot-set! user 'role-alist roles)
+             (user-edit-panel user #t))
+            (else (auth-error)))))
 
   (define (user-edit-panel user edited?)
     (if (kahua-authorized? 'admin)
-	(let1 logname (slot-ref user 'login-name)
-	  (cont (node-set/
-		 (h2/ "ユーザー" logname "の情報")
-		 (when/ edited?
-		   (p/ (font/ (@/ (color "#ff3535")) "情報を変更しました")))
-		 (form/cont/
-		  (@@/ (cont (entry-lambda (:keyword inactive :mvkeyword roles)
-			       (user-commit user (equal? "yes" inactive) roles))))
-		  (table/
-		   (tr/ (th/ (@/ (style "background-color:#d8d2c9")) "ログイン名")
-			(td/ (@/ (style "background-color:#ffd6b2;width:20em"))
-			     (p/ logname)))
-		   (tr/ (th/ (@/ (style "background-color:#d8d2c9")) "非アクティブ")
-			(td/ (@/ (style "background-color:#ffd6b2;width:20em"))
-			     (input/ (@/ (type "checkbox") (name "inactive") (value "yes")
-					 (checked (and (ref user 'inactive) "checked"))))))
-		   (tr/ (th/ (@/ (style "background-color:#d8d2c9")) "役割")
-			(td/ (@/ (style "background-color:#ffd6b2;width:20em"))
-			     (p/ (make-role-checkboxes (ref user 'role-alist)))))
-		   (tr/ (td/ (@/ (align "center") (bgcolor "#d8d2c9") (colspan 2))
-			     (input/ (@/ (type "submit") (name "submit") (value "変更")))))))
-		 (a/cont: (@@: (cont user-admin-page))
-			  "[ユーザー一覧へ]"))))
-	(auth-error)))
-  
+        (let1 logname (slot-ref user 'login-name)
+          (cont (node-set/
+                 (h2/ "ユーザー" logname "の情報")
+                 (when/ edited?
+                   (p/ (font/ (@/ (color "#ff3535")) "情報を変更しました")))
+                 (form/cont/
+                  (@@/ (cont (entry-lambda (:keyword inactive :mvkeyword roles)
+                               (user-commit user (equal? "yes" inactive) roles))))
+                  (table/
+                   (tr/ (th/ (@/ (style "background-color:#d8d2c9")) "ログイン名")
+                        (td/ (@/ (style "background-color:#ffd6b2;width:20em"))
+                             (p/ logname)))
+                   (tr/ (th/ (@/ (style "background-color:#d8d2c9")) "非アクティブ")
+                        (td/ (@/ (style "background-color:#ffd6b2;width:20em"))
+                             (input/ (@/ (type "checkbox") (name "inactive") (value "yes")
+                                         (checked (and (ref user 'inactive) "checked"))))))
+                   (tr/ (th/ (@/ (style "background-color:#d8d2c9")) "役割")
+                        (td/ (@/ (style "background-color:#ffd6b2;width:20em"))
+                             (p/ (make-role-checkboxes (ref user 'role-alist)))))
+                   (tr/ (td/ (@/ (align "center") (bgcolor "#d8d2c9") (colspan 2))
+                             (input/ (@/ (type "submit") (name "submit") (value "変更")))))))
+                 (a/cont: (@@: (cont user-admin-page))
+                          "[ユーザー一覧へ]"))))
+        (auth-error)))
+
   (define (format-user-info user count)
     (define c (if (even? count) "#ffbbbb" "#ffdddd"))
     (tr/ (td/ (@/ (style #`"background-color:,|c|;width:8em"))
-	      (a/cont/ (@@/ (cont (cute user-edit-panel user #f)))
-		       (ref user 'login-name)))
-	 (td/ (@/ (style: #`"background-color:,|c|"))
-	      (if (ref user 'inactive) "inactive" "active"))
-	 (td/ (@/ (style #`"background-color:,|c|;width:25em"))
-	      (string-join (map x->string (ref user 'role-alist)) ", "))))
+              (a/cont/ (@@/ (cont (cute user-edit-panel user #f)))
+                       (ref user 'login-name)))
+         (td/ (@/ (style: #`"background-color:,|c|"))
+              (if (ref user 'inactive) "inactive" "active"))
+         (td/ (@/ (style #`"background-color:,|c|;width:25em"))
+              (string-join (map x->string (ref user 'role-alist)) ", "))))
 
   (if (kahua-authorized? 'admin)
       (let1 user (kahua-current-user)
-	((lister (map values (make-kahua-collection <kahua-user>))
-		 format-user-info
-		 :header-formatter
-		 (lambda () (tr/ (th/ "ログイン名") (th/ "activeness") (th/ "役割"))))
-	 (lambda (nodes)
-	   (cont (node-set/ (h2/ "登録ユーザー一覧") nodes)))))
+        ((lister (map values (make-kahua-collection <kahua-user>))
+                 format-user-info
+                 :header-formatter
+                 (lambda () (tr/ (th/ "ログイン名") (th/ "activeness") (th/ "役割"))))
+         (lambda (nodes)
+           (cont (node-set/ (h2/ "登録ユーザー一覧") nodes)))))
       (auth-error)))

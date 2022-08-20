@@ -32,35 +32,35 @@
 
 (define (img-logo)
   (img/ (@/ (src (imgpath "lambda-books-logo.png")) (alt "[lambda books]")
-	    (border "0") (width 216) (height 47))))
+            (border "0") (width 216) (height 47))))
 
 (define (img-separator)
   (img/ (@/ (src (imgpath "separator.jpg")) (alt "[separator]")
-	    (width 480) (height 4))))
+            (width 480) (height 4))))
 
 ;; standard-frame :: [SXML] -> [SXML]
 (define (standard-frame contents)
   (html/
    (head/ (title/ "Lambda books"))
    (body/ (@/ (style "background-color: #ffffff; width:490px; margin: .5em auto;"))
-	  (standard-header)
-	  contents
-	  (standard-footer))))
+          (standard-header)
+          contents
+          (standard-footer))))
 
 ;; standard-page :: [SXML] -> [SXML]
 (define (standard-page contents)
   (standard-frame
    (table/ (tr/ (td/ (@/ (valign "top"))
-		     (standard-menu))
-		(td/ (@/ (valign "top"))
-		     (if (eq? contents empty)
-			 (default-contents)
-			 contents))))))
+                     (standard-menu))
+                (td/ (@/ (valign "top"))
+                     (if (eq? contents empty)
+                         (default-contents)
+                         contents))))))
 
 (define (standard-header)
   (node-set/ (a/cont/ (img-logo))
-	     (br/)
-	     (img-separator)))
+             (br/)
+             (img-separator)))
 
 (define-entry (books pid)
   (if pid
@@ -80,26 +80,26 @@
    (tr/ (td/ (a/cont/ (@@/ (cont partner-page)) "Partnership")))
    ;; admin roleのユーザーにのみ、リンクを見せる
    (tr/ (@@/ (require-role 'admin))
-	(td/ (a/cont/ (@@/ (cont user-admin-page)) "[ユーザ管理]")))))
+        (td/ (a/cont/ (@@/ (cont user-admin-page)) "[ユーザ管理]")))))
 
 (define (standard-footer)
   (node-set/
    (img-separator)
    (div/ (@/ (style "text-align: right"))
-	 "Powered by "
-	 (a/ (@/ (href "http://www.kahua.org/")) "Kahua"))))
+         "Powered by "
+         (a/ (@/ (href "http://www.kahua.org/")) "Kahua"))))
 
 (define (default-contents)
   (define (new-title book)
     (node-set/
      (tr/ (td/ (b/ (ref book 'title))))
      (tr/ (td/ (@/ (style "text-align: right"))
-	       (ref book 'authors) "著"))
+               (ref book 'authors) "著"))
      (tr/ (td/ (@/ (style "text-align: right"))
-	       "キャンペーン価格：" (ref book 'price) "円"))
+               "キャンペーン価格：" (ref book 'price) "円"))
      (tr/ (td/ (@/ (style "text-align: right"))
-	       (a/cont/ (@@/ (cont books (slot-ref book 'product-id)))
-			"詳しい情報を見る...")))))
+               (a/cont/ (@@/ (cont books (slot-ref book 'product-id)))
+                        "詳しい情報を見る...")))))
 
   (node-set/
    (h2/ "最新ニュース")
@@ -110,6 +110,6 @@
    (let1 dummy-books (filter-map (cut find-kahua-instance <book> 'product-id <>) '(0 1))
      (if (pair? dummy-books)
          (table/ (map/ new-title dummy-books))
-	 (p/ "(書籍データがありません)")))))
+         (p/ "(書籍データがありません)")))))
 
 (initialize-main-proc (cut standard-page empty))

@@ -102,8 +102,8 @@
        (hr/)
        (p/ "既にある定義"
            (pre/ (map/ (lambda (p)
-			 (format "(def ~s ~s)\n" (car p) (cadr p)))
-		       definitions)))))
+                         (format "(def ~s ~s)\n" (car p) (cadr p)))
+                       definitions)))))
 
     ;; parse は、ユーザが入力した式をトラバースして、内部表現に直す。
     ;; 内部表現の基本はS式だが、変数およびクロージャが構造体に置き換わっている。
@@ -170,7 +170,7 @@
              (make <closure> :arg (ref expr 'arg)
                    :body (substitute-local (ref expr 'body) var val)))
             (else expr)))
-      
+
     ;; 式の表示
     ;;   グローバル変数 - 変数名をリンクに
     ;;   クロージャ - 「λ」をリンクに
@@ -192,7 +192,7 @@
           (node-set/ "(" (render-clo (car t) #t) ") "
                      (render-map (cdr t)))
           (node-set/ (render-map t))))
-        
+
       (define (render-lvar lvar)
         (if (zero? (ref lvar 'id))
           (x->string (ref lvar 'var))
@@ -215,8 +215,8 @@
       (define (render-map lis)
         (define (rec lis r)
           (if (null? lis)
-	      (node-set (reverse! r))
-	      (rec (cdr lis) (list* (render-1 (car lis)) " " r))))
+              (node-set (reverse! r))
+              (rec (cdr lis) (list* (render-1 (car lis)) " " r))))
         (cond ((null? lis) "")
               ((null? (cdr lis)) (render-1 (car lis)))
               (else (rec (cdr lis) (list (render-1 (car lis)))))))
@@ -237,14 +237,14 @@
         (p/ "式または定義を記入して下さい。")
         (p/ "例:")
         (ul/
-	 (map/ (lambda (ex)
-		 (li/ (x->string ex)
-		      "  ["
-		      (a/cont/ (@@/ (cont calcul
-					  `(expr ,(x->string ex))))
-			       "この式を評価")
-		      "]"))
-	       *examples*))
+         (map/ (lambda (ex)
+                 (li/ (x->string ex)
+                      "  ["
+                      (a/cont/ (@@/ (cont calcul
+                                          `(expr ,(x->string ex))))
+                               "この式を評価")
+                      "]"))
+               *examples*))
         (form/cont/
          (@@/ (cont calcul))
          (textarea/ (@/ (name "expr") (rows 10) (cols 60)) text)
@@ -255,5 +255,3 @@
     (input "" "(if true X Y)")))
 
 (initialize-main-proc start)
-
-

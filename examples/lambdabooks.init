@@ -24,26 +24,26 @@
 
 (define (init-users)
   (for-each (lambda (entry)
-	      (let1 uname (car entry)
-		(unless (kahua-find-user uname)
-		  (let1 u (apply kahua-add-user entry)
-		    (when (and u (equal? uname "admin"))
-		      (slot-set! u 'role-alist '(admin)))))))
+              (let1 uname (car entry)
+                (unless (kahua-find-user uname)
+                  (let1 u (apply kahua-add-user entry)
+                    (when (and u (equal? uname "admin"))
+                      (slot-set! u 'role-alist '(admin)))))))
             '(("admin" "admin")
               ("guest" "guest"))))
 
 (define (init-books)
   (define make-book
     (cut make <book>
-	 :product-id <>
-	 :authors    <>
-	 :title      <>
-	 :publisher  <>
-	 :price      <>
-	 :comment    <>))
+         :product-id <>
+         :authors    <>
+         :title      <>
+         :publisher  <>
+         :price      <>
+         :comment    <>))
   (for-each (lambda (entry)
               (unless (find-kahua-instance <book> 'product-id (car entry))
-		(apply make-book entry)))
+                (apply make-book entry)))
             '((0
                "Hans Abelson, Gerald Jay Sussman"
                "Structure and Interpretation of Computer Programs"
@@ -124,4 +124,3 @@
                "この分野で著明な業績を残している著者らによる、procedural modelingとprocedural texturingの解説書の決定版。三版を数え、最新のトピックもふんだんに盛りこんでいる")
               ))
   )
-

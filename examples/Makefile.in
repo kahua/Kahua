@@ -36,22 +36,22 @@ KAHUACONFIG = @KAHUACONFIG_OPTION@
 
 SCRIPTFILES = foldlist/foldlist.kahua           \
 	      lambdabooks/lambdabooks.kahua     \
-              lambdabooks/lister.kahua          \
-              lambdabooks/login.kahua           \
-              lambdabooks/book.kahua            \
-              lambdabooks/review.kahua          \
-              lambdabooks/partner.kahua         \
-              lambdabooks/useradmin.kahua       \
-              wiki-iki/wiki-iki.kahua           \
-              login/login.kahua                 \
-              nqueen/nqueen.kahua               \
-              lazy-nqueen/lazy-nqueen.kahua     \
-              lambdacalcul/lambdacalcul.kahua
+	      lambdabooks/lister.kahua          \
+	      lambdabooks/login.kahua           \
+	      lambdabooks/book.kahua            \
+	      lambdabooks/review.kahua          \
+	      lambdabooks/partner.kahua         \
+	      lambdabooks/useradmin.kahua       \
+	      wiki-iki/wiki-iki.kahua           \
+	      login/login.kahua                 \
+	      nqueen/nqueen.kahua               \
+	      lazy-nqueen/lazy-nqueen.kahua     \
+	      lambdacalcul/lambdacalcul.kahua
 
 STATICFILES = lambdabooks/images/lambda-books-logo.png \
-              lambdabooks/images/separator.jpg \
-              wiki-iki/wiki-iki.css \
-              wiki-iki/images/wiki-iki.png
+	      lambdabooks/images/separator.jpg \
+	      wiki-iki/wiki-iki.css \
+	      wiki-iki/images/wiki-iki.png
 
 CONFIG_GENERATED = Makefile config.cache config.log config.status configure.lineno autom4te*.cache
 
@@ -64,7 +64,7 @@ check:
 clean:
 	rm -rf core *~ lambdabooks/*~ wiki-iki/*~ login/*~
 
-install: 
+install:
 	@echo "use 'make install-examples'"
 
 install-examples: all
@@ -72,7 +72,7 @@ install-examples: all
 	$(INSTALL) $(KAHUACONFIG) -t static $(STATICFILES)
 	$(INSTALL) $(KAHUACONFIG) -t base -r app-servers --no-overwrite app-servers.sample
 	$(INSTALL) $(KAHUACONFIG) -t plugin -r allow-module.scm --no-overwrite ../plugins/allow-module.scm
-	$(GOSH) -I. -I$(libdir) ./lambdabooks.init $(KAHUACONFIG) 
+	$(GOSH) -I. -I$(libdir) ./lambdabooks.init $(KAHUACONFIG)
 
 uninstall :
 	@echo "use 'make uninstall-examples'"
@@ -87,5 +87,3 @@ distclean: clean
 maintainer-clean: clean
 	rm -rf $(CONFIG_GENERATED)
 	rm -rf configure
-
-

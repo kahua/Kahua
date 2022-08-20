@@ -26,10 +26,10 @@
 (define-method format-for-list ((self <book>) cont)
   (node-set/
    (tr/ (td/ (@/ (colspan 2) (style "background-color:#92bae5"))
-	     (a/cont/ (@@/ (cont books (slot-ref self 'product-id))) (ref self 'title))))
+             (a/cont/ (@@/ (cont books (slot-ref self 'product-id))) (ref self 'title))))
    (tr/ (td/ (@/ (style "background-color:#bed0e2")) (ref self 'authors))
         (td/ (@/ (style "background-color:#bed0e2; text-align:right"))
-	     (ref self 'price)))))
+             (ref self 'price)))))
 
 (define-method format-for-detail ((self <book>) cont)
   (node-set/
@@ -43,31 +43,30 @@
    (hr/)
    (p/ (x->string (length (ref self 'reviews))) "件の読者レビューがあります。"
        (when/ (ref self 'reviews)
-	 (a/cont/ (@@/ (cont (cut show-reviews self cont)))
-		  "[読者レビューを読む]")))
+         (a/cont/ (@@/ (cont (cut show-reviews self cont)))
+                  "[読者レビューを読む]")))
    (book-review-link self cont)
    (p/ (@/ (style "text-align:right"))
        (a/cont/ (@@/ (cont books)) "[書籍一覧へ]"))))
 
 (define (book-review-link book cont)
   (p/ (if (kahua-current-user)
-	  (a/cont/ (@@/ (cont (cut write-review book cont)))
-		   "[この本についてのレビューを書く]")
-	  (node-set/
-	   "(" (user-box cont
-			 (lambda (nodes) (show-book-detail (slot-ref book 'product-id) cont)))
-	   "すると、この本についてのレビューを書くことができます)"))))
+          (a/cont/ (@@/ (cont (cut write-review book cont)))
+                   "[この本についてのレビューを書く]")
+          (node-set/
+           "(" (user-box cont
+                         (lambda (nodes) (show-book-detail (slot-ref book 'product-id) cont)))
+           "すると、この本についてのレビューを書くことができます)"))))
 
 (define (show-book-list cont)
   ((lister (map values (make-kahua-collection <book>))
-	   (lambda (book count)
-	     (format-for-list book cont)))
+           (lambda (book count)
+             (format-for-list book cont)))
    (lambda (nodes)
      (cont (node-set/ (h2/ "書籍リスト") nodes)))))
 
 (define (show-book-detail pid cont)
   (let1 book (find-kahua-instance <book> 'product-id pid)
     (if book
-	(cont (format-for-detail book cont))
-	(cont (p/ "(書籍データがありません)")))))
-
+        (cont (format-for-detail book cont))
+        (cont (p/ "(書籍データがありません)")))))

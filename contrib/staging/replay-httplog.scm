@@ -12,13 +12,13 @@
 
 (define (main args)
   (cond [(< (length+ args) 3) (help args)]
-	[else
-	 (let [(host (cadr args))
-	       (logfile (caddr args))]
-	   (call-with-input-file logfile
-	     (lambda (in)
-	       (for-each
-		(lambda (line)
-		  (let ((words (string-split line " ")))
-		    (print-status host (list-ref words 6))))
-		(port->string-list in)))))]))
+        [else
+         (let [(host (cadr args))
+               (logfile (caddr args))]
+           (call-with-input-file logfile
+             (lambda (in)
+               (for-each
+                (lambda (line)
+                  (let ((words (string-split line " ")))
+                    (print-status host (list-ref words 6))))
+                (port->string-list in)))))]))

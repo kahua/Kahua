@@ -34,7 +34,7 @@
     (entry-lambda (:keyword logname pass)
       (if (kahua-login logname pass)
           (redirect return-cont)
-	  (dialog logname pass))))
+          (dialog logname pass))))
 
   (define (dialog logname pass)
     (page
@@ -69,23 +69,23 @@
     (page
      (node-set/
       (if logname
-	  (if pass
-	      (p/ "2つのパスワードが異なります。同じパスワードを入力して下さい。")
-	      (p/ "そのユーザー名は既に登録されています。異なるユーザー名を選んで下さい。"))
+          (if pass
+              (p/ "2つのパスワードが異なります。同じパスワードを入力して下さい。")
+              (p/ "そのユーザー名は既に登録されています。異なるユーザー名を選んで下さい。"))
           (p/ "ユーザー名とパスワードを選び、入力して下さい。"
-	      "パスワードは確認のため2度入力して下さい。"))
+              "パスワードは確認のため2度入力して下さい。"))
       (form/cont/
        (@@/ (cont user-registration))
         (table/
          (tr/ (th/ "ユーザー名")
-	      (td/ (input/ (@/ (type "text") (name "logname")
-			       (value (or logname ""))))))
+              (td/ (input/ (@/ (type "text") (name "logname")
+                               (value (or logname ""))))))
          (tr/ (th/ "パスワード")
-	      (td/ (input/ (@/ (type "password") (name "pass")))))
+              (td/ (input/ (@/ (type "password") (name "pass")))))
          (tr/ (th/ "パスワード(確認)")
-	      (td/ (input/ (@/ (type "password") (name "pass2")))))
+              (td/ (input/ (@/ (type "password") (name "pass2")))))
          (tr/ (th/)
-	      (td/ (input/ (@/ (type "submit") (name "submit")
+              (td/ (input/ (@/ (type "submit") (name "submit")
                            (value "登録")))))))
       )))
 
@@ -99,7 +99,7 @@
        (else
         (kahua-add-user logname pass)
         (kahua-db-sync)
-	(kahua-login logname pass)
+        (kahua-login logname pass)
         (redirect return-cont)))))
 
   (new-user #f #f))
@@ -110,23 +110,22 @@
 
 (define (page nodeset)
   (html/ (head/ (title/ "Kahua example site login")
-		(link/ (@/ (rel "stylesheet") (type "text/css")
-			   (href (kahua-static-document-url
-				  "wiki-iki" "wiki-iki.css")))))
-	 (body/
-	  (h1/ "Kahua examples: Site login")
-	  (hr/)
-	  nodeset
-	  (hr/)
-	  (div/ (@/ (id "lastchanged"))
-		"Powered by " (a/ (@/ (href "http://www.kahua.org/")) "Kahua")))))
+                (link/ (@/ (rel "stylesheet") (type "text/css")
+                           (href (kahua-static-document-url
+                                  "wiki-iki" "wiki-iki.css")))))
+         (body/
+          (h1/ "Kahua examples: Site login")
+          (hr/)
+          nodeset
+          (hr/)
+          (div/ (@/ (id "lastchanged"))
+                "Powered by " (a/ (@/ (href "http://www.kahua.org/")) "Kahua")))))
 
 (define (redirect return-cont)
   (let ((path (or return-cont "")))
     (html/ ;; Needed to make a single SXML node (for now)
      (extra-header/ (@/ (name "Status") (value "302 Found")))
      (extra-header/ (@/ (name "Location")
-			(value (kahua-self-uri-full ".." path)))))))
+                        (value (kahua-self-uri-full ".." path)))))))
 
 (initialize-main-proc login)
-

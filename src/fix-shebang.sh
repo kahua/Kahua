@@ -9,5 +9,3 @@ chmod +x $SCRIPT && \
 echo '#!/bin/sh' > $SCRIPT.sh && \
 echo "$GOSH -I$LIB $EXE/$SCRIPT.scm" ' $@' >> $SCRIPT.sh && \
 chmod +x $SCRIPT.sh
-
-

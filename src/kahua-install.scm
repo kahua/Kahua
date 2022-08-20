@@ -44,9 +44,9 @@ options:
     (when (and rename (not (= (length files) 1))) (usage))
     (kahua-common-init site conf-file)
     (cond (dirs? (install-dirs uninstall?))
-	  ((null? files) (usage))
-	  (uninstall? (for-each (cut uninstall-file <> material-type rename) files))
-	  (else (for-each (cut install-file <> material-type rename no-over) files))))
+          ((null? files) (usage))
+          (uninstall? (for-each (cut uninstall-file <> material-type rename) files))
+          (else (for-each (cut install-file <> material-type rename no-over) files))))
   0)
 
 (define (install-file file material-type rename no-over)
@@ -69,12 +69,12 @@ options:
          (target-dir (sys-dirname target)))
     (when (file-exists? target)
       (guard (e (else (warn "couldn't uninstall ~a: ~a" target (ref e 'message))))
-	(sys-unlink target)))
+        (sys-unlink target)))
     (when (and (file-is-directory? target-dir)
                (equal? (sys-readdir target-dir) '("." "..")))
       (guard (e (else (warn "couldn't remove the directory ~a: ~a"
-			    target-dir (ref e 'message))))
-	(sys-rmdir target-dir)))))
+                            target-dir (ref e 'message))))
+        (sys-rmdir target-dir)))))
 
 ;; NB: uninstalling dirs isn't implemented yet, since it can be
 ;; pretty dangerous operation.
@@ -97,8 +97,8 @@ options:
          (build-path (kahua-plugin-directory) file))
         ((equal? material-type "static")
          (kahua-static-document-path file))
-	((equal? material-type "template")
-	 (build-path (kahua-template-directory) file))
+        ((equal? material-type "template")
+         (build-path (kahua-template-directory) file))
         (else
          (error "unknown material type:" material-type))))
 

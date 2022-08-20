@@ -19,28 +19,28 @@
 ;; Deal with login -----------------------------------
 (define (login-processor)
   (guard (e (else
-	     (print "ERROR: " (ref e 'message))
-	     login-processor))
+             (print "ERROR: " (ref e 'message))
+             login-processor))
     (display "Welcome to Kahua.") (newline)
     (let* ((user-mode (ref (kahua-config) 'user-mode))
-	   (username (or user-mode
-			 (begin
-			   (format #t "username: ")
-			   (flush)
-			   (read-line))))
-	   (password (if (sys-getenv "TERM")
-			 (get-password "password: ")
-			 (begin (format #t "password: ")
-				(flush)
-				(read-line)))))
+           (username (or user-mode
+                         (begin
+                           (format #t "username: ")
+                           (flush)
+                           (read-line))))
+           (password (if (sys-getenv "TERM")
+                         (get-password "password: ")
+                         (begin (format #t "password: ")
+                                (flush)
+                                (read-line)))))
       (cond ((find eof-object? (list username password)) (exit 0))
-	    ((kahua-check-developer username password)
-	     select-worker-processor)
-	    (else
-	     (newline)
-	     (display "Permission denied.")
-	     (newline)
-	     (exit 0))))))
+            ((kahua-check-developer username password)
+             select-worker-processor)
+            (else
+             (newline)
+             (display "Permission denied.")
+             (newline)
+             (exit 0))))))
 
 
 ;; Deal with select workers ------------------------------------
@@ -58,11 +58,11 @@
 
 (define (select-worker-processor)
   (guard (e (else
-	     (let1 errmsg (ref e 'message)
-	       (print "ERROR: " errmsg)
-	       (if (#/connect failed to/ errmsg)
-		   (exit 70)
-		   select-worker-processor))))
+             (let1 errmsg (ref e 'message)
+               (print "ERROR: " errmsg)
+               (if (#/connect failed to/ errmsg)
+                   (exit 70)
+                   select-worker-processor))))
     (show-workers)
     (format #t "select wno> ")
     (flush)
@@ -71,8 +71,8 @@
           (exit 0)
           (let1 cmd (call-with-input-string line port->sexp-list)
             (if (null? cmd)
-		select-worker-processor
-		(connect-worker (car cmd))))))))
+                select-worker-processor
+                (connect-worker (car cmd))))))))
 
 
 ;; Deal with worker command ------------------------------------
@@ -93,21 +93,21 @@
 (define (make-worker-command-processor type wid)
   (rec (worker-processor)
        (guard (e (else
-		  (display (ref e 'message)) (flush)
-		  worker-processor))
-	 (format #t "~a(~a)> " type wid)
-	 (flush)
-	 (let1 expr (read)
-	   (cond
-	    ((eof-object? expr) (exit 0))
-	    ((memq expr '(disconnect bye)) (read-line) select-worker-processor)
-	    (else
-	     ;; NB: the first two elts of reply is error-output and std-output
-	     (let1 reply (send-command wid `(eval ',expr kahua-app-server))
-	       (display (car reply)) (display (cadr reply))
-	       (for-each (lambda (r) (display r) (newline)) (cddr reply))
-	       worker-processor))))
-	 )))
+                  (display (ref e 'message)) (flush)
+                  worker-processor))
+         (format #t "~a(~a)> " type wid)
+         (flush)
+         (let1 expr (read)
+           (cond
+            ((eof-object? expr) (exit 0))
+            ((memq expr '(disconnect bye)) (read-line) select-worker-processor)
+            (else
+             ;; NB: the first two elts of reply is error-output and std-output
+             (let1 reply (send-command wid `(eval ',expr kahua-app-server))
+               (display (car reply)) (display (cadr reply))
+               (for-each (lambda (r) (display r) (newline)) (cddr reply))
+               worker-processor))))
+         )))
 
 ;; Utility -----------------------------------------------------
 (define (send-command wid cmd)

@@ -5,7 +5,7 @@
 ;;  See COPYING for terms and conditions of using this software
 ;;
 
-;; This will eventually becomes generic object broker.  
+;; This will eventually becomes generic object broker.
 ;; For now, this only handles state session object.
 ;; This script should be invoked by kahua-spvr.
 ;; When started, objserv reports the worker id to stdout.
@@ -59,27 +59,27 @@
 
 (define (main args)
   (let-args (cdr args) ((site "S=s")
-			(conf-file "c=s")
-			(thnum "t:threads=i" #f))
+                        (conf-file "c=s")
+                        (thnum "t:threads=i" #f))
     (kahua-common-init site conf-file)
     (write-pid-file (kahua-keyserv-pidpath))
     (kahua:log-open (kahua-logpath "kahua-keyserv.log") :prefix "~Y ~T ~P[~$]: ")
     (random-source-randomize! default-random-source)
     (let* ((wid (make-worker-id "%keyserv"))
            (sockaddr (worker-id->sockaddr wid (kahua-sockbase)))
-	   (tpool (make-thread-pool (or thnum (kahua-keyserv-concurrency)))))
+           (tpool (make-thread-pool (or thnum (kahua-keyserv-concurrency)))))
       (unwind-protect
        (begin
-	 (set-signal-handler! SIGPIPE #f)
-	 (sys-sigmask SIG_BLOCK *TERMINATION-SIGNALS*)
-	 (run-server wid sockaddr tpool)
-	 (sys-sigwait *TERMINATION-SIGNALS*)
-	 0)
+         (set-signal-handler! SIGPIPE #f)
+         (sys-sigmask SIG_BLOCK *TERMINATION-SIGNALS*)
+         (run-server wid sockaddr tpool)
+         (sys-sigwait *TERMINATION-SIGNALS*)
+         0)
        (begin
-	 (when (is-a? sockaddr <sockaddr-un>)
-	   (sys-unlink (sockaddr-name sockaddr)))
-	 (terminate-all! tpool 0)
-	 (sys-unlink (kahua-keyserv-pidpath)))))))
+         (when (is-a? sockaddr <sockaddr-un>)
+           (sys-unlink (sockaddr-name sockaddr)))
+         (terminate-all! tpool 0)
+         (sys-unlink (kahua-keyserv-pidpath)))))))
 
 (define (usage)
   (print "kahua-keyserv [-S <site-bundle>] [-c <conf-file>] [-t <thread-count>]")
@@ -93,9 +93,9 @@
       (add-job! tpool (cute handle-request (socket-accept sock))))
     (define (orphan-handler in flag)
       (when (eof-object? (read-byte in))
-	(display "keyserv: parent(maybe spvr) has gone, so me too!!\n" (current-error-port))
-	(selector-delete! selector in #f #f)
-	(sys-kill (sys-getpid) SIGTERM)))
+        (display "keyserv: parent(maybe spvr) has gone, so me too!!\n" (current-error-port))
+        (selector-delete! selector in #f #f)
+        (sys-kill (sys-getpid) SIGTERM)))
 
     ;; hack
     (when (is-a? sockaddr <sockaddr-un>)
@@ -106,43 +106,43 @@
     (selector-add! selector (socket-fd sock) accept-handler '(r))
 
     (let1 t (make-thread (lambda ()
-			   (do () (#f)
-			     (when (zero? (selector-select selector 60.0e6))
-			       (sweep-objects *default-timeout*))))
-			 "dispatcher")
+                           (do () (#f)
+                             (when (zero? (selector-select selector 60.0e6))
+                               (sweep-objects *default-timeout*))))
+                         "dispatcher")
       (thread-start! t))))
 
 (define (handle-request client)
   (call-with-client-socket client
     (lambda (input output)
       (guard (e (else #f))
-	(unwind-protect
-	 (guard (e (else (kahua:log-format "~a" (kahua-error-string e #t))))
-	   (let loop ((request (read input)))
-	     (unless (eof-object? request)
-	       (let1 result (match request
-			      (('flush . maybe-sec)
-			       (sweep-objects (x->integer (get-optional maybe-sec #f)))
-			       (list (num-objects)))
-			      (('stat) (list (num-objects)))
-			      (('keys) (all-keys))
-			      (('ref key) (ref-object key))
-			      ((key . attrs) (handle-object-command key attrs))
-			      (else    #f))
-		 (write result output)
-		 (newline output)
-		 (flush output)
-		 (loop (read input))))))
-	 (with-ignoring-exception (cut socket-shutdown client SHUT_RDWR))))))
+        (unwind-protect
+         (guard (e (else (kahua:log-format "~a" (kahua-error-string e #t))))
+           (let loop ((request (read input)))
+             (unless (eof-object? request)
+               (let1 result (match request
+                              (('flush . maybe-sec)
+                               (sweep-objects (x->integer (get-optional maybe-sec #f)))
+                               (list (num-objects)))
+                              (('stat) (list (num-objects)))
+                              (('keys) (all-keys))
+                              (('ref key) (ref-object key))
+                              ((key . attrs) (handle-object-command key attrs))
+                              (else    #f))
+                 (write result output)
+                 (newline output)
+                 (flush output)
+                 (loop (read input))))))
+         (with-ignoring-exception (cut socket-shutdown client SHUT_RDWR))))))
   0)
 
 (define (handle-object-command key attrs)
   (let loop ((obj (get-object key))
              (attrs attrs))
     (if (null? attrs)
-	obj
-	(begin (set-cdr! obj (assq-set! (cdr obj) (caar attrs) (cdar attrs)))
-	       (loop obj (cdr attrs))))))
+        obj
+        (begin (set-cdr! obj (assq-set! (cdr obj) (caar attrs) (cdar attrs)))
+               (loop obj (cdr attrs))))))
 
 ;; Object pool -------------------------------------------
 
@@ -155,20 +155,20 @@
   (with-locking-mutex *mutex*
     (lambda ()
       (let1 key (if (string? key)
-		    key
-		    (let loop ()
-		      (let1 candidate (number->string (random-integer *max-key*) 36)
-			(if (hash-table-get *object-pool* candidate #f)
-			    (loop)
-			    candidate))))
-	(cond ((hash-table-get *object-pool* key #f)
-	       => (lambda (k)
-		    (set! (cdr k) (assq-set! (cdr k) '%ctime (sys-time)))
-		    k))
-	      (else
-	       (let1 newobj `(,key (%ctime . ,(sys-time)))
-		 (hash-table-put! *object-pool* key newobj)
-		 newobj)))))
+                    key
+                    (let loop ()
+                      (let1 candidate (number->string (random-integer *max-key*) 36)
+                        (if (hash-table-get *object-pool* candidate #f)
+                            (loop)
+                            candidate))))
+        (cond ((hash-table-get *object-pool* key #f)
+               => (lambda (k)
+                    (set! (cdr k) (assq-set! (cdr k) '%ctime (sys-time)))
+                    k))
+              (else
+               (let1 newobj `(,key (%ctime . ,(sys-time)))
+                 (hash-table-put! *object-pool* key newobj)
+                 newobj)))))
     ))
 
 (define (ref-object key)

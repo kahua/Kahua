@@ -45,10 +45,10 @@
 
 (define-method newest-page ((pagename <string>))
   (and-let* ((ls (coerce-to <list> (make-kahua-collection <page> :index `(name . ,pagename))))
-	     ((pair? ls)))
+             ((pair? ls)))
     (newest-page (car (sort ls (lambda (a b)
-				 (> (ref a 'creation-time)
-				    (ref b 'creation-time))))))))
+                                 (> (ref a 'creation-time)
+                                    (ref b 'creation-time))))))))
 
 (define-method newest-page (_) #f) ;; fallback
 
@@ -90,15 +90,15 @@
           (else (list* "\n" line r))))
   (define (format-lines lines r)
     (if (null? lines)
-	(node-set (reverse! r))
-	(format-lines (cdr lines) (next-token (car lines) r))))
+        (node-set (reverse! r))
+        (format-lines (cdr lines) (next-token (car lines) r))))
 
   ;; body of format paragraph
   (if (string? lines)
       (cond ((#/^(\*+)\s/ lines)
-	     => (lambda (m)
-		  ((ref `(_ ,h2/ ,h3/ ,h4/ ,h5/ ,h6/) (min 4 (string-length (m 1)))) (m 'after))))
-	    (else (p/ lines)))
+             => (lambda (m)
+                  ((ref `(_ ,h2/ ,h3/ ,h4/ ,h5/ ,h6/) (min 4 (string-length (m 1)))) (m 'after))))
+            (else (p/ lines)))
       (p/ (format-lines lines '()))))
 
 (define (format-wikiname name cont)
@@ -137,9 +137,9 @@
     (table/ (@/ (id "recentchanges"))
             (tr/ (th/ (@/ (id "recentchanges")) "Recent Changes"))
             (map/ (lambda (page)
-		    (tr/ (td/ (@/ (id "recentchanges"))
-			      (format-wikiname (ref page 'name) cont))))
-		  pages))))
+                    (tr/ (td/ (@/ (id "recentchanges"))
+                              (format-wikiname (ref page 'name) cont))))
+                  pages))))
 
 ;;========================================================
 ;; Main application
@@ -147,10 +147,10 @@
 
 (define (standard-page nodes)
   (html/ (head/ (title/ "Wiki Iki")
-		(link/ (@/ (rel "stylesheet") (type "text/css")
-			   (href (kahua-static-document-url
-				  "wiki-iki" "wiki-iki.css")))))
-	 (body/ nodes)))
+                (link/ (@/ (rel "stylesheet") (type "text/css")
+                           (href (kahua-static-document-url
+                                  "wiki-iki" "wiki-iki.css")))))
+         (body/ nodes)))
 
 (define-entry (show-page pagename)
   (let ((pagename (or pagename *welcome-page*)))
@@ -162,14 +162,14 @@
 (define (show-page/page page)
   (define (body-pane nodes)
     (td/ (@/ (id "bodypane"))
-	 (div/ nodes)
-	 (hr/)
-	 (div/ (a/cont/
-		(@@/ (cont (cut edit-page (kahua-persistent-id page) (ref page 'name))))
-		"[Edit]"))
+         (div/ nodes)
+         (hr/)
+         (div/ (a/cont/
+                (@@/ (cont (cut edit-page (kahua-persistent-id page) (ref page 'name))))
+                "[Edit]"))
          (div/ (@/ (id "lastchanged"))
-	       "Last Change: " (format-time (ref page 'creation-time)) (br/)
-	       "Powered by " (a/ (@/ (href "http://www.kahua.org/")) "Kahua"))))
+               "Last Change: " (format-time (ref page 'creation-time)) (br/)
+               "Powered by " (a/ (@/ (href "http://www.kahua.org/")) "Kahua"))))
   (define (side-pane)
     (td/ (@/ (id "sidepane"))
          (user-pane (ref page 'name))
@@ -178,13 +178,13 @@
   (format-page page
                (lambda (nodes)
                  (standard-page (node-set/
-				 (page-title (ref page 'name))
-				 (table/ (@/ (style "width:100%"))
-					 (tr/ (body-pane nodes) (side-pane))))))
+                                 (page-title (ref page 'name))
+                                 (table/ (@/ (style "width:100%"))
+                                         (tr/ (body-pane nodes) (side-pane))))))
                standard-page))
 
 ;; Edit and commit uses page-id for an existing page,
-;; and pagename for a new page. 
+;; and pagename for a new page.
 
 (define (edit-page page-id pagename)
   ;; NB: we pick the newest page in case if the user come back to
@@ -224,9 +224,9 @@
 
 (define (page-title . names)
   (h1/ (a/cont/
-	(@@/ (cont show-page))
-	(img/ (@/ (src (kahua-static-document-url "wiki-iki/images/wiki-iki.png"))
-		  (border "0") (width 64) (height 64))))
+        (@@/ (cont show-page))
+        (img/ (@/ (src (kahua-static-document-url "wiki-iki/images/wiki-iki.png"))
+                  (border "0") (width 64) (height 64))))
        (span/ (@/ (style "vertical-align:50%; margin-left:0.5em")) (node-set names))))
 
 ;; canonicalize EOL to #\newline
@@ -280,6 +280,5 @@ ex: [[Page that doesn't exist]]
 
 "
 ))
-   
-(initialize-main-proc show-page)
 
+(initialize-main-proc show-page)

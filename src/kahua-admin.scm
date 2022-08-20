@@ -21,18 +21,18 @@
 (define (spvr-command-processor)
   (define (parse-command-line line)
     (cond ((eof-object? line)                 (exit 0))
-	  ((equal? line *redo-command*) (last-command))
-	  (else              (last-command line) line)))
+          ((equal? line *redo-command*) (last-command))
+          (else              (last-command line) line)))
   (guard (e (else
-	     (print "ERROR: " (ref e 'message))
-	     spvr-command-processor))
+             (print "ERROR: " (ref e 'message))
+             spvr-command-processor))
     (format #t "spvr> ")
     (let1 cmd (call-with-input-string
-		  (parse-command-line (read-line))
-		port->sexp-list)
+                  (parse-command-line (read-line))
+                port->sexp-list)
       (if (null? cmd)
-	  spvr-command-processor
-	  (dispatch-spvr-command cmd)))))
+          spvr-command-processor
+          (dispatch-spvr-command cmd)))))
 
 (define (dispatch-spvr-command cmd)
   (case (car cmd)
@@ -49,7 +49,7 @@
     ((update)
      (if (> (length cmd) 1)
        (apply update-command (cdr cmd))
-       (begin (display 
+       (begin (display
                "Usage: update <worker-type/number> (files...)\n")
               spvr-command-processor)))
 
@@ -104,7 +104,7 @@
   (define now (sys-time))
   (define (show-time time)
     (sys-strftime "%b %e %H:%M" (sys-localtime time)))
-  
+
   (format #t "wno   pid type         since        wid\n")
   (dolist (w reply)
     (format #t "~3d ~5d ~12a ~10a ~a\n"
@@ -133,20 +133,20 @@
 (define (make-worker-command-processor type wid)
   (rec (worker-processor)
        (guard (e (else
-		  (display (ref e 'message))
-		  worker-processor))
-	 (format #t "~a(~a)> " type wid)
-	 (let1 expr (read)
-	   (cond
-	    ((eof-object? expr) (exit 0))
-	    ((memq expr '(disconnect bye)) spvr-command-processor)
-	    (else
-	     ;; NB: the first two elts of reply is error-output and std-output
-	     (let1 reply (send-command wid expr)
-	       (display (car reply)) (display (cadr reply))
-	       (for-each (lambda (r) (display r) (newline)) (cddr reply))
-	       worker-processor))
-	    ))
+                  (display (ref e 'message))
+                  worker-processor))
+         (format #t "~a(~a)> " type wid)
+         (let1 expr (read)
+           (cond
+            ((eof-object? expr) (exit 0))
+            ((memq expr '(disconnect bye)) spvr-command-processor)
+            (else
+             ;; NB: the first two elts of reply is error-output and std-output
+             (let1 reply (send-command wid expr)
+               (display (car reply)) (display (cadr reply))
+               (for-each (lambda (r) (display r) (newline)) (cddr reply))
+               worker-processor))
+            ))
         )))
 
 (define (update-worker-files wtype . files)
@@ -155,34 +155,34 @@
                              (eqv? (get-keyword :worker-type w) wtype))
                            workers)))
     (if the-worker
-	(begin
-	  (display (caddr (send-command (get-keyword :worker-id the-worker) 
-				      '(update-server))))
-	  (newline))
+        (begin
+          (display (caddr (send-command (get-keyword :worker-id the-worker)
+                                      '(update-server))))
+          (newline))
         (format #t "No such worker: ~a\n" wtype)))
   spvr-command-processor)
 
 (define (update-command t/c . files)
   (let* ((workers (send-command #f '(ls)))
-	 (targets (filter
-		   (lambda (w)
-		     (or (eqv? (get-keyword :worker-type w) t/c)
-			 (eqv? (get-keyword :worker-count w) t/c)))
-		   workers)))
+         (targets (filter
+                   (lambda (w)
+                     (or (eqv? (get-keyword :worker-type w) t/c)
+                         (eqv? (get-keyword :worker-count w) t/c)))
+                   workers)))
     (if (null? targets)
-	(format #t "No such worker: ~a\n" t/c)
-	(for-each (lambda (w)
-		    (let* ((wid   (get-keyword :worker-id w))
-			   (wtype (get-keyword :worker-type w))
-			   (fs    (map (cut symbol->string <>) files))
-			   (ans   (send-command wid
-						`(update-server ,@fs))))
-		      (if (equal? (caddr ans) "#f")
-			  (begin
-			    (format #t "update failed: ~a(~a)\n" wtype wid)
-			    (format #t "~a\n" (car ans)))
-			  (format #t "update: ~a(~a)\n" wtype wid))))
-		  targets))
+        (format #t "No such worker: ~a\n" t/c)
+        (for-each (lambda (w)
+                    (let* ((wid   (get-keyword :worker-id w))
+                           (wtype (get-keyword :worker-type w))
+                           (fs    (map (cut symbol->string <>) files))
+                           (ans   (send-command wid
+                                                `(update-server ,@fs))))
+                      (if (equal? (caddr ans) "#f")
+                          (begin
+                            (format #t "update failed: ~a(~a)\n" wtype wid)
+                            (format #t "~a\n" (car ans)))
+                          (format #t "update: ~a(~a)\n" wtype wid))))
+                  targets))
     spvr-command-processor))
 
 ;; Deal with plugin command ------------------------------------
@@ -219,7 +219,7 @@
            (show-plugin wid))
           (else (error "unknown plugin command" cmd)))
     ))
-                
+
 ;; Utility -----------------------------------------------------
 (define (send-command wid cmd)
   (let ((sockaddr (worker-id->sockaddr wid (kahua-sockbase))))

@@ -29,7 +29,7 @@ MKINSTDIR = $(top_srcdir)/mkinstalldirs
 
 ELISPS = kahua.el
 
-CONFIG_GENERATED = Makefile 
+CONFIG_GENERATED = Makefile
 .PHONY: all check clean distclean install maintainer-clean
 
 all: $(ELISPS)
@@ -63,5 +63,3 @@ distclean: clean
 
 maintainer-clean: clean
 	rm -rf $(CONFIG_GENERATED)
-
-
