@@ -17,6 +17,7 @@
 
 (define-module kahua.config
   (use gauche.parameter)
+  (use gauche.version)
   (use file.util)
   (use util.list)
   (use util.match)
@@ -413,7 +414,9 @@
                          *default-site-structure*)))
     (let1 c (apply make <kahua-config> :site-root site-path initargs)
       (kahua-config c)
-      (push! *load-path* (kahua-application-directory))
+      (if (version<=? (gauche-version) "0.9.15")
+        (push! *load-path* (kahua-application-directory))
+        (load-paths (cons (kahua-application-directory) (load-paths))))
       c)))
 
 (define (kahua-common-init site . maybe-conf-file)
