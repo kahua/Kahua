@@ -3,8 +3,8 @@ dnl Configuring Kahua Examples
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-AC_PREREQ(2.54)
-AC_INIT(examples, 1.0, info@kahua.org)
+AC_PREREQ([2.71])
+AC_INIT([examples],[1.0],[info@kahua.org])
 AC_GAUCHE_INIT_EXT
 
 dnl Sets the default value of INSTALL_TYPE macro.
@@ -21,8 +21,7 @@ AC_CHECK_PROGS(GZIP_PROGRAM, gzip)
 
 KAHUA_STATICDIR=$localstatedir/kahua/static
 AC_ARG_WITH(staticdir,
-  AC_HELP_STRING([--with-staticdir=PATH],
-                 [Specifies the directory where Kahua static documents should be
+  AS_HELP_STRING([--with-staticdir=PATH],[Specifies the directory where Kahua static documents should be
 installed.  Default: $KAHUA_STATICDIR]),
   [
     case "$with_staticdir" in
@@ -34,8 +33,7 @@ AC_SUBST(KAHUA_STATICDIR)
 
 KAHUA_USER_OPTION=
 AC_ARG_WITH(kahua-user,
-  AC_HELP_STRING([--with-kahua-user=USER],
-                 [User name execute kahua servers. Default: none]),
+  AS_HELP_STRING([--with-kahua-user=USER],[User name execute kahua servers. Default: none]),
   [
     case "$with_kahua_user" in
       yes|no)  KAHUA_USER_OPTION= ;;
@@ -46,8 +44,7 @@ AC_SUBST(KAHUA_USER_OPTION)
 
 KAHUA_GROUP_OPTION=
 AC_ARG_WITH(kahua-group,
-  AC_HELP_STRING([--with-kahua-group=GROUP],
-                 [Group name execute kahua servers. Default: none]),
+  AS_HELP_STRING([--with-kahua-group=GROUP],[Group name execute kahua servers. Default: none]),
   [
     case "$with_kahua_group" in
       yes|no) KAHUA_GROUP_OPTION= ;;
@@ -58,8 +55,7 @@ AC_SUBST(KAHUA_GROUP_OPTION)
 
 KAHUACONFIG_OPTION=' -c $(sysconfdir)/kahua.conf'
 AC_ARG_WITH(site-bundle,
-  AC_HELP_STRING([--with-site-bundle=/path/to/bundle],
-                 [Target site bundle path. Default: none]),
+  AS_HELP_STRING([--with-site-bundle=/path/to/bundle],[Target site bundle path. Default: none]),
   [
     case "$with_site_bundle" in
       no) KAHUACONFIG_OPTION=' -c $(sysconfdir)/kahua.conf' ;;
@@ -72,4 +68,5 @@ dnl Set LDFLAGS to generate shared library.
 AC_GAUCHE_FIX_LIBS
 
 dnl Output
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

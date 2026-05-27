@@ -3,8 +3,8 @@ dnl Configuring Kahua
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
 dnl
-AC_PREREQ(2.59)
-AC_INIT(kahua, 1.1_pre19, info@kahua.org)
+AC_PREREQ([2.71])
+AC_INIT([kahua],[1.1_pre19],[info@kahua.org])
 AC_GAUCHE_INIT_EXT
 
 AC_SUBST(PACKAGE_NAME)
@@ -51,7 +51,7 @@ AC_MSG_RESULT(seem good)
 dnl Sets some additional installation destination
 KAHUA_CGIDIR=$libexecdir/kahua
 AC_ARG_WITH(cgidir,
-  AC_HELP_STRING([--with-cgidir=PATH],
+  AS_HELP_STRING([--with-cgidir=PATH],
                  [Specifies the directory where Kahua cgi scripts should be
 installed.  If disabled (--with-cgidir=no or --without-cgidir), cgi scripts
 are not installed automatically.  Default: $libexecdir/kahua]),
@@ -65,8 +65,8 @@ AC_SUBST(KAHUA_CGIDIR)
 
 FASTCGI_EXT=fcg
 AC_ARG_WITH(fastcgi-ext,
-  AC_HELP_STRING([--with-fastcgi-ext=EXT],
-		 [Specifies the extension of fastcgi script.  It's may be fcg or fcgi usually.  Default: fcg]),
+  AS_HELP_STRING([--with-fastcgi-ext=EXT],
+                 [Specifies the extension of fastcgi script.  It's may be fcg or fcgi usually.  Default: fcg]),
   [
     case "$with_fastcgi_ext" in
       "") ;;
@@ -76,7 +76,7 @@ AC_ARG_WITH(fastcgi-ext,
 AC_SUBST(FASTCGI_EXT)
 
 AC_ARG_WITH(fastcgi,
-  AC_HELP_STRING([--with-fastcgi=yes|no],
+  AS_HELP_STRING([--with-fastcgi=yes|no],
                  [If yes, kahua.cgi will be generated as a fastcgi script. Default: no]),
   [
     case "$with_fastcgi" in
@@ -86,9 +86,9 @@ AC_ARG_WITH(fastcgi,
   ])
 AC_SUBST(FASTCGI_SCRIPT)
 
-dnl Site bundle for examples. 
+dnl Site bundle for examples.
 AC_ARG_WITH(site-bundle,
-  AC_HELP_STRING([--with-site-bundle=/path/to/site],
+  AS_HELP_STRING([--with-site-bundle=/path/to/site],
                  [Examples installed into /path/to/bundle. Default: none]),[])
 
 dnl Add more test
@@ -103,10 +103,11 @@ AC_CONFIG_SUBDIRS(examples)
 
 dnl Output
 echo $PACKAGE_VERSION > VERSION
-AC_OUTPUT(Makefile 
-          src/Makefile 
-          doc/Modules/Makefile
-          cgi/Makefile 
-          emacs/Makefile
-          plugins/Makefile
-          test/Makefile)
+AC_CONFIG_FILES([Makefile
+                 src/Makefile
+                 doc/Modules/Makefile
+                 cgi/Makefile
+                 emacs/Makefile
+                 plugins/Makefile
+                 test/Makefile])
+AC_OUTPUT
