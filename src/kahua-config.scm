@@ -27,7 +27,7 @@
       (cond ((null? args)
              (for-each (lambda (slot len)
                          (format #t "~a:" slot)
-                         (display (make-string (- (+ max-len 4) len) #\sp))
+                         (display (make-string (- (+ max-len 4) len) #\space))
                          (format #t "~a~%" (ref conf slot)))
                        slots lens))
             (else
